@@ -4962,6 +4962,146 @@
 		)
 	)
 	(symbol
+		(lib_id "Connector:USB_C_Receptacle_USB2.0")
+		(at 201.93 39.37 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d3337e7a-6639-4290-a432-fba324f8fade")
+		(property "Reference" "J8"
+			(at 201.93 16.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "USB_C"
+			(at 201.93 19.05 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "cynthion:USB_C_Receptacle_HRO_TYPE-C-31-M-12"
+			(at 198.12 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 198.12 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "CONN RCPT USB2.0 TYPE-C 16POS"
+			(at 201.93 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" "DEALON"
+			(at 201.93 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Part Number" "USB-TYPE-C-019"
+			(at 201.93 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Substitution" "Yuandi TYPE-611A-T3"
+			(at 201.93 39.37 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "A1"
+			(uuid "bf7be64c-0206-4f15-b676-5637ba2e6308")
+		)
+		(pin "A12"
+			(uuid "8f74d7f4-9e08-49fc-b057-55cfeb133b6f")
+		)
+		(pin "A4"
+			(uuid "b786f653-1c64-45b3-9043-13405160297f")
+		)
+		(pin "A5"
+			(uuid "80e0397c-1724-4f19-8d3e-6dea9e87c18f")
+		)
+		(pin "A6"
+			(uuid "9e333e36-5b28-4f10-a1cf-b28e88eb31cd")
+		)
+		(pin "A7"
+			(uuid "87f87804-7753-4017-b984-c3cfc112fde3")
+		)
+		(pin "A8"
+			(uuid "f8bc0288-4fda-4477-9d6b-0932aa0be674")
+		)
+		(pin "A9"
+			(uuid "91b83575-5fae-46c5-94e0-eaf8d7ee139d")
+		)
+		(pin "B1"
+			(uuid "573cbd51-9441-4506-8612-b144f7bf161f")
+		)
+		(pin "B12"
+			(uuid "9bd2a6a1-2afc-4cfe-8dc9-a310e9187025")
+		)
+		(pin "B4"
+			(uuid "a1cd5780-1eab-4694-bf6b-453f4e23d7c5")
+		)
+		(pin "B5"
+			(uuid "41489083-6d57-44dd-81cf-d07d795425bb")
+		)
+		(pin "B6"
+			(uuid "7b8ea71e-7bda-43a3-bd13-ba0b75eeaccc")
+		)
+		(pin "B7"
+			(uuid "b65e1141-19fd-4c3b-8a5b-855be617986d")
+		)
+		(pin "B8"
+			(uuid "ba4c6d15-d224-4be7-8138-795688c0de27")
+		)
+		(pin "B9"
+			(uuid "a4dfda60-b9fe-4b8f-a460-6f679fd1a287")
+		)
+		(pin "S1"
+			(uuid "ca327d48-1965-406a-a200-23e741ed73f4")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "J8")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "support_hardware:SW_SPST_shielded")
 		(at 173.99 50.8 0)
 		(mirror y)
@@ -4979,7 +5119,7 @@
 				)
 			)
 		)
-		(property "Value" "BTN_PROGRAM"
+		(property "Value" "~"
 			(at 173.99 46.99 0)
 			(effects
 				(font
@@ -5033,6 +5173,15 @@
 			)
 		)
 		(property "Substitution" "DEALON TC-1150DL-6.0H-160"
+			(at 173.99 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C692468"
 			(at 173.99 50.8 0)
 			(effects
 				(font

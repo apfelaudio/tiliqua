@@ -1164,6 +1164,195 @@
 				)
 			)
 		)
+		(symbol "Regulator_Switching:AP63200WU"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "U"
+				(at -7.62 6.35 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "AP63200WU"
+				(at 2.54 6.35 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-6"
+				(at 0 -22.86 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "https://www.diodes.com/assets/Datasheets/AP63200-AP63201-AP63203-AP63205.pdf"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "2A, 500kHz Buck DC/DC Converter, adjustable output voltage, TSOT-23-6"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "2A Buck DC/DC"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "TSOT?23*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "AP63200WU_0_1"
+				(rectangle
+					(start -7.62 5.08)
+					(end 7.62 -5.08)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+			)
+			(symbol "AP63200WU_1_1"
+				(pin input line
+					(at 10.16 -2.54 180)
+					(length 2.54)
+					(name "FB"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 -2.54 0)
+					(length 2.54)
+					(name "EN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -10.16 2.54 0)
+					(length 2.54)
+					(name "IN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 -7.62 90)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin output line
+					(at 10.16 2.54 180)
+					(length 2.54)
+					(name "SW"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 10.16 0 180)
+					(length 2.54)
+					(name "BST"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "power:+12V"
 			(power)
 			(pin_names
@@ -1484,6 +1673,12 @@
 		(uuid "13798b18-972e-47ed-87d0-2c96e3799c58")
 	)
 	(junction
+		(at 41.91 85.09)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "1876c7c0-a7ca-4ac0-835f-9170f8067381")
+	)
+	(junction
 		(at 43.18 46.99)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1551,6 +1746,16 @@
 	)
 	(wire
 		(pts
+			(xy 45.72 90.17) (xy 41.91 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0546ab0d-9108-4415-a345-592d5949cde2")
+	)
+	(wire
+		(pts
 			(xy 43.18 39.37) (xy 43.18 41.91)
 		)
 		(stroke
@@ -1588,6 +1793,16 @@
 			(type default)
 		)
 		(uuid "1c12db6f-b85a-4d7e-bbe6-ca49dfe1beb6")
+	)
+	(wire
+		(pts
+			(xy 41.91 85.09) (xy 45.72 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1da91441-f957-4d71-9ce4-cdba13d3944e")
 	)
 	(wire
 		(pts
@@ -1658,6 +1873,16 @@
 			(type default)
 		)
 		(uuid "4614556a-8bcb-4e9d-b722-6bad5918c80c")
+	)
+	(wire
+		(pts
+			(xy 36.83 85.09) (xy 41.91 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "47e825c1-226d-4065-ab24-7df778c5e571")
 	)
 	(wire
 		(pts
@@ -1768,6 +1993,16 @@
 			(type default)
 		)
 		(uuid "8d2c16f5-1155-4d26-af65-fad2db519c22")
+	)
+	(wire
+		(pts
+			(xy 41.91 90.17) (xy 41.91 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "91e381aa-7ad9-498b-bf23-308a895ceb1d")
 	)
 	(wire
 		(pts
@@ -2154,6 +2389,72 @@
 			(project "backpack"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
 					(reference "#PWR035")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+12V")
+		(at 36.83 85.09 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "0dd1c0d2-4f52-4c4e-aba3-316d5a0bfb9c")
+		(property "Reference" "#PWR044"
+			(at 36.83 88.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+12V"
+			(at 34.163 81.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 36.83 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 36.83 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 36.83 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "2cbdcfa4-b2d6-4bb8-97de-974f74eb94bd")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
+					(reference "#PWR044")
 					(unit 1)
 				)
 			)
@@ -3213,6 +3514,73 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 55.88 95.25 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "78925122-5279-4a2d-abc1-2b4e9f16c675")
+		(property "Reference" "#PWR045"
+			(at 55.88 101.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 55.88 101.981 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 55.88 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 55.88 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 55.88 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "4df25a70-0e3f-4d63-8678-0c2617d93ba1")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
+					(reference "#PWR045")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C_Small")
 		(at 81.534 51.562 0)
 		(unit 1)
@@ -3537,6 +3905,86 @@
 			(project "backpack"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
 					(reference "J6")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Regulator_Switching:AP63200WU")
+		(at 55.88 87.63 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "abbc04af-e940-4a3b-86a5-42d6a6579017")
+		(property "Reference" "U5"
+			(at 55.88 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "AP63200WU"
+			(at 55.88 80.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:TSOT-23-6"
+			(at 55.88 110.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/AP63200-AP63201-AP63203-AP63205.pdf"
+			(at 55.88 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "2A, 500kHz Buck DC/DC Converter, adjustable output voltage, TSOT-23-6"
+			(at 55.88 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "3"
+			(uuid "dc7fb60e-1cf0-4330-8565-b8cf30e9babc")
+		)
+		(pin "2"
+			(uuid "51c6dffa-bdd1-44a7-960e-22a931d66ed7")
+		)
+		(pin "1"
+			(uuid "3f1fe791-4959-4601-b723-f12007e3898a")
+		)
+		(pin "4"
+			(uuid "58aaad90-ced4-4289-be86-28d6cabd2aa8")
+		)
+		(pin "6"
+			(uuid "7af1dc8b-6045-4b6a-a6f5-f4b22313263d")
+		)
+		(pin "5"
+			(uuid "bc021f8d-039f-4fc6-bc37-572de85f3284")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
+					(reference "U5")
 					(unit 1)
 				)
 			)
