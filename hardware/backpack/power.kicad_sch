@@ -2054,6 +2054,12 @@
 		)
 	)
 	(junction
+		(at 33.02 85.09)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "134d77c9-6741-422f-ad4d-3ec715e5a58d")
+	)
+	(junction
 		(at 87.249 49.657)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2148,6 +2154,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "ae6446a5-f5ae-41da-9ee2-22b69d9d3715")
+	)
+	(junction
+		(at 41.91 90.17)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b06c2d88-dc8b-4c38-b5b0-79f8ed5d0615")
 	)
 	(junction
 		(at 101.6 87.63)
@@ -2367,16 +2379,6 @@
 	)
 	(wire
 		(pts
-			(xy 36.83 85.09) (xy 41.91 85.09)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "47e825c1-226d-4065-ab24-7df778c5e571")
-	)
-	(wire
-		(pts
 			(xy 71.12 46.99) (xy 74.295 46.99)
 		)
 		(stroke
@@ -2394,6 +2396,16 @@
 			(type default)
 		)
 		(uuid "4e714ece-b604-4144-95ee-85b27ffcfb7c")
+	)
+	(wire
+		(pts
+			(xy 33.02 87.63) (xy 33.02 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "529d64fe-c8cd-44a4-807d-33160fe0038f")
 	)
 	(wire
 		(pts
@@ -2507,6 +2519,26 @@
 	)
 	(wire
 		(pts
+			(xy 33.02 85.09) (xy 41.91 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7b3f26a8-869c-499f-9ec6-a3dfaadc4af0")
+	)
+	(wire
+		(pts
+			(xy 41.91 90.17) (xy 41.91 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7b94c661-2e4a-4e65-9d48-da536990984c")
+	)
+	(wire
+		(pts
 			(xy 148.59 92.71) (xy 148.59 102.87)
 		)
 		(stroke
@@ -2564,6 +2596,16 @@
 			(type default)
 		)
 		(uuid "8d2c16f5-1155-4d26-af65-fad2db519c22")
+	)
+	(wire
+		(pts
+			(xy 34.29 87.63) (xy 33.02 87.63)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "905e2d5e-ade7-4982-bfb2-3bddc2c8f70a")
 	)
 	(wire
 		(pts
@@ -2907,6 +2949,16 @@
 	)
 	(wire
 		(pts
+			(xy 30.48 85.09) (xy 33.02 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e97070fd-963a-49f1-be45-1a5bf35cd631")
+	)
+	(wire
+		(pts
 			(xy 116.84 92.71) (xy 116.84 102.87)
 		)
 		(stroke
@@ -3018,6 +3070,18 @@
 			(justify left bottom)
 		)
 		(uuid "7ba1389e-d440-46c9-8b98-fcb5ee54f8b5")
+	)
+	(hierarchical_label "VAUX"
+		(shape passive)
+		(at 34.29 87.63 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "13d49da4-04d3-412a-b5be-c0102516dec1")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -3316,7 +3380,7 @@
 	)
 	(symbol
 		(lib_id "power:+12V")
-		(at 36.83 85.09 0)
+		(at 22.86 85.09 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3324,7 +3388,7 @@
 		(dnp no)
 		(uuid "0dd1c0d2-4f52-4c4e-aba3-316d5a0bfb9c")
 		(property "Reference" "#PWR044"
-			(at 36.83 88.9 0)
+			(at 22.86 88.9 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3333,7 +3397,7 @@
 			)
 		)
 		(property "Value" "+12V"
-			(at 34.163 81.28 0)
+			(at 20.193 81.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3342,7 +3406,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 36.83 85.09 0)
+			(at 22.86 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3351,7 +3415,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 36.83 85.09 0)
+			(at 22.86 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3360,7 +3424,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 36.83 85.09 0)
+			(at 22.86 85.09 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5125,6 +5189,101 @@
 		)
 	)
 	(symbol
+		(lib_id "Diode:US1G")
+		(at 26.67 85.09 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "8999c48f-66df-4261-a16a-2e100241acdf")
+		(property "Reference" "D6"
+			(at 26.67 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "1N4007FL"
+			(at 26.797 82.423 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SOD-123F"
+			(at 26.67 80.645 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/ds16008.pdf"
+			(at 26.67 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 26.67 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "dig#" "1655-1N4007FLCT-ND"
+			(at 16.51 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "mfg#" "1N4007FL"
+			(at 13.97 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C2840959"
+			(at 26.67 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "0bc1e7f9-9f8f-4f5d-a3ff-9d541314fc82")
+		)
+		(pin "2"
+			(uuid "0779f45c-157a-4b0f-af41-48507dabd549")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
+					(reference "D6")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:C_Small")
 		(at 148.59 90.17 0)
 		(unit 1)
@@ -5207,6 +5366,101 @@
 			(project "backpack"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
 					(reference "C35")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Polarized_Small")
+		(at 41.91 93.98 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "8ccc14d5-140f-4323-8b1c-39ade535a18a")
+		(property "Reference" "C36"
+			(at 39.37 91.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "22.0uF"
+			(at 38.1 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Capacitor_Tantalum_SMD:CP_EIA-3216-10_Kemet-I"
+			(at 41.91 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 41.91 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 41.91 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "dig#" ""
+			(at 39.37 101.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "mfg#" "CA45-A-16V-22uF-K"
+			(at 39.37 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C782264"
+			(at 41.91 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "137aa369-714b-47f3-8608-fc56178a1670")
+		)
+		(pin "2"
+			(uuid "0de483d3-63e9-48a6-9ce7-c51305d7951e")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
+					(reference "C36")
 					(unit 1)
 				)
 			)
@@ -6329,6 +6583,73 @@
 			(project "backpack"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
 					(reference "C27")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 41.91 96.52 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "de2250c8-7937-4a10-b773-238bea285fa6")
+		(property "Reference" "#PWR066"
+			(at 41.91 102.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 41.91 103.251 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 41.91 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 41.91 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 41.91 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "5f83e96b-642c-48a5-a6d6-d4463cfcc031")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
+					(reference "#PWR066")
 					(unit 1)
 				)
 			)
