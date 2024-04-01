@@ -793,6 +793,125 @@
 				)
 			)
 		)
+		(symbol "OLIMEX_RCL:R"
+			(pin_numbers hide)
+			(pin_names
+				(offset 0)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "R"
+				(at 0 2.032 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "R"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 -1.778 0)
+				(effects
+					(font
+						(size 0.762 0.762)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 90)
+				(effects
+					(font
+						(size 0.762 0.762)
+					)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Sim.Enable" "0"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "R_* Resistor_*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "R_0_1"
+				(rectangle
+					(start 2.54 -1.016)
+					(end -2.54 1.016)
+					(stroke
+						(width 0.254)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "R_1_1"
+				(pin passive line
+					(at -3.81 0 0)
+					(length 1.27)
+					(name "~"
+						(effects
+							(font
+								(size 1.524 1.524)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.524 1.524)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 3.81 0 180)
+					(length 1.27)
+					(name "~"
+						(effects
+							(font
+								(size 1.524 1.524)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.524 1.524)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "power:+3V3"
 			(power)
 			(pin_names
@@ -1142,6 +1261,16 @@
 	)
 	(wire
 		(pts
+			(xy 204.47 92.71) (xy 210.82 92.71)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "257bad3f-de51-46ad-ba45-c1df6e9ce754")
+	)
+	(wire
+		(pts
 			(xy 184.15 82.55) (xy 190.5 82.55)
 		)
 		(stroke
@@ -1302,16 +1431,6 @@
 	)
 	(wire
 		(pts
-			(xy 184.15 92.71) (xy 210.82 92.71)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "77867661-4e1c-4da4-94cb-3269e62a1a6a")
-	)
-	(wire
-		(pts
 			(xy 127 62.23) (xy 149.86 62.23)
 		)
 		(stroke
@@ -1322,13 +1441,13 @@
 	)
 	(wire
 		(pts
-			(xy 184.15 90.17) (xy 210.82 90.17)
+			(xy 184.15 92.71) (xy 196.85 92.71)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "7b2306e4-6722-4bae-b5aa-cd2f41ba0439")
+		(uuid "8b0d11b1-1c17-4a76-84f5-92ac623885ca")
 	)
 	(wire
 		(pts
@@ -1339,6 +1458,16 @@
 			(type solid)
 		)
 		(uuid "91d3c018-7909-47bf-b5e2-d7e7bf51e425")
+	)
+	(wire
+		(pts
+			(xy 204.47 90.17) (xy 210.82 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a2eadc95-da64-4e7d-905f-e90ef805ba5a")
 	)
 	(wire
 		(pts
@@ -1439,6 +1568,16 @@
 			(type solid)
 		)
 		(uuid "cedf1f69-aaaa-48e1-9ec2-31bbcd2212ed")
+	)
+	(wire
+		(pts
+			(xy 184.15 90.17) (xy 196.85 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d6dad56f-40fe-4e50-a6a2-49a5d3425a70")
 	)
 	(wire
 		(pts
@@ -2227,6 +2366,108 @@
 			(project "backpack"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/5f28fc0f-df6f-45b5-aac7-18a67e46504e"
 					(reference "R1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "OLIMEX_RCL:R")
+		(at 200.66 90.17 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "95f706ad-ea5f-4f05-974e-9c371d96b8e5")
+		(property "Reference" "R25"
+			(at 194.945 88.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "27R/R0402"
+			(at 200.66 88.265 0)
+			(effects
+				(font
+					(size 0.889 0.889)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 200.66 91.948 0)
+			(effects
+				(font
+					(size 0.762 0.762)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 200.66 90.17 90)
+			(effects
+				(font
+					(size 0.762 0.762)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 200.66 90.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Fieldname 1" "Value 1"
+			(at 200.66 90.17 0)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(hide yes)
+			)
+		)
+		(property "Fieldname2" "Value2"
+			(at 200.66 90.17 0)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(hide yes)
+			)
+		)
+		(property "Fieldname3" "Value3"
+			(at 200.66 90.17 0)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C138021"
+			(at 200.66 90.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "3393f56d-709d-4770-adb1-1ca7d696414e")
+		)
+		(pin "2"
+			(uuid "5b2ab0a0-73b0-4e1e-9280-6ef57830dfe8")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/5f28fc0f-df6f-45b5-aac7-18a67e46504e"
+					(reference "R25")
 					(unit 1)
 				)
 			)
@@ -3068,6 +3309,108 @@
 			(project "backpack"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/5f28fc0f-df6f-45b5-aac7-18a67e46504e"
 					(reference "#PWR02")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "OLIMEX_RCL:R")
+		(at 200.66 92.71 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "f2aaa10c-fc9c-4474-893a-cd5b1bc2653f")
+		(property "Reference" "R26"
+			(at 194.945 91.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "27R/R0402"
+			(at 200.66 94.488 0)
+			(effects
+				(font
+					(size 0.889 0.889)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 200.66 94.488 0)
+			(effects
+				(font
+					(size 0.762 0.762)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 200.66 92.71 90)
+			(effects
+				(font
+					(size 0.762 0.762)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 200.66 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Fieldname 1" "Value 1"
+			(at 200.66 92.71 0)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(hide yes)
+			)
+		)
+		(property "Fieldname2" "Value2"
+			(at 200.66 92.71 0)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(hide yes)
+			)
+		)
+		(property "Fieldname3" "Value3"
+			(at 200.66 92.71 0)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C138021"
+			(at 200.66 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "d6b64ae7-d536-4da7-bab2-35aa0df5adc2")
+		)
+		(pin "2"
+			(uuid "efe56cf1-da64-4007-abb8-6cd8550376be")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/5f28fc0f-df6f-45b5-aac7-18a67e46504e"
+					(reference "R26")
 					(unit 1)
 				)
 			)
