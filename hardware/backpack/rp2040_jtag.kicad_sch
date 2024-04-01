@@ -3287,6 +3287,16 @@
 	)
 	(wire
 		(pts
+			(xy 130.81 25.4) (xy 130.81 33.02)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a82ce785-ee8f-4f17-acae-bcba1baa10cd")
+	)
+	(wire
+		(pts
 			(xy 128.27 114.3) (xy 105.41 114.3)
 		)
 		(stroke
@@ -3904,6 +3914,18 @@
 			(justify left bottom)
 		)
 		(uuid "f603a82d-3e7a-48a1-aa30-51a46a00447f")
+	)
+	(hierarchical_label "BOOTSEL_OUT"
+		(shape input)
+		(at 130.81 25.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "1803a682-5b48-4562-a7f0-ca08a79173e6")
 	)
 	(hierarchical_label "JTAG_TCK"
 		(shape bidirectional)
