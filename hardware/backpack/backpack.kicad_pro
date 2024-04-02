@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 0.762,
-          "height": 1.524,
-          "width": 1.524
+          "drill": 0.0,
+          "height": 3.2,
+          "width": 2.5
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -525,11 +525,101 @@
           "label": "DNP",
           "name": "${DNP}",
           "show": true
+        },
+        {
+          "group_by": false,
+          "label": "#",
+          "name": "${ITEM_NUMBER}",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Fieldname 1",
+          "name": "Fieldname 1",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Fieldname2",
+          "name": "Fieldname2",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Fieldname3",
+          "name": "Fieldname3",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Manufacturer",
+          "name": "Manufacturer",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Mfg",
+          "name": "Mfg",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "PN",
+          "name": "PN",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Part Number",
+          "name": "Part Number",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Substitution",
+          "name": "Substitution",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Tol",
+          "name": "Tol",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "dig#",
+          "name": "dig#",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "lcsc",
+          "name": "lcsc",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "lcsc#",
+          "name": "lcsc#",
+          "show": true
+        },
+        {
+          "group_by": false,
+          "label": "mfg#",
+          "name": "mfg#",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "Description",
+          "name": "Description",
+          "show": false
         }
       ],
       "filter_string": "",
       "group_symbols": true,
-      "name": "Grouped By Value",
+      "name": "",
       "sort_asc": true,
       "sort_field": "Reference"
     },

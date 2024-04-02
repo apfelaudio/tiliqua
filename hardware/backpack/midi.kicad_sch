@@ -5,11 +5,19 @@
 	(uuid "573d2032-5bf7-4f7e-a8fc-85e89a534c1a")
 	(paper "A4")
 	(lib_symbols
-		(symbol "Connector_Audio:AudioJack2_Ground_SwitchT"
+		(symbol "Connector:AudioJack2_Ground_Switch"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
 			(property "Reference" "J"
+				(at 0 11.43 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "AudioJack2_Ground_Switch"
 				(at 0 8.89 0)
 				(effects
 					(font
@@ -17,16 +25,8 @@
 					)
 				)
 			)
-			(property "Value" "AudioJack2_Ground_SwitchT"
-				(at 0 6.35 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
 			(property "Footprint" ""
-				(at 0 0 0)
+				(at 0 5.08 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -35,7 +35,7 @@
 				)
 			)
 			(property "Datasheet" "~"
-				(at 0 0 0)
+				(at 0 5.08 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -43,7 +43,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Audio Jack, 2 Poles (Mono / TS), Grounded Sleeve, Switched T Pole (Normalling)"
+			(property "Description" "Audio Jack, 2 Poles (Mono / TS), Grounded Sleeve, Switched Pole (Normalling)"
 				(at 0 0 0)
 				(effects
 					(font
@@ -70,16 +70,41 @@
 					(hide yes)
 				)
 			)
-			(symbol "AudioJack2_Ground_SwitchT_0_1"
+			(symbol "AudioJack2_Ground_Switch_0_1"
 				(rectangle
-					(start -2.54 0)
-					(end -3.81 -2.54)
+					(start -2.54 -2.54)
+					(end -3.81 0)
 					(stroke
 						(width 0.254)
 						(type default)
 					)
 					(fill
 						(type outline)
+					)
+				)
+				(rectangle
+					(start 2.54 6.35)
+					(end -2.54 -5.08)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+			)
+			(symbol "AudioJack2_Ground_Switch_1_1"
+				(polyline
+					(pts
+						(xy 0.635 4.826) (xy 0.889 4.318)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
 					)
 				)
 				(polyline
@@ -120,7 +145,19 @@
 				)
 				(polyline
 					(pts
-						(xy 2.54 2.54) (xy -0.635 2.54) (xy -0.635 0) (xy -1.27 -0.635) (xy -1.905 0)
+						(xy 2.54 2.54) (xy 0.635 2.54) (xy 0.635 4.826) (xy 0.381 4.318)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 5.08) (xy -0.635 5.08) (xy -0.635 0) (xy -1.27 -0.635) (xy -1.905 0)
 					)
 					(stroke
 						(width 0.254)
@@ -130,19 +167,6 @@
 						(type none)
 					)
 				)
-				(rectangle
-					(start 2.54 3.81)
-					(end -2.54 -5.08)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
-				)
-			)
-			(symbol "AudioJack2_Ground_SwitchT_1_1"
 				(pin passive line
 					(at 0 -7.62 90)
 					(length 2.54)
@@ -162,7 +186,7 @@
 					)
 				)
 				(pin passive line
-					(at 5.08 2.54 180)
+					(at 5.08 5.08 180)
 					(length 2.54)
 					(name "~"
 						(effects
@@ -172,6 +196,24 @@
 						)
 					)
 					(number "S"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 5.08 2.54 180)
+					(length 2.54)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "SN"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1328,20 +1370,28 @@
 		(uuid "c79abc12-9191-4d68-b4a3-0c8144dbbfe0")
 	)
 	(no_connect
-		(at 121.92 71.12)
-		(uuid "009f53e1-16f0-4622-ab19-c7b33ac4c7a5")
+		(at 116.84 78.74)
+		(uuid "167579a8-8637-49de-b840-e2e8d017159e")
 	)
 	(no_connect
-		(at 116.84 76.2)
-		(uuid "3df4d1b8-b70a-4187-9c5d-88b491c6b6d5")
+		(at 190.5 115.57)
+		(uuid "1af41e0d-ca9c-41f8-b784-7144af60ca85")
 	)
 	(no_connect
-		(at 190.5 113.03)
-		(uuid "56fb02ab-9ddc-43ac-878d-2b0d57fa905a")
+		(at 185.42 110.49)
+		(uuid "20dd441f-041c-4cd8-acef-4fc068f11031")
 	)
 	(no_connect
-		(at 185.42 107.95)
-		(uuid "8d4579e7-2f1f-41d6-9924-898f8d395013")
+		(at 121.92 68.58)
+		(uuid "2942bb40-680b-4f6a-b318-250eb0c4a425")
+	)
+	(no_connect
+		(at 185.42 105.41)
+		(uuid "3a8b07dc-ff8e-4290-bc71-56fd58365f63")
+	)
+	(no_connect
+		(at 121.92 73.66)
+		(uuid "f3ac38ee-5e03-4ac7-9509-ed4e1f038a56")
 	)
 	(wire
 		(pts
@@ -1395,16 +1445,6 @@
 	)
 	(wire
 		(pts
-			(xy 185.42 105.41) (xy 182.88 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "37003fbb-6a52-4724-b30a-ed42438ae6fb")
-	)
-	(wire
-		(pts
 			(xy 156.21 113.03) (xy 156.21 107.95)
 		)
 		(stroke
@@ -1455,6 +1495,16 @@
 	)
 	(wire
 		(pts
+			(xy 182.88 105.41) (xy 182.88 107.95)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4df3ae66-4387-4b2c-b649-64092631bfa4")
+	)
+	(wire
+		(pts
 			(xy 163.83 118.11) (xy 163.83 120.65)
 		)
 		(stroke
@@ -1475,13 +1525,13 @@
 	)
 	(wire
 		(pts
-			(xy 121.92 68.58) (xy 128.27 68.58)
+			(xy 128.27 71.12) (xy 121.92 71.12)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "6f5cdb2e-ce36-4663-978a-65e1df81d44b")
+		(uuid "6fc0bdbc-0ac4-47f0-af85-74dfb225fbb1")
 	)
 	(wire
 		(pts
@@ -1522,6 +1572,16 @@
 			(type default)
 		)
 		(uuid "990308d5-125a-4b4b-bb9e-c399f79c6037")
+	)
+	(wire
+		(pts
+			(xy 182.88 107.95) (xy 185.42 107.95)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9b7aa700-16a3-4777-9968-8f254d80e02b")
 	)
 	(wire
 		(pts
@@ -1585,13 +1645,13 @@
 	)
 	(wire
 		(pts
-			(xy 128.27 68.58) (xy 128.27 73.66)
+			(xy 128.27 73.66) (xy 128.27 71.12)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "dd858105-e3ab-4916-bf7a-ef4d3a99cfb2")
+		(uuid "e1012147-d190-4fd6-8e75-bfac3b302716")
 	)
 	(wire
 		(pts
@@ -1991,117 +2051,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Connector_Audio:AudioJack2_Ground_SwitchT")
-		(at 190.5 105.41 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "3dffe00c-59cf-4352-8dcc-80d71a5494b8")
-		(property "Reference" "J5"
-			(at 191.135 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "MIDI_TRS_A"
-			(at 191.135 99.06 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "pj3410:pj324m"
-			(at 190.5 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://datasheet.lcsc.com/lcsc/2211141030_Korean-Hroparts-Elec-PJ-3410-4A_C5184992.pdf"
-			(at 190.5 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 190.5 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Mfg" "XKB Connectivity"
-			(at 190.5 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "PN" "PJ-3410"
-			(at 190.5 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc" ""
-			(at 190.5 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C5146694"
-			(at 190.5 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "G"
-			(uuid "be976383-4cb8-466f-89e7-5aaf07b76505")
-		)
-		(pin "S"
-			(uuid "e7ee68dc-0c31-4997-99d8-35c6814efa72")
-		)
-		(pin "T"
-			(uuid "b7bb7ef5-6884-4198-918d-2c65102e26ef")
-		)
-		(pin "TN"
-			(uuid "002e2999-96d2-4875-9737-e4bc8bfc134f")
-		)
-		(instances
-			(project "backpack"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab"
-					(reference "J5")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 148.59 120.65 0)
 		(mirror y)
@@ -2163,116 +2112,6 @@
 			(project "backpack"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab"
 					(reference "#PWR016")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Connector_Audio:AudioJack2_Ground_SwitchT")
-		(at 116.84 68.58 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "49040594-b56e-4ca9-ad9f-be8c3c952d28")
-		(property "Reference" "J4"
-			(at 116.205 59.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "MIDI_TRS_A"
-			(at 116.205 62.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "pj3410:pj324m"
-			(at 116.84 68.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://datasheet.lcsc.com/lcsc/2211141030_Korean-Hroparts-Elec-PJ-3410-4A_C5184992.pdf"
-			(at 116.84 68.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 116.84 68.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Mfg" "XKB Connectivity"
-			(at 116.84 68.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "PN" "PJ-3410"
-			(at 116.84 68.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc" ""
-			(at 116.84 68.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C5146694"
-			(at 116.84 68.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "G"
-			(uuid "1f849fc8-6eb5-4bc5-80ad-26f4cd346ebd")
-		)
-		(pin "S"
-			(uuid "8b17c5e8-f22c-4a23-96ff-92c615889945")
-		)
-		(pin "T"
-			(uuid "9260077f-7735-45f7-a935-02db800936d8")
-		)
-		(pin "TN"
-			(uuid "1006a214-1661-4514-b8e4-9c72ee96fdc3")
-		)
-		(instances
-			(project "backpack"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab"
-					(reference "J4")
 					(unit 1)
 				)
 			)
@@ -3096,6 +2935,101 @@
 		)
 	)
 	(symbol
+		(lib_id "Connector:AudioJack2_Ground_Switch")
+		(at 190.5 107.95 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "dd13ab96-f53b-47b8-a9f2-74f82cb13377")
+		(property "Reference" "J5"
+			(at 191.135 95.885 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "AUDIO JACK PJ-324M0"
+			(at 191.135 98.425 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "pj3410:pj324m"
+			(at 190.5 102.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://datasheet.lcsc.com/lcsc/2110120730_XKB-Connectivity-PJ-324M0_C2884986.pdf"
+			(at 190.5 102.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 190.5 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C2884986"
+			(at 190.5 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "mfg#" "PJ-324M0"
+			(at 190.5 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "G"
+			(uuid "8fc0e76b-ee64-4fdf-8c98-ce885a8ca619")
+		)
+		(pin "S"
+			(uuid "3111248b-8555-4963-b01c-fc23503e3864")
+		)
+		(pin "SN"
+			(uuid "21228e08-0a02-4279-b550-cb39132e1dc7")
+		)
+		(pin "T"
+			(uuid "918cd77d-662f-4f3b-9c8e-7552a5785756")
+		)
+		(pin "TN"
+			(uuid "73c206b4-5609-418d-bb37-b1105e2b5d0d")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab"
+					(reference "J5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R")
 		(at 191.77 69.85 270)
 		(unit 1)
@@ -3175,6 +3109,101 @@
 			(project "backpack"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab"
 					(reference "R16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector:AudioJack2_Ground_Switch")
+		(at 116.84 71.12 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e461c919-026e-433d-916d-dd4942c99ff6")
+		(property "Reference" "J4"
+			(at 116.205 59.055 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "AUDIO JACK PJ-324M0"
+			(at 116.205 61.595 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "pj3410:pj324m"
+			(at 116.84 66.04 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://datasheet.lcsc.com/lcsc/2110120730_XKB-Connectivity-PJ-324M0_C2884986.pdf"
+			(at 116.84 66.04 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 116.84 71.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C2884986"
+			(at 116.84 71.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "mfg#" "PJ-324M0"
+			(at 116.84 71.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "G"
+			(uuid "3627cace-cfe3-49b0-8346-7a190a6be754")
+		)
+		(pin "S"
+			(uuid "1dfdba93-19bb-4e01-96e3-795beb61b462")
+		)
+		(pin "SN"
+			(uuid "18644fe6-42bf-4887-95be-8fd65f736ea6")
+		)
+		(pin "T"
+			(uuid "c00df22f-1f1a-4eea-8e90-ff9bbac2a339")
+		)
+		(pin "TN"
+			(uuid "1fecbb13-4b47-484b-b3a8-1aa092d5331e")
+		)
+		(instances
+			(project "backpack"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab"
+					(reference "J4")
 					(unit 1)
 				)
 			)

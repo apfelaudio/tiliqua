@@ -5636,6 +5636,15 @@
 				(hide yes)
 			)
 		)
+		(property "lcsc#" "C2071868"
+			(at 55.88 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "3"
 			(uuid "dc7fb60e-1cf0-4330-8565-b8cf30e9babc")
 		)
