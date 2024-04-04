@@ -2078,7 +2078,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C106254"
+		(property "lcsc#" "C52923"
 			(at 176.53 48.26 0)
 			(effects
 				(font
@@ -2293,7 +2293,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "10K"
 			(at 108.712 48.387 0)
 			(effects
 				(font
@@ -2347,7 +2347,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C60490"
+		(property "lcsc#" "C25744"
 			(at 110.49 49.53 0)
 			(effects
 				(font
@@ -2388,7 +2388,7 @@
 				)
 			)
 		)
-		(property "Value" "27R/R0402"
+		(property "Value" "27R"
 			(at 200.66 88.265 0)
 			(effects
 				(font
@@ -2405,7 +2405,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 200.66 90.17 90)
 			(effects
 				(font
@@ -2545,7 +2545,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C93942"
+		(property "lcsc#" "C25765"
 			(at 208.28 80.01 0)
 			(effects
 				(font
@@ -2650,7 +2650,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C106254"
+		(property "lcsc#" "C52923"
 			(at 212.09 63.5 0)
 			(effects
 				(font
@@ -2840,7 +2840,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "~"
+		(property "Datasheet" ""
 			(at 127 77.47 0)
 			(effects
 				(font
@@ -2894,7 +2894,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 127 77.47 0)
 			(effects
 				(font
@@ -3064,7 +3064,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C106254"
+		(property "lcsc#" "C52923"
 			(at 157.48 48.26 0)
 			(effects
 				(font
@@ -3331,7 +3331,7 @@
 				)
 			)
 		)
-		(property "Value" "27R/R0402"
+		(property "Value" "27R"
 			(at 200.66 94.488 0)
 			(effects
 				(font
@@ -3348,7 +3348,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 200.66 92.71 90)
 			(effects
 				(font

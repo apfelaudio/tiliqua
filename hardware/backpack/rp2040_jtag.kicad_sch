@@ -4052,7 +4052,7 @@
 				)
 			)
 		)
-		(property "Value" "27R/R0402"
+		(property "Value" "27R"
 			(at 121.92 85.598 0)
 			(effects
 				(font
@@ -4069,7 +4069,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 121.92 83.82 90)
 			(effects
 				(font
@@ -4155,7 +4155,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 87.63 90)
 			(effects
 				(font
@@ -4190,7 +4190,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 88.9 0)
 			(effects
 				(font
@@ -4248,7 +4248,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 250.19 120.65 90)
 			(effects
 				(font
@@ -4292,7 +4292,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C60490"
+		(property "lcsc#" " C138044"
 			(at 250.19 120.65 0)
 			(effects
 				(font
@@ -4396,7 +4396,7 @@
 				)
 			)
 		)
-		(property "Value" "~"
+		(property "Value" "SW_Tactile_SPST"
 			(at 186.69 25.4 0)
 			(effects
 				(font
@@ -4646,7 +4646,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C60490"
+		(property "lcsc#" "C25744"
 			(at 254 114.3 0)
 			(effects
 				(font
@@ -4688,7 +4688,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 105.41 90)
 			(effects
 				(font
@@ -4723,7 +4723,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 106.68 0)
 			(effects
 				(font
@@ -4764,7 +4764,7 @@
 				)
 			)
 		)
-		(property "Value" "100R/R0402"
+		(property "Value" "100R"
 			(at 128.905 128.27 0)
 			(effects
 				(font
@@ -4781,7 +4781,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 119.38 129.54 90)
 			(effects
 				(font
@@ -4825,7 +4825,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "  C106232"
+		(property "lcsc#" "C25076"
 			(at 119.38 129.54 0)
 			(effects
 				(font
@@ -4867,7 +4867,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 100.33 90)
 			(effects
 				(font
@@ -4902,7 +4902,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 101.6 0)
 			(effects
 				(font
@@ -5009,7 +5009,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 120.65 90)
 			(effects
 				(font
@@ -5044,7 +5044,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 119.38 0)
 			(effects
 				(font
@@ -5085,7 +5085,7 @@
 				)
 			)
 		)
-		(property "Value" "100R/R0402"
+		(property "Value" "100R"
 			(at 144.78 34.925 0)
 			(effects
 				(font
@@ -5102,7 +5102,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 144.78 33.02 90)
 			(effects
 				(font
@@ -5119,7 +5119,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "  C106232"
+		(property "lcsc#" "C25076"
 			(at 144.78 33.02 0)
 			(effects
 				(font
@@ -5180,7 +5180,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 102.87 132.08 0)
 			(effects
 				(font
@@ -5265,7 +5265,7 @@
 				)
 			)
 		)
-		(property "Value" "10k/R0402"
+		(property "Value" "10K"
 			(at 120.65 31.75 0)
 			(effects
 				(font
@@ -5326,7 +5326,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C60490"
+		(property "lcsc#" "C25744"
 			(at 111.76 33.02 0)
 			(effects
 				(font
@@ -5376,7 +5376,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOP-8_3.9x4.9mm_P1.27mm"
+		(property "Footprint" "Package_SO:SOIC-8W_5.3x5.3mm_P1.27mm"
 			(at 113.03 77.47 0)
 			(effects
 				(font
@@ -5589,7 +5589,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 97.79 90)
 			(effects
 				(font
@@ -5624,7 +5624,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 99.06 0)
 			(effects
 				(font
@@ -5747,7 +5747,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 102.87 109.22 0)
 			(effects
 				(font
@@ -5805,7 +5805,7 @@
 				)
 			)
 		)
-		(property "Value" "27R/R0402"
+		(property "Value" "27R"
 			(at 121.92 79.375 0)
 			(effects
 				(font
@@ -5822,7 +5822,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 121.92 81.28 90)
 			(effects
 				(font
@@ -5908,7 +5908,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 165.1 39.37 90)
 			(effects
 				(font
@@ -5943,7 +5943,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 163.83 38.1 0)
 			(effects
 				(font
@@ -5985,7 +5985,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 95.25 45.72 90)
 			(effects
 				(font
@@ -6020,7 +6020,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 97.79 58.42 0)
 			(effects
 				(font
@@ -6126,7 +6126,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 118.11 90)
 			(effects
 				(font
@@ -6161,7 +6161,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 116.84 0)
 			(effects
 				(font
@@ -6202,7 +6202,7 @@
 				)
 			)
 		)
-		(property "Value" "10k/R0402"
+		(property "Value" "10K"
 			(at 120.65 41.91 0)
 			(effects
 				(font
@@ -6263,7 +6263,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C60490"
+		(property "lcsc#" "C25744"
 			(at 111.76 43.18 0)
 			(effects
 				(font
@@ -6627,7 +6627,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 102.87 137.16 0)
 			(effects
 				(font
@@ -6713,7 +6713,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 102.87 90)
 			(effects
 				(font
@@ -6748,7 +6748,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 104.14 0)
 			(effects
 				(font
@@ -6790,7 +6790,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 92.71 90)
 			(effects
 				(font
@@ -6825,7 +6825,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 93.98 0)
 			(effects
 				(font
@@ -6886,7 +6886,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 102.87 114.3 0)
 			(effects
 				(font
@@ -7008,7 +7008,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 74.93 90)
 			(effects
 				(font
@@ -7043,7 +7043,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 76.2 0)
 			(effects
 				(font
@@ -7085,7 +7085,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 90.17 90)
 			(effects
 				(font
@@ -7120,7 +7120,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 91.44 0)
 			(effects
 				(font
@@ -7162,7 +7162,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "100nF/10V/20%/X5R/C0402"
+		(property "Value" "0.1uF"
 			(at 104.14 95.25 90)
 			(effects
 				(font
@@ -7197,7 +7197,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C129131"
+		(property "lcsc#" " C307331"
 			(at 102.87 96.52 0)
 			(effects
 				(font

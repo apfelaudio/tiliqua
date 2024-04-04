@@ -3174,7 +3174,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 127 90.17 0)
 			(effects
 				(font
@@ -3431,7 +3431,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C338036"
+		(property "lcsc#" "C14663"
 			(at 89.281 32.004 0)
 			(effects
 				(font
@@ -3601,7 +3601,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C2840959"
+		(property "lcsc#" "C493190"
 			(at 57.15 46.99 0)
 			(effects
 				(font
@@ -3753,7 +3753,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C105871"
+		(property "lcsc#" " C137950"
 			(at 101.6 99.06 0)
 			(effects
 				(font
@@ -3848,7 +3848,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C2840959"
+		(property "lcsc#" "C493190"
 			(at 57.15 36.83 0)
 			(effects
 				(font
@@ -4088,7 +4088,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C338036"
+		(property "lcsc#" "C14663"
 			(at 135.89 90.17 0)
 			(effects
 				(font
@@ -4333,7 +4333,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C338036"
+		(property "lcsc#" "C14663"
 			(at 72.39 87.63 0)
 			(effects
 				(font
@@ -4468,7 +4468,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 85.471 32.004 0)
 			(effects
 				(font
@@ -4784,7 +4784,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C338036"
+		(property "lcsc#" "C14663"
 			(at 89.154 52.197 0)
 			(effects
 				(font
@@ -4888,7 +4888,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C2840959"
+		(property "lcsc#" "C493190"
 			(at 26.67 85.09 0)
 			(effects
 				(font
@@ -4967,7 +4967,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C338036"
+		(property "lcsc#" "C14663"
 			(at 148.59 90.17 0)
 			(effects
 				(font
@@ -5035,7 +5035,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 41.91 93.98 0)
 			(effects
 				(font
@@ -5371,7 +5371,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 116.84 90.17 0)
 			(effects
 				(font
@@ -5559,7 +5559,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C105871"
+		(property "lcsc#" "C327365"
 			(at 101.6 91.44 0)
 			(effects
 				(font
@@ -5784,7 +5784,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "~"
 			(at 85.344 52.197 0)
 			(effects
 				(font
@@ -6030,7 +6030,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C338036"
+		(property "lcsc#" "C14858"
 			(at 92.71 91.44 0)
 			(effects
 				(font

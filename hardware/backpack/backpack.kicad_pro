@@ -489,8 +489,8 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "",
-      "pos_files": "",
+      "plot": "../fab/",
+      "pos_files": "../fab/place/",
       "specctra_dsn": "",
       "step": "",
       "svg": "",
@@ -530,7 +530,7 @@
           "group_by": false,
           "label": "Datasheet",
           "name": "Datasheet",
-          "show": true
+          "show": false
         },
         {
           "group_by": false,
