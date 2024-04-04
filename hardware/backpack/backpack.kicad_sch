@@ -7124,7 +7124,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(uuid "0ef66af0-c7d2-4452-9d97-57f91af225b6")
 		(property "Reference" "J8"
 			(at 38.1 21.082 0)
@@ -7165,6 +7165,15 @@
 			)
 		)
 		(property "Description" ""
+			(at 58.42 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C2977809"
 			(at 58.42 74.93 0)
 			(effects
 				(font
