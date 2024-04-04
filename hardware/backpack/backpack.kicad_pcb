@@ -16792,7 +16792,6 @@
 			(net 1 "GND")
 			(pinfunction "GND")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "e248f2a6-a7b5-48b1-b668-b9709d36ceb3")
 		)
 		(pad "2" smd roundrect
@@ -16803,7 +16802,6 @@
 			(net 2 "+3V3")
 			(pinfunction "3.3V")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "dfb5d626-19e4-4026-a7c7-cbd6baf878d3")
 		)
 		(pad "3" smd roundrect
@@ -16814,7 +16812,6 @@
 			(net 114 "ECP5_A2")
 			(pinfunction "USB_D+")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "7e76c253-ac09-4d87-9747-fcc2b29a9cce")
 		)
 		(pad "4" smd roundrect
@@ -16825,7 +16822,6 @@
 			(net 140 "unconnected-(J8-3.3V_EN-Pad4)")
 			(pinfunction "3.3V_EN")
 			(pintype "bidirectional+no_connect")
-			(solder_mask_margin 0.102)
 			(uuid "f424a4da-e7d1-48e9-8413-2e50a45eb615")
 		)
 		(pad "5" smd roundrect
@@ -16836,7 +16832,6 @@
 			(net 101 "ECP5_B3")
 			(pinfunction "USB_D-")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "5081fa38-7358-4ce5-94f5-3cd3ff5308dc")
 		)
 		(pad "6" smd roundrect
@@ -16847,7 +16842,6 @@
 			(net 129 "ECP5_C4")
 			(pinfunction "~{RESET}")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "b5fdf127-b1c3-4a81-8884-2c1688cec002")
 		)
 		(pad "7" smd roundrect
@@ -16858,7 +16852,6 @@
 			(net 1 "GND")
 			(pinfunction "GND")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "221208d9-2ef0-4264-94ee-851d3734d581")
 		)
 		(pad "8" smd roundrect
@@ -16869,7 +16862,6 @@
 			(net 111 "ECP5_D5")
 			(pinfunction "G11")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "71e77fa2-1672-4842-9dc9-c29ec8edb066")
 		)
 		(pad "9" smd roundrect
@@ -16880,7 +16872,6 @@
 			(net 102 "unconnected-(J8-USB_VIN-Pad9)")
 			(pinfunction "USB_VIN")
 			(pintype "bidirectional+no_connect")
-			(solder_mask_margin 0.102)
 			(uuid "55b17a63-1e82-4ff7-8402-b3eb27fc715b")
 		)
 		(pad "10" smd roundrect
@@ -16891,7 +16882,6 @@
 			(net 130 "ECP5_T10_TCK")
 			(pinfunction "D0")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "b6509c64-e6ee-454b-94f1-6ff302479e07")
 		)
 		(pad "11" smd roundrect
@@ -16902,7 +16892,6 @@
 			(net 107 "ECP5_A3")
 			(pinfunction "~{BOOT}")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "63897ed5-f51f-4c94-b963-d137e58b2779")
 		)
 		(pad "12" smd roundrect
@@ -16913,7 +16902,6 @@
 			(net 94 "unconnected-(J8-I2C_SDA-Pad12)")
 			(pinfunction "I2C_SDA")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "2f4f55c5-fd79-4bd9-ad1e-18df64c002a1")
 		)
 		(pad "13" smd roundrect
@@ -16924,7 +16912,6 @@
 			(net 137 "unconnected-(J8-RTS1-Pad13)")
 			(pinfunction "RTS1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "e928dfe3-425b-45b8-b9d8-34efd7c7efa8")
 		)
 		(pad "14" smd roundrect
@@ -16935,7 +16922,6 @@
 			(net 87 "unconnected-(J8-I2C_SCL-Pad14)")
 			(pinfunction "I2C_SCL")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "0a039580-63c6-4496-bfad-0a12032070d4")
 		)
 		(pad "15" smd roundrect
@@ -16946,7 +16932,6 @@
 			(net 113 "unconnected-(J8-CTS1-Pad15)")
 			(pinfunction "CTS1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "7b6291a9-6813-4658-84ee-3c45fdc82bec")
 		)
 		(pad "16" smd roundrect
@@ -16957,7 +16942,6 @@
 			(net 128 "unconnected-(J8-I2C_~{INT}-Pad16)")
 			(pinfunction "I2C_~{INT}")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "b1a5286c-4ef6-4a96-921e-cc09f6e3b840")
 		)
 		(pad "17" smd roundrect
@@ -16968,7 +16952,6 @@
 			(net 131 "ECP5_B4")
 			(pinfunction "TX1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "be07b12c-f8d1-4581-ba42-b9e26f9f4638")
 		)
 		(pad "18" smd roundrect
@@ -16979,7 +16962,6 @@
 			(net 126 "ECP5_R11_TDI")
 			(pinfunction "D1/CAM_TRIG")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "a85433e4-0df6-4a74-9dc3-43ff38cbfd90")
 		)
 		(pad "19" smd roundrect
@@ -16990,7 +16972,6 @@
 			(net 97 "ECP5_A4")
 			(pinfunction "RX1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "40656dd8-abeb-49c2-bdb5-c4e1fed58b22")
 		)
 		(pad "20" smd roundrect
@@ -17001,7 +16982,6 @@
 			(net 109 "ECP5_E4")
 			(pinfunction "RX2")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "6cdda76d-19c9-49ff-94c6-af8c8e94bbe6")
 		)
 		(pad "21" smd roundrect
@@ -17012,7 +16992,6 @@
 			(net 135 "ECP5_T11_TMS")
 			(pinfunction "SWDCK")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "cb7d73a9-ca35-46cd-9a3a-9dc96701c5fd")
 		)
 		(pad "22" smd roundrect
@@ -17023,7 +17002,6 @@
 			(net 123 "ECP5_D4")
 			(pinfunction "TX2")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "9c376e34-3269-4d2b-8afd-468d094ce4b1")
 		)
 		(pad "23" smd roundrect
@@ -17034,7 +17012,6 @@
 			(net 100 "ECP5_M10_TDO")
 			(pinfunction "SWDIO")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "4f23de41-51af-4f20-9683-fe4f467ab2d9")
 		)
 		(pad "32" smd roundrect
@@ -17045,7 +17022,6 @@
 			(net 115 "ECP5_D6")
 			(pinfunction "PWM0")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "8025bc34-4a66-4a98-9c04-f19f8cfce107")
 		)
 		(pad "33" smd roundrect
@@ -17056,7 +17032,6 @@
 			(net 1 "GND")
 			(pinfunction "GND")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "4b1d5414-c433-4025-a169-125b70e784b1")
 		)
 		(pad "34" smd roundrect
@@ -17067,7 +17042,6 @@
 			(net 92 "ECP5_C5")
 			(pinfunction "A0")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "2d62c602-1b41-41c7-8bd3-fa00c8c2ff00")
 		)
 		(pad "35" smd roundrect
@@ -17078,7 +17052,6 @@
 			(net 132 "ECP5_B5")
 			(pinfunction "USBHOST_D+")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "bec1b05f-e5f3-45f2-bfa9-883b5032eed2")
 		)
 		(pad "36" smd roundrect
@@ -17089,7 +17062,6 @@
 			(net 1 "GND")
 			(pinfunction "GND")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "b06f9b8d-ce5d-411f-9d55-06f968f133cc")
 		)
 		(pad "37" smd roundrect
@@ -17100,7 +17072,6 @@
 			(net 124 "ECP5_A5")
 			(pinfunction "USBHOST_D-")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "9f6e3802-1287-4136-8ef9-3cea8f6e53e4")
 		)
 		(pad "38" smd roundrect
@@ -17111,7 +17082,6 @@
 			(net 106 "ECP5_C6")
 			(pinfunction "A1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "623e3521-f99c-43c6-bb79-599b43e7df83")
 		)
 		(pad "39" smd roundrect
@@ -17122,7 +17092,6 @@
 			(net 1 "GND")
 			(pinfunction "GND")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "c3358ec7-f3dd-427d-9fc4-8808f50ad57f")
 		)
 		(pad "40" smd roundrect
@@ -17133,7 +17102,6 @@
 			(net 141 "ECP5_C7")
 			(pinfunction "G0/BUS0")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "fc43422a-3301-439f-84a9-9cdf95f1e725")
 		)
 		(pad "41" smd roundrect
@@ -17144,7 +17112,6 @@
 			(net 116 "ECP5_B6")
 			(pinfunction "CAN-RX")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "8197b52c-6999-4a2c-84f0-fbf1eca27a52")
 		)
 		(pad "42" smd roundrect
@@ -17155,7 +17122,6 @@
 			(net 121 "ECP5_D7")
 			(pinfunction "G1/BUS1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "9991a39f-5f0e-4aba-909a-13b36272acd7")
 		)
 		(pad "43" smd roundrect
@@ -17166,7 +17132,6 @@
 			(net 89 "ECP5_A6")
 			(pinfunction "CAN-TX")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "2432bc75-ef0e-4eaa-800b-02d23f66ce14")
 		)
 		(pad "44" smd roundrect
@@ -17177,7 +17142,6 @@
 			(net 95 "ECP5_D8")
 			(pinfunction "G2/BUS2")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "3dbc47e6-d635-4902-9706-d8f38048fba3")
 		)
 		(pad "45" smd roundrect
@@ -17188,7 +17152,6 @@
 			(net 1 "GND")
 			(pinfunction "GND")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "33a4243d-944e-4681-98a3-9e92a6d73559")
 		)
 		(pad "46" smd roundrect
@@ -17199,7 +17162,6 @@
 			(net 112 "ECP5_C9")
 			(pinfunction "G3/BUS3")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "73ba66eb-0ac1-4672-a6ce-113a6dda0af2")
 		)
 		(pad "47" smd roundrect
@@ -17210,7 +17172,6 @@
 			(net 134 "ECP5_B7")
 			(pinfunction "PWM1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "cb038c98-e2ee-427c-a61e-e5d837b938b0")
 		)
 		(pad "48" smd roundrect
@@ -17221,7 +17182,6 @@
 			(net 133 "ECP5_C10")
 			(pinfunction "G4/BUS4")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "ca9cea71-ca65-45ce-ad68-6467e67050ea")
 		)
 		(pad "49" smd roundrect
@@ -17232,7 +17192,6 @@
 			(net 122 "unconnected-(J8-BATT_VIN{slash}3-Pad49)")
 			(pinfunction "BATT_VIN/3")
 			(pintype "bidirectional+no_connect")
-			(solder_mask_margin 0.102)
 			(uuid "9af0293a-73c9-4d63-b407-b608a5811ad7")
 		)
 		(pad "50" smd roundrect
@@ -17243,7 +17202,6 @@
 			(net 103 "ECP5_D9")
 			(pinfunction "AUD_BCLK")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "55d1f744-a778-4206-8d57-c2d885b995dc")
 		)
 		(pad "51" smd roundrect
@@ -17254,7 +17212,6 @@
 			(net 139 "ECP5_A7")
 			(pinfunction "I2C_SDA1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "f1aea208-2442-41b0-b08d-14ba27bb7fd5")
 		)
 		(pad "52" smd roundrect
@@ -17265,7 +17222,6 @@
 			(net 118 "ECP5_B11")
 			(pinfunction "AUD_LRCLK")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "8bcfa829-56c1-49ef-85e7-ddb90adea95b")
 		)
 		(pad "53" smd roundrect
@@ -17276,7 +17232,6 @@
 			(net 117 "ECP5_B8")
 			(pinfunction "I2C_SCL1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "8b549c1d-3a7a-4dd2-b451-cdfad56e117e")
 		)
 		(pad "54" smd roundrect
@@ -17287,7 +17242,6 @@
 			(net 88 "ECP5_C11")
 			(pinfunction "AUD_IN/CAM_PCLK")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "0f4fc9a0-1ba1-4256-8587-821acdcd0372")
 		)
 		(pad "55" smd roundrect
@@ -17298,7 +17252,6 @@
 			(net 119 "ECP5_A9")
 			(pinfunction "SPI_~{CS}")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "951ece8d-c3ef-4f43-adf0-519916dfc36d")
 		)
 		(pad "56" smd roundrect
@@ -17309,7 +17262,6 @@
 			(net 138 "ECP5_D13")
 			(pinfunction "AUD_OUT/CAM_MCLK")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "e9436c77-e6fc-452e-9063-9f500e998e9c")
 		)
 		(pad "57" smd roundrect
@@ -17320,7 +17272,6 @@
 			(net 96 "ECP5_B9")
 			(pinfunction "SPI_SCK")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "403bc49f-0613-4f97-86ce-5de882a7ec0e")
 		)
 		(pad "58" smd roundrect
@@ -17331,7 +17282,6 @@
 			(net 127 "ECP5_C13")
 			(pinfunction "AUD_MCLK")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "aced8cf5-a4d4-473b-9675-78a8ad4fc70c")
 		)
 		(pad "59" smd roundrect
@@ -17342,7 +17292,6 @@
 			(net 125 "ECP5_A10")
 			(pinfunction "SPI_SDO")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "a30e732d-90e2-4407-8c8c-f249de1790d5")
 		)
 		(pad "60" smd roundrect
@@ -17353,7 +17302,6 @@
 			(net 142 "ECP5_B13")
 			(pinfunction "SPI_SCK1/SDIO_CLK")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "fc9137b5-e802-475e-b89a-2d4b518360b3")
 		)
 		(pad "61" smd roundrect
@@ -17364,7 +17312,6 @@
 			(net 136 "ECP5_B10")
 			(pinfunction "SPI_SDI")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "deb19445-8f7d-4a43-af86-baa480bcbd8e")
 		)
 		(pad "62" smd roundrect
@@ -17375,7 +17322,6 @@
 			(net 93 "ECP5_A13")
 			(pinfunction "SPI_SDO1/SDIO_CMD")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "2e0ea500-440e-4850-a4a9-70007efd9ccf")
 		)
 		(pad "63" smd roundrect
@@ -17386,7 +17332,6 @@
 			(net 85 "ECP5_B15")
 			(pinfunction "G10/ADC_D+/CAM_VSYNC")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "01b158cb-29a8-42fc-a34a-33f30e068727")
 		)
 		(pad "64" smd roundrect
@@ -17397,7 +17342,6 @@
 			(net 105 "ECP5_A14")
 			(pinfunction "SPI_SDI1/SDIO_DATA0")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "61ac4f4e-60e6-4e70-adff-81091a805e12")
 		)
 		(pad "65" smd roundrect
@@ -17408,7 +17352,6 @@
 			(net 110 "ECP5_A15")
 			(pinfunction "G9/ADC_D-/CAM_HSYNC")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "71637d90-940d-4156-a73f-4c7149238b88")
 		)
 		(pad "66" smd roundrect
@@ -17419,7 +17362,6 @@
 			(net 108 "ECP5_B14")
 			(pinfunction "SDIO_DATA1")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "6b1ec97e-2d57-467d-91aa-ae01e2f978bc")
 		)
 		(pad "67" smd roundrect
@@ -17430,7 +17372,6 @@
 			(net 86 "ECP5_C15")
 			(pinfunction "G8")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "07740702-cbdf-4a6f-b7cb-d0ffd7e89e53")
 		)
 		(pad "68" smd roundrect
@@ -17441,7 +17382,6 @@
 			(net 120 "ECP5_C14")
 			(pinfunction "SDIO_DATA2")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "98738c5c-b53e-4b11-9d9a-4a0a9964358c")
 		)
 		(pad "69" smd roundrect
@@ -17452,7 +17392,6 @@
 			(net 91 "ECP5_B16")
 			(pinfunction "G7/BUS7")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "2d10e9a2-498b-4f2c-bf98-fd7e7695e529")
 		)
 		(pad "70" smd roundrect
@@ -17463,7 +17402,6 @@
 			(net 90 "ECP5_D14")
 			(pinfunction "SPI_~{CS1}/SDIO_DATA3")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "256616e9-3fc8-460b-95ff-e836cccff2fb")
 		)
 		(pad "71" smd roundrect
@@ -17474,7 +17412,6 @@
 			(net 99 "ECP5_C16")
 			(pinfunction "G6/BUS6")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "4e147003-bd4c-4eac-b21e-6d403b3b6cb1")
 		)
 		(pad "72" smd roundrect
@@ -17485,7 +17422,6 @@
 			(net 104 "unconnected-(J8-RTC_3V-Pad72)")
 			(pinfunction "RTC_3V")
 			(pintype "bidirectional+no_connect")
-			(solder_mask_margin 0.102)
 			(uuid "59e51561-fb00-4c9a-90c3-f0e01ac71b60")
 		)
 		(pad "73" smd roundrect
@@ -17496,7 +17432,6 @@
 			(net 98 "ECP5_D16")
 			(pinfunction "G5/BUS5")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "4666bb22-d53f-4493-849a-8a3419b4f008")
 		)
 		(pad "74" smd roundrect
@@ -17507,7 +17442,6 @@
 			(net 2 "+3V3")
 			(pinfunction "3.3V")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "1599d610-f55f-4f59-81c9-45d735c1bdfd")
 		)
 		(pad "75" smd roundrect
@@ -17518,7 +17452,6 @@
 			(net 1 "GND")
 			(pinfunction "GND")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "e8751bbf-8104-49c3-9787-25f4f59556c8")
 		)
 		(pad "S1" smd roundrect
@@ -17529,7 +17462,6 @@
 			(net 1 "GND")
 			(pinfunction "GND")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "b2bfaec8-4c42-4238-9938-86685412987f")
 		)
 		(pad "S2" smd roundrect
@@ -17540,7 +17472,6 @@
 			(net 1 "GND")
 			(pinfunction "GND")
 			(pintype "bidirectional")
-			(solder_mask_margin 0.102)
 			(uuid "0cb24ab9-25aa-4ade-93d5-31a266d1b260")
 		)
 		(model "/home/seb/dev/backpack/hardware/libs/m2.pretty/21992304.step"
