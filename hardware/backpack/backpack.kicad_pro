@@ -492,7 +492,7 @@
       "plot": "../fab/",
       "pos_files": "../fab/place/",
       "specctra_dsn": "",
-      "step": "",
+      "step": "backpack.step",
       "svg": "",
       "vrml": ""
     },
