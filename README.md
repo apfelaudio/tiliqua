@@ -17,3 +17,16 @@
 - PWM-controlled, user-programmable red/green LEDs on each audio channel.
 - Jack insertion detection on input & output jacks.
 - 2x expansion ports (PMOD compatible) for up to 24 simultaneous audio channels (with extra eurorack-pmods).
+
+## Builds on the following (awesome) open-hardware projects
+- Audio interface and gateware from my existing [eurorack-pmod](https://github.com/apfelaudio/eurorack-pmod) project.
+- USB interface and gateware based on [LUNA and Cynthion](https://github.com/greatscottgadgets/luna/) projects.
+- USB Audio gateware and descriptors based on [adat-usb2-audio-interface](https://github.com/hansfbaier/adat-usb2-audio-interface).
+
+# License
+
+Hardware and gateware are released under the CERN Open-Hardware License V2 CERN-OHL-S, mirrored in the LICENSE text in this repository.
+
+**Copyright (C) 2024 Sebastian Holzapfel**
+
+The above LICENSE and copyright notice do NOT apply to imported artifacts in this repository (i.e datasheets, third-party footprints).

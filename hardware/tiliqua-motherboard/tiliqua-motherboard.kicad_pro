@@ -454,7 +454,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "backpack.kicad_pro",
+    "filename": "tiliqua-motherboard.kicad_pro",
     "version": 1
   },
   "net_settings": {
@@ -492,7 +492,7 @@
       "plot": "../fab/",
       "pos_files": "../fab/place/",
       "specctra_dsn": "",
-      "step": "backpack.step",
+      "step": "tiliqua-motherboard.step",
       "svg": "",
       "vrml": ""
     },
