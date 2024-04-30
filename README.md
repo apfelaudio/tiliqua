@@ -18,6 +18,14 @@
 - Jack insertion detection on input & output jacks.
 - 2x expansion ports (PMOD compatible) for up to 24 simultaneous audio channels (with extra eurorack-pmods).
 
+## Where do I get a Tiliqua?
+
+TODO
+
+## Building and running demo projects
+
+TODO
+
 ## Builds on the following (awesome) open-hardware projects
 - Audio interface and gateware from my existing [eurorack-pmod](https://github.com/apfelaudio/eurorack-pmod) project.
 - USB interface and gateware based on [LUNA and Cynthion](https://github.com/greatscottgadgets/luna/) projects.
@@ -25,8 +33,8 @@
 
 # License
 
-Hardware and gateware are released under the CERN Open-Hardware License V2 CERN-OHL-S, mirrored in the LICENSE text in this repository.
+The hardware and gateware in this project is largely covered under the CERN Open-Hardware License V2 CERN-OHL-S, mirrored in the LICENSE text in this repository. Some gateware and software is covered under the BSD 3-clause license - check the header of the individual source files for specifics.
 
 **Copyright (C) 2024 Sebastian Holzapfel**
 
-The above LICENSE and copyright notice do NOT apply to imported artifacts in this repository (i.e datasheets, third-party footprints).
+The above LICENSE and copyright notice do NOT apply to imported artifacts in this repository (i.e datasheets, third-party footprints), or dependencies released under a different (but compatible) open-source license.
