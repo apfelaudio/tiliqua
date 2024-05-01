@@ -2,13 +2,9 @@
 
 <sup>WARN: 🚧 under construction! 🚧 - this module is in early development</sup>
 
+**[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful, hackable FPGA-based audio multitool for Eurorack.**
+
 <img src="doc/img/tiliqua-proto1-front.jpg" width="200">
-
-**[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful FPGA-based audio multitool for Eurorack.**
-
-**Goal:** make it easier to get started in FPGAs in the context of audio.
-
-<img src="doc/img/tiliqua-proto1-back.jpg" width="400">
 
 ## Technical
 - Based on Lattice ECP5 FPGA, supported by open-source FPGA toolchains.
@@ -21,6 +17,8 @@
 - PWM-controlled, user-programmable red/green LEDs on each audio channel.
 - Jack insertion detection on input & output jacks.
 - 2x expansion ports (PMOD compatible) for up to 24 simultaneous audio channels (with extra eurorack-pmods).
+
+<img src="doc/img/tiliqua-proto1-back.jpg" width="400">
 
 ## Where do I get a Tiliqua?
 
