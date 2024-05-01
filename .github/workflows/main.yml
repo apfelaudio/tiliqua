@@ -3,7 +3,7 @@ name: build & test
 on: [push]
 
 jobs:
-  ubuntu-build-tiliqua-usb-audio:
+  ubuntu-example-usb-audio:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -11,7 +11,11 @@ jobs:
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
       - run: yosys --version
-      - run: pdm install
+      - run: |
+          pdm install
+          pdm run build_tiliqua
         working-directory: gateware/example-usb-audio
-      - run: pdm build_tiliqua
-        working-directory: gateware/example-usb-audio
+      - uses: actions/upload-artifact@v3
+        with:
+          name: example-usb-audio.bit
+          path: gateware/example-usb-audio/build/top.bit

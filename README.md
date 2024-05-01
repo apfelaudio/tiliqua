@@ -24,7 +24,15 @@ TODO
 
 ## Building and running demo projects
 
-TODO
+For the `example-usb-audio` project for on an Ubuntu system, first make sure you have [pdm](https://github.com/pdm-project/pdm) installed. Then:
+
+```bash
+cd gateware/example-usb-audio
+pdm install
+pdm run build_tiliqua
+```
+
+All examples are also built in CI - check `.github/workflows` if you need more gruesome details on how systems are built.
 
 ## Builds on the following (awesome) open-hardware projects
 - Audio interface and gateware from my existing [eurorack-pmod](https://github.com/apfelaudio/eurorack-pmod) project.
