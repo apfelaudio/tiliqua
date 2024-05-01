@@ -1,0 +1,17 @@
+name: build & test
+
+on: [push]
+
+jobs:
+  ubuntu-build-tiliqua-usb-audio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pdm-project/setup-pdm@v3
+      - uses: YosysHQ/setup-oss-cad-suite@v3
+      - run: git submodule update --init --recursive
+      - run: yosys --version
+      - run: pdm install
+        working-directory: gateware/example-usb-audio
+      - run: pdm build_tiliqua
+        working-directory: gateware/example-usb-audio
