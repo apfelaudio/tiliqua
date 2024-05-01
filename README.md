@@ -2,9 +2,13 @@
 
 <sup>WARN: 🚧 under construction! 🚧 - this module is in early development</sup>
 
+<img src="doc/img/tiliqua-proto1-front.jpg" width="200">
+
 **[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful FPGA-based audio multitool for Eurorack.**
 
 **Goal:** make it easier to get started in FPGAs in the context of audio.
+
+<img src="doc/img/tiliqua-proto1-back.jpg" width="400">
 
 ## Technical
 - Based on Lattice ECP5 FPGA, supported by open-source FPGA toolchains.
