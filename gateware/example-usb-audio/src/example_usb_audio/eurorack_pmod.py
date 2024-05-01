@@ -7,7 +7,7 @@ import os
 from amaranth              import *
 from amaranth.build        import *
 
-from util                  import EdgeToPulse
+from example_usb_audio.util import EdgeToPulse
 
 def pins_from_pmod_connector_with_ribbon(platform, pmod_index):
     """Create a eurorack-pmod resource on a given PMOD connector. Assumes ribbon cable flip."""
@@ -80,7 +80,7 @@ class EurorackPmod(Elaboratable):
         #
 
         vroot = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                             "../deps/eurorack-pmod/gateware")
+                                             "../../../deps/eurorack-pmod/gateware")
 
         # Defines and default cal for PMOD hardware version.
         if self.hardware_r33:

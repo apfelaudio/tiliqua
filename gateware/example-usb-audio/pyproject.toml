@@ -1,0 +1,19 @@
+[project]
+name = "example-usb-audio"
+version = "0.0.0"
+description = "USB Audio example for Tiliqua"
+
+requires-python = "~=3.8"
+dependencies = [
+    "amaranth[builtin-yosys]~=0.4",
+    "luna @ git+https://github.com/schnommus/luna@seb/isochronous-rebase",
+]
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest",
+]
+
+[tool.pdm.scripts]
+test = { cmd = "pytest" }
+build_tiliqua = { call = "example_usb_audio:build_tiliqua()" }

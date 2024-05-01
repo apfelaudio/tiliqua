@@ -31,12 +31,13 @@ from luna.gateware.stream.generator           import StreamSerializer
 from luna.gateware.stream                     import StreamInterface
 from luna.gateware.architecture.car                    import PHYResetController
 
-from util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
-from usb_stream_to_channels import USBStreamToChannels
-from channels_to_usb_stream import ChannelsToUSBStream
-from audio_to_channels      import AudioToChannels
+from example_usb_audio.util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
+from example_usb_audio.usb_stream_to_channels import USBStreamToChannels
+from example_usb_audio.channels_to_usb_stream import ChannelsToUSBStream
+from example_usb_audio.audio_to_channels      import AudioToChannels
+from example_usb_audio.tiliqua                import TiliquaPlatform
 
-import eurorack_pmod
+import example_usb_audio.eurorack_pmod
 
 class USB2AudioInterface(Elaboratable):
     """ USB Audio Class v2 interface """
@@ -633,9 +634,9 @@ class UAC2RequestHandlers(USBRequestHandler):
 
                 return m
 
-if __name__ == "__main__":
-    if not os.getenv('PMOD_HW') in ['HW_R33', 'HW_R31']:
-        print('Please specify a valid eurorack-pmod hardware revision in the environment e.g.\n'
-              '$ PMOD_HW=HW_R33 LUNA_PLAFORM=<your_platform> ...')
-    else:
-        top_level_cli(USB2AudioInterface)
+def build_tiliqua():
+    os.environ["PMOD_HW"] = "HW_R33"
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+
+    TiliquaPlatform().build(USB2AudioInterface())
