@@ -29,9 +29,9 @@ TODO
 For the `example-usb-audio` project for on an Ubuntu system, first make sure you have [pdm](https://github.com/pdm-project/pdm) installed. Then:
 
 ```bash
-cd gateware/example-usb-audio
+cd gateware
 pdm install
-pdm run build_tiliqua
+pdm build_example_usb_audio
 ```
 
 All examples are also built in CI - check `.github/workflows` if you need more gruesome details on how systems are built.

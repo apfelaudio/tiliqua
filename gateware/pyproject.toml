@@ -16,4 +16,4 @@ test = [
 
 [tool.pdm.scripts]
 test = { cmd = "pytest" }
-build_tiliqua = { call = "example_usb_audio:build_tiliqua()" }
+build_example_usb_audio = { call = "example_usb_audio.top:build()" }
