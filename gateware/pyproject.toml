@@ -17,3 +17,4 @@ test = [
 [tool.pdm.scripts]
 test = { cmd = "pytest" }
 build_example_usb_audio = { call = "example_usb_audio.top:build()" }
+build_example_mirror = { call = "example_mirror.top:build()" }
