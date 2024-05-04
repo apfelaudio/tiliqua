@@ -45,10 +45,10 @@ class AudioToChannels(Elaboratable):
             # FIXME: ignoring rdy in write domain. Should be fine as write domain
             # will always be slower than the read domain, but should be fixed.
             adc_fifo.w_en.eq(eurorack_pmod.fs_strobe),
-            adc_fifo.w_data[    :SW*1].eq(eurorack_pmod.cal_in0),
-            adc_fifo.w_data[SW*1:SW*2].eq(eurorack_pmod.cal_in1),
-            adc_fifo.w_data[SW*2:SW*3].eq(eurorack_pmod.cal_in2),
-            adc_fifo.w_data[SW*3:SW*4].eq(eurorack_pmod.cal_in3),
+            adc_fifo.w_data[    :SW*1].eq(eurorack_pmod.sample_i[0]),
+            adc_fifo.w_data[SW*1:SW*2].eq(eurorack_pmod.sample_i[1]),
+            adc_fifo.w_data[SW*2:SW*3].eq(eurorack_pmod.sample_i[2]),
+            adc_fifo.w_data[SW*3:SW*4].eq(eurorack_pmod.sample_i[3]),
         ]
 
         # (usb domain) unpack samples from the adc_fifo (one big concatenated
@@ -100,8 +100,7 @@ class AudioToChannels(Elaboratable):
         # HOST -> USB Channel stream -> eurorack-pmod calibrated OUTPUT samples.
         #
 
-        for n, output in zip(range(4), [eurorack_pmod.cal_out0, eurorack_pmod.cal_out1,
-                                        eurorack_pmod.cal_out2, eurorack_pmod.cal_out3]):
+        for n, output in zip(range(4), eurorack_pmod.sample_o):
 
             # FIXME: we shouldn't need one FIFO per channel
             fifo = AsyncFIFO(width=SW, depth=64, w_domain="usb", r_domain="audio")

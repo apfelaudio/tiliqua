@@ -9,24 +9,6 @@ from amaranth.build        import *
 
 from example_usb_audio.util import EdgeToPulse
 
-def pins_from_pmod_connector_with_ribbon(platform, pmod_index):
-    """Create a eurorack-pmod resource on a given PMOD connector. Assumes ribbon cable flip."""
-    eurorack_pmod = [
-        Resource(f"eurorack_pmod{pmod_index}", pmod_index,
-            Subsignal("sdin1",   Pins("1",  conn=("pmod", pmod_index), dir='o')),
-            Subsignal("sdout1",  Pins("2",  conn=("pmod", pmod_index), dir='i')),
-            Subsignal("lrck",    Pins("3",  conn=("pmod", pmod_index), dir='o')),
-            Subsignal("bick",    Pins("4",  conn=("pmod", pmod_index), dir='o')),
-            Subsignal("mclk",    Pins("10", conn=("pmod", pmod_index), dir='o')),
-            Subsignal("pdn",     Pins("9",  conn=("pmod", pmod_index), dir='o')),
-            Subsignal("i2c_sda", Pins("8",  conn=("pmod", pmod_index), dir='io')),
-            Subsignal("i2c_scl", Pins("7",  conn=("pmod", pmod_index), dir='io')),
-            Attrs(IO_TYPE="LVCMOS33"),
-        )
-    ]
-    platform.add_resources(eurorack_pmod)
-    return platform.request(f"eurorack_pmod{pmod_index}")
-
 class EurorackPmod(Elaboratable):
     """
     Amaranth wrapper for Verilog files from `eurorack-pmod` project.
@@ -43,32 +25,26 @@ class EurorackPmod(Elaboratable):
         self.width = width
         self.hardware_r33 = hardware_r33
 
-        self.cal_in0 = Signal(signed(width))
-        self.cal_in1 = Signal(signed(width))
-        self.cal_in2 = Signal(signed(width))
-        self.cal_in3 = Signal(signed(width))
+        # Output strobe once per sample in the `audio` domain (256*Fs)
+        self.fs_strobe = Signal()
 
-        self.cal_out0 = Signal(signed(width))
-        self.cal_out1 = Signal(signed(width))
-        self.cal_out2 = Signal(signed(width))
-        self.cal_out3 = Signal(signed(width))
+        # Audio samples latched on `fs_strobe`.
+        self.sample_i = [Signal(signed(width)) for _ in range(4)]
+        self.sample_o = [Signal(signed(width)) for _ in range(4)]
 
+        # Touch sensing and jacksense outputs.
+        self.touch = [Signal(8) for _ in range(8)]
+        self.jack = Signal(8)
+
+        # Read from the onboard I2C eeprom.
+        # These will be valid a few hundred milliseconds after boot.
         self.eeprom_mfg = Signal(8)
         self.eeprom_dev = Signal(8)
         self.eeprom_serial = Signal(32)
-        self.jack = Signal(8)
 
-        self.sample_adc0 = Signal(signed(width))
-        self.sample_adc1 = Signal(signed(width))
-        self.sample_adc2 = Signal(signed(width))
-        self.sample_adc3 = Signal(signed(width))
-
+        # Signals only used for calibration
+        self.sample_adc = [Signal(signed(width)) for _ in range(4)]
         self.force_dac_output = Signal(signed(width))
-
-        self.touch = [Signal(8) for _ in range(8)]
-
-        self.fs_strobe = Signal()
-
 
     def add_verilog_sources(self, platform):
 
@@ -162,14 +138,14 @@ class EurorackPmod(Elaboratable):
             o_bick = pmod_pins.bick.o,
 
             # Ports (clock at clk_fs)
-            o_cal_in0 = self.cal_in0,
-            o_cal_in1 = self.cal_in1,
-            o_cal_in2 = self.cal_in2,
-            o_cal_in3 = self.cal_in3,
-            i_cal_out0 = self.cal_out0,
-            i_cal_out1 = self.cal_out1,
-            i_cal_out2 = self.cal_out2,
-            i_cal_out3 = self.cal_out3,
+            o_cal_in0 = self.sample_i[0],
+            o_cal_in1 = self.sample_i[1],
+            o_cal_in2 = self.sample_i[2],
+            o_cal_in3 = self.sample_i[3],
+            i_cal_out0 = self.sample_o[0],
+            i_cal_out1 = self.sample_o[1],
+            i_cal_out2 = self.sample_o[2],
+            i_cal_out3 = self.sample_o[3],
 
             # Ports (serialized data fetched over I2C)
             o_eeprom_mfg = self.eeprom_mfg,
@@ -187,11 +163,30 @@ class EurorackPmod(Elaboratable):
             o_touch7 = self.touch[7],
 
             # Debug ports
-            o_sample_adc0 = self.sample_adc0,
-            o_sample_adc1 = self.sample_adc1,
-            o_sample_adc2 = self.sample_adc2,
-            o_sample_adc3 = self.sample_adc3,
+            o_sample_adc0 = self.sample_adc[0],
+            o_sample_adc1 = self.sample_adc[1],
+            o_sample_adc2 = self.sample_adc[2],
+            o_sample_adc3 = self.sample_adc[3],
             i_force_dac_output = self.force_dac_output,
         )
 
         return m
+
+def pins_from_pmod_connector_with_ribbon(platform, pmod_index):
+    """Create a eurorack-pmod resource on a given PMOD connector. Assumes ribbon cable flip."""
+    eurorack_pmod = [
+        Resource(f"eurorack_pmod{pmod_index}", pmod_index,
+            Subsignal("sdin1",   Pins("1",  conn=("pmod", pmod_index), dir='o')),
+            Subsignal("sdout1",  Pins("2",  conn=("pmod", pmod_index), dir='i')),
+            Subsignal("lrck",    Pins("3",  conn=("pmod", pmod_index), dir='o')),
+            Subsignal("bick",    Pins("4",  conn=("pmod", pmod_index), dir='o')),
+            Subsignal("mclk",    Pins("10", conn=("pmod", pmod_index), dir='o')),
+            Subsignal("pdn",     Pins("9",  conn=("pmod", pmod_index), dir='o')),
+            Subsignal("i2c_sda", Pins("8",  conn=("pmod", pmod_index), dir='io')),
+            Subsignal("i2c_scl", Pins("7",  conn=("pmod", pmod_index), dir='io')),
+            Attrs(IO_TYPE="LVCMOS33"),
+        )
+    ]
+    platform.add_resources(eurorack_pmod)
+    return platform.request(f"eurorack_pmod{pmod_index}")
+
