@@ -1,10 +1,10 @@
 # `tiliqua`
 
-<sup>WARN: 🚧 under construction! 🚧 - this module is in early development</sup>
+<sup>WARN: 🚧 under construction! 🚧 - this module is in active development</sup>
 
 **[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful, hackable FPGA-based audio multitool for Eurorack.**
 
-<img src="doc/img/tiliqua-proto1-front.jpg" width="200">
+<img src="doc/img/tiliqua-proto1-front.jpg" width="300">
 
 ## Technical
 - Based on Lattice ECP5 FPGA, supported by open-source FPGA toolchains.
