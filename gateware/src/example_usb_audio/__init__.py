@@ -29,15 +29,16 @@ from luna.gateware.usb.usb2.request           import USBRequestHandler, StallOnl
 from luna.gateware.usb.stream                 import USBInStreamInterface
 from luna.gateware.stream.generator           import StreamSerializer
 from luna.gateware.stream                     import StreamInterface
-from luna.gateware.architecture.car                    import PHYResetController
+from luna.gateware.architecture.car           import PHYResetController
+
+from tiliqua.tiliqua_platform import TiliquaPlatform
+from tiliqua.eurorack_pmod import EurorackPmod
 
 from example_usb_audio.util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
 from example_usb_audio.usb_stream_to_channels import USBStreamToChannels
 from example_usb_audio.channels_to_usb_stream import ChannelsToUSBStream
 from example_usb_audio.audio_to_channels      import AudioToChannels
-from example_usb_audio.tiliqua                import TiliquaPlatform
 
-import example_usb_audio.eurorack_pmod
 
 class USB2AudioInterface(Elaboratable):
     """ USB Audio Class v2 interface """
@@ -437,17 +438,9 @@ class USB2AudioInterface(Elaboratable):
             ep2_in.stream.stream_eq(channels_to_usb_stream.usb_stream_out),
         ]
 
-        pmod_pins = None
-        if "ecpix" in platform.name.lower():
-            print("ecpix5: default audio on PMOD0")
-            pmod_pins = eurorack_pmod.pins_from_pmod_connector_with_ribbon(platform, 0)
-        elif "tiliqua" in platform.name.lower():
-            print("tiliqua: default audio on backpack ffc")
-            pmod_pins = platform.request("audio_ffc")
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=pmod_pins,
-                hardware_r33=(os.getenv('PMOD_HW') == 'HW_R33'))
+        m.submodules.pmod0 = pmod0 = EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True)
 
         m.submodules.audio_to_channels = AudioToChannels(
                 pmod0,
@@ -635,7 +628,6 @@ class UAC2RequestHandlers(USBRequestHandler):
                 return m
 
 def build_tiliqua():
-    os.environ["PMOD_HW"] = "HW_R33"
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
 

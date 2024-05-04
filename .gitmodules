@@ -1,6 +1,3 @@
-[submodule "gateware/deps/luna"]
-	path = gateware/deps/luna
-	url = https://github.com/schnommus/luna
 [submodule "gateware/deps/eurorack-pmod"]
 	path = gateware/deps/eurorack-pmod
 	url = https://github.com/apfelaudio/eurorack-pmod

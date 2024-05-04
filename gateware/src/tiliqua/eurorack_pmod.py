@@ -80,7 +80,7 @@ class EurorackPmod(Elaboratable):
         #
 
         vroot = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                             "../../../deps/eurorack-pmod/gateware")
+                                             "../../deps/eurorack-pmod/gateware")
 
         # Defines and default cal for PMOD hardware version.
         if self.hardware_r33:
