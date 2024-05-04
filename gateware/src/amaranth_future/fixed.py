@@ -1,3 +1,6 @@
+# from https://github.com/amaranth-lang/amaranth/pull/1005
+# slightly modified to work out-of-tree with Amaranth ~= 0.4
+
 from amaranth.hdl import ast
 from amaranth.utils import bits_for
 

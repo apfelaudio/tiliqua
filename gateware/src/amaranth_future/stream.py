@@ -1,3 +1,6 @@
+# from https://github.com/amaranth-lang/amaranth/pull/1266
+# slightly modified to work out-of-tree with Amaranth ~= 0.4
+
 from amaranth.hdl import *
 from amaranth.lib import wiring
 from amaranth.lib.wiring import In, Out
