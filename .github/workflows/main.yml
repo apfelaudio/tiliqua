@@ -13,9 +13,9 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm run build_tiliqua
-        working-directory: gateware/example-usb-audio
+          pdm build_example_usb_audio
+        working-directory: gateware
       - uses: actions/upload-artifact@v3
         with:
           name: example-usb-audio.bit
-          path: gateware/example-usb-audio/build/top.bit
+          path: gateware/build/top.bit
