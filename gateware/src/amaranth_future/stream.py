@@ -85,7 +85,7 @@ def fifo_w_stream(fifo):
     w_stream.payload.reset_less = False # TODO
     w_stream.valid = fifo.w_en
     w_stream.ready = fifo.w_rdy
-    return w_stream
+    return wiring.flipped(w_stream)
 
 def fifo_r_stream(fifo):
     r_stream = Signature(fifo.width).create()

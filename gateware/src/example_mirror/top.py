@@ -7,24 +7,20 @@ import os
 from amaranth              import *
 from amaranth.build        import *
 from amaranth.lib          import wiring
-from amaranth.lib.wiring   import In, Out
 
 from amaranth.lib.fifo     import AsyncFIFO
 
 from amaranth_future       import stream
 
 from tiliqua.tiliqua_platform import TiliquaPlatform
-from tiliqua                  import eurorack_pmod
+from tiliqua.eurorack_pmod import EurorackPmod
 
-class AudioStream(wiring.Component):
+class AudioStream(Elaboratable):
 
     """
     Domain crossing logic to move samples from `eurorack-pmod` logic in the audio domain
     to logic in a different domain using a stream interface.
     """
-
-    adc_stream: Out(stream.Signature(eurorack_pmod.WIDTH*4))
-    dac_stream: In(stream.Signature(eurorack_pmod.WIDTH*4))
 
     def __init__(self, eurorack_pmod, stream_domain="sync", fifo_depth=8):
 
@@ -35,7 +31,8 @@ class AudioStream(wiring.Component):
         self.adc_fifo = AsyncFIFO(width=eurorack_pmod.width*4, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
         self.dac_fifo = AsyncFIFO(width=eurorack_pmod.width*4, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
 
-        super().__init__()
+        self.adc_stream = stream.fifo_r_stream(self.adc_fifo)
+        self.dac_stream  = stream.fifo_w_stream(self.dac_fifo)
 
     def elaborate(self, platform) -> Module:
 
@@ -47,10 +44,6 @@ class AudioStream(wiring.Component):
         m.submodules.dac_fifo = dac_fifo = self.dac_fifo
 
         eurorack_pmod = self.eurorack_pmod
-
-        wiring.connect(m, wiring.flipped(self.adc_stream), stream.fifo_r_stream(adc_fifo))
-        wiring.connect(m, stream.fifo_w_stream(dac_fifo), self.dac_stream)
-
 
         # (audio domain) on every sample strobe, latch and write all channels concatenated into one entry
         # of adc_fifo.
@@ -90,7 +83,7 @@ class MirrorTop(Elaboratable):
 
         m.submodules.car = platform.clock_domain_generator()
 
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+        m.submodules.pmod0 = pmod0 = EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True)
 
