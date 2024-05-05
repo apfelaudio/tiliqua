@@ -6,10 +6,14 @@ import os
 
 from amaranth              import *
 from amaranth.build        import *
+from amaranth.lib          import wiring
+from amaranth.lib.wiring   import In, Out
 
 from example_usb_audio.util import EdgeToPulse
 
-class EurorackPmod(Elaboratable):
+WIDTH = 16
+
+class EurorackPmod(wiring.Component):
     """
     Amaranth wrapper for Verilog files from `eurorack-pmod` project.
 
@@ -20,31 +24,34 @@ class EurorackPmod(Elaboratable):
     rates (as needed for 4x4 TDM the AK4619 requires).
     """
 
-    def __init__(self, pmod_pins, width=16, hardware_r33=True):
+    # Output strobe once per sample in the `audio` domain (256*Fs)
+    fs_strobe: Out(1)
+
+    # Audio samples latched on `fs_strobe`.
+    sample_i: Out(signed(WIDTH)).array(4)
+    sample_o: In(signed(WIDTH)).array(4)
+
+    # Touch sensing and jacksense outputs.
+    touch: Out(8).array(8)
+    jack: Out(8)
+
+    # Read from the onboard I2C eeprom.
+    # These will be valid a few hundred milliseconds after boot.
+    eeprom_mfg: Out(8)
+    eeprom_dev: Out(8)
+    eeprom_serial: Out(32)
+
+    # Signals only used for calibration
+    sample_adc: Out(signed(WIDTH)).array(4)
+    force_dac_output: In(signed(WIDTH))
+
+    def __init__(self, pmod_pins, hardware_r33=True):
+
         self.pmod_pins = pmod_pins
-        self.width = width
+        self.width = WIDTH
         self.hardware_r33 = hardware_r33
 
-        # Output strobe once per sample in the `audio` domain (256*Fs)
-        self.fs_strobe = Signal()
-
-        # Audio samples latched on `fs_strobe`.
-        self.sample_i = [Signal(signed(width)) for _ in range(4)]
-        self.sample_o = [Signal(signed(width)) for _ in range(4)]
-
-        # Touch sensing and jacksense outputs.
-        self.touch = [Signal(8) for _ in range(8)]
-        self.jack = Signal(8)
-
-        # Read from the onboard I2C eeprom.
-        # These will be valid a few hundred milliseconds after boot.
-        self.eeprom_mfg = Signal(8)
-        self.eeprom_dev = Signal(8)
-        self.eeprom_serial = Signal(32)
-
-        # Signals only used for calibration
-        self.sample_adc = [Signal(signed(width)) for _ in range(4)]
-        self.force_dac_output = Signal(signed(width))
+        super().__init__()
 
     def add_verilog_sources(self, platform):
 
@@ -107,6 +114,7 @@ class EurorackPmod(Elaboratable):
         m.d.audio += fs_edge.edge_in.eq(clk_fs),
         m.d.comb += self.fs_strobe.eq(fs_edge.pulse_out)
 
+
         # When i2c oe is asserted, we always want to pull down.
         m.d.comb += [
             pmod_pins.i2c_scl.o.eq(0),
@@ -122,7 +130,7 @@ class EurorackPmod(Elaboratable):
             i_clk_fs = clk_fs, #FIXME: deprecate
             i_rst = ResetSignal("audio"),
 
-            # Pads (tristate, require different logic to hook these
+            # Pads (tristate, may require different logic to hook these
             # up to pads depending on the target platform).
             o_i2c_scl_oe = pmod_pins.i2c_scl.oe,
             i_i2c_scl_i = pmod_pins.i2c_scl.i,
