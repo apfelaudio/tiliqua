@@ -6,6 +6,7 @@ import os
 
 from amaranth              import *
 from amaranth.build        import *
+from amaranth.lib          import wiring
 
 from amaranth.lib.fifo     import AsyncFIFO
 
@@ -88,11 +89,10 @@ class MirrorTop(Elaboratable):
 
         m.submodules.audio_stream = audio_stream = AudioStream(pmod0)
 
-        m.d.comb += [
-            audio_stream.dac_stream.payload.eq(audio_stream.adc_stream.payload),
-            audio_stream.dac_stream.valid.eq(audio_stream.adc_stream.valid),
-            audio_stream.adc_stream.ready.eq(audio_stream.dac_stream.ready),
-        ]
+        print(audio_stream.adc_stream)
+        print(audio_stream.dac_stream)
+
+        wiring.connect(m, audio_stream.adc_stream, audio_stream.dac_stream)
 
         return m
 

@@ -82,13 +82,15 @@ class Interface:
 def fifo_w_stream(fifo):
     w_stream = Signature(fifo.width).create()
     w_stream.payload = fifo.w_data
+    w_stream.payload.reset_less = False # TODO
     w_stream.valid = fifo.w_en
     w_stream.ready = fifo.w_rdy
-    return w_stream
+    return wiring.flipped(w_stream)
 
 def fifo_r_stream(fifo):
     r_stream = Signature(fifo.width).create()
     r_stream.payload = fifo.r_data
+    r_stream.payload.reset_less = False # TODO
     r_stream.valid = fifo.r_rdy
     r_stream.ready = fifo.r_en
     return r_stream
