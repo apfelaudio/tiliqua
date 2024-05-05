@@ -38,13 +38,10 @@ class AudioStream(wiring.Component):
 
         m = Module()
 
-        adc_data = Signal(data.ArrayLayout(signed(self.eurorack_pmod.width), 4))
-        dac_data = Signal(data.ArrayLayout(signed(self.eurorack_pmod.width), 4))
-
         m.submodules.adc_fifo = adc_fifo = AsyncFIFO(
-                width=adc_data.shape().size, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
+                width=self.eurorack_pmod.sample_i.shape().size, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
         m.submodules.dac_fifo = dac_fifo = AsyncFIFO(
-                width=dac_data.shape().size, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
+                width=self.eurorack_pmod.sample_o.shape().size, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
 
         adc_stream = stream.fifo_r_stream(adc_fifo)
         dac_stream = wiring.flipped(stream.fifo_w_stream(dac_fifo))
@@ -54,16 +51,13 @@ class AudioStream(wiring.Component):
 
         eurorack_pmod = self.eurorack_pmod
 
-        m.d.comb += [adc_data[n].eq(eurorack_pmod.sample_i[n]) for n in range(4)]
-        m.d.comb += [eurorack_pmod.sample_o[n].eq(dac_data[n]) for n in range(4)]
-
         # (audio domain) on every sample strobe, latch and write all channels concatenated into one entry
         # of adc_fifo.
         m.d.audio += [
             # FIXME: ignoring rdy in write domain. Should be fine as write domain
             # will always be slower than the read domain, but should be fixed.
             adc_fifo.w_en.eq(eurorack_pmod.fs_strobe),
-            adc_fifo.w_data.eq(adc_data),
+            adc_fifo.w_data.eq(self.eurorack_pmod.sample_i),
         ]
 
 
@@ -76,7 +70,7 @@ class AudioStream(wiring.Component):
             with m.State('SEND'):
                 m.d.audio += [
                     dac_fifo.r_en.eq(0),
-                    dac_data.eq(dac_fifo.r_data),
+                    self.eurorack_pmod.sample_o.eq(dac_fifo.r_data),
                 ]
                 m.next = 'READ'
 

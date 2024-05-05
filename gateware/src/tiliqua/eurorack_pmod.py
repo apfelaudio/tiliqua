@@ -6,7 +6,7 @@ import os
 
 from amaranth              import *
 from amaranth.build        import *
-from amaranth.lib          import wiring
+from amaranth.lib          import wiring, data
 from amaranth.lib.wiring   import In, Out
 
 from example_usb_audio.util import EdgeToPulse
@@ -28,8 +28,8 @@ class EurorackPmod(wiring.Component):
     fs_strobe: Out(1)
 
     # Audio samples latched on `fs_strobe`.
-    sample_i: Out(signed(WIDTH)).array(4)
-    sample_o: In(signed(WIDTH)).array(4)
+    sample_i: Out(data.ArrayLayout(signed(WIDTH), 4))
+    sample_o: In(data.ArrayLayout(signed(WIDTH), 4))
 
     # Touch sensing and jacksense outputs.
     touch: Out(8).array(8)
