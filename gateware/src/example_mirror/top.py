@@ -6,7 +6,7 @@ import os
 
 from amaranth              import *
 from amaranth.build        import *
-from amaranth.lib          import wiring
+from amaranth.lib          import wiring, data
 
 from amaranth.lib.fifo     import AsyncFIFO
 
@@ -28,11 +28,8 @@ class AudioStream(Elaboratable):
         self.stream_domain = stream_domain
         self.fifo_depth = fifo_depth
 
-        self.adc_fifo = AsyncFIFO(width=eurorack_pmod.width*4, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
-        self.dac_fifo = AsyncFIFO(width=eurorack_pmod.width*4, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
-
-        self.adc_stream = stream.fifo_r_stream(self.adc_fifo)
-        self.dac_stream = wiring.flipped(stream.fifo_w_stream(self.dac_fifo))
+        self.istream = stream.Signature(data.ArrayLayout(signed(16), 4)).create()
+        self.ostream = wiring.flipped(stream.Signature(data.ArrayLayout(signed(16), 4)).create())
 
     def elaborate(self, platform) -> Module:
 
@@ -40,8 +37,16 @@ class AudioStream(Elaboratable):
 
         SW = self.eurorack_pmod.width
 
-        m.submodules.adc_fifo = adc_fifo = self.adc_fifo
-        m.submodules.dac_fifo = dac_fifo = self.dac_fifo
+        m.submodules.adc_fifo = adc_fifo = AsyncFIFO(
+                width=SW*4, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
+        m.submodules.dac_fifo = dac_fifo = AsyncFIFO(
+                width=SW*4, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
+
+        adc_stream = stream.fifo_r_stream(adc_fifo)
+        dac_stream = wiring.flipped(stream.fifo_w_stream(dac_fifo))
+
+        wiring.connect(m, adc_stream, wiring.flipped(self.istream))
+        wiring.connect(m, wiring.flipped(self.ostream), dac_stream)
 
         eurorack_pmod = self.eurorack_pmod
 
@@ -89,10 +94,7 @@ class MirrorTop(Elaboratable):
 
         m.submodules.audio_stream = audio_stream = AudioStream(pmod0)
 
-        print(audio_stream.adc_stream)
-        print(audio_stream.dac_stream)
-
-        wiring.connect(m, audio_stream.adc_stream, audio_stream.dac_stream)
+        wiring.connect(m, audio_stream.istream, audio_stream.ostream)
 
         return m
 
