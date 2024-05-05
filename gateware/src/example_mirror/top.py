@@ -32,7 +32,7 @@ class AudioStream(Elaboratable):
         self.dac_fifo = AsyncFIFO(width=eurorack_pmod.width*4, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
 
         self.adc_stream = stream.fifo_r_stream(self.adc_fifo)
-        self.dac_stream  = stream.fifo_w_stream(self.dac_fifo)
+        self.dac_stream = wiring.flipped(stream.fifo_w_stream(self.dac_fifo))
 
     def elaborate(self, platform) -> Module:
 
