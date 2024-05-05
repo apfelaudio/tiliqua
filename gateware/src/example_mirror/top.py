@@ -9,6 +9,8 @@ from amaranth.build        import *
 
 from amaranth.lib.fifo     import AsyncFIFO
 
+from amaranth_future       import stream
+
 from tiliqua.tiliqua_platform import TiliquaPlatform
 from tiliqua.eurorack_pmod import EurorackPmod
 
@@ -19,31 +21,31 @@ class AudioStream(Elaboratable):
     to logic in a different domain using a stream interface.
     """
 
-    def __init__(self, eurorack_pmod, out_stream, in_stream, stream_domain="sync", fifo_depth=8):
+    def __init__(self, eurorack_pmod, stream_domain="sync", fifo_depth=8):
 
-        self.out_stream = out_stream
-        self.in_stream = in_stream
         self.eurorack_pmod = eurorack_pmod
         self.stream_domain = stream_domain
         self.fifo_depth = fifo_depth
+
+        self.adc_fifo = AsyncFIFO(width=eurorack_pmod.width*4, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
+        self.dac_fifo = AsyncFIFO(width=eurorack_pmod.width*4, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
+
+        self.adc_stream = stream.fifo_r_stream(self.adc_fifo)
+        self.dac_stream  = stream.fifo_w_stream(self.dac_fifo)
 
     def elaborate(self, platform) -> Module:
 
         m = Module()
 
+        SW = self.eurorack_pmod.width
+
+        m.submodules.adc_fifo = adc_fifo = self.adc_fifo
+        m.submodules.dac_fifo = dac_fifo = self.dac_fifo
+
         eurorack_pmod = self.eurorack_pmod
-        SW      = eurorack_pmod.width       # Sample width used in underlying I2S driver.
-
-        #
-        # INPUT SIDE
-        # eurorack-pmod calibrated INPUT samples -> out_stream
-        #
-
-        m.submodules.adc_fifo = adc_fifo = AsyncFIFO(width=SW*4, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
 
         # (audio domain) on every sample strobe, latch and write all channels concatenated into one entry
         # of adc_fifo.
-
         m.d.audio += [
             # FIXME: ignoring rdy in write domain. Should be fine as write domain
             # will always be slower than the read domain, but should be fixed.
@@ -52,28 +54,6 @@ class AudioStream(Elaboratable):
             adc_fifo.w_data[SW*1:SW*2].eq(eurorack_pmod.sample_i[1]),
             adc_fifo.w_data[SW*2:SW*3].eq(eurorack_pmod.sample_i[2]),
             adc_fifo.w_data[SW*3:SW*4].eq(eurorack_pmod.sample_i[3]),
-        ]
-
-        # (stream domain)
-
-        m.d.comb += [
-            self.out_stream.valid.eq(adc_fifo.r_rdy),
-            adc_fifo.r_en.eq(self.out_stream.ready),
-            self.out_stream.payload.eq(adc_fifo.r_data),
-        ]
-
-        #
-        # OUTPUT SIDE
-        # in_stream -> eurorack-pmod calibrated OUTPUT samples.
-        #
-
-        m.submodules.dac_fifo = dac_fifo = AsyncFIFO(width=SW*4, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
-
-        # (stream domain)
-        m.d.comb += [
-            dac_fifo.w_en.eq(self.in_stream.valid),
-            in_stream.ready.eq(dac_fifo.w_rdy),
-            dac_fifo.w_data.eq(stream.payload),
         ]
 
         # (audio domain) once fs_strobe hits, write the next pending sample to eurorack_pmod.
@@ -106,7 +86,13 @@ class MirrorTop(Elaboratable):
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True)
 
-        m.d.comb += [pmod0.sample_o[i].eq(pmod0.sample_i[i]) for i in range(4)]
+        m.submodules.audio_stream = audio_stream = AudioStream(pmod0)
+
+        m.d.comb += [
+            audio_stream.dac_stream.payload.eq(audio_stream.adc_stream.payload),
+            audio_stream.dac_stream.valid.eq(audio_stream.adc_stream.valid),
+            audio_stream.adc_stream.ready.eq(audio_stream.dac_stream.ready),
+        ]
 
         return m
 

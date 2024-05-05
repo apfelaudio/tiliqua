@@ -80,14 +80,14 @@ class Interface:
         return f"stream.Interface(payload={self.payload!r}, valid={self.valid!r}, ready={self.ready!r})"
 
 def fifo_w_stream(fifo):
-    w_stream = stream.Signature(fifo.width).create()
+    w_stream = Signature(fifo.width).create()
     w_stream.payload = fifo.w_data
     w_stream.valid = fifo.w_en
     w_stream.ready = fifo.w_rdy
     return w_stream
 
 def fifo_r_stream(fifo):
-    r_stream = stream.Signature(fifo.width).create()
+    r_stream = Signature(fifo.width).create()
     r_stream.payload = fifo.r_data
     r_stream.valid = fifo.r_rdy
     r_stream.ready = fifo.r_en
