@@ -76,6 +76,22 @@ class AudioStream(wiring.Component):
 
         return m
 
+class VCA(wiring.Component):
+
+    i: In(stream.Signature(data.ArrayLayout(signed(eurorack_pmod.WIDTH), 4)))
+    o: Out(stream.Signature(data.ArrayLayout(signed(eurorack_pmod.WIDTH), 4)))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        wiring.connect(m, wiring.flipped(self.i), wiring.flipped(self.o))
+
+        m.d.comb += [
+            self.o.payload[0].eq(self.i.payload[0] * self.i.payload[1])
+        ]
+
+        return m
+
 class MirrorTop(Elaboratable):
     """Route audio inputs straight to outputs (in the audio domain)."""
 
@@ -90,7 +106,9 @@ class MirrorTop(Elaboratable):
 
         m.submodules.audio_stream = audio_stream = AudioStream(pmod0)
 
-        wiring.connect(m, audio_stream.istream, audio_stream.ostream)
+        m.submodules.vca = vca = VCA()
+        wiring.connect(m, audio_stream.istream, vca.i)
+        wiring.connect(m, vca.o, audio_stream.ostream)
 
         return m
 
