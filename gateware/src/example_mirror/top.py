@@ -38,12 +38,13 @@ class AudioStream(wiring.Component):
 
         m = Module()
 
-        SW = self.eurorack_pmod.width
+        adc_data = Signal(data.ArrayLayout(signed(self.eurorack_pmod.width), 4))
+        dac_data = Signal(data.ArrayLayout(signed(self.eurorack_pmod.width), 4))
 
         m.submodules.adc_fifo = adc_fifo = AsyncFIFO(
-                width=SW*4, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
+                width=adc_data.shape().size, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
         m.submodules.dac_fifo = dac_fifo = AsyncFIFO(
-                width=SW*4, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
+                width=dac_data.shape().size, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
 
         adc_stream = stream.fifo_r_stream(adc_fifo)
         dac_stream = wiring.flipped(stream.fifo_w_stream(dac_fifo))
@@ -53,17 +54,18 @@ class AudioStream(wiring.Component):
 
         eurorack_pmod = self.eurorack_pmod
 
+        m.d.comb += [adc_data[n].eq(eurorack_pmod.sample_i[n]) for n in range(4)]
+        m.d.comb += [eurorack_pmod.sample_o[n].eq(dac_data[n]) for n in range(4)]
+
         # (audio domain) on every sample strobe, latch and write all channels concatenated into one entry
         # of adc_fifo.
         m.d.audio += [
             # FIXME: ignoring rdy in write domain. Should be fine as write domain
             # will always be slower than the read domain, but should be fixed.
             adc_fifo.w_en.eq(eurorack_pmod.fs_strobe),
-            adc_fifo.w_data[    :SW*1].eq(eurorack_pmod.sample_i[0]),
-            adc_fifo.w_data[SW*1:SW*2].eq(eurorack_pmod.sample_i[1]),
-            adc_fifo.w_data[SW*2:SW*3].eq(eurorack_pmod.sample_i[2]),
-            adc_fifo.w_data[SW*3:SW*4].eq(eurorack_pmod.sample_i[3]),
+            adc_fifo.w_data.eq(adc_data),
         ]
+
 
         # (audio domain) once fs_strobe hits, write the next pending sample to eurorack_pmod.
         with m.FSM(domain="audio") as fsm:
@@ -74,10 +76,7 @@ class AudioStream(wiring.Component):
             with m.State('SEND'):
                 m.d.audio += [
                     dac_fifo.r_en.eq(0),
-                    eurorack_pmod.sample_o[0].eq(dac_fifo.r_data[    :SW*1]),
-                    eurorack_pmod.sample_o[1].eq(dac_fifo.r_data[SW*1:SW*2]),
-                    eurorack_pmod.sample_o[2].eq(dac_fifo.r_data[SW*2:SW*3]),
-                    eurorack_pmod.sample_o[3].eq(dac_fifo.r_data[SW*3:SW*4]),
+                    dac_data.eq(dac_fifo.r_data),
                 ]
                 m.next = 'READ'
 
