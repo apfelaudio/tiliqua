@@ -7,20 +7,24 @@ import os
 from amaranth              import *
 from amaranth.build        import *
 from amaranth.lib          import wiring, data
+from amaranth.lib.wiring   import In, Out
 
 from amaranth.lib.fifo     import AsyncFIFO
 
 from amaranth_future       import stream
 
 from tiliqua.tiliqua_platform import TiliquaPlatform
-from tiliqua.eurorack_pmod import EurorackPmod
+from tiliqua                  import eurorack_pmod
 
-class AudioStream(Elaboratable):
+class AudioStream(wiring.Component):
 
     """
     Domain crossing logic to move samples from `eurorack-pmod` logic in the audio domain
     to logic in a different domain using a stream interface.
     """
+
+    istream: Out(stream.Signature(data.ArrayLayout(signed(eurorack_pmod.WIDTH), 4)))
+    ostream: In(stream.Signature(data.ArrayLayout(signed(eurorack_pmod.WIDTH), 4)))
 
     def __init__(self, eurorack_pmod, stream_domain="sync", fifo_depth=8):
 
@@ -28,8 +32,7 @@ class AudioStream(Elaboratable):
         self.stream_domain = stream_domain
         self.fifo_depth = fifo_depth
 
-        self.istream = stream.Signature(data.ArrayLayout(signed(16), 4)).create()
-        self.ostream = wiring.flipped(stream.Signature(data.ArrayLayout(signed(16), 4)).create())
+        super().__init__()
 
     def elaborate(self, platform) -> Module:
 
@@ -88,7 +91,7 @@ class MirrorTop(Elaboratable):
 
         m.submodules.car = platform.clock_domain_generator()
 
-        m.submodules.pmod0 = pmod0 = EurorackPmod(
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True)
 
