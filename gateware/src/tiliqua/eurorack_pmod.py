@@ -11,6 +11,7 @@ from amaranth.lib.wiring   import In, Out
 
 from example_usb_audio.util import EdgeToPulse
 
+# Sample width of individual samples in (bits, signed).
 WIDTH = 16
 
 class EurorackPmod(wiring.Component):
