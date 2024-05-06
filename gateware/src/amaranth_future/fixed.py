@@ -85,6 +85,8 @@ class Value(ast.ValueCastable):
 
     @ast.ValueCastable.lowermethod
     def as_value(self):
+        if self.signed:
+            return self._target.as_signed()
         return self._target
 
     def shape(self):

@@ -11,20 +11,21 @@ from amaranth.lib.wiring   import In, Out
 
 from amaranth.lib.fifo     import AsyncFIFO
 
-from amaranth_future       import stream
+from amaranth_future       import stream, fixed
 
 from tiliqua.tiliqua_platform import TiliquaPlatform
 from tiliqua                  import eurorack_pmod
+from tiliqua.eurorack_pmod    import ASQ
 
 class AudioStream(wiring.Component):
 
     """
     Domain crossing logic to move samples from `eurorack-pmod` logic in the audio domain
-    to logic in a different domain using a stream interface.
+    to logic in a different (faster) domain using a stream interface.
     """
 
-    istream: Out(stream.Signature(data.ArrayLayout(signed(eurorack_pmod.WIDTH), 4)))
-    ostream: In(stream.Signature(data.ArrayLayout(signed(eurorack_pmod.WIDTH), 4)))
+    istream: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    ostream: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
     def __init__(self, eurorack_pmod, stream_domain="sync", fifo_depth=8):
 
@@ -39,9 +40,11 @@ class AudioStream(wiring.Component):
         m = Module()
 
         m.submodules.adc_fifo = adc_fifo = AsyncFIFO(
-                width=self.eurorack_pmod.sample_i.shape().size, depth=self.fifo_depth, w_domain="audio", r_domain=self.stream_domain)
+                width=self.eurorack_pmod.sample_i.shape().size, depth=self.fifo_depth,
+                w_domain="audio", r_domain=self.stream_domain)
         m.submodules.dac_fifo = dac_fifo = AsyncFIFO(
-                width=self.eurorack_pmod.sample_o.shape().size, depth=self.fifo_depth, w_domain=self.stream_domain, r_domain="audio")
+                width=self.eurorack_pmod.sample_o.shape().size, depth=self.fifo_depth,
+                w_domain=self.stream_domain, r_domain="audio")
 
         adc_stream = stream.fifo_r_stream(adc_fifo)
         dac_stream = wiring.flipped(stream.fifo_w_stream(dac_fifo))
@@ -51,17 +54,21 @@ class AudioStream(wiring.Component):
 
         eurorack_pmod = self.eurorack_pmod
 
-        # (audio domain) on every sample strobe, latch and write all channels concatenated into one entry
-        # of adc_fifo.
+        # below is synchronous logic in the *audio domain*
+
+        # On every fs_strobe, latch and write all channels concatenated
+        # into one entry of adc_fifo.
+
         m.d.audio += [
-            # FIXME: ignoring rdy in write domain. Should be fine as write domain
-            # will always be slower than the read domain, but should be fixed.
+            # WARN: ignoring rdy in write domain. Mostly fine as long as
+            # stream_domain is faster than audio_domain.
             adc_fifo.w_en.eq(eurorack_pmod.fs_strobe),
             adc_fifo.w_data.eq(self.eurorack_pmod.sample_i),
         ]
 
 
-        # (audio domain) once fs_strobe hits, write the next pending sample to eurorack_pmod.
+        # Once fs_strobe hits, write the next pending samples to CODEC
+
         with m.FSM(domain="audio") as fsm:
             with m.State('READ'):
                 with m.If(eurorack_pmod.fs_strobe & dac_fifo.r_rdy):
@@ -78,17 +85,15 @@ class AudioStream(wiring.Component):
 
 class VCA(wiring.Component):
 
-    i: In(stream.Signature(data.ArrayLayout(signed(eurorack_pmod.WIDTH), 4)))
-    o: Out(stream.Signature(data.ArrayLayout(signed(eurorack_pmod.WIDTH), 4)))
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
     def elaborate(self, platform):
         m = Module()
 
         wiring.connect(m, wiring.flipped(self.i), wiring.flipped(self.o))
 
-        m.d.comb += [
-            self.o.payload[0].eq(self.i.payload[0] * self.i.payload[1])
-        ]
+        m.d.comb += self.o.payload[0].eq(self.i.payload[0] * self.i.payload[1])
 
         return m
 

@@ -9,9 +9,14 @@ from amaranth.build        import *
 from amaranth.lib          import wiring, data
 from amaranth.lib.wiring   import In, Out
 
+from amaranth_future       import fixed
+
 from example_usb_audio.util import EdgeToPulse
 
 WIDTH = 16
+
+# Native 'Audio sample SQ', shape of audio samples from CODEC.
+ASQ = fixed.SQ(0, WIDTH-1)
 
 class EurorackPmod(wiring.Component):
     """
@@ -28,8 +33,8 @@ class EurorackPmod(wiring.Component):
     fs_strobe: Out(1)
 
     # Audio samples latched on `fs_strobe`.
-    sample_i: Out(data.ArrayLayout(signed(WIDTH), 4))
-    sample_o: In(data.ArrayLayout(signed(WIDTH), 4))
+    sample_i: Out(data.ArrayLayout(ASQ, 4))
+    sample_o: In(data.ArrayLayout(ASQ, 4))
 
     # Touch sensing and jacksense outputs.
     touch: Out(8).array(8)
@@ -48,7 +53,6 @@ class EurorackPmod(wiring.Component):
     def __init__(self, pmod_pins, hardware_r33=True):
 
         self.pmod_pins = pmod_pins
-        self.width = WIDTH
         self.hardware_r33 = hardware_r33
 
         super().__init__()
@@ -123,7 +127,7 @@ class EurorackPmod(wiring.Component):
 
         m.submodules.veurorack_pmod = Instance("eurorack_pmod",
             # Parameters
-            p_W = self.width,
+            p_W = WIDTH,
 
             # Ports (clk + reset)
             i_clk_256fs = ClockSignal("audio"),
