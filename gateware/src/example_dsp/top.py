@@ -85,8 +85,8 @@ class AudioStream(wiring.Component):
 
 class VCA(wiring.Component):
 
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 2)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 1)))
 
     def elaborate(self, platform):
         m = Module()
@@ -94,6 +94,42 @@ class VCA(wiring.Component):
         wiring.connect(m, wiring.flipped(self.i), wiring.flipped(self.o))
 
         m.d.comb += self.o.payload[0].eq(self.i.payload[0] * self.i.payload[1])
+
+        return m
+
+class AudioStreamSplitter(wiring.Component):
+
+    def __init__(self, n_channels):
+        self.n_channels = n_channels
+        super().__init__({
+            "i": In(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
+            "o": Out(stream.Signature(ASQ)).array(n_channels),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += self.i.rdy.eq(Cat([self.o[n].rdy for n in range(self.n_channels)].all()))
+        m.d.comb += [self.o[n].payload.eq(self.i.payload[n]) for n in range(self.n_channels)]
+        m.d.comb += [self.o[n].valid.eq(self.i.valid) for n in range(self.n_channels)]
+
+        return m
+
+class AudioStreamCombiner(wiring.Component):
+
+    def __init__(self, n_channels):
+        self.n_channels = n_channels
+        super().__init__({
+            "i": In(stream.Signature(ASQ)).array(n_channels),
+            "o": Out(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [self.i[n].rdy.eq(self.o.rdy) for n in range(self.n_channels)]
+        m.d.comb += [self.o.payload[n].eq(self.i[n].payload) for n in range(self.n_channels)]
+        m.d.comb += self.o.valid.eq(Cat([self.i[n].valid for n in range(self.n_channels)].all()))
 
         return m
 
@@ -111,13 +147,48 @@ class MirrorTop(Elaboratable):
 
         m.submodules.audio_stream = audio_stream = AudioStream(pmod0)
 
-        m.submodules.vca = vca = VCA()
-        wiring.connect(m, audio_stream.istream, vca.i)
-        wiring.connect(m, vca.o, audio_stream.ostream)
+        wiring.connect(m, audio_stream.istream, audio_stream.ostream)
 
         return m
 
-def build():
+class VCATop(Elaboratable):
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.car = platform.clock_domain_generator()
+
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True)
+
+        m.submodules.audio_stream = audio_stream = AudioStream(pmod0)
+
+        m.submodules.splitter4 = splitter4 = AudioStreamSplitter(n_channels=4)
+        m.submodules.combiner4 = combiner4 = AudioStreamCombiner(n_channels=4)
+
+        m.submodules.combiner2 = combiner2 = AudioStreamCombiner(n_channels=2)
+
+        m.submodules.vca0 = vca0 = VCA()
+
+        wiring.connect(m, audio_stream.istream, splitter4.i)
+        wiring.connect(m, splitter4.o[0], combiner2.i[0])
+        wiring.connect(m, splitter4.o[1], combiner2.i[1])
+        wiring.connect(m, combiner2.o, vca0.i)
+        wiring.connect(m, vca0.o, combiner4.i[0])
+        wiring.connect(m, stream.Signature(ASQ, always_valid=True).create(), combiner4.i[1])
+        wiring.connect(m, stream.Signature(ASQ, always_valid=True).create(), combiner4.i[2])
+        wiring.connect(m, stream.Signature(ASQ, always_valid=True).create(), combiner4.i[3])
+        wiring.connect(m, combiner4.o, audio_stream.ostream)
+
+        return m
+
+def build_mirror():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     TiliquaPlatform().build(MirrorTop())
+
+def build_vca():
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    TiliquaPlatform().build(VCATop())
