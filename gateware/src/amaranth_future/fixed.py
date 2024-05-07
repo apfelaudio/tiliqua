@@ -84,9 +84,10 @@ class Value(ast.ValueCastable):
 
     @ast.ValueCastable.lowermethod
     def as_value(self):
+        # FIXME For some reason lib.wiring breaks if we return
+        # signed values from here, not sure why.
         return self._target
 
-    @ast.ValueCastable.lowermethod
     def sas_value(self):
         if self.signed:
             return self._target.as_signed()

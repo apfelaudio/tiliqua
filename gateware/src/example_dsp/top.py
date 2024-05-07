@@ -83,6 +83,55 @@ class AudioStream(wiring.Component):
 
         return m
 
+class Split(wiring.Component):
+
+    def __init__(self, n_channels):
+        self.n_channels = n_channels
+        super().__init__({
+            "i": In(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
+            "o": Out(stream.Signature(ASQ)).array(n_channels),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        done = Signal(self.n_channels)
+
+        m.d.comb += self.i.ready.eq(Cat([self.o[n].ready | done[n] for n in range(self.n_channels)]).all())
+        m.d.comb += [self.o[n].payload.eq(self.i.payload[n]) for n in range(self.n_channels)]
+        m.d.comb += [self.o[n].valid.eq(self.i.valid & ~done[n]) for n in range(self.n_channels)]
+
+        flow = [self.o[n].valid & self.o[n].ready
+                for n in range(self.n_channels)]
+        end  = Cat([flow[n] | done[n]
+                    for n in range(self.n_channels)]).all()
+        with m.If(end):
+            m.d.sync += done.eq(0)
+        with m.Else():
+            for n in range(self.n_channels):
+                with m.If(flow[n]):
+                    m.d.sync += done[n].eq(1)
+
+        return m
+
+class Merge(wiring.Component):
+
+    def __init__(self, n_channels):
+        self.n_channels = n_channels
+        super().__init__({
+            "i": In(stream.Signature(ASQ)).array(n_channels),
+            "o": Out(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [self.i[n].ready.eq(self.o.ready & self.o.valid) for n in range(self.n_channels)]
+        m.d.comb += [self.o.payload[n].eq(self.i[n].payload) for n in range(self.n_channels)]
+        m.d.comb += self.o.valid.eq(Cat([self.i[n].valid for n in range(self.n_channels)]).all())
+
+        return m
+
 class VCA(wiring.Component):
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 2)))
@@ -96,42 +145,6 @@ class VCA(wiring.Component):
             self.o.valid.eq(self.i.valid),
             self.i.ready.eq(self.o.ready),
         ]
-
-        return m
-
-class AudioStreamSplitter(wiring.Component):
-
-    def __init__(self, n_channels):
-        self.n_channels = n_channels
-        super().__init__({
-            "i": In(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
-            "o": Out(stream.Signature(ASQ)).array(n_channels),
-        })
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += self.i.ready.eq(Cat([self.o[n].ready for n in range(self.n_channels)]).all())
-        m.d.comb += [self.o[n].payload.eq(self.i.payload[n]) for n in range(self.n_channels)]
-        m.d.comb += [self.o[n].valid.eq(self.i.valid) for n in range(self.n_channels)]
-
-        return m
-
-class AudioStreamCombiner(wiring.Component):
-
-    def __init__(self, n_channels):
-        self.n_channels = n_channels
-        super().__init__({
-            "i": In(stream.Signature(ASQ)).array(n_channels),
-            "o": Out(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
-        })
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += [self.i[n].ready.eq(self.o.ready) for n in range(self.n_channels)]
-        m.d.comb += [self.o.payload[n].eq(self.i[n].payload) for n in range(self.n_channels)]
-        m.d.comb += self.o.valid.eq(Cat([self.i[n].valid for n in range(self.n_channels)]).all())
 
         return m
 
@@ -166,26 +179,29 @@ class VCATop(Elaboratable):
 
         m.submodules.audio_stream = audio_stream = AudioStream(pmod0)
 
-        m.submodules.splitter4 = splitter4 = AudioStreamSplitter(n_channels=4)
-        m.submodules.combiner4 = combiner4 = AudioStreamCombiner(n_channels=4)
-
-        m.submodules.combiner2 = combiner2 = AudioStreamCombiner(n_channels=2)
+        m.submodules.split4 = split4 = Split(n_channels=4)
+        m.submodules.merge4 = merge4 = Merge(n_channels=4)
+        m.submodules.merge2a = merge2a = Merge(n_channels=2)
+        m.submodules.merge2b = merge2b = Merge(n_channels=2)
 
         m.submodules.vca0 = vca0 = VCA()
+        m.submodules.vca1 = vca1 = VCA()
 
-        wiring.connect(m, audio_stream.istream, splitter4.i)
-        print(Value.cast(splitter4.o[0].payload))
-        print(Value.cast(combiner2.i[0].payload))
-        wiring.connect(m, splitter4.o[0], combiner2.i[0])
-        wiring.connect(m, splitter4.o[1], combiner2.i[1])
-        wiring.connect(m, splitter4.o[2], stream.Signature(ASQ, always_ready=True).flip().create())
-        wiring.connect(m, splitter4.o[3], stream.Signature(ASQ, always_ready=True).flip().create())
-        wiring.connect(m, combiner2.o, vca0.i)
-        wiring.connect(m, vca0.o, combiner4.i[0])
-        wiring.connect(m, stream.Signature(ASQ, always_valid=True).create(), combiner4.i[1])
-        wiring.connect(m, stream.Signature(ASQ, always_valid=True).create(), combiner4.i[2])
-        wiring.connect(m, stream.Signature(ASQ, always_valid=True).create(), combiner4.i[3])
-        wiring.connect(m, combiner4.o, audio_stream.ostream)
+        ready_stub = stream.Signature(ASQ, always_ready=True).flip().create()
+        valid_stub = stream.Signature(ASQ, always_valid=True).create()
+
+        wiring.connect(m, audio_stream.istream, split4.i)
+        wiring.connect(m, split4.o[0], merge2a.i[0])
+        wiring.connect(m, split4.o[1], merge2a.i[1])
+        wiring.connect(m, split4.o[2], merge2b.i[0])
+        wiring.connect(m, split4.o[3], merge2b.i[1])
+        wiring.connect(m, merge2a.o, vca0.i)
+        wiring.connect(m, merge2b.o, vca1.i)
+        wiring.connect(m, vca0.o, merge4.i[0])
+        wiring.connect(m, vca1.o, merge4.i[1])
+        wiring.connect(m, valid_stub, merge4.i[2])
+        wiring.connect(m, valid_stub, merge4.i[3])
+        wiring.connect(m, merge4.o, audio_stream.ostream)
 
         return m
 
