@@ -193,11 +193,16 @@ class SVF(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                   m.d.sync += [
-                       x.eq(self.i.payload[0]),
-                       kK.eq(self.i.payload[1]),
-                       kQinv.eq(self.i.payload[2]),
-                   ]
+                   m.d.sync += x.eq(self.i.payload[0]),
+
+                   # how to do signedness checks without `fixed` breaking?
+
+                   with m.If(self.i.payload[1].as_value()[15] == 0):
+                       m.d.sync += kK.eq(self.i.payload[1])
+
+                   with m.If(self.i.payload[2].as_value()[15] == 0):
+                       m.d.sync += kQinv.eq(self.i.payload[2])
+
                    m.next = 'MAC0'
             with m.State('MAC0'):
                 m.d.sync += alp.eq(abp*kK + alp)
