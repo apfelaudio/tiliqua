@@ -62,11 +62,11 @@ class Value(ast.ValueCastable):
     def round(self, f_width=0):
         # If we're increasing precision, extend with more fractional bits.
         if f_width > self.f_width:
-            return Shape(self.i_width, f_width, signed = self.signed)(ast.Cat(ast.Const(0, f_width - self.f_width), self.as_value()))
+            return Shape(self.i_width, f_width, signed = self.signed)(ast.Cat(ast.Const(0, f_width - self.f_width), self.sas_value()))
         
         # If we're reducing precision, truncate bits and add the top truncated bits for rounding.
         elif f_width < self.f_width:
-            return Shape(self.i_width, f_width, signed = self.signed)(self.as_value()[self.f_width - f_width:] + self.as_value()[self.f_width - f_width - 1])
+            return Shape(self.i_width, f_width, signed = self.signed)(self.sas_value()[self.f_width - f_width:] + self.sas_value()[self.f_width - f_width - 1])
 
         return self
 
@@ -84,8 +84,12 @@ class Value(ast.ValueCastable):
 
     @ast.ValueCastable.lowermethod
     def as_value(self):
-        #if self.signed:
-        #    return self._target.as_signed()
+        return self._target
+
+    @ast.ValueCastable.lowermethod
+    def sas_value(self):
+        if self.signed:
+            return self._target.as_signed()
         return self._target
 
     def shape(self):
@@ -94,7 +98,7 @@ class Value(ast.ValueCastable):
     def eq(self, other):
         # Regular values are assigned directly to the underlying value.
         if isinstance(other, ast.Value):
-            return self.as_value().eq(other)
+            return self.sas_value().eq(other)
 
         # int and float are cast to fixed.Const.
         elif isinstance(other, int) or isinstance(other, float):
@@ -107,7 +111,7 @@ class Value(ast.ValueCastable):
         # Match precision.
         other = other.round(self.f_width)
 
-        return self.as_value().eq(other.as_value())
+        return self.sas_value().eq(other.sas_value())
 
     def __mul__(self, other):
         # Regular values are cast to fixed.Value
@@ -122,7 +126,7 @@ class Value(ast.ValueCastable):
         elif not isinstance(other, Value):
             raise TypeError(f"Object {other!r} cannot be converted to a fixed.Value")
 
-        return Value.cast(self.as_value() * other.as_value(), self.f_width + other.f_width)
+        return Value.cast(self.sas_value() * other.sas_value(), self.f_width + other.f_width)
 
     def __rmul__(self, other):
         return self.__mul__(other)
@@ -142,7 +146,7 @@ class Value(ast.ValueCastable):
 
         f_width = max(self.f_width, other.f_width)
 
-        return Value.cast(self.round(f_width).as_value() + other.round(f_width).as_value(), f_width)
+        return Value.cast(self.round(f_width).sas_value() + other.round(f_width).sas_value(), f_width)
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -162,7 +166,7 @@ class Value(ast.ValueCastable):
 
         f_width = max(self.f_width, other.f_width)
 
-        return Value.cast(self.round(f_width).as_value() - other.round(f_width).as_value(), f_width)
+        return Value.cast(self.round(f_width).sas_value() - other.round(f_width).sas_value(), f_width)
 
     def __rsub__(self, other):
         return -self.__sub__(other)
@@ -171,10 +175,10 @@ class Value(ast.ValueCastable):
         return self
     
     def __neg__(self):
-        return Value.cast(-self.as_value(), self.f_width)
+        return Value.cast(-self.sas_value(), self.f_width)
 
     def __abs__(self):
-        return Value.cast(abs(self.as_value()), self.f_width)
+        return Value.cast(abs(self.sas_value()), self.f_width)
 
     def __lshift__(self, other):
         if isinstance(other, int):
@@ -182,9 +186,9 @@ class Value(ast.ValueCastable):
                 raise ValueError("Shift amount cannot be negative")
 
             if other > self.f_width:
-                return Value.cast(ast.Cat(ast.Const(0, other - self.f_width), self.as_value()))
+                return Value.cast(ast.Cat(ast.Const(0, other - self.f_width), self.sas_value()))
             else:
-                return Value.cast(self.as_value(), self.f_width - other)
+                return Value.cast(self.sas_value(), self.f_width - other)
 
         elif not isinstance(other, ast.Value):
             raise TypeError("Shift amount must be an integer value")
@@ -192,14 +196,14 @@ class Value(ast.ValueCastable):
         if other.signed:
             raise TypeError("Shift amount must be unsigned")
 
-        return Value.cast(self.as_value() << other, self.f_width)
+        return Value.cast(self.sas_value() << other, self.f_width)
 
     def __rshift__(self, other):
         if isinstance(other, int):
             if other < 0:
                 raise ValueError("Shift amount cannot be negative")
 
-            return Value.cast(self.as_value(), self.f_width + other)
+            return Value.cast(self.sas_value(), self.f_width + other)
 
         elif not isinstance(other, ast.Value):
             raise TypeError("Shift amount must be an integer value")
@@ -210,7 +214,7 @@ class Value(ast.ValueCastable):
         # Extend f_width by maximal shift amount.
         f_width = self.f_width + 2**other.width - 1
 
-        return Value.cast(self.round(f_width).as_value() >> other, f_width)
+        return Value.cast(self.round(f_width).sas_value() >> other, f_width)
 
     def __repr__(self):
         return f"(fixedpoint {'SQ' if self.signed else 'UQ'}{self.i_width}.{self.f_width} {self._target!r})"
