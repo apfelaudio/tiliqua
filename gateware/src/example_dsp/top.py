@@ -148,6 +148,29 @@ class VCA(wiring.Component):
 
         return m
 
+class NCO(wiring.Component):
+
+    i: In(stream.Signature(ASQ))
+    o: Out(stream.Signature(ASQ))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        s = Signal(fixed.SQ(16, eurorack_pmod.WIDTH-1))
+
+        m.d.comb += [
+            self.o.valid.eq(self.i.valid),
+            self.i.ready.eq(self.o.ready),
+        ]
+
+        with m.If(self.i.valid):
+            m.d.sync += [
+                s.eq(s + self.i.payload),
+                self.o.payload.eq(s.round() >> 6),
+            ]
+
+        return m
+
 class MirrorTop(Elaboratable):
     """Route audio inputs straight to outputs (in the audio domain)."""
 
@@ -182,24 +205,25 @@ class VCATop(Elaboratable):
         m.submodules.split4 = split4 = Split(n_channels=4)
         m.submodules.merge4 = merge4 = Merge(n_channels=4)
         m.submodules.merge2a = merge2a = Merge(n_channels=2)
-        m.submodules.merge2b = merge2b = Merge(n_channels=2)
 
         m.submodules.vca0 = vca0 = VCA()
-        m.submodules.vca1 = vca1 = VCA()
+        m.submodules.nco0 = nco0 = NCO()
 
         ready_stub = stream.Signature(ASQ, always_ready=True).flip().create()
         valid_stub = stream.Signature(ASQ, always_valid=True).create()
 
         wiring.connect(m, audio_stream.istream, split4.i)
+
         wiring.connect(m, split4.o[0], merge2a.i[0])
         wiring.connect(m, split4.o[1], merge2a.i[1])
-        wiring.connect(m, split4.o[2], merge2b.i[0])
-        wiring.connect(m, split4.o[3], merge2b.i[1])
+        wiring.connect(m, split4.o[2], nco0.i)
+        wiring.connect(m, split4.o[3], ready_stub)
+
         wiring.connect(m, merge2a.o, vca0.i)
-        wiring.connect(m, merge2b.o, vca1.i)
+
         wiring.connect(m, vca0.o, merge4.i[0])
-        wiring.connect(m, vca1.o, merge4.i[1])
-        wiring.connect(m, valid_stub, merge4.i[2])
+        wiring.connect(m, valid_stub, merge4.i[1])
+        wiring.connect(m, nco0.o, merge4.i[2])
         wiring.connect(m, valid_stub, merge4.i[3])
         wiring.connect(m, merge4.o, audio_stream.ostream)
 
