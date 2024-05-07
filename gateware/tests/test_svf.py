@@ -17,7 +17,9 @@ class SVFTests(unittest.TestCase):
         def testbench():
             for n in range(0, 100):
                 x = fixed.Const(0.4*(math.sin(n*0.2) + math.sin(n)), shape=ASQ)
-                yield svf.i.payload.eq(x)
+                yield svf.i.payload[0].eq(x)
+                yield svf.i.payload[1].eq(fixed.Const(0.3, shape=ASQ))
+                yield svf.i.payload[2].eq(fixed.Const(0.1, shape=ASQ))
                 yield svf.i.valid.eq(1)
                 yield Tick()
                 yield svf.i.valid.eq(0)

@@ -173,7 +173,7 @@ class NCO(wiring.Component):
 
 class SVF(wiring.Component):
 
-    i: In(stream.Signature(ASQ))
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 3)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 3)))
 
     def elaborate(self, platform):
@@ -186,14 +186,18 @@ class SVF(wiring.Component):
         alp   = Signal(dtype)
         ahp   = Signal(dtype)
         x     = Signal(dtype)
-        kK    = fixed.Const(0.3, dtype)
-        kQinv = fixed.Const(0.1, dtype)
+        kK    = Signal(dtype)
+        kQinv = Signal(dtype)
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                   m.d.sync += x.eq(self.i.payload)
+                   m.d.sync += [
+                       x.eq(self.i.payload[0]),
+                       kK.eq(self.i.payload[1]),
+                       kQinv.eq(self.i.payload[2]),
+                   ]
                    m.next = 'MAC0'
             with m.State('MAC0'):
                 m.d.sync += alp.eq(abp*kK + alp)
@@ -250,6 +254,7 @@ class VCATop(Elaboratable):
         m.submodules.split4 = split4 = Split(n_channels=4)
         m.submodules.merge4 = merge4 = Merge(n_channels=4)
         m.submodules.split3 = split3 = Split(n_channels=3)
+        m.submodules.merge3 = merge3 = Merge(n_channels=3)
 
         #m.submodules.vca0 = vca0 = VCA()
         #m.submodules.nco0 = nco0 = NCO()
@@ -260,10 +265,12 @@ class VCATop(Elaboratable):
 
         wiring.connect(m, audio_stream.istream, split4.i)
 
-        wiring.connect(m, split4.o[0], svf0.i)
-        wiring.connect(m, split4.o[1], ready_stub)
-        wiring.connect(m, split4.o[2], ready_stub)
+        wiring.connect(m, split4.o[0], merge3.i[0])
+        wiring.connect(m, split4.o[1], merge3.i[1])
+        wiring.connect(m, split4.o[2], merge3.i[2])
         wiring.connect(m, split4.o[3], ready_stub)
+
+        wiring.connect(m, merge3.o, svf0.i)
 
         wiring.connect(m, svf0.o, split3.i)
 
