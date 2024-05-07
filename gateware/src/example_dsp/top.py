@@ -171,6 +171,51 @@ class NCO(wiring.Component):
 
         return m
 
+class SVF(wiring.Component):
+
+    i: In(stream.Signature(ASQ))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 3)))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        # is this stable with only 18 bits? (native multiplier width)
+        dtype = fixed.SQ(2, eurorack_pmod.WIDTH-1)
+
+        abp   = Signal(dtype)
+        alp   = Signal(dtype)
+        ahp   = Signal(dtype)
+        x     = Signal(dtype)
+        kK    = fixed.Const(0.3, dtype)
+        kQinv = fixed.Const(0.1, dtype)
+
+        with m.FSM() as fsm:
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.i.ready.eq(1),
+                with m.If(self.i.valid):
+                   m.d.sync += x.eq(self.i.payload)
+                   m.next = 'MAC0'
+            with m.State('MAC0'):
+                m.d.sync += alp.eq(abp*kK + alp)
+                m.next = 'MAC1'
+            with m.State('MAC1'):
+                m.d.sync += ahp.eq(x - alp - kQinv*abp)
+                m.next = 'MAC2'
+            with m.State('MAC2'):
+                m.d.sync += abp.eq(ahp*kK + abp)
+                m.next = 'WAIT-READY'
+            with m.State('WAIT-READY'):
+                m.d.comb += [
+                    self.o.valid.eq(1),
+                    self.o.payload[0].eq(ahp),
+                    self.o.payload[1].eq(alp),
+                    self.o.payload[2].eq(abp),
+                ]
+                with m.If(self.o.ready):
+                    m.next = 'WAIT-VALID'
+
+        return m
+
 class MirrorTop(Elaboratable):
     """Route audio inputs straight to outputs (in the audio domain)."""
 
