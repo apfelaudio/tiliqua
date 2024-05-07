@@ -34,8 +34,7 @@ class Shape(ast.ShapeCastable):
     def const(self, value):
         if value is None:
             value = 0
-
-        return Const(value, self)
+        return Const(value, self)._target
 
     def __repr__(self):
         return f"fixed.Shape({self.i_width}, {self.f_width}, signed={self.signed})"
@@ -85,8 +84,8 @@ class Value(ast.ValueCastable):
 
     @ast.ValueCastable.lowermethod
     def as_value(self):
-        if self.signed:
-            return self._target.as_signed()
+        #if self.signed:
+        #    return self._target.as_signed()
         return self._target
 
     def shape(self):

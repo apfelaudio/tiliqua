@@ -91,9 +91,11 @@ class VCA(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        wiring.connect(m, wiring.flipped(self.i), wiring.flipped(self.o))
-
-        m.d.comb += self.o.payload[0].eq(self.i.payload[0] * self.i.payload[1])
+        m.d.comb += [
+            self.o.payload[0].eq(self.i.payload[0] * self.i.payload[1]),
+            self.o.valid.eq(self.i.valid),
+            self.i.ready.eq(self.o.ready),
+        ]
 
         return m
 
@@ -109,7 +111,7 @@ class AudioStreamSplitter(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += self.i.rdy.eq(Cat([self.o[n].rdy for n in range(self.n_channels)].all()))
+        m.d.comb += self.i.ready.eq(Cat([self.o[n].ready for n in range(self.n_channels)]).all())
         m.d.comb += [self.o[n].payload.eq(self.i.payload[n]) for n in range(self.n_channels)]
         m.d.comb += [self.o[n].valid.eq(self.i.valid) for n in range(self.n_channels)]
 
@@ -127,9 +129,9 @@ class AudioStreamCombiner(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += [self.i[n].rdy.eq(self.o.rdy) for n in range(self.n_channels)]
+        m.d.comb += [self.i[n].ready.eq(self.o.ready) for n in range(self.n_channels)]
         m.d.comb += [self.o.payload[n].eq(self.i[n].payload) for n in range(self.n_channels)]
-        m.d.comb += self.o.valid.eq(Cat([self.i[n].valid for n in range(self.n_channels)].all()))
+        m.d.comb += self.o.valid.eq(Cat([self.i[n].valid for n in range(self.n_channels)]).all())
 
         return m
 
@@ -172,8 +174,12 @@ class VCATop(Elaboratable):
         m.submodules.vca0 = vca0 = VCA()
 
         wiring.connect(m, audio_stream.istream, splitter4.i)
+        print(Value.cast(splitter4.o[0].payload))
+        print(Value.cast(combiner2.i[0].payload))
         wiring.connect(m, splitter4.o[0], combiner2.i[0])
         wiring.connect(m, splitter4.o[1], combiner2.i[1])
+        wiring.connect(m, splitter4.o[2], stream.Signature(ASQ, always_ready=True).flip().create())
+        wiring.connect(m, splitter4.o[3], stream.Signature(ASQ, always_ready=True).flip().create())
         wiring.connect(m, combiner2.o, vca0.i)
         wiring.connect(m, vca0.o, combiner4.i[0])
         wiring.connect(m, stream.Signature(ASQ, always_valid=True).create(), combiner4.i[1])
