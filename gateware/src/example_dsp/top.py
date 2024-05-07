@@ -249,27 +249,28 @@ class VCATop(Elaboratable):
 
         m.submodules.split4 = split4 = Split(n_channels=4)
         m.submodules.merge4 = merge4 = Merge(n_channels=4)
-        m.submodules.merge2a = merge2a = Merge(n_channels=2)
+        m.submodules.split3 = split3 = Split(n_channels=3)
 
-        m.submodules.vca0 = vca0 = VCA()
-        m.submodules.nco0 = nco0 = NCO()
+        #m.submodules.vca0 = vca0 = VCA()
+        #m.submodules.nco0 = nco0 = NCO()
+        m.submodules.svf0 = svf0 = SVF()
 
         ready_stub = stream.Signature(ASQ, always_ready=True).flip().create()
         valid_stub = stream.Signature(ASQ, always_valid=True).create()
 
         wiring.connect(m, audio_stream.istream, split4.i)
 
-        wiring.connect(m, split4.o[0], merge2a.i[0])
-        wiring.connect(m, split4.o[1], merge2a.i[1])
-        wiring.connect(m, split4.o[2], nco0.i)
+        wiring.connect(m, split4.o[0], svf0.i)
+        wiring.connect(m, split4.o[1], ready_stub)
+        wiring.connect(m, split4.o[2], ready_stub)
         wiring.connect(m, split4.o[3], ready_stub)
 
-        wiring.connect(m, merge2a.o, vca0.i)
+        wiring.connect(m, svf0.o, split3.i)
 
-        wiring.connect(m, vca0.o, merge4.i[0])
-        wiring.connect(m, valid_stub, merge4.i[1])
-        wiring.connect(m, nco0.o, merge4.i[2])
-        wiring.connect(m, valid_stub, merge4.i[3])
+        wiring.connect(m, split3.o[0], merge4.i[0])
+        wiring.connect(m, split3.o[1], merge4.i[1])
+        wiring.connect(m, split3.o[2], merge4.i[2])
+        wiring.connect(m, valid_stub,  merge4.i[3])
         wiring.connect(m, merge4.o, audio_stream.ostream)
 
         return m
