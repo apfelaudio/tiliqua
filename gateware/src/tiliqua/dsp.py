@@ -1,6 +1,9 @@
 from amaranth              import *
 from amaranth.lib          import wiring, data
 from amaranth.lib.wiring   import In, Out
+from amaranth.hdl.mem      import Memory
+from amaranth.utils        import log2_int
+
 from amaranth_future       import stream, fixed
 
 from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
@@ -191,3 +194,88 @@ class SVF(wiring.Component):
 
         return m
 
+class DelayLine(wiring.Component):
+
+    """
+    Delay line with variable delay length. This can also be
+    used as a fixed delay line or a wavetable / grain storage.
+
+    - 'sw': sample write, each one written to an incrementing
+    index in a local circular buffer.
+    - 'da': delay address, each strobe (later) emits a 'ds' (sample),
+    the value of the audio sample 'da' elements later than the
+    last sample write 'sw' to occur up to 'max_delay'.
+
+    Other uses:
+    - If 'da' is a constant, this becomes a fixed delay line.
+    - If 'sw' stop sending samples, this is like a frozen wavetable.
+
+    """
+
+    def __init__(self, max_delay=512):
+        # max_delay must be a power of 2
+        assert(2**log2_int(max_delay) == max_delay)
+        self.max_delay = max_delay
+        self.address_width = log2_int(max_delay)
+        super().__init__({
+            "sw": In(stream.Signature(ASQ)),
+            "da": In(stream.Signature(unsigned(self.address_width))),
+            "ds": Out(stream.Signature(ASQ)),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.mem = mem = Memory(
+            width=ASQ.as_shape().width, depth=self.max_delay, init=[])
+        wport = mem.write_port()
+        rport = mem.read_port(transparent=True)
+
+        wrpointer = Signal(self.address_width)
+        rdpointer = Signal(self.address_width)
+
+        #
+        # read side (da -> ds)
+        #
+
+        m.d.comb += [
+            rport.addr.eq(rdpointer),
+            self.ds.payload.eq(rport.data),
+        ]
+
+        # Set read pointer on valid delay address
+        with m.If(self.da.valid & self.ds.ready):
+            m.d.comb += [
+                # Read pointer must be wrapped to max delay
+                # Should wrap correctly as long as max delay is POW2
+                rdpointer.eq(wrpointer - self.da.payload),
+                rport.en.eq(1),
+            ]
+            m.d.sync += [
+                self.ds.valid.eq(1),
+                self.da.ready.eq(1),
+            ]
+        with m.Else():
+            m.d.sync += [
+                self.ds.valid.eq(0),
+                self.da.ready.eq(0),
+            ]
+
+        #
+        # write side (sw -> circular buffer)
+        #
+
+        m.d.comb += [
+            self.sw.ready.eq(1),
+            wport.addr.eq(wrpointer),
+            wport.en.eq(self.sw.valid),
+            wport.data.eq(self.sw.payload),
+        ]
+
+        with m.If(wport.en):
+            with m.If(wrpointer != (self.max_delay - 1)):
+                m.d.sync += wrpointer.eq(wrpointer + 1)
+            with m.Else():
+                m.d.sync += wrpointer.eq(0)
+
+        return m
