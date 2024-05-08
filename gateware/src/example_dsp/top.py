@@ -173,8 +173,24 @@ class NCO(wiring.Component):
 
 class SVF(wiring.Component):
 
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 3)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 3)))
+    """
+    Oversampled Chamberlin State Variable Filter.
+
+    Reference: Fig.3 in https://arxiv.org/pdf/2111.05592
+
+    """
+
+    i: In(stream.Signature(data.StructLayout({
+            "x": ASQ,
+            "cutoff": ASQ,
+            "resonance": ASQ,
+        })))
+
+    o: Out(stream.Signature(data.StructLayout({
+            "hp": ASQ,
+            "lp": ASQ,
+            "bp": ASQ,
+        })))
 
     def elaborate(self, platform):
         m = Module()
@@ -189,20 +205,21 @@ class SVF(wiring.Component):
         kK    = Signal(dtype)
         kQinv = Signal(dtype)
 
+        # internal oversampling iterations
+        n_oversample = 2
+        oversample = Signal(8)
+
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                   m.d.sync += x.eq(self.i.payload[0]),
-
-                   # how to do signedness checks without `fixed` breaking?
-
-                   with m.If(self.i.payload[1].as_value()[15] == 0):
-                       m.d.sync += kK.eq(self.i.payload[1])
-
-                   with m.If(self.i.payload[2].as_value()[15] == 0):
-                       m.d.sync += kQinv.eq(self.i.payload[2])
-
+                   m.d.sync += x.eq(self.i.payload.x),
+                   m.d.sync += oversample.eq(0)
+                   # FIXME: signedness check without working around `fixed`
+                   with m.If(self.i.payload.cutoff.as_value()[15] == 0):
+                       m.d.sync += kK.eq(self.i.payload.cutoff)
+                   with m.If(self.i.payload.resonance.as_value()[15] == 0):
+                       m.d.sync += kQinv.eq(self.i.payload.resonance)
                    m.next = 'MAC0'
             with m.State('MAC0'):
                 m.d.sync += alp.eq(abp*kK + alp)
@@ -212,13 +229,18 @@ class SVF(wiring.Component):
                 m.next = 'MAC2'
             with m.State('MAC2'):
                 m.d.sync += abp.eq(ahp*kK + abp)
-                m.next = 'WAIT-READY'
+                with m.If(oversample != n_oversample - 1):
+                    m.d.sync += oversample.eq(oversample + 1)
+                    m.next = 'MAC0'
+                with m.Else():
+                    # FIXME: average of last N oversamples, instead of last
+                    m.next = 'WAIT-READY'
             with m.State('WAIT-READY'):
                 m.d.comb += [
                     self.o.valid.eq(1),
-                    self.o.payload[0].eq(ahp),
-                    self.o.payload[1].eq(alp),
-                    self.o.payload[2].eq(abp),
+                    self.o.payload.hp.eq(ahp >> 1),
+                    self.o.payload.lp.eq(alp >> 1),
+                    self.o.payload.bp.eq(abp >> 1),
                 ]
                 with m.If(self.o.ready):
                     m.next = 'WAIT-VALID'
