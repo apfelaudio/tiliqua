@@ -6,10 +6,86 @@ import os
 
 from amaranth              import *
 from amaranth.build        import *
+from amaranth.lib          import wiring, data
+from amaranth.lib.wiring   import In, Out
+from amaranth.lib.fifo     import AsyncFIFO
+
+from amaranth_future       import fixed, stream
 
 from example_usb_audio.util import EdgeToPulse
 
-class EurorackPmod(Elaboratable):
+WIDTH = 16
+
+# Native 'Audio sample SQ', shape of audio samples from CODEC.
+ASQ = fixed.SQ(0, WIDTH-1)
+
+class AudioStream(wiring.Component):
+
+    """
+    Domain crossing logic to move samples from `eurorack-pmod` logic in the audio domain
+    to logic in a different (faster) domain using a stream interface.
+    """
+
+    istream: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    ostream: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    def __init__(self, eurorack_pmod, stream_domain="sync", fifo_depth=8):
+
+        self.eurorack_pmod = eurorack_pmod
+        self.stream_domain = stream_domain
+        self.fifo_depth = fifo_depth
+
+        super().__init__()
+
+    def elaborate(self, platform) -> Module:
+
+        m = Module()
+
+        m.submodules.adc_fifo = adc_fifo = AsyncFIFO(
+                width=self.eurorack_pmod.sample_i.shape().size, depth=self.fifo_depth,
+                w_domain="audio", r_domain=self.stream_domain)
+        m.submodules.dac_fifo = dac_fifo = AsyncFIFO(
+                width=self.eurorack_pmod.sample_o.shape().size, depth=self.fifo_depth,
+                w_domain=self.stream_domain, r_domain="audio")
+
+        adc_stream = stream.fifo_r_stream(adc_fifo)
+        dac_stream = wiring.flipped(stream.fifo_w_stream(dac_fifo))
+
+        wiring.connect(m, adc_stream, wiring.flipped(self.istream))
+        wiring.connect(m, wiring.flipped(self.ostream), dac_stream)
+
+        eurorack_pmod = self.eurorack_pmod
+
+        # below is synchronous logic in the *audio domain*
+
+        # On every fs_strobe, latch and write all channels concatenated
+        # into one entry of adc_fifo.
+
+        m.d.audio += [
+            # WARN: ignoring rdy in write domain. Mostly fine as long as
+            # stream_domain is faster than audio_domain.
+            adc_fifo.w_en.eq(eurorack_pmod.fs_strobe),
+            adc_fifo.w_data.eq(self.eurorack_pmod.sample_i),
+        ]
+
+
+        # Once fs_strobe hits, write the next pending samples to CODEC
+
+        with m.FSM(domain="audio") as fsm:
+            with m.State('READ'):
+                with m.If(eurorack_pmod.fs_strobe & dac_fifo.r_rdy):
+                    m.d.audio += dac_fifo.r_en.eq(1)
+                    m.next = 'SEND'
+            with m.State('SEND'):
+                m.d.audio += [
+                    dac_fifo.r_en.eq(0),
+                    self.eurorack_pmod.sample_o.eq(dac_fifo.r_data),
+                ]
+                m.next = 'READ'
+
+        return m
+
+class EurorackPmod(wiring.Component):
     """
     Amaranth wrapper for Verilog files from `eurorack-pmod` project.
 
@@ -20,31 +96,33 @@ class EurorackPmod(Elaboratable):
     rates (as needed for 4x4 TDM the AK4619 requires).
     """
 
-    def __init__(self, pmod_pins, width=16, hardware_r33=True):
+    # Output strobe once per sample in the `audio` domain (256*Fs)
+    fs_strobe: Out(1)
+
+    # Audio samples latched on `fs_strobe`.
+    sample_i: Out(data.ArrayLayout(ASQ, 4))
+    sample_o: In(data.ArrayLayout(ASQ, 4))
+
+    # Touch sensing and jacksense outputs.
+    touch: Out(8).array(8)
+    jack: Out(8)
+
+    # Read from the onboard I2C eeprom.
+    # These will be valid a few hundred milliseconds after boot.
+    eeprom_mfg: Out(8)
+    eeprom_dev: Out(8)
+    eeprom_serial: Out(32)
+
+    # Signals only used for calibration
+    sample_adc: Out(signed(WIDTH)).array(4)
+    force_dac_output: In(signed(WIDTH))
+
+    def __init__(self, pmod_pins, hardware_r33=True):
+
         self.pmod_pins = pmod_pins
-        self.width = width
         self.hardware_r33 = hardware_r33
 
-        # Output strobe once per sample in the `audio` domain (256*Fs)
-        self.fs_strobe = Signal()
-
-        # Audio samples latched on `fs_strobe`.
-        self.sample_i = [Signal(signed(width)) for _ in range(4)]
-        self.sample_o = [Signal(signed(width)) for _ in range(4)]
-
-        # Touch sensing and jacksense outputs.
-        self.touch = [Signal(8) for _ in range(8)]
-        self.jack = Signal(8)
-
-        # Read from the onboard I2C eeprom.
-        # These will be valid a few hundred milliseconds after boot.
-        self.eeprom_mfg = Signal(8)
-        self.eeprom_dev = Signal(8)
-        self.eeprom_serial = Signal(32)
-
-        # Signals only used for calibration
-        self.sample_adc = [Signal(signed(width)) for _ in range(4)]
-        self.force_dac_output = Signal(signed(width))
+        super().__init__()
 
     def add_verilog_sources(self, platform):
 
@@ -107,6 +185,7 @@ class EurorackPmod(Elaboratable):
         m.d.audio += fs_edge.edge_in.eq(clk_fs),
         m.d.comb += self.fs_strobe.eq(fs_edge.pulse_out)
 
+
         # When i2c oe is asserted, we always want to pull down.
         m.d.comb += [
             pmod_pins.i2c_scl.o.eq(0),
@@ -115,14 +194,14 @@ class EurorackPmod(Elaboratable):
 
         m.submodules.veurorack_pmod = Instance("eurorack_pmod",
             # Parameters
-            p_W = self.width,
+            p_W = WIDTH,
 
             # Ports (clk + reset)
             i_clk_256fs = ClockSignal("audio"),
             i_clk_fs = clk_fs, #FIXME: deprecate
             i_rst = ResetSignal("audio"),
 
-            # Pads (tristate, require different logic to hook these
+            # Pads (tristate, may require different logic to hook these
             # up to pads depending on the target platform).
             o_i2c_scl_oe = pmod_pins.i2c_scl.oe,
             i_i2c_scl_i = pmod_pins.i2c_scl.i,
