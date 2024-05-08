@@ -241,6 +241,7 @@ class DelayLine(wiring.Component):
         m.d.comb += [
             rport.addr.eq(rdpointer),
             self.ds.payload.eq(rport.data),
+            self.da.ready.eq(1),
         ]
 
         # Set read pointer on valid delay address
@@ -251,15 +252,9 @@ class DelayLine(wiring.Component):
                 rdpointer.eq(wrpointer - self.da.payload),
                 rport.en.eq(1),
             ]
-            m.d.sync += [
-                self.ds.valid.eq(1),
-                self.da.ready.eq(1),
-            ]
+            m.d.sync += self.ds.valid.eq(1),
         with m.Else():
-            m.d.sync += [
-                self.ds.valid.eq(0),
-                self.da.ready.eq(0),
-            ]
+            m.d.sync += self.ds.valid.eq(0),
 
         #
         # write side (sw -> circular buffer)

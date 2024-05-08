@@ -113,6 +113,45 @@ class VCATop(Elaboratable):
 
         return m
 
+class DelayTop(Elaboratable):
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.car = platform.clock_domain_generator()
+
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True)
+
+        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
+
+        m.submodules.split4 = split4 = dsp.Split(n_channels=4)
+        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
+
+        m.submodules.delay_line = delay_line = dsp.DelayLine(max_delay=4096)
+
+        wiring.connect(m, audio_stream.istream, split4.i)
+
+        wiring.connect(m, split4.o[0], delay_line.sw)
+        wiring.connect(m, split4.o[1], dsp.ASQ_READY)
+        wiring.connect(m, split4.o[2], dsp.ASQ_READY)
+        wiring.connect(m, split4.o[3], dsp.ASQ_READY)
+
+        m.d.comb += [
+            delay_line.da.valid.eq(audio_stream.istream.valid),
+            delay_line.da.payload.eq(delay_line.max_delay - 2),
+        ]
+
+        wiring.connect(m, delay_line.ds, merge4.i[0])
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[1])
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
+
+        wiring.connect(m, merge4.o, audio_stream.ostream)
+
+        return m
+
 def build_mirror():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
@@ -127,3 +166,8 @@ def build_vca():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     TiliquaPlatform().build(VCATop())
+
+def build_delay():
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    TiliquaPlatform().build(DelayTop())
