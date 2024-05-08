@@ -129,7 +129,7 @@ class DelayTop(Elaboratable):
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
-        m.submodules.delay_line = delay_line = dsp.DelayLine(max_delay=4096)
+        m.submodules.delay_line = delay_line = dsp.DelayLine(max_delay=8192)
 
         wiring.connect(m, audio_stream.istream, split4.i)
 
@@ -140,7 +140,7 @@ class DelayTop(Elaboratable):
 
         m.d.comb += [
             delay_line.da.valid.eq(audio_stream.istream.valid),
-            delay_line.da.payload.eq(delay_line.max_delay - 2),
+            delay_line.da.payload.eq(delay_line.max_delay - 1),
         ]
 
         wiring.connect(m, delay_line.ds, merge4.i[0])

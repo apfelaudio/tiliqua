@@ -245,7 +245,7 @@ class DelayLine(wiring.Component):
         ]
 
         # Set read pointer on valid delay address
-        with m.If(self.da.valid & self.ds.ready):
+        with m.If(self.da.valid):
             m.d.comb += [
                 # Read pointer must be wrapped to max delay
                 # Should wrap correctly as long as max delay is POW2
