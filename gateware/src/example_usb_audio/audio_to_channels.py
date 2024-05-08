@@ -4,6 +4,7 @@
 
 from amaranth              import *
 from amaranth.lib.fifo     import AsyncFIFO
+from tiliqua.eurorack_pmod import WIDTH
 
 class AudioToChannels(Elaboratable):
 
@@ -25,7 +26,7 @@ class AudioToChannels(Elaboratable):
         eurorack_pmod = self.eurorack_pmod
 
         # Sample widths
-        SW      = eurorack_pmod.width       # Sample width used in underlying I2S driver.
+        SW      = WIDTH                     # Sample width used in underlying I2S driver.
         SW_USB  = self.to_usb.payload.width # Sample width used for USB transfers.
         N_ZFILL = SW_USB - SW               # Zero padding if SW < SW_USB
 
