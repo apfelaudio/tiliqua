@@ -18,12 +18,20 @@ class Split(wiring.Component):
     Split a single stream into multiple independent streams.
     """
 
-    def __init__(self, n_channels):
+    def __init__(self, n_channels, replicate=False):
         self.n_channels = n_channels
-        super().__init__({
-            "i": In(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
-            "o": Out(stream.Signature(ASQ)).array(n_channels),
-        })
+        self.replicate  = replicate
+
+        if self.replicate:
+            super().__init__({
+                "i": In(stream.Signature(ASQ)),
+                "o": Out(stream.Signature(ASQ)).array(n_channels),
+            })
+        else:
+            super().__init__({
+                "i": In(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
+                "o": Out(stream.Signature(ASQ)).array(n_channels),
+            })
 
     def elaborate(self, platform):
         m = Module()
@@ -31,8 +39,12 @@ class Split(wiring.Component):
         done = Signal(self.n_channels)
 
         m.d.comb += self.i.ready.eq(Cat([self.o[n].ready | done[n] for n in range(self.n_channels)]).all())
-        m.d.comb += [self.o[n].payload.eq(self.i.payload[n]) for n in range(self.n_channels)]
         m.d.comb += [self.o[n].valid.eq(self.i.valid & ~done[n]) for n in range(self.n_channels)]
+
+        if self.replicate:
+            m.d.comb += [self.o[n].payload.eq(self.i.payload) for n in range(self.n_channels)]
+        else:
+            m.d.comb += [self.o[n].payload.eq(self.i.payload[n]) for n in range(self.n_channels)]
 
         flow = [self.o[n].valid & self.o[n].ready
                 for n in range(self.n_channels)]
@@ -272,5 +284,22 @@ class DelayLine(wiring.Component):
                 m.d.sync += wrpointer.eq(wrpointer + 1)
             with m.Else():
                 m.d.sync += wrpointer.eq(0)
+
+        return m
+
+class Mix2(wiring.Component):
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 2)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 1)))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [
+            self.o.payload[0].eq((self.i.payload[0] >> 1) +
+                                 (self.i.payload[1] >> 1)),
+            self.o.valid.eq(self.i.valid),
+            self.i.ready.eq(self.o.ready),
+        ]
 
         return m

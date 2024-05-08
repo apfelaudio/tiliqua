@@ -129,21 +129,32 @@ class DelayTop(Elaboratable):
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
+        m.submodules.mult2  = mult2  = dsp.Split(n_channels=2, replicate=True)
+        m.submodules.mix2   = mix2   = dsp.Mix2()
+        m.submodules.merge2 = merge2 = dsp.Merge(n_channels=2)
+
         m.submodules.delay_line = delay_line = dsp.DelayLine(max_delay=8192)
 
         wiring.connect(m, audio_stream.istream, split4.i)
 
-        wiring.connect(m, split4.o[0], delay_line.sw)
+        wiring.connect(m, split4.o[0], mult2.i)
         wiring.connect(m, split4.o[1], dsp.ASQ_READY)
         wiring.connect(m, split4.o[2], dsp.ASQ_READY)
         wiring.connect(m, split4.o[3], dsp.ASQ_READY)
+
+        wiring.connect(m, mult2.o[0], delay_line.sw)
 
         m.d.comb += [
             delay_line.da.valid.eq(audio_stream.istream.valid),
             delay_line.da.payload.eq(delay_line.max_delay - 1),
         ]
 
-        wiring.connect(m, delay_line.ds, merge4.i[0])
+        wiring.connect(m, mult2.o[1],    merge2.i[0])
+        wiring.connect(m, delay_line.ds, merge2.i[1])
+
+        wiring.connect(m, merge2.o, mix2.i)
+
+        wiring.connect(m, mix2.o,        merge4.i[0])
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[1])
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
