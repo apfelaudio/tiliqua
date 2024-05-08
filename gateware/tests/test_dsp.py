@@ -17,6 +17,22 @@ class DSPTests(unittest.TestCase):
         def testbench():
             yield Tick()
             yield Tick()
+            for n in range(0, 50):
+                x = fixed.Const(0.8*math.sin(n*0.2), shape=ASQ)
+                yield delay_line.sw.valid.eq(1)
+                yield delay_line.sw.payload.eq(x)
+                yield Tick()
+                yield delay_line.sw.valid.eq(0)
+                yield Tick()
+                yield Tick()
+            yield Tick()
+            for n in range(0, 10):
+                yield delay_line.da.payload.eq(n)
+                yield delay_line.ds.ready.eq(1)
+                yield delay_line.da.valid.eq(1)
+                yield Tick()
+                yield delay_line.da.valid.eq(0)
+                yield Tick()
 
         sim = Simulator(delay_line)
         sim.add_clock(1e-6)
