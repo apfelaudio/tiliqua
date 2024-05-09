@@ -422,7 +422,7 @@ class MatrixMix(wiring.Component):
 
     """
     Matrix mixer with constant coefficients and configurable
-    input & output channel count.
+    input & output channel count. Uses a single multiplier.
 
     Coefficients must fit inside the self.ctype declared below.
 
