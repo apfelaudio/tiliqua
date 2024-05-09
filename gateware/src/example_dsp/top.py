@@ -192,7 +192,7 @@ class PitchTop(Elaboratable):
         m.d.comb += [
             split4.o[1].ready.eq(pitch_shift.i.ready),
             pitch_shift.i.valid.eq(split4.o[1].valid),
-            pitch_shift.i.payload.pitch.eq(split4.o[1].payload),
+            pitch_shift.i.payload.pitch.eq(split4.o[1].payload.sas_value() >> 8),
             pitch_shift.i.payload.grain_sz.eq(delay_line.max_delay // 2),
         ]
 
