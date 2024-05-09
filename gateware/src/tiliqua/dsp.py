@@ -301,7 +301,7 @@ class PitchShift(wiring.Component):
 
     def __init__(self, delayln, xfade=256):
         assert(2**log2_int(xfade) == xfade)
-        assert(xfade < delayln.max_delay/4)
+        assert(xfade <= delayln.max_delay/4)
         self.delayln    = delayln
         self.xfade      = xfade
         self.xfade_bits = log2_int(xfade)

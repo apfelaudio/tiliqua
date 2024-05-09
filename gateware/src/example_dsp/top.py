@@ -181,7 +181,7 @@ class PitchTop(Elaboratable):
 
         m.submodules.delay_line = delay_line = dsp.DelayLine(max_delay=8192)
         m.submodules.pitch_shift = pitch_shift = dsp.PitchShift(
-            delayln=delay_line, xfade=1024)
+            delayln=delay_line, xfade=delay_line.max_delay//4)
 
         wiring.connect(m, audio_stream.istream, split4.i)
 
@@ -193,7 +193,7 @@ class PitchTop(Elaboratable):
             split4.o[1].ready.eq(pitch_shift.i.ready),
             pitch_shift.i.valid.eq(split4.o[1].valid),
             pitch_shift.i.payload.pitch.eq(split4.o[1].payload.sas_value() >> 8),
-            pitch_shift.i.payload.grain_sz.eq(delay_line.max_delay // 2),
+            pitch_shift.i.payload.grain_sz.eq(delay_line.max_delay//2),
         ]
 
         wiring.connect(m, split4.o[2], dsp.ASQ_READY)
