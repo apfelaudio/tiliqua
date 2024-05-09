@@ -306,7 +306,8 @@ class PitchShift(wiring.Component):
         self.xfade      = xfade
         self.xfade_bits = log2_int(xfade)
         # delay type: integer component is index into delay line
-        self.dtype = fixed.SQ(self.delayln.address_width, 8)
+        # +1 is necessary so that we don't overflow on adding grain_sz.
+        self.dtype = fixed.SQ(self.delayln.address_width+1, 8)
         super().__init__({
             "i": In(stream.Signature(data.StructLayout({
                     "pitch": self.dtype,
@@ -359,6 +360,7 @@ class PitchShift(wiring.Component):
                     self.delayln.da.payload.eq(delay0.round() >> delay0.f_width),
                 ]
                 with m.If(self.delayln.ds.valid):
+                    m.d.comb += self.delayln.da.valid.eq(0),
                     m.d.sync += sample0.eq(self.delayln.ds.payload)
                     m.next = 'TAP1'
             with m.State('TAP1'):
@@ -368,6 +370,7 @@ class PitchShift(wiring.Component):
                     self.delayln.da.payload.eq(delay1.round() >> delay1.f_width),
                 ]
                 with m.If(self.delayln.ds.valid):
+                    m.d.comb += self.delayln.da.valid.eq(0),
                     m.d.sync += sample1.eq(self.delayln.ds.payload)
                     m.next = 'ENV'
             with m.State('ENV'):
