@@ -196,13 +196,23 @@ class PitchTop(Elaboratable):
             pitch_shift.i.payload.grain_sz.eq(delay_line.max_delay//2),
         ]
 
-        wiring.connect(m, split4.o[2], dsp.ASQ_READY)
-        wiring.connect(m, split4.o[3], dsp.ASQ_READY)
+        m.submodules.svf0 = svf0 = dsp.SVF()
+
+        # connect without 'wiring.connect' so we can see the payload field names.
+        m.submodules.merge3 = merge3 = dsp.Merge(n_channels=3)
+        m.submodules.split3 = split3 = dsp.Split(n_channels=3)
+
+        wiring.connect(m, pitch_shift.o, merge3.i[0])
+        wiring.connect(m, split4.o[2],   merge3.i[1])
+        wiring.connect(m, split4.o[3],   merge3.i[2])
+
+        wiring.connect(m, merge3.o, svf0.i)
+        wiring.connect(m, svf0.o,   split3.i)
 
         # first channel is pitch shift output
-        wiring.connect(m, pitch_shift.o, merge4.i[0])
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[1])
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
+        wiring.connect(m, split3.o[0], merge4.i[0])
+        wiring.connect(m, split3.o[1], merge4.i[1])
+        wiring.connect(m, split3.o[2], merge4.i[2])
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
 
         wiring.connect(m, merge4.o, audio_stream.ostream)
