@@ -217,6 +217,9 @@ class Value(ast.ValueCastable):
 
         return Value.cast(self.round(f_width).sas_value() >> other, f_width)
 
+    def __lt__(self, other):
+        return self.__sub__(other).sas_value() < 0
+
     def __repr__(self):
         return f"(fixedpoint {'SQ' if self.signed else 'UQ'}{self.i_width}.{self.f_width} {self._target!r})"
 
