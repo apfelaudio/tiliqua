@@ -22,3 +22,4 @@ build_example_svf = { call = "example_dsp.top:build_svf()" }
 build_example_vca = { call = "example_dsp.top:build_vca()" }
 build_example_delay = { call = "example_dsp.top:build_delay()" }
 build_example_pitch = { call = "example_dsp.top:build_pitch()" }
+build_example_matrix = { call = "example_dsp.top:build_matrix()" }

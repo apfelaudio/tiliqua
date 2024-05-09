@@ -114,3 +114,36 @@ class DSPTests(unittest.TestCase):
         sim.add_process(testbench)
         with sim.write_vcd(vcd_file=open("test_svf.vcd", "w")):
             sim.run()
+
+    def test_matrix(self):
+
+        matrix = dsp.MatrixMix(
+            i_channels=4, o_channels=4,
+            coefficients=[[1, 0, 0, 0],
+                          [0, 1, 0, 0],
+                          [0, 0, 1, 0],
+                          [0, 0, 0, 1]])
+
+        def testbench():
+            yield matrix.i.payload[0].eq(fixed.Const(0.2, shape=ASQ))
+            yield matrix.i.payload[1].eq(fixed.Const(0.4,  shape=ASQ))
+            yield matrix.i.payload[2].eq(fixed.Const(0.6,  shape=ASQ))
+            yield matrix.i.payload[3].eq(fixed.Const(0.8,  shape=ASQ))
+            yield matrix.i.valid.eq(1)
+            yield Tick()
+            yield matrix.i.valid.eq(0)
+            yield Tick()
+            yield matrix.o.ready.eq(1)
+            while (yield matrix.o.valid) != 1:
+                yield Tick()
+            for n in range(matrix.o_channels):
+                p = (yield matrix.o.payload[n])
+                c = fixed.Const(0, shape=ASQ)
+                c._value = p
+                print(c.as_float())
+
+        sim = Simulator(matrix)
+        sim.add_clock(1e-6)
+        sim.add_process(testbench)
+        with sim.write_vcd(vcd_file=open("test_matrix.vcd", "w")):
+            sim.run()
