@@ -287,6 +287,117 @@ class DelayLine(wiring.Component):
 
         return m
 
+class PitchShift(wiring.Component):
+
+    """
+    Granular pitch shifter. Works by crossfading 2 separately
+    tracked taps on a delay line. As a result, maximum grain
+    size is the delay line 'max_delay' // 2.
+
+    The delay line itself must be hooked up to the input audio
+    source from outside this component (this allows multiple
+    shifters to share a single delay line).
+    """
+
+    def __init__(self, delayln, xfade=256):
+        assert(2**log2_int(xfade) == xfade)
+        assert(xfade < delayln.max_delay/4)
+        self.delayln    = delayln
+        self.xfade      = xfade
+        self.xfade_bits = log2_int(xfade)
+        # delay type: integer component is index into delay line
+        self.dtype = fixed.SQ(self.delayln.address_width, 8)
+        super().__init__({
+            "i": In(stream.Signature(data.StructLayout({
+                    "pitch": self.dtype,
+                    "grain_sz": unsigned(log2_int(delayln.max_delay)),
+                  }))),
+            "o": Out(stream.Signature(ASQ)),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+
+        # Current position in delay line 0, 1 (+= pitch every sample)
+        delay0 = Signal(self.dtype)
+        delay1 = Signal(self.dtype)
+        # Last samples from delay lines
+        sample0 = Signal(ASQ)
+        sample1 = Signal(ASQ)
+        # Envelope values
+        env0 = Signal(ASQ)
+        env1 = Signal(ASQ)
+
+        s    = Signal(self.dtype)
+        m.d.comb += s.eq(delay0 + self.i.payload.pitch)
+
+        # Last latched grain size, pitch
+        grain_sz_latched = Signal(self.i.payload.grain_sz.shape())
+
+        # Second tap always uses second half of delay line.
+        m.d.comb += delay1.eq(delay0 + grain_sz_latched)
+
+        with m.FSM() as fsm:
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.i.ready.eq(1),
+                with m.If(self.i.valid):
+                    pitch    = self.i.payload.pitch
+                    grain_sz = self.i.payload.grain_sz
+                    m.d.sync += grain_sz_latched.eq(grain_sz)
+                    with m.If((delay0 + pitch) < fixed.Const(0, shape=self.dtype)):
+                        m.d.sync += delay0.eq(delay0 + grain_sz + pitch)
+                    with m.Elif((delay0 + pitch) > fixed.Value.cast(grain_sz)):
+                        m.d.sync += delay0.eq(delay0 + pitch - grain_sz)
+                    with m.Else():
+                        m.d.sync += delay0.eq(delay0 + pitch)
+                    m.next = 'TAP0'
+            with m.State('TAP0'):
+                m.d.comb += [
+                    self.delayln.ds.ready.eq(1),
+                    self.delayln.da.valid.eq(1),
+                    self.delayln.da.payload.eq(delay0.round() >> delay0.f_width),
+                ]
+                with m.If(self.delayln.ds.valid):
+                    m.d.sync += sample0.eq(self.delayln.ds.payload)
+                    m.next = 'TAP1'
+            with m.State('TAP1'):
+                m.d.comb += [
+                    self.delayln.ds.ready.eq(1),
+                    self.delayln.da.valid.eq(1),
+                    self.delayln.da.payload.eq(delay1.round() >> delay1.f_width),
+                ]
+                with m.If(self.delayln.ds.valid):
+                    m.d.sync += sample1.eq(self.delayln.ds.payload)
+                    m.next = 'ENV'
+            with m.State('ENV'):
+                with m.If(delay0 < self.xfade):
+                    # Map delay0 <= [0, xfade] to env0 <= [0, 1]
+                    m.d.sync += [
+                        env0.eq(delay0 >> self.xfade_bits),
+                        env1.eq(fixed.Const(0.99, shape=ASQ) -
+                                (delay0 >> self.xfade_bits)),
+                    ]
+                with m.Else():
+                    # If we're outside the xfade, just take tap 0
+                    m.d.sync += [
+                        env0.eq(fixed.Const(0.99, shape=ASQ)),
+                        env1.eq(fixed.Const(0, shape=ASQ)),
+                    ]
+                m.next = 'WAIT-SOURCE-READY'
+            with m.State('WAIT-SOURCE-READY'):
+                m.d.comb += [
+                    self.o.valid.eq(1),
+                    # FIXME: move these into a MAC loop to save a multiplier.
+                    self.o.payload.eq(
+                        (sample0 * env0) + (sample1 * env1)
+                    )
+                ]
+                with m.If(self.o.ready):
+                    m.next = 'WAIT-VALID'
+        return m
+
+
 class Mix2(wiring.Component):
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 2)))

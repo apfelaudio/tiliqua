@@ -2,8 +2,9 @@ import unittest
 
 import math
 
-from amaranth.sim import *
-from amaranth_future import fixed
+from amaranth              import *
+from amaranth.sim          import *
+from amaranth_future       import fixed
 from tiliqua.eurorack_pmod import ASQ
 
 from tiliqua import dsp
@@ -39,6 +40,43 @@ class DSPTests(unittest.TestCase):
         sim.add_process(testbench)
         with sim.write_vcd(vcd_file=open("test_delayline.vcd", "w")):
             sim.run()
+
+    def test_pitch(self):
+
+        m = Module()
+        delay_line = dsp.DelayLine(max_delay=256)
+        pitch_shift = dsp.PitchShift(delayln=delay_line, xfade=32)
+        m.submodules += [delay_line, pitch_shift]
+
+        def testbench():
+            yield Tick()
+            yield Tick()
+            for n in range(0, 300):
+                x = fixed.Const(0.8*math.sin(n*0.1), shape=ASQ)
+                yield delay_line.sw.valid.eq(1)
+                yield delay_line.sw.payload.eq(x)
+                yield Tick()
+                yield delay_line.sw.valid.eq(0)
+                yield Tick()
+                yield Tick()
+                yield pitch_shift.i.payload.pitch.eq(
+                    fixed.Const(-0.5, shape=pitch_shift.dtype))
+                yield pitch_shift.i.payload.grain_sz.eq(
+                    delay_line.max_delay//2)
+                yield pitch_shift.o.ready.eq(1)
+                yield pitch_shift.i.valid.eq(1)
+                yield Tick()
+                yield pitch_shift.i.valid.eq(0)
+                yield Tick()
+                while (yield pitch_shift.i.ready) != 1:
+                    yield Tick()
+
+        sim = Simulator(m)
+        sim.add_clock(1e-6)
+        sim.add_process(testbench)
+        with sim.write_vcd(vcd_file=open("test_pitch.vcd", "w")):
+            sim.run()
+
 
     def test_svf(self):
 
