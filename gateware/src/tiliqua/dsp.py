@@ -265,6 +265,7 @@ class DelayLine(wiring.Component):
                 rport.en.eq(1),
             ]
             m.d.sync += self.ds.valid.eq(1),
+        # FIXME: don't go here unless ds is ready!
         with m.Else():
             m.d.sync += self.ds.valid.eq(0),
 

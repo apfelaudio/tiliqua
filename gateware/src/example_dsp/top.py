@@ -249,14 +249,14 @@ class DiffuserTop(Elaboratable):
 
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=8, o_channels=8,
-            coefficients=[[0.1, 0.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.0], # in0
-                          [0.0, 0.1, 0.0, 0.0, 0.0, 0.3, 0.0, 0.0], #  |
-                          [0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.3, 0.0], #  |
-                          [0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.3], # in3
-                          [0.9, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.0], # ds0
-                          [0.0, 0.9, 0.0, 0.0, 0.3, 0.2, 0.3, 0.2], #  |
-                          [0.0, 0.0, 0.9, 0.0, 0.2, 0.3, 0.1, 0.3], #  |
-                          [0.0, 0.0, 0.0, 0.9, 0.1, 0.0, 0.0, 0.1]])# ds3
+            coefficients=[[0.1, 0.0, 0.0, 0.0, 0.1, 0.2, 0.0, 0.0], # in0
+                          [0.0, 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0], #  |
+                          [0.0, 0.0, 0.1, 0.0, 0.2, 0.0, 0.1, 0.2], #  |
+                          [0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.1], # in3
+                          [2.9, 0.0, 0.0, 0.0, 0.2, 0.1, 0.2, 0.2], # ds0
+                          [0.0, 2.9, 0.0, 0.0, 0.4, 0.2, 0.4, 0.2], #  |
+                          [0.0, 0.0, 2.9, 0.0, 0.2, 0.4, 0.1, 0.4], #  |
+                          [0.0, 0.0, 0.0, 2.9, 0.1, 0.2, 0.2, 0.1]])# ds3
                           # out0 ------- out3  sw0 ---------- sw3
 
         delay_lines = [dsp.DelayLine(max_delay=8192) for n in range(4)]
@@ -266,8 +266,8 @@ class DiffuserTop(Elaboratable):
         m.d.comb += [
             delay_lines[0].da.payload.eq(8000),
             delay_lines[1].da.payload.eq(6666),
-            delay_lines[2].da.payload.eq(2777),
-            delay_lines[3].da.payload.eq(500),
+            delay_lines[2].da.payload.eq(7000),
+            delay_lines[3].da.payload.eq(7200),
         ]
 
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
