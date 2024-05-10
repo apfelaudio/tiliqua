@@ -448,8 +448,6 @@ class MatrixMix(wiring.Component):
             for x in xs
         ]
 
-        assert(len(coefficients_flat) == i_channels*o_channels)
-
         # coefficient memory
         self.mem = Memory(
             width=self.ctype.as_shape().width,
@@ -520,8 +518,7 @@ class MatrixMix(wiring.Component):
                 m.next = 'NEXT'
                 m.d.sync += [
                     o_accum[o_ch_l].eq(o_accum[o_ch_l] +
-                                       (fixed.Value.cast(rport.data,
-                                                         self.ctype.f_width) *
+                                       (fixed.Value(self.ctype, rport.data) *
                                         i_latch[l_i_ch]))
                 ]
                 with m.If(done):

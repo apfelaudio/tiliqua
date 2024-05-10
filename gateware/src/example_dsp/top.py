@@ -249,25 +249,30 @@ class DiffuserTop(Elaboratable):
 
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=8, o_channels=8,
-            coefficients=[[0.1, 0.0, 0.0, 0.0, 0.1, 0.2, 0.0, 0.0], # in0
-                          [0.0, 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0], #  |
-                          [0.0, 0.0, 0.1, 0.0, 0.2, 0.0, 0.1, 0.2], #  |
-                          [0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.2, 0.1], # in3
-                          [2.9, 0.0, 0.0, 0.0, 0.2, 0.1, 0.2, 0.2], # ds0
-                          [0.0, 2.9, 0.0, 0.0, 0.4, 0.2, 0.4, 0.2], #  |
-                          [0.0, 0.0, 2.9, 0.0, 0.2, 0.4, 0.1, 0.4], #  |
-                          [0.0, 0.0, 0.0, 2.9, 0.1, 0.2, 0.2, 0.1]])# ds3
+            coefficients=[[0.2, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0, 0.0], # in0
+                          [0.0, 0.2, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0], #  |
+                          [0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.8, 0.0], #  |
+                          [0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.8], # in3
+                          [0.8, 0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4], # ds0
+                          [0.0, 0.8, 0.0, 0.0,-0.4, 0.4,-0.4,-0.4], #  |
+                          [0.0, 0.0, 0.8, 0.0,-0.4,-0.4, 0.4,-0.4], #  |
+                          [0.0, 0.0, 0.0, 0.8,-0.4,-0.4,-0.4, 0.4]])# ds3
                           # out0 ------- out3  sw0 ---------- sw3
 
-        delay_lines = [dsp.DelayLine(max_delay=8192) for n in range(4)]
+        delay_lines = [
+            dsp.DelayLine(max_delay=2048),
+            dsp.DelayLine(max_delay=4096),
+            dsp.DelayLine(max_delay=8192),
+            dsp.DelayLine(max_delay=8192),
+        ]
         m.submodules += delay_lines
 
         m.d.comb += [delay_lines[n].da.valid.eq(1) for n in range(4)]
         m.d.comb += [
-            delay_lines[0].da.payload.eq(8000),
-            delay_lines[1].da.payload.eq(6666),
-            delay_lines[2].da.payload.eq(7000),
-            delay_lines[3].da.payload.eq(7200),
+            delay_lines[0].da.payload.eq(2000),
+            delay_lines[1].da.payload.eq(3000),
+            delay_lines[2].da.payload.eq(5000),
+            delay_lines[3].da.payload.eq(7000),
         ]
 
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
