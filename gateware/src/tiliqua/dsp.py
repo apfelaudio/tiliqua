@@ -130,6 +130,51 @@ class SawNCO(wiring.Component):
 
         return m
 
+class WaveShaper(wiring.Component):
+
+    """
+    Waveshaper that maps x to f(x), where the function must be
+    stateless so we can precompute a mapping lookup table.
+    """
+
+    i: In(stream.Signature(ASQ))
+    o: Out(stream.Signature(ASQ))
+
+    def __init__(self, lut_function=None, lut_size=512):
+        # lut_size must be a power of 2
+        assert(2**log2_int(lut_size) == lut_size)
+        self.lut_size = lut_size
+        self.lut_addr_width = log2_int(lut_size)
+
+        # build LUT such that we can index into it using 2s
+        # complement and pluck out results with correct sign.
+        self.lut = []
+        for i in range(lut_size):
+            x = None
+            if i < lut_size//2:
+                x = 2*i / lut_size
+            else:
+                x = 2*(i - lut_size) / lut_size
+            fx = lut_function(x)
+            self.lut.append(fixed.Const(fx, shape=ASQ)._value)
+
+        super().__init__()
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.mem = mem = Memory(
+            width=ASQ.as_shape().width, depth=self.lut_size, init=self.lut)
+        rport = mem.read_port(transparent=True)
+
+        m.d.comb += [
+            rport.addr.eq(self.i.payload._target[ASQ.f_width-self.lut_addr_width+1:]),
+            rport.en.eq(self.i.valid),
+            self.o.payload.eq(rport.data),
+        ]
+
+        return m
+
 class SVF(wiring.Component):
 
     """
