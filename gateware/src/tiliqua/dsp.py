@@ -430,6 +430,8 @@ class MatrixMix(wiring.Component):
             for x in xs
         ]
 
+        assert(len(coefficients_flat) == i_channels*o_channels)
+
         # coefficient memory
         self.mem = Memory(
             width=self.ctype.as_shape().width,
