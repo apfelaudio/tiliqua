@@ -4,10 +4,11 @@ import math
 
 from amaranth              import *
 from amaranth.sim          import *
-from amaranth_future       import fixed
-from tiliqua.eurorack_pmod import ASQ
 
-from tiliqua import dsp
+from amaranth_future       import fixed
+
+from tiliqua.eurorack_pmod import ASQ
+from tiliqua               import dsp
 
 class DSPTests(unittest.TestCase):
 
