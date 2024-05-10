@@ -401,24 +401,6 @@ class PitchShift(wiring.Component):
                     m.next = 'WAIT-VALID'
         return m
 
-
-class Mix2(wiring.Component):
-
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 2)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 1)))
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += [
-            self.o.payload[0].eq((self.i.payload[0] >> 1) +
-                                 (self.i.payload[1] >> 1)),
-            self.o.valid.eq(self.i.valid),
-            self.i.ready.eq(self.o.ready),
-        ]
-
-        return m
-
 class MatrixMix(wiring.Component):
 
     """

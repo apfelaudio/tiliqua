@@ -76,6 +76,8 @@ class SVFTop(Elaboratable):
 
 class VCATop(Elaboratable):
 
+    """Audio-rate VCA."""
+
     def elaborate(self, platform):
         m = Module()
 
@@ -113,57 +115,9 @@ class VCATop(Elaboratable):
 
         return m
 
-class DelayTop(Elaboratable):
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
-
-        m.submodules.split4 = split4 = dsp.Split(n_channels=4)
-        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
-
-        m.submodules.mult2  = mult2  = dsp.Split(n_channels=2, replicate=True)
-        m.submodules.mix2   = mix2   = dsp.Mix2()
-        m.submodules.merge2 = merge2 = dsp.Merge(n_channels=2)
-
-        m.submodules.delay_line = delay_line = dsp.DelayLine(max_delay=8192)
-
-        wiring.connect(m, audio_stream.istream, split4.i)
-
-        wiring.connect(m, split4.o[0], mult2.i)
-        wiring.connect(m, split4.o[1], dsp.ASQ_READY)
-        wiring.connect(m, split4.o[2], dsp.ASQ_READY)
-        wiring.connect(m, split4.o[3], dsp.ASQ_READY)
-
-        wiring.connect(m, mult2.o[0], delay_line.sw)
-
-        m.d.comb += [
-            delay_line.da.valid.eq(audio_stream.istream.valid),
-            delay_line.da.payload.eq(delay_line.max_delay - 1),
-        ]
-
-        wiring.connect(m, mult2.o[1],    merge2.i[0])
-        wiring.connect(m, delay_line.ds, merge2.i[1])
-
-        wiring.connect(m, merge2.o, mix2.i)
-
-        wiring.connect(m, mix2.o,        merge4.i[0])
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[1])
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
-
-        wiring.connect(m, merge4.o, audio_stream.ostream)
-
-        return m
-
 class PitchTop(Elaboratable):
+
+    """Pitch shifter with CV-controlled pitch."""
 
     def elaborate(self, platform):
         m = Module()
@@ -211,6 +165,8 @@ class PitchTop(Elaboratable):
 
 class MatrixTop(Elaboratable):
 
+    """Matrix mixer with fixed coefficients."""
+
     def elaborate(self, platform):
         m = Module()
 
@@ -236,6 +192,10 @@ class MatrixTop(Elaboratable):
 
 class DiffuserTop(Elaboratable):
 
+    """
+    4-channel feedback delay, diffused by a matrix mixer.
+    """
+
     def elaborate(self, platform):
         m = Module()
 
@@ -246,6 +206,12 @@ class DiffuserTop(Elaboratable):
                 hardware_r33=True)
 
         m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
+
+        # quadrants in the below matrix are:
+        #
+        # [in    -> out] [in    -> delay]
+        # [delay -> out] [delay -> delay] <- feedback
+        #
 
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=8, o_channels=8,
@@ -317,11 +283,6 @@ def build_vca():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     TiliquaPlatform().build(VCATop())
-
-def build_delay():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(DelayTop())
 
 def build_pitch():
     os.environ["AMARANTH_verbose"] = "1"
