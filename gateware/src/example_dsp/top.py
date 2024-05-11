@@ -4,6 +4,8 @@
 
 import os
 
+import math
+
 from amaranth              import *
 from amaranth.build        import *
 from amaranth.lib          import wiring, data
@@ -269,6 +271,46 @@ class DiffuserTop(Elaboratable):
 
         return m
 
+class WaveshaperTop(Elaboratable):
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.car = platform.clock_domain_generator()
+
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True)
+
+        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
+
+        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
+
+        def scaled_tanh(x):
+            return math.tanh(3.0*x)
+
+        m.submodules.vca0 = vca0 = dsp.GainVCA()
+        m.submodules.waveshaper = waveshaper = dsp.WaveShaper(lut_function=scaled_tanh)
+
+        m.d.comb += [
+            vca0.i.valid.eq(audio_stream.istream.valid),
+            audio_stream.istream.ready.eq(vca0.i.ready),
+
+            vca0.i.payload.x.eq(audio_stream.istream.payload[0]),
+            vca0.i.payload.gain.eq(audio_stream.istream.payload[1] << 2),
+        ]
+
+        wiring.connect(m, vca0.o, waveshaper.i)
+
+        wiring.connect(m, waveshaper.o, merge4.i[0])
+
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[1])
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
+        wiring.connect(m, merge4.o, audio_stream.ostream)
+
+        return m
+
 def build_mirror():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
@@ -298,3 +340,9 @@ def build_diffuser():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     TiliquaPlatform().build(DiffuserTop())
+
+def build_waveshaper():
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    TiliquaPlatform().build(WaveshaperTop())
+
