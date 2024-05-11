@@ -290,21 +290,27 @@ class WaveshaperTop(Elaboratable):
             return math.tanh(3.0*x)
 
         m.submodules.vca0 = vca0 = dsp.GainVCA()
-        m.submodules.waveshaper = waveshaper = dsp.WaveShaper(lut_function=scaled_tanh)
+        m.submodules.vca1 = vca1 = dsp.GainVCA()
+        m.submodules.waveshaper0 = waveshaper0 = dsp.WaveShaper(lut_function=scaled_tanh)
+        m.submodules.waveshaper1 = waveshaper1 = dsp.WaveShaper(lut_function=scaled_tanh)
 
         m.d.comb += [
             vca0.i.valid.eq(audio_stream.istream.valid),
+            vca1.i.valid.eq(audio_stream.istream.valid),
             audio_stream.istream.ready.eq(vca0.i.ready),
 
             vca0.i.payload.x.eq(audio_stream.istream.payload[0]),
-            vca0.i.payload.gain.eq(audio_stream.istream.payload[1] << 2),
+            vca1.i.payload.x.eq(audio_stream.istream.payload[1]),
+            vca0.i.payload.gain.eq(audio_stream.istream.payload[2] << 2),
+            vca1.i.payload.gain.eq(audio_stream.istream.payload[2] << 2),
         ]
 
-        wiring.connect(m, vca0.o, waveshaper.i)
+        wiring.connect(m, vca0.o, waveshaper0.i)
+        wiring.connect(m, vca1.o, waveshaper1.i)
 
-        wiring.connect(m, waveshaper.o, merge4.i[0])
+        wiring.connect(m, waveshaper0.o, merge4.i[0])
+        wiring.connect(m, waveshaper1.o, merge4.i[1])
 
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[1])
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
         wiring.connect(m, merge4.o, audio_stream.ostream)
