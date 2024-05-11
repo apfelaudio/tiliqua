@@ -101,6 +101,43 @@ class VCA(wiring.Component):
 
         return m
 
+class GainVCA(wiring.Component):
+
+    """
+    Voltage Controlled Amplifier where the gain amount can be > 1.
+    The output is clipped to fit in a normal ASQ.
+    """
+
+    i: In(stream.Signature(data.StructLayout({
+            "x": ASQ,
+            "gain": fixed.SQ(2, ASQ.f_width), # only 2 extra bits, so -3 to +3 is OK
+        })))
+    o: Out(stream.Signature(ASQ))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        result = Signal(fixed.SQ(3, ASQ.f_width))
+        m.d.comb += result.eq(self.i.payload.x * self.i.payload.gain)
+
+        sat_hi = fixed.Const(0, shape=ASQ)
+        sat_hi._value = 2**ASQ.f_width - 1 # move to Const.max()?
+        sat_lo = fixed.Const(-1, shape=ASQ)
+
+        with m.If(sat_hi < result):
+            m.d.comb += self.o.payload.eq(sat_hi),
+        with m.Elif(result < sat_lo):
+            m.d.comb += self.o.payload.eq(sat_lo),
+        with m.Else():
+            m.d.comb += self.o.payload.eq(result),
+
+        m.d.comb += [
+            self.o.valid.eq(self.i.valid),
+            self.i.ready.eq(self.o.ready),
+        ]
+
+        return m
+
 class SawNCO(wiring.Component):
 
     """
@@ -171,6 +208,11 @@ class WaveShaper(wiring.Component):
             rport.addr.eq(self.i.payload._target[ASQ.f_width-self.lut_addr_width+1:]),
             rport.en.eq(self.i.valid),
             self.o.payload.eq(rport.data),
+            self.i.ready.eq(self.o.ready)
+        ]
+
+        m.d.sync += [
+            self.o.valid.eq(self.i.valid)
         ]
 
         return m

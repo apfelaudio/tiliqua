@@ -168,3 +168,34 @@ class DSPTests(unittest.TestCase):
         sim.add_process(testbench)
         with sim.write_vcd(vcd_file=open("test_waveshaper.vcd", "w")):
             sim.run()
+
+    def test_gainvca(self):
+
+        def scaled_tanh(x):
+            return math.tanh(3.0*x)
+
+        m = Module()
+        vca = dsp.GainVCA()
+        waveshaper = dsp.WaveShaper(lut_function=scaled_tanh)
+
+        m.submodules += [vca, waveshaper]
+
+        m.d.sync += [
+            waveshaper.i.payload.eq(vca.o.payload),
+        ]
+
+        def testbench():
+            yield Tick()
+            for n in range(0, 100):
+                x = fixed.Const(0.8*math.sin(n*0.3), shape=ASQ)
+                gain = fixed.Const(3.0*math.sin(n*0.1), shape=fixed.SQ(2, ASQ.f_width))
+                yield vca.i.payload.x.eq(x)
+                yield vca.i.payload.gain.eq(gain)
+                yield vca.i.valid.eq(1)
+                yield Tick()
+
+        sim = Simulator(m)
+        sim.add_clock(1e-6)
+        sim.add_process(testbench)
+        with sim.write_vcd(vcd_file=open("test_gainvca.vcd", "w")):
+            sim.run()
