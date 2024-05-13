@@ -153,15 +153,24 @@ class DSPTests(unittest.TestCase):
         def scaled_tanh(x):
             return math.tanh(3.0*x)
 
-        waveshaper = dsp.WaveShaper(lut_function=scaled_tanh)
+        waveshaper = dsp.WaveShaper(lut_function=scaled_tanh, lut_size=16)
 
         def testbench():
             yield Tick()
             for n in range(0, 100):
-                x = fixed.Const(0.8*math.sin(n*0.3), shape=ASQ)
+                x = fixed.Const(0.999*math.sin(n*0.10), shape=ASQ)
+                if math.sin(n*0.10) > 0.99:
+                    x = fixed.Const(0, shape=ASQ)
+                    x._value = 2**ASQ.f_width - 1
+                if math.sin(n*0.10) < -0.99:
+                    x = fixed.Const(-1, shape=ASQ)
                 yield waveshaper.i.payload.eq(x)
                 yield waveshaper.i.valid.eq(1)
+                yield waveshaper.o.ready.eq(1)
                 yield Tick()
+                yield waveshaper.i.valid.eq(0)
+                while (yield waveshaper.o.valid) != 1:
+                    yield Tick()
 
         sim = Simulator(waveshaper)
         sim.add_clock(1e-6)

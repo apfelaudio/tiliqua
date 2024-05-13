@@ -70,6 +70,9 @@ class Value(ast.ValueCastable):
 
         return self
 
+    def truncate(self, f_width=0):
+        return Shape(self.i_width, f_width, signed = self.signed)(self.sas_value()[self.f_width - f_width:])
+
     @property
     def i_width(self):
         return self._shape.i_width

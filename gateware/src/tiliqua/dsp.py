@@ -172,16 +172,19 @@ class WaveShaper(wiring.Component):
     """
     Waveshaper that maps x to f(x), where the function must be
     stateless so we can precompute a mapping lookup table.
+
+    Linear interpolation is used between lut elements.
     """
 
     i: In(stream.Signature(ASQ))
     o: Out(stream.Signature(ASQ))
 
-    def __init__(self, lut_function=None, lut_size=512):
+    def __init__(self, lut_function=None, lut_size=512, continuous=False):
         # lut_size must be a power of 2
         assert(2**log2_int(lut_size) == lut_size)
         self.lut_size = lut_size
         self.lut_addr_width = log2_int(lut_size)
+        self.continuous = continuous
 
         # build LUT such that we can index into it using 2s
         # complement and pluck out results with correct sign.
@@ -195,6 +198,8 @@ class WaveShaper(wiring.Component):
             fx = lut_function(x)
             self.lut.append(fixed.Const(fx, shape=ASQ)._value)
 
+        print(self.lut)
+
         super().__init__()
 
     def elaborate(self, platform):
@@ -204,16 +209,55 @@ class WaveShaper(wiring.Component):
             width=ASQ.as_shape().width, depth=self.lut_size, init=self.lut)
         rport = mem.read_port(transparent=True)
 
-        m.d.comb += [
-            rport.addr.eq(self.i.payload._target[ASQ.f_width-self.lut_addr_width+1:]),
-            rport.en.eq(self.i.valid),
-            self.o.payload.eq(rport.data),
-            self.i.ready.eq(self.o.ready)
-        ]
+        ltype = fixed.SQ(self.lut_addr_width-1, ASQ.f_width-self.lut_addr_width+1)
 
-        m.d.sync += [
-            self.o.valid.eq(self.i.valid)
-        ]
+        x = Signal(ltype)
+        y = Signal(ASQ)
+
+        trunc = Signal()
+
+        with m.FSM() as fsm:
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.i.ready.eq(1),
+                with m.If(self.i.valid):
+                    m.d.sync += x.eq(self.i.payload << ltype.i_width)
+                    m.d.sync += y.eq(0)
+                    m.next = 'READ0'
+            with m.State('READ0'):
+                m.d.comb += [
+                    rport.en.eq(1),
+                ]
+                # is this a function where f(+1) ~= f(-1)
+                if self.continuous:
+                    m.d.comb += rport.addr.eq(x.truncate()+1)
+                else:
+                    with m.If((x.truncate()).sas_value() ==
+                              2**(self.lut_addr_width-1)-1):
+                        m.d.comb += trunc.eq(1)
+                        m.d.comb += rport.addr.eq(x.truncate())
+                    with m.Else():
+                        m.d.comb += rport.addr.eq(x.truncate()+1)
+                m.next = 'MAC0'
+            with m.State('MAC0'):
+                m.d.sync += y.eq(fixed.Value(ASQ, rport.data) *
+                                 (x - x.truncate()))
+                m.d.comb += [
+                    rport.addr.eq(x.truncate()),
+                    rport.en.eq(1),
+                ]
+                m.next = 'MAC1'
+            with m.State('MAC1'):
+                m.d.sync += y.eq(y + fixed.Value(ASQ, rport.data) *
+                                 (x.truncate() - x + 1))
+                m.next = 'WAIT-READY'
+
+            with m.State('WAIT-READY'):
+                m.d.comb += [
+                    self.o.valid.eq(1),
+                    self.o.payload.eq(y),
+                ]
+                with m.If(self.o.ready):
+                    m.next = 'WAIT-VALID'
 
         return m
 
