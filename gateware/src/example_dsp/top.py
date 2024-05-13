@@ -317,6 +317,34 @@ class WaveshaperTop(Elaboratable):
 
         return m
 
+class TouchMixTop(Elaboratable):
+
+    """Matrix mixer, combine touch inputs in interesting ways."""
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.car = platform.clock_domain_generator()
+
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True,
+                touch_enabled=True)
+
+        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
+
+        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
+            i_channels=4, o_channels=4,
+            coefficients=[[0.5, -0.5, 0.25, 0.1],
+                          [0.5, -0.5, 0.25, 0.2],
+                          [-0.5, 0.5, 0.25, 0.3],
+                          [-0.5, 0.5, 0.25, 0.4]])
+
+        wiring.connect(m, audio_stream.istream, matrix_mix.i)
+        wiring.connect(m, matrix_mix.o, audio_stream.ostream)
+
+        return m
+
 def build_mirror():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
@@ -352,3 +380,7 @@ def build_waveshaper():
     os.environ["AMARANTH_debug_verilog"] = "1"
     TiliquaPlatform().build(WaveshaperTop())
 
+def build_touchmix():
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    TiliquaPlatform().build(TouchMixTop())
