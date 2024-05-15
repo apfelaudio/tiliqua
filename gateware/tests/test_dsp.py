@@ -5,6 +5,7 @@ import math
 from amaranth              import *
 from amaranth.sim          import *
 from amaranth_future       import fixed
+from amaranth.lib          import wiring, data
 from tiliqua.eurorack_pmod import ASQ
 
 from tiliqua import dsp
@@ -215,4 +216,39 @@ class DSPTests(unittest.TestCase):
         sim.add_clock(1e-6)
         sim.add_process(testbench)
         with sim.write_vcd(vcd_file=open("test_gainvca.vcd", "w")):
+            sim.run()
+
+    def test_nco(self):
+
+        m = Module()
+
+        def sine_osc(x):
+            return math.sin(math.pi*x)
+
+        nco = dsp.SawNCO()
+        waveshaper = dsp.WaveShaper(lut_function=sine_osc, lut_size=128,
+                                    continuous=True)
+
+        m.submodules += [nco, waveshaper]
+
+        wiring.connect(m, nco.o, waveshaper.i)
+
+        def testbench():
+            yield waveshaper.o.ready.eq(1)
+            yield Tick()
+            for n in range(0, 400):
+                phase = fixed.Const(0.1*math.sin(n*0.10), shape=ASQ)
+                yield nco.i.payload.freq_inc.eq(0.66)
+                yield nco.i.payload.phase.eq(phase)
+                yield nco.i.valid.eq(1)
+                yield Tick()
+                yield nco.i.valid.eq(0)
+                yield Tick()
+                while (yield waveshaper.o.valid) != 1:
+                    yield Tick()
+
+        sim = Simulator(m)
+        sim.add_clock(1e-6)
+        sim.add_process(testbench)
+        with sim.write_vcd(vcd_file=open("test_nco.vcd", "w")):
             sim.run()

@@ -142,28 +142,36 @@ class SawNCO(wiring.Component):
 
     """
     Sawtooth Numerically Controlled Oscillator.
-
-    FIXME: tune this 1V/Oct
     """
 
-    i: In(stream.Signature(ASQ))
+    i: In(stream.Signature(data.StructLayout({
+            "freq_inc": ASQ,
+            "phase": ASQ,
+        })))
     o: Out(stream.Signature(ASQ))
+
+    def __init__(self, extra_bits=16, shift=6):
+        self.extra_bits = extra_bits
+        self.shift = shift
+        super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        s = Signal(fixed.SQ(16, ASQ.f_width))
+        s = Signal(fixed.SQ(self.extra_bits, ASQ.f_width))
+
+        out_no_phase_mod = Signal(ASQ)
 
         m.d.comb += [
             self.o.valid.eq(self.i.valid),
             self.i.ready.eq(self.o.ready),
+            out_no_phase_mod.eq(s.round() >> self.shift),
+            self.o.payload.eq(
+                out_no_phase_mod + self.i.payload.phase),
         ]
 
-        with m.If(self.i.valid):
-            m.d.sync += [
-                s.eq(s + self.i.payload),
-                self.o.payload.eq(s.round() >> 6),
-            ]
+        with m.If(self.i.valid & self.o.ready):
+            m.d.sync += s.eq(s + self.i.payload.freq_inc),
 
         return m
 
