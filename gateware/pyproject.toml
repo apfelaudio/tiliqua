@@ -26,3 +26,4 @@ build_example_matrix = { call = "example_dsp.top:build_matrix()" }
 build_example_diffuser = { call = "example_dsp.top:build_diffuser()" }
 build_example_waveshaper = { call = "example_dsp.top:build_waveshaper()" }
 build_example_touchmix = { call = "example_dsp.top:build_touchmix()" }
+build_example_nco = { call = "example_dsp.top:build_nco()" }
