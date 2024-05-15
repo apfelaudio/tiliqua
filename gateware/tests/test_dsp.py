@@ -148,6 +148,19 @@ class DSPTests(unittest.TestCase):
         with sim.write_vcd(vcd_file=open("test_matrix.vcd", "w")):
             sim.run()
 
+    def test_fixed(self):
+
+        d = fixed.Const(4000, shape=fixed.SQ(2, 4))
+        e = fixed.Const(4000, shape=fixed.UQ(2, 4))
+        d = fixed.Const(-4000, shape=fixed.SQ(2, 4))
+        e = fixed.Const(-4000, shape=fixed.UQ(2, 4))
+        print(d, e)
+
+        print(fixed.SQ(2, 4).max())
+        print(fixed.SQ(2, 4).min())
+        print(ASQ.max())
+        print(ASQ.min())
+
     def test_waveshaper(self):
 
         def scaled_tanh(x):
@@ -158,12 +171,7 @@ class DSPTests(unittest.TestCase):
         def testbench():
             yield Tick()
             for n in range(0, 100):
-                x = fixed.Const(0.999*math.sin(n*0.10), shape=ASQ)
-                if math.sin(n*0.10) > 0.99:
-                    x = fixed.Const(0, shape=ASQ)
-                    x._value = 2**ASQ.f_width - 1
-                if math.sin(n*0.10) < -0.99:
-                    x = fixed.Const(-1, shape=ASQ)
+                x = fixed.Const(math.sin(n*0.10), shape=ASQ)
                 yield waveshaper.i.payload.eq(x)
                 yield waveshaper.i.valid.eq(1)
                 yield waveshaper.o.ready.eq(1)
