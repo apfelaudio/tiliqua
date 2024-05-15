@@ -165,7 +165,7 @@ class SawNCO(wiring.Component):
         m.d.comb += [
             self.o.valid.eq(self.i.valid),
             self.i.ready.eq(self.o.ready),
-            out_no_phase_mod.eq(s.round() >> self.shift),
+            out_no_phase_mod.eq(s >> self.shift),
             self.o.payload.eq(
                 out_no_phase_mod + self.i.payload.phase),
         ]

@@ -365,7 +365,7 @@ class NCOTop(Elaboratable):
 
         m.submodules.merge2 = merge2 = dsp.Merge(n_channels=2)
 
-        m.submodules.nco    = nco    = dsp.SawNCO()
+        m.submodules.nco    = nco    = dsp.SawNCO(shift=4)
 
         def v_oct_lut(x, clamp_lo=-8.0, clamp_hi=6.0):
             def volts_to_freq(volts, a3_freq_hz=440.0):
@@ -378,7 +378,7 @@ class NCOTop(Elaboratable):
                 x = clamp_hi
             if x < clamp_lo:
                 x = clamp_lo
-            out = volts_to_delta(x) * (8)
+            out = volts_to_delta(x) * 16
             print(x, volts_to_freq(x), out)
             return out
 
@@ -386,7 +386,7 @@ class NCOTop(Elaboratable):
                 lut_function=v_oct_lut, lut_size=128, continuous=False)
 
         def sine_osc(x):
-            return 0.25*math.sin(math.pi*x)
+            return 0.4*math.sin(math.pi*x)
 
         m.submodules.waveshaper = waveshaper = dsp.WaveShaper(
                 lut_function=sine_osc, lut_size=128, continuous=True)
