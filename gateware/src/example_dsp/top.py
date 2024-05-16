@@ -363,6 +363,9 @@ class NCOTop(Elaboratable):
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
+        m.submodules.rep4 = rep4 = dsp.Split(n_channels=4,
+                                             replicate=True)
+
         m.submodules.merge2 = merge2 = dsp.Merge(n_channels=2)
 
         m.submodules.nco    = nco    = dsp.SawNCO(shift=4)
@@ -385,11 +388,33 @@ class NCOTop(Elaboratable):
         m.submodules.v_oct = v_oct = dsp.WaveShaper(
                 lut_function=v_oct_lut, lut_size=128, continuous=False)
 
-        def sine_osc(x):
-            return 0.4*math.sin(math.pi*x)
+        amplitude = 0.4
 
-        m.submodules.waveshaper = waveshaper = dsp.WaveShaper(
-                lut_function=sine_osc, lut_size=128, continuous=True)
+
+        def sine_osc(x):
+            return amplitude*math.sin(math.pi*x)
+
+        def saw_osc(x):
+            return amplitude*x
+
+        def tri_osc(x):
+            return amplitude*abs(x)
+
+        def square_osc(x):
+            return amplitude if x > 0 else -amplitude
+
+        waveshapers = [
+            dsp.WaveShaper(lut_function=sine_osc,
+                           lut_size=128, continuous=True),
+            dsp.WaveShaper(lut_function=saw_osc,
+                           lut_size=128, continuous=True),
+            dsp.WaveShaper(lut_function=tri_osc,
+                           lut_size=128, continuous=True),
+            dsp.WaveShaper(lut_function=square_osc,
+                           lut_size=128, continuous=True),
+        ]
+
+        m.submodules += waveshapers
 
         wiring.connect(m, audio_stream.istream, split4.i)
         wiring.connect(m, split4.o[2], dsp.ASQ_READY)
@@ -399,12 +424,15 @@ class NCOTop(Elaboratable):
         wiring.connect(m, v_oct.o, merge2.i[0])
         wiring.connect(m, split4.o[1], merge2.i[1])
         wiring.connect(m, merge2.o, nco.i)
-        wiring.connect(m, nco.o, waveshaper.i)
-        wiring.connect(m, waveshaper.o, merge4.i[0])
-
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[1])
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
+        wiring.connect(m, nco.o, rep4.i)
+        wiring.connect(m, rep4.o[0], waveshapers[0].i)
+        wiring.connect(m, rep4.o[1], waveshapers[1].i)
+        wiring.connect(m, rep4.o[2], waveshapers[2].i)
+        wiring.connect(m, rep4.o[3], waveshapers[3].i)
+        wiring.connect(m, waveshapers[0].o, merge4.i[0])
+        wiring.connect(m, waveshapers[1].o, merge4.i[1])
+        wiring.connect(m, waveshapers[2].o, merge4.i[2])
+        wiring.connect(m, waveshapers[3].o, merge4.i[3])
         wiring.connect(m, merge4.o, audio_stream.ostream)
 
         return m
