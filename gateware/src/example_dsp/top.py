@@ -398,7 +398,7 @@ class NCOTop(Elaboratable):
             return amplitude*x
 
         def tri_osc(x):
-            return amplitude*abs(x)
+            return amplitude * (2*abs(x) - 1.0)
 
         def square_osc(x):
             return amplitude if x > 0 else -amplitude
@@ -416,6 +416,13 @@ class NCOTop(Elaboratable):
 
         m.submodules += waveshapers
 
+        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
+            i_channels=4, o_channels=4,
+            coefficients=[[1.0, 0.0, 0.0, 0.0],
+                          [0.0, 1.0, 0.0, 0.0],
+                          [0.0, 0.0, 1.0, 0.0],
+                          [0.0, 0.0, 0.0, 1.0]])
+
         wiring.connect(m, audio_stream.istream, split4.i)
         wiring.connect(m, split4.o[2], dsp.ASQ_READY)
         wiring.connect(m, split4.o[3], dsp.ASQ_READY)
@@ -429,11 +436,15 @@ class NCOTop(Elaboratable):
         wiring.connect(m, rep4.o[1], waveshapers[1].i)
         wiring.connect(m, rep4.o[2], waveshapers[2].i)
         wiring.connect(m, rep4.o[3], waveshapers[3].i)
+
         wiring.connect(m, waveshapers[0].o, merge4.i[0])
         wiring.connect(m, waveshapers[1].o, merge4.i[1])
         wiring.connect(m, waveshapers[2].o, merge4.i[2])
         wiring.connect(m, waveshapers[3].o, merge4.i[3])
-        wiring.connect(m, merge4.o, audio_stream.ostream)
+
+        wiring.connect(m, merge4.o, matrix_mix.i)
+
+        wiring.connect(m, matrix_mix.o, audio_stream.ostream)
 
         return m
 
