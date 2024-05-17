@@ -578,6 +578,11 @@ class MatrixMix(wiring.Component):
 
         super().__init__({
             "i": In(stream.Signature(data.ArrayLayout(ASQ, i_channels))),
+            "c": In(stream.Signature(data.StructLayout({
+                "o_x": unsigned(log2_int(self.o_channels)),
+                "i_y": unsigned(log2_int(self.i_channels)),
+                "v":   self.ctype
+                }))),
             "o": Out(stream.Signature(data.ArrayLayout(ASQ, o_channels))),
         })
 
@@ -585,6 +590,7 @@ class MatrixMix(wiring.Component):
         m = Module()
 
         m.submodules.mem = self.mem
+        wport = self.mem.write_port()
         rport = self.mem.read_port(transparent=True)
 
         i_latch = Signal(data.ArrayLayout(self.ctype, self.i_channels))
@@ -604,6 +610,17 @@ class MatrixMix(wiring.Component):
             rport.en.eq(1),
             rport.addr.eq(Cat(o_ch, i_ch)),
         ]
+
+        # coefficient update logic
+
+        m.d.comb += [
+            self.c.ready.eq(1),
+            rport.addr.eq(Cat(self.c.payload.o_x, self.c.payload.i_y)),
+            wport.en.eq(self.c.valid),
+            wport.data.eq(self.c.payload.v),
+        ]
+
+        # main multiplications state machine
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
