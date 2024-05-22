@@ -184,10 +184,11 @@ class WaveShaper(wiring.Component):
     Linear interpolation is used between lut elements.
     """
 
-    i: In(stream.Signature(ASQ))
-    o: Out(stream.Signature(ASQ))
-
-    def __init__(self, lut_function=None, lut_size=512, continuous=False):
+    def __init__(self, lut_function=None, lut_size=512, continuous=False,
+                 n_channels=1):
+        # n_channels must be a power of 2
+        assert(2**log2_int(n_channels) == n_channels)
+        self.n_channels = n_channels
         # lut_size must be a power of 2
         assert(2**log2_int(lut_size) == lut_size)
         self.lut_size = lut_size
@@ -208,7 +209,11 @@ class WaveShaper(wiring.Component):
 
         print(self.lut)
 
-        super().__init__()
+        super().__init__({
+            "i": In(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
+            "o": In(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
+        })
+
 
     def elaborate(self, platform):
         m = Module()
@@ -219,8 +224,11 @@ class WaveShaper(wiring.Component):
 
         ltype = fixed.SQ(self.lut_addr_width-1, ASQ.f_width-self.lut_addr_width+1)
 
+        payload_latch = Signal(data.ArrayLayout(ASQ, self.n_channels))
         x = Signal(ltype)
         y = Signal(ASQ)
+
+        channel = Signal(log2_int(self.n_channels))
 
         trunc = Signal()
 
@@ -228,9 +236,13 @@ class WaveShaper(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                    m.d.sync += x.eq(self.i.payload << ltype.i_width)
-                    m.d.sync += y.eq(0)
-                    m.next = 'READ0'
+                    m.d.sync += payload_latch.eq(self.i.payload)
+                    m.d.sync += channel.eq(0)
+                    m.next = 'NEXT'
+            with m.State('NEXT'):
+                m.d.sync += x.eq(self.i.payload[channel] << ltype.i_width)
+                m.d.sync += y.eq(0)
+                m.next = 'READ0'
             with m.State('READ0'):
                 m.d.comb += [
                     rport.en.eq(1),
@@ -255,14 +267,16 @@ class WaveShaper(wiring.Component):
                 ]
                 m.next = 'MAC1'
             with m.State('MAC1'):
-                m.d.sync += y.eq(y + fixed.Value(ASQ, rport.data) *
-                                 (x.truncate() - x + 1))
-                m.next = 'WAIT-READY'
-
+                m.d.sync += self.o.payload[channel].eq(
+                    y + fixed.Value(ASQ, rport.data) * (x.truncate() - x + 1))
+                with m.If(channel == self.n_channels-1):
+                    m.next = 'WAIT-READY'
+                with m.Else():
+                    m.d.sync += channel.eq(channel + 1)
+                    m.next = 'NEXT'
             with m.State('WAIT-READY'):
                 m.d.comb += [
                     self.o.valid.eq(1),
-                    self.o.payload.eq(y),
                 ]
                 with m.If(self.o.ready):
                     m.next = 'WAIT-VALID'
