@@ -36,6 +36,16 @@ class Shape(ast.ShapeCastable):
             value = 0
         return Const(value, self)._target
 
+    def max(self):
+        c = Const(0, self)
+        c._value = c._max_value()
+        return c
+
+    def min(self):
+        c = Const(0, self)
+        c._value = c._min_value()
+        return c
+
     def __repr__(self):
         return f"fixed.Shape({self.i_width}, {self.f_width}, signed={self.signed})"
 
@@ -69,6 +79,9 @@ class Value(ast.ValueCastable):
             return Shape(self.i_width, f_width, signed = self.signed)(self.sas_value()[self.f_width - f_width:] + self.sas_value()[self.f_width - f_width - 1])
 
         return self
+
+    def truncate(self, f_width=0):
+        return Shape(self.i_width, f_width, signed = self.signed)(self.sas_value()[self.f_width - f_width:])
 
     @property
     def i_width(self):
@@ -226,6 +239,7 @@ class Value(ast.ValueCastable):
 
 class Const(Value):
     def __init__(self, value, shape=None):
+
         if isinstance(value, float) or isinstance(value, int):
             num, den = value.as_integer_ratio()
 
@@ -246,7 +260,26 @@ class Const(Value):
         value = num
 
         self._shape = shape
+
+        if value > self._max_value():
+            print("WARN fixed.Const: clamp", value, "to", self._max_value())
+            value = self._max_value()
+        if value < self._min_value():
+            print("WARN fixed.Const: clamp", value, "to", self._min_value())
+            value = self._min_value()
+
         self._value = value
+
+    def _max_value(self):
+        return 2**(self._shape.i_width +
+                   self._shape.f_width) - 1
+
+    def _min_value(self):
+        if self._shape.signed:
+            return -1 * 2**(self._shape.i_width +
+                            self._shape.f_width)
+        else:
+            return 0
 
     @property
     def _target(self):

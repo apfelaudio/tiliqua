@@ -317,6 +317,127 @@ class WaveshaperTop(Elaboratable):
 
         return m
 
+class TouchMixTop(Elaboratable):
+
+    """Matrix mixer, combine touch inputs in interesting ways."""
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.car = platform.clock_domain_generator()
+
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True,
+                touch_enabled=True)
+
+        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
+
+        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
+            i_channels=4, o_channels=4,
+            coefficients=[[0.5, -0.5, 0.25, 0.1],
+                          [0.5, -0.5, 0.25, 0.2],
+                          [-0.5, 0.5, 0.25, 0.3],
+                          [-0.5, 0.5, 0.25, 0.4]])
+
+        wiring.connect(m, audio_stream.istream, matrix_mix.i)
+        wiring.connect(m, matrix_mix.o, audio_stream.ostream)
+
+        return m
+
+class NCOTop(Elaboratable):
+
+    """Audio-rate NCO."""
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.car = platform.clock_domain_generator()
+
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True)
+
+        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
+
+        m.submodules.split4 = split4 = dsp.Split(n_channels=4)
+        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
+
+        m.submodules.rep4 = rep4 = dsp.Split(n_channels=4,
+                                             replicate=True)
+
+        m.submodules.merge2 = merge2 = dsp.Merge(n_channels=2)
+
+        m.submodules.nco    = nco    = dsp.SawNCO(shift=4)
+
+        def v_oct_lut(x, clamp_lo=-8.0, clamp_hi=6.0):
+            def volts_to_freq(volts, a3_freq_hz=440.0):
+                return (a3_freq_hz / 8.0) * 2 ** (volts + 2.0 - 3.0/4.0)
+            def volts_to_delta(volts, sample_rate_hz=48000):
+                return (1.0 / sample_rate_hz) * volts_to_freq(volts)
+            # convert audio sample [-1, 1] to volts
+            x = x*(2**15/4000)
+            if x > clamp_hi:
+                x = clamp_hi
+            if x < clamp_lo:
+                x = clamp_lo
+            out = volts_to_delta(x) * 16
+            print(x, volts_to_freq(x), out)
+            return out
+
+        m.submodules.v_oct = v_oct = dsp.WaveShaper(
+                lut_function=v_oct_lut, lut_size=128, continuous=False)
+
+        amplitude = 0.4
+
+
+        def sine_osc(x):
+            return amplitude*math.sin(math.pi*x)
+
+        def saw_osc(x):
+            return amplitude*x
+
+        def tri_osc(x):
+            return amplitude*abs(x)
+
+        def square_osc(x):
+            return amplitude if x > 0 else -amplitude
+
+        waveshapers = [
+            dsp.WaveShaper(lut_function=sine_osc,
+                           lut_size=128, continuous=True),
+            dsp.WaveShaper(lut_function=saw_osc,
+                           lut_size=128, continuous=True),
+            dsp.WaveShaper(lut_function=tri_osc,
+                           lut_size=128, continuous=True),
+            dsp.WaveShaper(lut_function=square_osc,
+                           lut_size=128, continuous=True),
+        ]
+
+        m.submodules += waveshapers
+
+        wiring.connect(m, audio_stream.istream, split4.i)
+        wiring.connect(m, split4.o[2], dsp.ASQ_READY)
+        wiring.connect(m, split4.o[3], dsp.ASQ_READY)
+
+        wiring.connect(m, split4.o[0], v_oct.i)
+        wiring.connect(m, v_oct.o, merge2.i[0])
+        wiring.connect(m, split4.o[1], merge2.i[1])
+        wiring.connect(m, merge2.o, nco.i)
+        wiring.connect(m, nco.o, rep4.i)
+        wiring.connect(m, rep4.o[0], waveshapers[0].i)
+        wiring.connect(m, rep4.o[1], waveshapers[1].i)
+        wiring.connect(m, rep4.o[2], waveshapers[2].i)
+        wiring.connect(m, rep4.o[3], waveshapers[3].i)
+        wiring.connect(m, waveshapers[0].o, merge4.i[0])
+        wiring.connect(m, waveshapers[1].o, merge4.i[1])
+        wiring.connect(m, waveshapers[2].o, merge4.i[2])
+        wiring.connect(m, waveshapers[3].o, merge4.i[3])
+        wiring.connect(m, merge4.o, audio_stream.ostream)
+
+        return m
+
+
 def build_mirror():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
@@ -352,3 +473,12 @@ def build_waveshaper():
     os.environ["AMARANTH_debug_verilog"] = "1"
     TiliquaPlatform().build(WaveshaperTop())
 
+def build_touchmix():
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    TiliquaPlatform().build(TouchMixTop())
+
+def build_nco():
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    TiliquaPlatform().build(NCOTop())

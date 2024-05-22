@@ -117,10 +117,11 @@ class EurorackPmod(wiring.Component):
     sample_adc: Out(signed(WIDTH)).array(4)
     force_dac_output: In(signed(WIDTH))
 
-    def __init__(self, pmod_pins, hardware_r33=True):
+    def __init__(self, pmod_pins, hardware_r33=True, touch_enabled=True):
 
         self.pmod_pins = pmod_pins
         self.hardware_r33 = hardware_r33
+        self.touch_enabled = touch_enabled
 
         super().__init__()
 
@@ -138,7 +139,8 @@ class EurorackPmod(wiring.Component):
 
         # Defines and default cal for PMOD hardware version.
         if self.hardware_r33:
-            platform.add_file("eurorack_pmod_defines.sv", "`define HW_R33\n`define TOUCH_SENSE_ENABLED")
+            touch_define = "`define TOUCH_SENSE_ENABLED" if self.touch_enabled else ""
+            platform.add_file("eurorack_pmod_defines.sv", f"`define HW_R33\n{touch_define}")
             platform.add_file("cal/cal_mem_default_r33.hex",
                               open(os.path.join(vroot, "cal/cal_mem_default_r33.hex")))
         else:
