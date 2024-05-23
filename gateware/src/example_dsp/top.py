@@ -28,7 +28,8 @@ class MirrorTop(Elaboratable):
 
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
+                hardware_r33=True,
+                touch_enabled=True)
 
         m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
