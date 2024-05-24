@@ -23,6 +23,8 @@ from tiliqua.eurorack_pmod    import ASQ
 from amaranth_soc          import wishbone
 from tiliqua.psram         import HyperRAMDQSPHY, HyperRAMDQSInterface
 
+from amaranth.back import verilog
+
 def gpdi_from_pmod(platform, pmod_index):
     gpdi = [
         Resource(f"gpdi{pmod_index}", pmod_index,
@@ -42,7 +44,7 @@ def gpdi_from_pmod(platform, pmod_index):
 
 class LxVideo(Elaboratable):
 
-    def __init__(self, fb_base=None, bus_master=None, fifo_depth=128):
+    def __init__(self, fb_base=None, bus_master=None, fifo_depth=128, sim=False):
         super().__init__()
 
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
@@ -64,15 +66,12 @@ class LxVideo(Elaboratable):
 
         self.enable = Signal(1, reset=0)
 
+        self.sim = sim
+
     def elaborate(self, platform) -> Module:
         m = Module()
 
         m.submodules.fifo = self.fifo
-
-        gpdi = gpdi_from_pmod(platform, 0)
-
-        lxvid_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lxvid.v")
-        platform.add_file("build/lxvid.v", open(lxvid_path))
 
         vtg_hcount = Signal(12)
         vtg_vcount = Signal(12)
@@ -88,33 +87,58 @@ class LxVideo(Elaboratable):
         m.submodules.vsync_ff = FFSynchronizer(
                 i=phy_vsync_hdmi, o=phy_vsync_sync, o_domain="sync")
 
-        m.submodules.vlxvid = Instance("lxvid",
-            i_clk_sys = ClockSignal("sync"),
-            i_clk_hdmi = ClockSignal("hdmi"),
-            i_clk_hdmi5x = ClockSignal("hdmi5x"),
+        if not self.sim:
+            lxvid_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lxvid.v")
+            platform.add_file("build/lxvid.v", open(lxvid_path))
 
-            i_rst_sys = ResetSignal("sync"),
-            i_rst_hdmi = ResetSignal("hdmi"),
-            i_rst_hdmi5x = ResetSignal("hdmi5x"),
+            gpdi = gpdi_from_pmod(platform, 0)
 
-            o_gpdi_clk_n = gpdi.clk_n.o,
-            o_gpdi_clk_p = gpdi.clk_p.o,
-            o_gpdi_data0_n = gpdi.data0_n.o,
-            o_gpdi_data0_p = gpdi.data0_p.o,
-            o_gpdi_data1_n = gpdi.data1_n.o,
-            o_gpdi_data1_p = gpdi.data1_p.o,
-            o_gpdi_data2_n = gpdi.data2_n.o,
-            o_gpdi_data2_p = gpdi.data2_p.o,
+            m.submodules.vlxvid = Instance("lxvid",
+                i_clk_sys = ClockSignal("sync"),
+                i_clk_hdmi = ClockSignal("hdmi"),
+                i_clk_hdmi5x = ClockSignal("hdmi5x"),
 
-            o_vtg_hcount = vtg_hcount,
-            o_vtg_vcount = vtg_vcount,
-            o_phy_vsync  = phy_vsync_hdmi,
-            o_phy_de  = phy_de_hdmi,
+                i_rst_sys = ResetSignal("sync"),
+                i_rst_hdmi = ResetSignal("hdmi"),
+                i_rst_hdmi5x = ResetSignal("hdmi5x"),
 
-            i_phy_r = phy_r,
-            i_phy_g = phy_g,
-            i_phy_b = phy_b,
-        )
+                o_gpdi_clk_n = gpdi.clk_n.o,
+                o_gpdi_clk_p = gpdi.clk_p.o,
+                o_gpdi_data0_n = gpdi.data0_n.o,
+                o_gpdi_data0_p = gpdi.data0_p.o,
+                o_gpdi_data1_n = gpdi.data1_n.o,
+                o_gpdi_data1_p = gpdi.data1_p.o,
+                o_gpdi_data2_n = gpdi.data2_n.o,
+                o_gpdi_data2_p = gpdi.data2_p.o,
+
+                o_vtg_hcount = vtg_hcount,
+                o_vtg_vcount = vtg_vcount,
+                o_phy_vsync  = phy_vsync_hdmi,
+                o_phy_de  = phy_de_hdmi,
+
+                i_phy_r = phy_r,
+                i_phy_g = phy_g,
+                i_phy_b = phy_b,
+            )
+        else:
+            m.submodules.vlxvid = Instance("lxvid",
+                i_clk_sys = ClockSignal("sync"),
+                i_clk_hdmi = ClockSignal("hdmi"),
+                i_clk_hdmi5x = ClockSignal("hdmi5x"),
+
+                i_rst_sys = ResetSignal("sync"),
+                i_rst_hdmi = ResetSignal("hdmi"),
+                i_rst_hdmi5x = ResetSignal("hdmi5x"),
+
+                o_vtg_hcount = vtg_hcount,
+                o_vtg_vcount = vtg_vcount,
+                o_phy_vsync  = phy_vsync_hdmi,
+                o_phy_de  = phy_de_hdmi,
+
+                i_phy_r = phy_r,
+                i_phy_g = phy_g,
+                i_phy_b = phy_b,
+            )
 
         # how?
 
@@ -434,6 +458,47 @@ class Draw(Elaboratable):
 
         return m
 
+class FakeHyperRAMDQSInterface(Elaboratable):
+
+    LOW_LATENCY_CLOCKS  = 3
+    HIGH_LATENCY_CLOCKS = 5
+
+    def __init__(self):
+
+        #
+        # I/O port.
+        #
+        self.reset            = Signal()
+
+        # Control signals.
+        self.address          = Signal(32)
+        self.register_space   = Signal()
+        self.perform_write    = Signal()
+        self.single_page      = Signal()
+        self.start_transfer   = Signal()
+        self.final_word       = Signal()
+
+        # Status signals.
+        self.idle             = Signal()
+        self.read_ready       = Signal()
+        self.write_ready      = Signal()
+
+        # Data signals.
+        self.read_data        = Signal(32)
+        self.write_data       = Signal(32)
+
+        self.clk = Signal()
+
+        self.fsm = Signal(8)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        ###
+
+        return m
+
+
 class HyperRAMPeripheral(Elaboratable):
     """HyperRAM peripheral.
 
@@ -451,7 +516,7 @@ class HyperRAMPeripheral(Elaboratable):
     bus : :class:`amaranth_soc.wishbone.Interface`
         Wishbone bus interface.
     """
-    def __init__(self, *, size, data_width=32, granularity=8):
+    def __init__(self, *, size, data_width=32, granularity=8, sim=False):
         super().__init__()
 
         if not isinstance(size, int) or size <= 0 or size & size-1:
@@ -477,8 +542,12 @@ class HyperRAMPeripheral(Elaboratable):
         self.size        = size
         self.granularity = granularity
 
-        self.psram_phy = HyperRAMDQSPHY(bus=None)
-        self.psram = HyperRAMDQSInterface(phy=self.psram_phy.phy)
+        self.sim = sim
+        if sim:
+            self.psram = FakeHyperRAMDQSInterface()
+        else:
+            self.psram_phy = HyperRAMDQSPHY(bus=None)
+            self.psram = HyperRAMDQSInterface(phy=self.psram_phy.phy)
 
     def add_master(self, bus):
         self._hram_arbiter.add(bus)
@@ -494,12 +563,16 @@ class HyperRAMPeripheral(Elaboratable):
 
         m.submodules.arbiter    = self._hram_arbiter
 
-        self.psram_phy.bus = platform.request('ram', dir={'rwds':'-', 'dq':'-', 'cs':'-'})
-        m.submodules += [self.psram_phy, self.psram]
+        if self.sim:
+            m.submodules += self.psram
+        else:
+            self.psram_phy.bus = platform.request('ram', dir={'rwds':'-', 'dq':'-', 'cs':'-'})
+            m.submodules += [self.psram_phy, self.psram]
+            m.d.comb += self.psram_phy.bus.reset.o        .eq(0),
+
         psram = self.psram
 
         m.d.comb += [
-            self.psram_phy.bus.reset.o        .eq(0),
             psram.single_page      .eq(0),
             psram.register_space   .eq(0),
             psram.perform_write.eq(self.shared_bus.we),
@@ -528,13 +601,49 @@ class HyperRAMPeripheral(Elaboratable):
 
         return m
 
-class VectorScopeTop(Elaboratable):
+class FakeEurorackPmod(Elaboratable):
 
     def __init__(self):
+        self.sample_i = [Signal(signed(16)) for _ in range(4)]
+        self.fs_strobe = Signal()
 
+    def elaborate(self, platform) -> Module:
+        m = Module()
 
-        self.hyperram = HyperRAMPeripheral(size=16*1024*1024)
-        self.video = LxVideo(fb_base=0x0, bus_master=self.hyperram.bus)
+        ###
+
+        return m
+
+class TiliquaFakeDomainGenerator(Elaboratable):
+    """ Clock generator for Tiliqua platform. """
+
+    def __init__(self, *, clock_frequencies=None, clock_signal_name=None):
+        pass
+
+    def elaborate(self, platform):
+        m = Module()
+
+        # Create our domains.
+        m.domains.sync   = ClockDomain()
+        m.domains.usb    = ClockDomain()
+        m.domains.fast   = ClockDomain()
+        m.domains.audio  = ClockDomain()
+        m.domains.raw48  = ClockDomain()
+        m.domains.hdmi  = ClockDomain()
+        m.domains.hdmi5x  = ClockDomain()
+
+        return m
+
+class VectorScopeTop(Elaboratable):
+
+    def __init__(self, sim=False):
+
+        self.sim = sim
+
+        self.hyperram = HyperRAMPeripheral(
+                size=16*1024*1024, sim=sim)
+        self.video = LxVideo(fb_base=0x0, bus_master=self.hyperram.bus,
+                             sim=sim)
         self.persist = Persistance(fb_base=0x0, bus_master=self.hyperram.bus)
         self.draw = Draw(fb_base=0x0, bus_master=self.hyperram.bus)
 
@@ -542,17 +651,26 @@ class VectorScopeTop(Elaboratable):
         self.hyperram.add_master(self.persist.bus)
         self.hyperram.add_master(self.draw.bus)
 
+        if self.sim:
+            self.pmod0 = FakeEurorackPmod()
+
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.car = TiliquaDomainGenerator()
+        if self.sim:
+            m.submodules.car = TiliquaFakeDomainGenerator()
+        else:
+            m.submodules.car = TiliquaDomainGenerator()
 
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+        if not self.sim:
+            self.pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True)
 
+        pmod0 = self.pmod0
+        m.submodules.pmod0 = pmod0
         self.draw.pmod0 = pmod0
 
         m.submodules.hyperram = self.hyperram
@@ -574,3 +692,24 @@ def build_vectorscope():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     TiliquaPlatform().build(VectorScopeTop())
+
+def verilog_vectorscope():
+    top = VectorScopeTop(sim=True)
+    with open("vectorscope.v", "w") as f:
+        f.write(verilog.convert(top, ports={
+            "clk_sync":             (ClockSignal("sync"),               None),
+            "rst_sync":             (ResetSignal("sync"),               None),
+            "clk_hdmi":             (ClockSignal("hdmi"),               None),
+            "rst_hdmi":             (ResetSignal("hdmi"),               None),
+            "psram_perform_write":  (top.hyperram.psram.perform_write,  None),
+            "psram_start_transfer": (top.hyperram.psram.start_transfer, None),
+            "psram_address":        (top.hyperram.psram.address,        None),
+            "psram_read_ready":     (top.hyperram.psram.read_ready,     None),
+            "psram_write_ready":    (top.hyperram.psram.write_ready,    None),
+            "psram_read_data":      (top.hyperram.psram.read_data,      None),
+            "psram_write_data":     (top.hyperram.psram.write_data,     None),
+            "psram_idle":           (top.hyperram.psram.idle,           None),
+            "pmod0_fs_strobe":      (top.pmod0.fs_strobe,               None),
+            "pmod0_sample_i0":      (top.pmod0.sample_i[0],             None),
+            "pmod0_sample_i1":      (top.pmod0.sample_i[1],             None),
+            }))

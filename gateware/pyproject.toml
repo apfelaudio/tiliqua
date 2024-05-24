@@ -29,3 +29,4 @@ build_example_waveshaper = { call = "example_dsp.top:build_waveshaper()" }
 build_example_touchmix = { call = "example_dsp.top:build_touchmix()" }
 build_example_nco = { call = "example_dsp.top:build_nco()" }
 build_example_vectorscope = { call = "example_vectorscope.top:build_vectorscope()" }
+verilog_vectorscope = { call = "example_vectorscope.top:verilog_vectorscope()" }
