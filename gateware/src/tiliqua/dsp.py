@@ -81,6 +81,43 @@ class Merge(wiring.Component):
 
         return m
 
+class RRMux(wiring.Component):
+
+    """
+    Round-robin multiplexer for single stream in-out components where:
+    1) 'inner' is assumed to be stateless (outputs do not depend on previous inputs)
+    2) 'inner' is assumed to only handle 1 payload at a time
+    FIXME: Won't work for DelayLine at the moment with 2x valid in a row
+    """
+
+    def __init__(self, n_channels, inner_i, inner_o):
+
+        assert(2**log2_int(n_channels) == n_channels)
+
+        self.n_channels = n_channels
+        self.inner_i = inner_i
+        self.inner_o = inner_o
+
+        super().__init__({
+            "i": In(stream.Signature(ASQ)).array(n_channels),
+            "o": Out(stream.Signature(ASQ)).array(n_channels),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        ch = Signal(log2_int(self.n_channels))
+        with m.Switch(ch):
+            for i in range(self.n_channels):
+                with m.Case(i):
+                    wiring.connect(m, self.i[i], self.inner_i)
+                    wiring.connect(m, self.inner_o, self.o[i])
+                    # warn: assumes this block only handles one payload at a time
+                    with m.If(self.o[i].valid & self.o[i].ready):
+                        m.d.sync += ch.eq(ch+1)
+
+        return m
+
 class VCA(wiring.Component):
 
     """
