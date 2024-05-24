@@ -75,7 +75,7 @@ class TiliquaPlatform(LatticeECP5Platform):
 
         # HyperRAM
         Resource("ram", 0,
-            Subsignal("clk",   DiffPairs("C3", "D3", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
+            Subsignal("clk",   Pins("C3", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
             Subsignal("dq",    Pins("F2 B1 C2 E1 E3 E2 F3 G4", dir="io")),
             Subsignal("rwds",  Pins( "D1", dir="io")),
             Subsignal("cs",    PinsN("B2", dir="o")),
