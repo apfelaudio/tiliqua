@@ -9,9 +9,7 @@ from amaranth.vendor import LatticeECP5Platform
 
 from amaranth_boards.resources import *
 
-from luna.gateware.platform.core import LUNAPlatform
-
-class _TiliquaPlatform(LatticeECP5Platform):
+class TiliquaPlatform(LatticeECP5Platform):
     device      = "LFE5U-45F"
     package     = "BG256"
     speed       = "7"
@@ -106,14 +104,15 @@ class TiliquaDomainGenerator(Elaboratable):
         m.domains.fast   = ClockDomain()
         m.domains.audio  = ClockDomain()
         m.domains.raw48  = ClockDomain()
+        m.domains.hdmi  = ClockDomain()
+        m.domains.hdmi5x  = ClockDomain()
 
 
         clk48 = platform.request(platform.default_clk, dir='i').i
         reset  = platform.request(platform.default_rst, dir='i').i
-        #reset  = Signal(1, reset=0)
 
-        # ecppll -i 48 --clkout0 60 --clkout1 60 --reset -f pll60.v
-        # 60MHz for USB (currently also fast + sync domains)
+        # ecppll -i 48 --clkout0 60 --clkout1 120 --clkout2 40 --clkout3 200 --reset -f pll60.v
+        # 60MHz for USB (currently also sync domain. fast is for DQS)
 
         m.d.comb += [
             ClockSignal("raw48").eq(clk48),
@@ -128,7 +127,9 @@ class TiliquaDomainGenerator(Elaboratable):
 
                 # Generated clock outputs.
                 o_CLKOP=feedback60,
-                o_CLKOS=ClockSignal("usb"),
+                o_CLKOS=ClockSignal("fast"),
+                o_CLKOS2=ClockSignal("hdmi"),
+                o_CLKOS3=ClockSignal("hdmi5x"),
 
                 # Status.
                 o_LOCK=locked60,
@@ -148,9 +149,17 @@ class TiliquaDomainGenerator(Elaboratable):
                 p_CLKOP_CPHASE=4,
                 p_CLKOP_FPHASE=0,
                 p_CLKOS_ENABLE="ENABLED",
-                p_CLKOS_DIV=10,
+                p_CLKOS_DIV=5,
                 p_CLKOS_CPHASE=4,
                 p_CLKOS_FPHASE=0,
+                p_CLKOS2_ENABLE="ENABLED",
+                p_CLKOS2_DIV=15,
+                p_CLKOS2_CPHASE=4,
+                p_CLKOS2_FPHASE=0,
+                p_CLKOS3_ENABLE="ENABLED",
+                p_CLKOS3_DIV=3,
+                p_CLKOS3_CPHASE=4,
+                p_CLKOS3_FPHASE=0,
                 p_FEEDBK_PATH="CLKOP",
                 p_CLKFB_DIV=5,
 
@@ -199,17 +208,17 @@ class TiliquaDomainGenerator(Elaboratable):
                 p_OUTDIVIDER_MUXC="DIVC",
                 p_OUTDIVIDER_MUXD="DIVD",
 
-                p_CLKI_DIV = 5,
+                p_CLKI_DIV = 13,
                 p_CLKOP_ENABLE = "ENABLED",
-                p_CLKOP_DIV = 32,
+                p_CLKOP_DIV = 71,
                 p_CLKOP_CPHASE = 9,
                 p_CLKOP_FPHASE = 0,
                 p_CLKOS_ENABLE = "ENABLED",
-                p_CLKOS_DIV = 50,
+                p_CLKOS_DIV = 16,
                 p_CLKOS_CPHASE = 0,
                 p_CLKOS_FPHASE = 0,
                 p_FEEDBK_PATH = "CLKOP",
-                p_CLKFB_DIV = 2,
+                p_CLKFB_DIV = 3,
 
                 # Clock in.
                 i_CLKI=clk48,
@@ -246,18 +255,16 @@ class TiliquaDomainGenerator(Elaboratable):
 
         # Derived clocks and resets
         m.d.comb += [
+            ClockSignal("usb")   .eq(feedback60),
             ClockSignal("sync")  .eq(ClockSignal("usb")),
-            ClockSignal("fast")  .eq(ClockSignal("usb")),
+
             ResetSignal("sync")  .eq(~locked60),
             ResetSignal("fast")  .eq(~locked60),
             ResetSignal("usb")   .eq(~locked60),
+            ResetSignal("hdmi")  .eq(~locked60),
+            ResetSignal("hdmi5x").eq(~locked60),
 
             ResetSignal("audio")   .eq(~locked12),
         ]
 
         return m
-
-class TiliquaPlatform(_TiliquaPlatform, LUNAPlatform):
-    name                   = "Tiliqua (45F)"
-    clock_domain_generator = TiliquaDomainGenerator
-    default_usb_connection = "ulpi"

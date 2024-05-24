@@ -5,14 +5,14 @@ description = "USB Audio example for Tiliqua"
 
 requires-python = ">=3.9,<=3.11"
 dependencies = [
-    "amaranth[builtin-yosys]~=0.4",
-    "luna @ git+https://github.com/schnommus/luna@seb/isochronous-rebase",
+    "amaranth @ git+https://github.com/amaranth-lang/amaranth@main",
+    "amaranth-boards @ git+https://github.com/amaranth-lang/amaranth-boards@main",
+    "amaranth-soc @ git+https://github.com/amaranth-lang/amaranth-soc@main",
     "scipy>=1.9.3",
 ]
 
 [tool.pdm.dev-dependencies]
 test = [
-    "pytest",
 ]
 
 [tool.pdm.scripts]
@@ -28,3 +28,4 @@ build_example_diffuser = { call = "example_dsp.top:build_diffuser()" }
 build_example_waveshaper = { call = "example_dsp.top:build_waveshaper()" }
 build_example_touchmix = { call = "example_dsp.top:build_touchmix()" }
 build_example_nco = { call = "example_dsp.top:build_nco()" }
+build_example_vectorscope = { call = "example_vectorscope.top:build_vectorscope()" }
