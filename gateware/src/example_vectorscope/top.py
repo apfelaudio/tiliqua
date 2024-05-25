@@ -679,17 +679,16 @@ class HyperRAMPeripheral(Elaboratable):
 
         return m
 
+
 class FakeEurorackPmod(Elaboratable):
 
     def __init__(self):
-        self.sample_i = [Signal(signed(16)) for _ in range(4)]
+        self.sample_i = [Signal(ASQ) for _ in range(4)]
         self.fs_strobe = Signal()
 
     def elaborate(self, platform) -> Module:
         m = Module()
-
         ###
-
         return m
 
 class TiliquaFakeDomainGenerator(Elaboratable):
@@ -794,6 +793,6 @@ def verilog_vectorscope():
             "video_g":              (top.video.phy_g,                   None),
             "video_b":              (top.video.phy_b,                   None),
             "pmod0_fs_strobe":      (top.pmod0.fs_strobe,               None),
-            "pmod0_sample_i0":      (top.pmod0.sample_i[0],             None),
-            "pmod0_sample_i1":      (top.pmod0.sample_i[1],             None),
+            "pmod0_sample_i0":      (top.pmod0.sample_i[0]._target,     None),
+            "pmod0_sample_i1":      (top.pmod0.sample_i[1]._target,     None),
             }))
