@@ -47,7 +47,14 @@ int main(int argc, char** argv) {
     uint64_t idle_hi = 0;
 
     uint8_t *psram_data = (uint8_t*)malloc(1024*1024*16);
-    memset(psram_data, 0x0, 1024*1024*16);
+    for (uint32_t i = 0; i != 1024*1024*4; ++i) {
+        uint32_t *p = (uint32_t*)&psram_data[i*4];
+        if (i%2 == 0) {
+            *p = 0xFFFFFFFF;
+        } else {
+            *p = 0;
+        }
+    }
 
     uint32_t imx = 720;
     uint32_t imy = 720;

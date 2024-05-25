@@ -250,7 +250,7 @@ class LxVideo(Elaboratable):
 
 class Persistance(Elaboratable):
 
-    def __init__(self, fb_base=None, bus_master=None, fifo_depth=128, holdoff=1024):
+    def __init__(self, fb_base=None, bus_master=None, fifo_depth=32, holdoff=256):
         super().__init__()
 
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
@@ -296,7 +296,7 @@ class Persistance(Elaboratable):
                     bus.cyc.eq(1),
                     bus.we.eq(0),
                     bus.sel.eq(2**(bus.data_width//8)-1),
-                    bus.adr.eq(self.fb_base + dma_addr_in), 
+                    bus.adr.eq(self.fb_base + dma_addr_in),
                     self.fifo.w_data.eq(bus.dat_r),
                 ]
                 with m.If(~self.fifo.w_rdy):
@@ -323,7 +323,7 @@ class Persistance(Elaboratable):
                 m.d.comb += [
                     bus.stb.eq(1),
                     bus.cyc.eq(1),
-                    bus.we.eq(1),
+                    bus.we.eq(self.fifo.r_rdy),
                     bus.sel.eq(2**(bus.data_width//8)-1),
                     bus.adr.eq(self.fb_base + dma_addr_out),
                     bus.dat_w.eq((self.fifo.r_data >> 1) & 0x7f7f7f7f),
