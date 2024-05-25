@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     VerilatedFstC* tfp = new VerilatedFstC;
     top->trace(tfp, 99);  // Trace 99 levels of hierarchy (or see below)
     tfp->open("simx.fst");
-    uint32_t sim_time = 1000000;
+    uint64_t sim_time = 100000000000;
 
     top->psram_idle = 1;
     top->psram_write_ready = 1;
@@ -29,12 +29,19 @@ int main(int argc, char** argv) {
     top->eval();
     tfp->dump(contextp->time());
 
+    uint32_t mod = 0;
+
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
-        contextp->timeInc(1);
-        top->clk_sync = !top->clk_sync;
-        top->clk_hdmi = !top->clk_hdmi;
+        contextp->timeInc(8333);
+        if (mod % 3 == 0) {
+            top->clk_hdmi = !top->clk_hdmi;
+        }
+        if (mod % 2 == 0) {
+            top->clk_sync = !top->clk_sync;
+        }
         top->eval();
         tfp->dump(contextp->time());
+        mod += 1;
     }
     tfp->close();
     return 0;
