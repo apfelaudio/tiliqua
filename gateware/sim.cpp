@@ -61,17 +61,21 @@ int main(int argc, char** argv) {
             }
         }
         if (mod % 2 == 0) {
-            top->clk_sync = !top->clk_sync;
 
             if (top->clk_sync) {
 
-                top->psram_read_data_view =
-                    (psram_data[top->psram_address_ptr+0] << 24)  |
-                    (psram_data[top->psram_address_ptr+1] << 16)  |
-                    (psram_data[top->psram_address_ptr+2] << 8)   |
-                    (psram_data[top->psram_address_ptr+3] << 0);
-
                 // Probably incorrect ram r/w timing is causing the visual shift
+                // Switch these assignments to use internal comb do_read / do_write?
+                // put these inside the ram simulation component
+
+                if (top->psram_read_ready) {
+                    top->psram_read_data_view =
+                        (psram_data[top->psram_address_ptr+0] << 24)  |
+                        (psram_data[top->psram_address_ptr+1] << 16)  |
+                        (psram_data[top->psram_address_ptr+2] << 8)   |
+                        (psram_data[top->psram_address_ptr+3] << 0);
+                    top->eval();
+                }
 
                 if (top->psram_write_ready) {
                     psram_data[top->psram_address_ptr+3] = (uint8_t)(top->psram_write_data >> 0);
@@ -79,6 +83,7 @@ int main(int argc, char** argv) {
                     psram_data[top->psram_address_ptr+1] = (uint8_t)(top->psram_write_data >> 16);
                     psram_data[top->psram_address_ptr+0] = (uint8_t)(top->psram_write_data >> 24);
                     //printf("%x\n", top->psram_address_ptr);
+                    top->eval();
                 }
 
                 if (mod_pmod % 312 == 0) {
@@ -93,6 +98,8 @@ int main(int argc, char** argv) {
                 }
                 mod_pmod += 1;
             }
+
+            top->clk_sync = !top->clk_sync;
         }
         if (top->psram_idle == 1) {
             idle_hi += 1;
