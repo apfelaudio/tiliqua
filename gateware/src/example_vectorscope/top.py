@@ -68,17 +68,24 @@ class LxVideo(Elaboratable):
 
         self.sim = sim
 
+        self.vtg_hcount = Signal(12)
+        self.vtg_vcount = Signal(12)
+
+        self.phy_r = Signal(8)
+        self.phy_g = Signal(8)
+        self.phy_b = Signal(8)
+
     def elaborate(self, platform) -> Module:
         m = Module()
 
         m.submodules.fifo = self.fifo
 
-        vtg_hcount = Signal(12)
-        vtg_vcount = Signal(12)
+        vtg_hcount = self.vtg_hcount
+        vtg_vcount = self.vtg_vcount
 
-        phy_r = Signal(8)
-        phy_g = Signal(8)
-        phy_b = Signal(8)
+        phy_r = self.phy_r
+        phy_g = self.phy_g
+        phy_b = self.phy_b
 
         phy_de_hdmi = Signal()
         phy_vsync_hdmi = Signal()
@@ -776,6 +783,11 @@ def verilog_vectorscope():
             "psram_write_data":     (top.hyperram.psram.write_data,     None),
             "psram_read_ready":     (top.hyperram.psram.read_ready,     None),
             "psram_write_ready":    (top.hyperram.psram.write_ready,    None),
+            "video_hcount":         (top.video.vtg_hcount,              None),
+            "video_vcount":         (top.video.vtg_vcount,              None),
+            "video_r":              (top.video.phy_r,                   None),
+            "video_g":              (top.video.phy_g,                   None),
+            "video_b":              (top.video.phy_b,                   None),
             "pmod0_fs_strobe":      (top.pmod0.fs_strobe,               None),
             "pmod0_sample_i0":      (top.pmod0.sample_i[0],             None),
             "pmod0_sample_i1":      (top.pmod0.sample_i[1],             None),
