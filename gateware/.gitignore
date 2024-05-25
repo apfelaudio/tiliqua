@@ -1,5 +1,10 @@
+vectorscope.v
+obj_dir/
+*.bmp
+
 # VCD traces
 *.vcd
+*.fst
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
