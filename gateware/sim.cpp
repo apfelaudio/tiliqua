@@ -1,4 +1,6 @@
+#if defined VM_TRACE_FST && VM_TRACE_FST == 1
 #include <verilated_fst_c.h>
+#endif
 
 #include "Vvectorscope.h"
 #include "verilated.h"
@@ -12,23 +14,31 @@ int main(int argc, char** argv) {
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
     Vvectorscope* top = new Vvectorscope{contextp};
+#if defined VM_TRACE_FST && VM_TRACE_FST == 1
     Verilated::traceEverOn(true);
     VerilatedFstC* tfp = new VerilatedFstC;
     top->trace(tfp, 99);  // Trace 99 levels of hierarchy (or see below)
     tfp->open("simx.fst");
-    uint64_t sim_time = 50000000000;
+#endif
+    uint64_t sim_time = 300000000000;
 
     contextp->timeInc(1);
     top->rst_sync = 1;
     top->rst_hdmi = 1;
     top->eval();
+
+#if defined VM_TRACE_FST && VM_TRACE_FST == 1
     tfp->dump(contextp->time());
+#endif
 
     contextp->timeInc(1);
     top->rst_sync = 0;
     top->rst_hdmi = 0;
     top->eval();
+
+#if defined VM_TRACE_FST && VM_TRACE_FST == 1
     tfp->dump(contextp->time());
+#endif
 
     uint32_t mod = 0;
     uint32_t mod_pmod;
@@ -37,7 +47,7 @@ int main(int argc, char** argv) {
     uint64_t idle_hi = 0;
 
     uint8_t *psram_data = (uint8_t*)malloc(1024*1024*16);
-    memset(psram_data, 0xff, 1024*1024*16);
+    memset(psram_data, 0x0, 1024*1024*16);
 
     uint32_t imx = 720;
     uint32_t imy = 720;
@@ -47,7 +57,6 @@ int main(int argc, char** argv) {
     uint32_t pmod_clocks = 0;
 
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
-        contextp->timeInc(8333);
         if (mod % 3 == 0) {
             top->clk_hdmi = !top->clk_hdmi;
             if (top->clk_hdmi) {
@@ -61,6 +70,8 @@ int main(int argc, char** argv) {
             }
         }
         if (mod % 2 == 0) {
+
+            top->clk_sync = !top->clk_sync;
 
             if (top->clk_sync) {
 
@@ -89,8 +100,8 @@ int main(int argc, char** argv) {
                 if (mod_pmod % 312 == 0) {
                     ++pmod_clocks;
                     top->pmod0_fs_strobe = 1;
-                    top->pmod0_sample_i0 = (int16_t)5000.0*sin((float)pmod_clocks / 100.0);
-                    top->pmod0_sample_i1 = (int16_t)5000.0*cos((float)pmod_clocks / 100.0);
+                    top->pmod0_sample_i0 = (int16_t)10000.0*sin((float)pmod_clocks / 10000.0);
+                    top->pmod0_sample_i1 = (int16_t)10000.0*cos((float)pmod_clocks /  2000.0);
                 } else {
                     if (top->pmod0_fs_strobe) {
                         top->pmod0_fs_strobe = 0;
@@ -98,16 +109,17 @@ int main(int argc, char** argv) {
                 }
                 mod_pmod += 1;
             }
-
-            top->clk_sync = !top->clk_sync;
         }
         if (top->psram_idle == 1) {
             idle_hi += 1;
         } else {
             idle_lo += 1;
         }
+        contextp->timeInc(8333);
         top->eval();
+#if defined VM_TRACE_FST && VM_TRACE_FST == 1
         tfp->dump(contextp->time());
+#endif
         mod += 1;
     }
     printf("hi: %i, lo: %i, perc: %f\n", idle_hi, idle_lo,
@@ -115,6 +127,8 @@ int main(int argc, char** argv) {
 
     stbi_write_bmp("out.bmp", imx, imy, 3, image_data);
 
+#if defined VM_TRACE_FST && VM_TRACE_FST == 1
     tfp->close();
+#endif
     return 0;
 }

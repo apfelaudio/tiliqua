@@ -532,7 +532,9 @@ class FakeHyperRAMDQSInterface(Elaboratable):
                         is_read             .eq(~self.perform_write),
                         is_register         .eq(self.register_space),
                         is_multipage        .eq(~self.single_page),
-                        self.address_ptr    .eq(self.address),
+                        # address is specified with 16-bit granularity.
+                        # <<1 gets us to 8-bit for our fake uint8 storage.
+                        self.address_ptr    .eq(self.address<<1),
                     ]
             with m.State("LATCH_RWDS"):
                 m.next="SHIFT_COMMAND0"
