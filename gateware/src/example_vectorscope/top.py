@@ -403,8 +403,8 @@ class Draw(Elaboratable):
 
                 with m.If(pmod0.fs_strobe):
                     m.d.sync += [
-                        sample_x.eq(pmod0.sample_i[0]>>6),
-                        sample_y.eq(pmod0.sample_i[1]>>6),
+                        sample_x.eq(pmod0.sample_i[0].sas_value()>>6),
+                        sample_y.eq(pmod0.sample_i[1].sas_value()>>6),
                     ]
 
                     m.next = 'LATCH1'
@@ -767,9 +767,12 @@ class VectorScopeTop(Elaboratable):
         return m
 
 def build_vectorscope():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(VectorScopeTop())
+    overrides = {
+        "debug_verilog": True,
+        "verbose": True,
+        "nextpnr_opts": "--timing-allow-fail"
+    }
+    TiliquaPlatform().build(VectorScopeTop(), **overrides)
 
 def verilog_vectorscope():
     top = VectorScopeTop(sim=True)
