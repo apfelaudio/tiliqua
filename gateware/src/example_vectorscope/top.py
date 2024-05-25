@@ -460,7 +460,6 @@ class Draw(Elaboratable):
 
 class FakeHyperRAMDQSInterface(Elaboratable):
 
-    LOW_LATENCY_CLOCKS  = 3
     HIGH_LATENCY_CLOCKS = 5
 
     def __init__(self):
@@ -491,10 +490,80 @@ class FakeHyperRAMDQSInterface(Elaboratable):
 
         self.fsm = Signal(8)
 
+        self.address_ptr      = Signal(32)
+        self.read_data_view   = Signal(32)
+
     def elaborate(self, platform):
         m = Module()
 
-        ###
+        #
+        # Latched control/addressing signals.
+        #
+        is_read         = Signal()
+        is_register     = Signal()
+        is_multipage    = Signal()
+
+        #
+        # FSM datapath signals.
+        #
+
+        # Tracks whether we need to add an extra latency period between our
+        # command and the data body.
+        extra_latency   = Signal()
+
+        # Tracks how many cycles of latency we have remaining between a command
+        # and the relevant data stages.
+        latency_clocks_remaining  = Signal(range(0, self.HIGH_LATENCY_CLOCKS + 1))
+
+        with m.FSM() as fsm:
+
+            with m.State('IDLE'):
+                m.d.comb += self.idle        .eq(1)
+                with m.If(self.start_transfer):
+                    m.next = 'LATCH_RWDS'
+                    m.d.sync += [
+                        is_read             .eq(~self.perform_write),
+                        is_register         .eq(self.register_space),
+                        is_multipage        .eq(~self.single_page),
+                        self.address_ptr    .eq(self.address),
+                    ]
+            with m.State("LATCH_RWDS"):
+                m.next="SHIFT_COMMAND0"
+            with m.State('SHIFT_COMMAND0'):
+                m.next = 'SHIFT_COMMAND1'
+            with m.State('SHIFT_COMMAND1'):
+                with m.If(is_register & ~is_read):
+                    m.next = 'WRITE_DATA'
+                with m.Else():
+                    m.next = "HANDLE_LATENCY"
+                    m.d.sync += latency_clocks_remaining.eq(self.HIGH_LATENCY_CLOCKS)
+            with m.State('HANDLE_LATENCY'):
+                m.d.sync += latency_clocks_remaining.eq(latency_clocks_remaining - 1)
+                with m.If(latency_clocks_remaining == 0):
+                    with m.If(is_read):
+                        m.next = 'READ_DATA'
+                    with m.Else():
+                        m.next = 'WRITE_DATA'
+            with m.State('READ_DATA'):
+                m.d.comb += [
+                    self.read_data     .eq(self.read_data_view),
+                    self.read_ready    .eq(1),
+                ]
+                m.d.sync += self.address_ptr.eq(self.address_ptr + 4)
+                with m.If(self.final_word):
+                    m.next = 'RECOVERY'
+            with m.State("WRITE_DATA"):
+                m.d.comb += self.write_ready.eq(1),
+                m.d.sync += self.address_ptr.eq(self.address_ptr + 4)
+                with m.If(is_register):
+                    m.next = 'IDLE'
+                with m.Elif(self.final_word):
+                    m.next = 'RECOVERY'
+            with m.State('RECOVERY'):
+                m.d.sync += self.address_ptr.eq(0)
+                m.next = 'IDLE'
+
+        m.d.comb += self.fsm.eq(fsm.state)
 
         return m
 
@@ -701,14 +770,12 @@ def verilog_vectorscope():
             "rst_sync":             (ResetSignal("sync"),               None),
             "clk_hdmi":             (ClockSignal("hdmi"),               None),
             "rst_hdmi":             (ResetSignal("hdmi"),               None),
-            "psram_perform_write":  (top.hyperram.psram.perform_write,  None),
-            "psram_start_transfer": (top.hyperram.psram.start_transfer, None),
-            "psram_address":        (top.hyperram.psram.address,        None),
+            "psram_idle":           (top.hyperram.psram.idle,           None),
+            "psram_address_ptr":    (top.hyperram.psram.address_ptr,    None),
+            "psram_read_data_view": (top.hyperram.psram.read_data_view, None),
+            "psram_write_data":     (top.hyperram.psram.write_data,     None),
             "psram_read_ready":     (top.hyperram.psram.read_ready,     None),
             "psram_write_ready":    (top.hyperram.psram.write_ready,    None),
-            "psram_read_data":      (top.hyperram.psram.read_data,      None),
-            "psram_write_data":     (top.hyperram.psram.write_data,     None),
-            "psram_idle":           (top.hyperram.psram.idle,           None),
             "pmod0_fs_strobe":      (top.pmod0.fs_strobe,               None),
             "pmod0_sample_i0":      (top.pmod0.sample_i[0],             None),
             "pmod0_sample_i1":      (top.pmod0.sample_i[1],             None),
