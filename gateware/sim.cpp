@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     top->trace(tfp, 99);  // Trace 99 levels of hierarchy (or see below)
     tfp->open("simx.fst");
 #endif
-    uint64_t sim_time = 200000000000;
+    uint64_t sim_time = 1000000000000;
 
     contextp->timeInc(1);
     top->rst_sync = 1;
@@ -56,6 +56,8 @@ int main(int argc, char** argv) {
 
     uint32_t pmod_clocks = 0;
 
+    uint32_t frames = 0;
+
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
         if (mod % 3 == 0) {
             top->clk_hdmi = !top->clk_hdmi;
@@ -66,6 +68,13 @@ int main(int argc, char** argv) {
                     image_data[y*imx*3 + x*3 + 0] = top->video_r;
                     image_data[y*imx*3 + x*3 + 1] = top->video_g;
                     image_data[y*imx*3 + x*3 + 2] = top->video_b;
+                }
+                if (x == imx-1 && y == imy-1) {
+                    char name[64];
+                    sprintf(name, "frame%02d.bmp", frames);
+                    printf("out %s\n", name);
+                    stbi_write_bmp(name, imx, imy, 3, image_data);
+                    ++frames;
                 }
             }
         }
@@ -124,8 +133,6 @@ int main(int argc, char** argv) {
     }
     printf("hi: %i, lo: %i, perc: %f\n", idle_hi, idle_lo,
             (float)idle_lo / (float)(idle_hi + idle_lo));
-
-    stbi_write_bmp("out.bmp", imx, imy, 3, image_data);
 
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
     tfp->close();
