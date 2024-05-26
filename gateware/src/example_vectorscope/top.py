@@ -333,12 +333,8 @@ class Persistance(Elaboratable):
                     pixa.eq(wr_source),
                 ]
 
-                decr = 16
                 for n in range(4):
-                    with m.If(pixa[n] > decr):
-                        m.d.comb += pixb[n].eq(pixa[n] - decr)
-                    with m.Else():
-                        m.d.comb += pixb[n].eq(0)
+                    m.d.comb += pixb[n].eq(pixa[n] >> 1)
 
                 m.d.comb += [
                     bus.stb.eq(1),
