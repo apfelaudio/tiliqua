@@ -250,7 +250,7 @@ class LxVideo(Elaboratable):
 
 class Persistance(Elaboratable):
 
-    def __init__(self, fb_base=None, bus_master=None, fifo_depth=8, holdoff=64):
+    def __init__(self, fb_base=None, bus_master=None, fifo_depth=128, holdoff=1024):
         super().__init__()
 
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
@@ -325,12 +325,27 @@ class Persistance(Elaboratable):
 
             with m.State('BURST-OUT'):
                 m.d.sync += holdoff_count.eq(0)
+
+                pixa = Signal(data.ArrayLayout(unsigned(8), 4))
+                pixb = Signal(data.ArrayLayout(unsigned(8), 4))
+
+                m.d.comb += [
+                    pixa.eq(wr_source),
+                ]
+
+                decr = 16
+                for n in range(4):
+                    with m.If(pixa[n] > decr):
+                        m.d.comb += pixb[n].eq(pixa[n] - decr)
+                    with m.Else():
+                        m.d.comb += pixb[n].eq(0)
+
                 m.d.comb += [
                     bus.stb.eq(1),
                     bus.cyc.eq(1),
                     bus.we.eq(1),
                     bus.sel.eq(2**(bus.data_width//8)-1),
-                    bus.dat_w.eq((wr_source >> 1) & 0x7f7f7f7f),
+                    bus.dat_w.eq(pixb),
                     bus.adr.eq(self.fb_base + dma_addr_out),
                     wr_source.eq(pnext),
                 ]
