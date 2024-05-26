@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
     tfp->open("simx.fst");
 #endif
     uint64_t sim_time = 1000000000000;
+    //uint64_t sim_time = 10000000000;
 
     contextp->timeInc(1);
     top->rst_sync = 1;
@@ -49,11 +50,15 @@ int main(int argc, char** argv) {
     uint8_t *psram_data = (uint8_t*)malloc(1024*1024*16);
     for (uint32_t i = 0; i != 1024*1024*4; ++i) {
         uint32_t *p = (uint32_t*)&psram_data[i*4];
+        //*p = i+1024;
+        /*
         if (i%2 == 0) {
             *p = 0xFFFFFFFF;
         } else {
             *p = 0;
         }
+        */
+        *p = 0;
     }
 
     uint32_t imx = 720;
@@ -97,19 +102,20 @@ int main(int argc, char** argv) {
 
                 if (top->psram_read_ready) {
                     top->psram_read_data_view =
-                        (psram_data[top->psram_address_ptr+0] << 24)  |
-                        (psram_data[top->psram_address_ptr+1] << 16)  |
-                        (psram_data[top->psram_address_ptr+2] << 8)   |
-                        (psram_data[top->psram_address_ptr+3] << 0);
+                        (psram_data[top->psram_address_ptr+3] << 24)  |
+                        (psram_data[top->psram_address_ptr+2] << 16)  |
+                        (psram_data[top->psram_address_ptr+1] << 8)   |
+                        (psram_data[top->psram_address_ptr+0] << 0);
+                    //printf("read %x@%x\n", top->psram_read_data_view, top->psram_address_ptr);
                     top->eval();
                 }
 
                 if (top->psram_write_ready) {
-                    psram_data[top->psram_address_ptr+3] = (uint8_t)(top->psram_write_data >> 0);
-                    psram_data[top->psram_address_ptr+2] = (uint8_t)(top->psram_write_data >> 8);
-                    psram_data[top->psram_address_ptr+1] = (uint8_t)(top->psram_write_data >> 16);
-                    psram_data[top->psram_address_ptr+0] = (uint8_t)(top->psram_write_data >> 24);
-                    //printf("%x\n", top->psram_address_ptr);
+                    psram_data[top->psram_address_ptr+0] = (uint8_t)(top->psram_write_data >> 0);
+                    psram_data[top->psram_address_ptr+1] = (uint8_t)(top->psram_write_data >> 8);
+                    psram_data[top->psram_address_ptr+2] = (uint8_t)(top->psram_write_data >> 16);
+                    psram_data[top->psram_address_ptr+3] = (uint8_t)(top->psram_write_data >> 24);
+                    //printf("write %x@%x\n", top->psram_write_data, top->psram_address_ptr);
                     top->eval();
                 }
 

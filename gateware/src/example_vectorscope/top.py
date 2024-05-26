@@ -250,7 +250,7 @@ class LxVideo(Elaboratable):
 
 class Persistance(Elaboratable):
 
-    def __init__(self, fb_base=None, bus_master=None, fifo_depth=32, holdoff=256):
+    def __init__(self, fb_base=None, bus_master=None, fifo_depth=8, holdoff=64):
         super().__init__()
 
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
@@ -265,7 +265,7 @@ class Persistance(Elaboratable):
         self.fb_hsize = 720
         self.fb_vsize = 720
 
-        self.dma_addr_in = Signal(32, reset=1)
+        self.dma_addr_in = Signal(32, reset=0)
         self.dma_addr_out = Signal(32)
 
         self.enable = Signal(1, reset=0)
@@ -284,6 +284,9 @@ class Persistance(Elaboratable):
 
         holdoff_count = Signal(32)
 
+        pnext = Signal(32)
+        wr_source = Signal(32)
+
         with m.FSM() as fsm:
             with m.State('OFF'):
                 with m.If(self.enable):
@@ -297,7 +300,6 @@ class Persistance(Elaboratable):
                     bus.we.eq(0),
                     bus.sel.eq(2**(bus.data_width//8)-1),
                     bus.adr.eq(self.fb_base + dma_addr_in),
-                    self.fifo.w_data.eq(bus.dat_r),
                 ]
                 with m.If(~self.fifo.w_rdy):
                     m.d.comb += bus.cti.eq(
@@ -308,6 +310,7 @@ class Persistance(Elaboratable):
                             wishbone.CycleType.INCR_BURST)
                 with m.If(bus.stb & bus.ack & self.fifo.w_rdy): # WARN: drops last word
                     m.d.comb += self.fifo.w_en.eq(1)
+                    m.d.comb += self.fifo.w_data.eq(bus.dat_r),
                     with m.If(dma_addr_in < (fb_len_words-1)):
                         m.d.sync += dma_addr_in.eq(dma_addr_in + 1)
                     with m.Else():
@@ -316,6 +319,8 @@ class Persistance(Elaboratable):
             with m.State('WAIT1'):
                 m.d.sync += holdoff_count.eq(holdoff_count + 1)
                 with m.If(holdoff_count == self.holdoff):
+                    m.d.sync += pnext.eq(self.fifo.r_data)
+                    m.d.comb += self.fifo.r_en.eq(1)
                     m.next = 'BURST-OUT'
 
             with m.State('BURST-OUT'):
@@ -323,10 +328,11 @@ class Persistance(Elaboratable):
                 m.d.comb += [
                     bus.stb.eq(1),
                     bus.cyc.eq(1),
-                    bus.we.eq(self.fifo.r_rdy),
+                    bus.we.eq(1),
                     bus.sel.eq(2**(bus.data_width//8)-1),
+                    bus.dat_w.eq((wr_source >> 1) & 0x7f7f7f7f),
                     bus.adr.eq(self.fb_base + dma_addr_out),
-                    bus.dat_w.eq((self.fifo.r_data >> 1) & 0x7f7f7f7f),
+                    wr_source.eq(pnext),
                 ]
 
                 with m.If(~self.fifo.r_rdy):
@@ -336,12 +342,15 @@ class Persistance(Elaboratable):
                 with m.Else():
                     m.d.comb += bus.cti.eq(
                             wishbone.CycleType.INCR_BURST)
-                with m.If(bus.stb & bus.ack & self.fifo.r_rdy):
+                with m.If(bus.stb & bus.ack):
                     m.d.comb += self.fifo.r_en.eq(1)
+                    m.d.comb += wr_source.eq(self.fifo.r_data),
                     with m.If(dma_addr_out < (fb_len_words-1)):
                         m.d.sync += dma_addr_out.eq(dma_addr_out + 1)
+                        m.d.comb += bus.adr.eq(self.fb_base + dma_addr_out + 1),
                     with m.Else():
                         m.d.sync += dma_addr_out.eq(0)
+                        m.d.comb += bus.adr.eq(self.fb_base + 0),
 
             with m.State('WAIT2'):
                 m.d.sync += holdoff_count.eq(holdoff_count + 1)
