@@ -675,3 +675,72 @@ class MatrixMix(wiring.Component):
                     m.next = 'WAIT-VALID'
 
         return m
+
+from scipy import signal
+
+class FIR(wiring.Component):
+
+    i: In(stream.Signature(ASQ))
+    o: Out(stream.Signature(ASQ))
+
+    def __init__(self,
+                 fs:               int,
+                 filter_cutoff_hz: int,
+                 filter_order:     int,
+                 filter_type:      str='lowpass'):
+
+
+        cutoff = filter_cutoff_hz / fs
+        taps = signal.firwin(filter_order, cutoff, fs=fs,
+                             pass_zero=filter_type, window='hamming')
+        self.taps_float = taps
+
+        super().__init__()
+
+    def elaborate(self, platform):
+        m = Module()
+
+        self.ctype = fixed.SQ(2, ASQ.f_width)
+
+        self.taps = taps = Array(fixed.Const(t, shape=self.ctype)
+                                 for t in self.taps_float)
+        x                = Array(Signal(self.ctype) for t in taps)
+        n                = len(self.taps)
+
+        ix = Signal(range(n+1))
+        a  = Signal(self.ctype)
+        b  = Signal(self.ctype)
+        y  = Signal(self.ctype)
+
+        with m.FSM() as fsm:
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.i.ready.eq(1),
+                with m.If(self.i.valid):
+                    m.d.sync += [x[i+1].eq(x[i]) for i in range(n-1)]
+                    m.d.sync += x[0].eq(self.i.payload)
+                    m.d.sync += [
+                        ix.eq(1),
+                        a.eq(x[0]),
+                        b.eq(taps[0]),
+                        y.eq(0)
+                    ]
+                    m.next = "MAC"
+            with m.State("MAC"):
+                m.d.sync += y.eq(y + (a * b))
+                with m.If(ix == n):
+                    m.next = "WAIT-READY"
+                with m.Else():
+                    m.d.sync += [
+                        a.eq(x[ix]),
+                        b.eq(taps[ix]),
+                        ix.eq(ix + 1)
+                    ]
+            with m.State('WAIT-READY'):
+                m.d.comb += [
+                    self.o.valid.eq(1),
+                    self.o.payload.eq(y)
+                ]
+                with m.If(self.o.ready):
+                    m.next = 'WAIT-VALID'
+
+        return m
