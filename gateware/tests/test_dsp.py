@@ -279,3 +279,29 @@ class DSPTests(unittest.TestCase):
         sim.add_process(testbench)
         with sim.write_vcd(vcd_file=open("test_fir.vcd", "w")):
             sim.run()
+
+    def test_resample(self):
+
+        resample = dsp.Resample(fs_in=48000, n_up=2, m_down=1)
+
+        def testbench():
+            for n in range(0, 100):
+                x = fixed.Const(0.4*(math.sin(n*0.2) + math.sin(n)), shape=ASQ)
+                yield resample.i.payload.eq(x)
+                yield resample.i.valid.eq(1)
+                yield Tick()
+                yield resample.i.valid.eq(0)
+                yield Tick()
+                for _ in range(2):
+                    while (yield resample.o.valid) != 1:
+                        yield Tick()
+                    yield resample.o.ready.eq(1)
+                    yield Tick()
+                    yield resample.o.ready.eq(0)
+                    yield Tick()
+
+        sim = Simulator(resample)
+        sim.add_clock(1e-6)
+        sim.add_process(testbench)
+        with sim.write_vcd(vcd_file=open("test_resample.vcd", "w")):
+            sim.run()

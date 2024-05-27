@@ -1,6 +1,7 @@
 from amaranth              import *
 from amaranth.lib          import wiring, data
 from amaranth.lib.wiring   import In, Out
+from amaranth.lib.fifo     import SyncFIFO
 from amaranth.hdl.mem      import Memory
 from amaranth.utils        import log2_int
 
@@ -680,6 +681,8 @@ from scipy import signal
 
 class FIR(wiring.Component):
 
+    # TODO: adjustable headroom for upsampler
+
     i: In(stream.Signature(ASQ))
     o: Out(stream.Signature(ASQ))
 
@@ -688,7 +691,6 @@ class FIR(wiring.Component):
                  filter_cutoff_hz: int,
                  filter_order:     int,
                  filter_type:      str='lowpass'):
-
 
         cutoff = filter_cutoff_hz / fs
         taps = signal.firwin(filter_order, cutoff, fs=fs,
@@ -742,5 +744,84 @@ class FIR(wiring.Component):
                 ]
                 with m.If(self.o.ready):
                     m.next = 'WAIT-VALID'
+
+        return m
+
+class Resample(wiring.Component):
+
+    # TODO prescaling!
+
+    i: In(stream.Signature(ASQ))
+    o: Out(stream.Signature(ASQ))
+
+    def __init__(self,
+                 fs_in:  int,
+                 n_up:   int,
+                 m_down: int):
+
+        self.fs_in  = fs_in
+        self.n_up   = n_up
+        self.m_down = m_down
+
+        super().__init__()
+
+    def elaborate(self, platform):
+
+        m = Module()
+
+        m.submodules.filt = filt = FIR(
+            fs=self.fs_in*self.n_up,
+            filter_cutoff_hz=self.fs_in/2,
+            #filter_cutoff_hz=min(self.fs_in/2,
+            #                     int(self.fs_in*(self.n_up/self.m_down)/2)),
+            filter_order=24)
+
+        m.submodules.down_fifo = down_fifo = SyncFIFO(
+            width=ASQ.as_shape().width, depth=self.n_up)
+
+        upsampled_signal  = Signal(ASQ)
+        upsample_counter  = Signal(range(self.n_up))
+
+        m.d.comb += [
+            self.i.ready.eq((upsample_counter == 0) & (down_fifo.w_rdy)),
+            filt.i.payload.eq(upsampled_signal),
+            filt.i.valid.eq(upsample_counter > 0),
+            down_fifo.w_en.eq(down_fifo.w_rdy & filt.o.valid), # FIXME: was i.valid?
+            filt.o.ready.eq(down_fifo.w_en),
+        ]
+
+        with m.If(filt.i.ready):
+            with m.If(self.i.valid & self.i.ready):
+                m.d.comb += [
+                    upsampled_signal.eq(self.i.payload), # TODO prescale!
+                    filt.i.valid.eq(1),
+                ]
+                m.d.sync += upsample_counter.eq(self.n_up - 1)
+            with m.Elif(upsample_counter > 0):
+                m.d.comb += upsampled_signal.eq(0)
+                m.d.sync += upsample_counter.eq(upsample_counter - 1)
+
+        downsample_counter = Signal(range(self.m_down))
+
+        m.d.comb += [
+            down_fifo.w_data.eq(filt.o.payload),
+            self.o.valid.eq(down_fifo.r_rdy),
+        ]
+
+        with m.If(down_fifo.r_rdy & self.o.ready):
+            m.d.comb += down_fifo.r_en.eq(1)
+            with m.If(downsample_counter == 0):
+                m.d.sync += downsample_counter.eq(self.m_down - 1)
+                m.d.comb += [
+                    self.o.payload.eq(down_fifo.r_data),
+                    self.o.valid.eq(1),
+                ]
+            with m.Else():
+                m.d.sync += downsample_counter.eq(downsample_counter - 1)
+                m.d.comb += self.o.valid.eq(0)
+        with m.Else():
+            m.d.comb += [
+                down_fifo.r_en.eq(0),
+            ]
 
         return m
