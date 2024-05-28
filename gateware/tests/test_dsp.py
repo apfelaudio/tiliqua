@@ -255,8 +255,8 @@ class DSPTests(unittest.TestCase):
 
     def test_fir(self):
 
-        fir = dsp.FIR(fs=48000, filter_cutoff_hz=1000,
-                      filter_order=24)
+        fir = dsp.FIR(fs=48000, filter_cutoff_hz=2000,
+                      filter_order=10)
 
         def testbench():
             for n in range(0, 100):

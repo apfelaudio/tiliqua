@@ -690,12 +690,14 @@ class FIR(wiring.Component):
                  fs:               int,
                  filter_cutoff_hz: int,
                  filter_order:     int,
-                 filter_type:      str='lowpass'):
+                 filter_type:      str='lowpass',
+                 prescale:         float=1):
 
-        cutoff = filter_cutoff_hz / fs
-        taps = signal.firwin(filter_order, cutoff, fs=fs,
-                             pass_zero=filter_type, window='hamming')
+        taps = signal.firwin(numtaps=filter_order+1, cutoff=filter_cutoff_hz,
+                             fs=fs, pass_zero=filter_type, window='hamming')
         self.taps_float = taps
+        self.prescale   = prescale
+        print(taps)
 
         super().__init__()
 
@@ -704,8 +706,9 @@ class FIR(wiring.Component):
 
         self.ctype = fixed.SQ(2, ASQ.f_width)
 
-        self.taps = taps = Array(fixed.Const(t, shape=self.ctype)
+        self.taps = taps = Array(fixed.Const(t*self.prescale, shape=self.ctype)
                                  for t in self.taps_float)
+        print(self.taps)
         x                = Array(Signal(self.ctype) for t in taps)
         n                = len(self.taps)
 
@@ -771,10 +774,10 @@ class Resample(wiring.Component):
 
         m.submodules.filt = filt = FIR(
             fs=self.fs_in*self.n_up,
-            filter_cutoff_hz=self.fs_in/2,
-            #filter_cutoff_hz=min(self.fs_in/2,
-            #                     int(self.fs_in*(self.n_up/self.m_down)/2)),
-            filter_order=24)
+            filter_cutoff_hz=min(self.fs_in/2,
+                                 int((self.fs_in/2)*(self.n_up/self.m_down))),
+            filter_order=10,
+            prescale=self.n_up)
 
         m.submodules.down_fifo = down_fifo = SyncFIFO(
             width=ASQ.as_shape().width, depth=self.n_up)
