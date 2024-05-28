@@ -697,7 +697,6 @@ class FIR(wiring.Component):
                              fs=fs, pass_zero=filter_type, window='hamming')
         self.taps_float = taps
         self.prescale   = prescale
-        print(taps)
 
         super().__init__()
 
@@ -708,7 +707,6 @@ class FIR(wiring.Component):
 
         self.taps = taps = Array(fixed.Const(t*self.prescale, shape=self.ctype)
                                  for t in self.taps_float)
-        print(self.taps)
         x                = Array(Signal(self.ctype) for t in taps)
         n                = len(self.taps)
 
@@ -752,8 +750,6 @@ class FIR(wiring.Component):
 
 class Resample(wiring.Component):
 
-    # TODO prescaling!
-
     i: In(stream.Signature(ASQ))
     o: Out(stream.Signature(ASQ))
 
@@ -776,7 +772,7 @@ class Resample(wiring.Component):
             fs=self.fs_in*self.n_up,
             filter_cutoff_hz=min(self.fs_in/2,
                                  int((self.fs_in/2)*(self.n_up/self.m_down))),
-            filter_order=10,
+            filter_order=4*self.n_up, # order must be scaled by upsampling factor
             prescale=self.n_up)
 
         m.submodules.down_fifo = down_fifo = SyncFIFO(
@@ -787,21 +783,22 @@ class Resample(wiring.Component):
 
         m.d.comb += [
             self.i.ready.eq((upsample_counter == 0) & (down_fifo.w_rdy)),
-            filt.i.payload.eq(upsampled_signal),
-            filt.i.valid.eq(upsample_counter > 0),
-            down_fifo.w_en.eq(down_fifo.w_rdy & filt.o.valid), # FIXME: was i.valid?
+            down_fifo.w_en.eq(down_fifo.w_rdy & filt.o.valid),
             filt.o.ready.eq(down_fifo.w_en),
         ]
 
         with m.If(filt.i.ready):
             with m.If(self.i.valid & self.i.ready):
                 m.d.comb += [
-                    upsampled_signal.eq(self.i.payload), # TODO prescale!
+                    filt.i.payload.eq(self.i.payload),
                     filt.i.valid.eq(1),
                 ]
                 m.d.sync += upsample_counter.eq(self.n_up - 1)
             with m.Elif(upsample_counter > 0):
-                m.d.comb += upsampled_signal.eq(0)
+                m.d.comb += [
+                    filt.i.payload.eq(0),
+                    filt.i.valid.eq(1),
+                ]
                 m.d.sync += upsample_counter.eq(upsample_counter - 1)
 
         downsample_counter = Signal(range(self.m_down))

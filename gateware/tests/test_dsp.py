@@ -282,7 +282,10 @@ class DSPTests(unittest.TestCase):
 
     def test_resample(self):
 
-        resample = dsp.Resample(fs_in=48000, n_up=2, m_down=1)
+        N_UP   = 2
+        M_DOWN = 1
+
+        resample = dsp.Resample(fs_in=48000, n_up=N_UP, m_down=M_DOWN)
 
         def testbench():
             for n in range(0, 100):
@@ -292,7 +295,7 @@ class DSPTests(unittest.TestCase):
                 yield Tick()
                 yield resample.i.valid.eq(0)
                 yield Tick()
-                for _ in range(2):
+                for _ in range(N_UP):
                     while (yield resample.o.valid) != 1:
                         yield Tick()
                     yield resample.o.ready.eq(1)
