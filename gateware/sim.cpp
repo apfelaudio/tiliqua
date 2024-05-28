@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     tfp->open("simx.fst");
 #endif
     //uint64_t sim_time = 1000000000000;
-    uint64_t sim_time =  500000000000;
+    uint64_t sim_time =  200000000000;
 
     contextp->timeInc(1);
     top->rst_sync = 1;
@@ -122,8 +122,8 @@ int main(int argc, char** argv) {
                 if (mod_pmod % 312 == 0) {
                     ++pmod_clocks;
                     top->pmod0_fs_strobe = 1;
-                    top->pmod0_sample_i0 = (int16_t)10000.0*sin((float)pmod_clocks / 10000.0);
-                    top->pmod0_sample_i1 = (int16_t)10000.0*cos((float)pmod_clocks /  2000.0);
+                    top->pmod0_sample_i0 = (int16_t)20000.0*sin((float)pmod_clocks / 2000.0);
+                    top->pmod0_sample_i1 = (int16_t)20000.0*cos((float)pmod_clocks /   50.0);
                 } else {
                     if (top->pmod0_fs_strobe) {
                         top->pmod0_fs_strobe = 0;

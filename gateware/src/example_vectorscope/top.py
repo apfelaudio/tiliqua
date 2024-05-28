@@ -384,7 +384,6 @@ class Draw(Elaboratable):
 
         self.sample_x = Signal(signed(16))
         self.sample_y = Signal(signed(16))
-        self.fs_strobe = Signal(1)
 
         self.enable = Signal(1, reset=0)
 
@@ -406,7 +405,26 @@ class Draw(Elaboratable):
 
         pmod0 = self.pmod0
 
-        m.d.comb += self.fs_strobe.eq(pmod0.fs_strobe)
+        m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0)
+        m.submodules.split = split = dsp.Split(n_channels=4)
+        m.submodules.merge = merge = dsp.Merge(n_channels=4)
+
+        N_UP=6
+        m.submodules.resample0 = resample0 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
+        m.submodules.resample1 = resample1 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
+
+        wiring.connect(m, astream.istream, split.i)
+
+        wiring.connect(m, split.o[0], resample0.i)
+        wiring.connect(m, split.o[1], resample1.i)
+        wiring.connect(m, split.o[2], dsp.ASQ_READY)
+        wiring.connect(m, split.o[3], dsp.ASQ_READY)
+
+        wiring.connect(m, resample0.o,   merge.i[0])
+        wiring.connect(m, resample1.o,   merge.i[1])
+        wiring.connect(m, dsp.ASQ_VALID, merge.i[2])
+        wiring.connect(m, dsp.ASQ_VALID, merge.i[3])
+
 
         px_read = self.px_read
         px_sum = self.px_sum
@@ -421,12 +439,12 @@ class Draw(Elaboratable):
 
             with m.State('LATCH0'):
 
-                with m.If(pmod0.fs_strobe):
+                m.d.comb += merge.o.ready.eq(1)
+                with m.If(merge.o.valid):
                     m.d.sync += [
-                        sample_x.eq(pmod0.sample_i[0].sas_value()>>6),
-                        sample_y.eq(pmod0.sample_i[1].sas_value()>>6),
+                        sample_x.eq(merge.o.payload[0].sas_value()>>6),
+                        sample_y.eq(merge.o.payload[1].sas_value()>>6),
                     ]
-
                     m.next = 'LATCH1'
 
             with m.State('LATCH1'):
@@ -703,12 +721,17 @@ class HyperRAMPeripheral(Elaboratable):
 class FakeEurorackPmod(Elaboratable):
 
     def __init__(self):
-        self.sample_i = [Signal(ASQ) for _ in range(4)]
+        self.sample_i = Signal(data.ArrayLayout(ASQ, 4))
+        self.sample_o = Signal(data.ArrayLayout(ASQ, 4))
+        self.sample_inject = [Signal(ASQ) for _ in range(4)]
         self.fs_strobe = Signal()
 
     def elaborate(self, platform) -> Module:
         m = Module()
-        ###
+
+        for n in range(4):
+            m.d.comb += self.sample_i[n].eq(self.sample_inject[n])
+
         return m
 
 class TiliquaFakeDomainGenerator(Elaboratable):
@@ -728,6 +751,11 @@ class TiliquaFakeDomainGenerator(Elaboratable):
         m.domains.raw48  = ClockDomain()
         m.domains.hdmi  = ClockDomain()
         m.domains.hdmi5x  = ClockDomain()
+
+        m.d.comb += [
+            ClockSignal("audio").eq(ClockSignal("sync")),
+            ResetSignal("audio").eq(ResetSignal("sync")),
+        ]
 
         return m
 
@@ -813,6 +841,6 @@ def verilog_vectorscope():
             "video_g":              (top.video.phy_g,                   None),
             "video_b":              (top.video.phy_b,                   None),
             "pmod0_fs_strobe":      (top.pmod0.fs_strobe,               None),
-            "pmod0_sample_i0":      (top.pmod0.sample_i[0]._target,     None),
-            "pmod0_sample_i1":      (top.pmod0.sample_i[1]._target,     None),
+            "pmod0_sample_i0":      (top.pmod0.sample_inject[0]._target,None),
+            "pmod0_sample_i1":      (top.pmod0.sample_inject[1]._target,None),
             }))
