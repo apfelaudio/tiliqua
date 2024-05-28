@@ -772,7 +772,7 @@ class Resample(wiring.Component):
             fs=self.fs_in*self.n_up,
             filter_cutoff_hz=min(self.fs_in/2,
                                  int((self.fs_in/2)*(self.n_up/self.m_down))),
-            filter_order=4*self.n_up, # order must be scaled by upsampling factor
+            filter_order=8*self.n_up, # order must be scaled by upsampling factor
             prescale=self.n_up)
 
         m.submodules.down_fifo = down_fifo = SyncFIFO(
@@ -801,27 +801,29 @@ class Resample(wiring.Component):
                 ]
                 m.d.sync += upsample_counter.eq(upsample_counter - 1)
 
-        downsample_counter = Signal(range(self.m_down))
+        downsample_counter = Signal(range(self.m_down+1))
 
         m.d.comb += [
             down_fifo.w_data.eq(filt.o.payload),
             self.o.valid.eq(down_fifo.r_rdy),
         ]
 
-        with m.If(down_fifo.r_rdy & self.o.ready):
-            m.d.comb += down_fifo.r_en.eq(1)
+        with m.If(down_fifo.r_rdy):
             with m.If(downsample_counter == 0):
-                m.d.sync += downsample_counter.eq(self.m_down - 1)
                 m.d.comb += [
                     self.o.payload.eq(down_fifo.r_data),
                     self.o.valid.eq(1),
                 ]
             with m.Else():
-                m.d.sync += downsample_counter.eq(downsample_counter - 1)
                 m.d.comb += self.o.valid.eq(0)
+
+        with m.If(down_fifo.r_rdy & self.o.ready):
+            m.d.comb += down_fifo.r_en.eq(1)
+            with m.If(downsample_counter == 0):
+                m.d.sync += downsample_counter.eq(self.m_down - 1)
+            with m.Else():
+                m.d.sync += downsample_counter.eq(downsample_counter - 1)
         with m.Else():
-            m.d.comb += [
-                down_fifo.r_en.eq(0),
-            ]
+            m.d.comb += down_fifo.r_en.eq(0),
 
         return m
