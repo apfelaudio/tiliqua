@@ -1370,14 +1370,6 @@
 		(uuid "c79abc12-9191-4d68-b4a3-0c8144dbbfe0")
 	)
 	(no_connect
-		(at 116.84 78.74)
-		(uuid "167579a8-8637-49de-b840-e2e8d017159e")
-	)
-	(no_connect
-		(at 190.5 115.57)
-		(uuid "1af41e0d-ca9c-41f8-b784-7144af60ca85")
-	)
-	(no_connect
 		(at 185.42 110.49)
 		(uuid "20dd441f-041c-4cd8-acef-4fc068f11031")
 	)
@@ -1422,6 +1414,16 @@
 			(type default)
 		)
 		(uuid "21f96624-6efb-4df7-a610-b954b7aa6f94")
+	)
+	(polyline
+		(pts
+			(xy 111.76 83.185) (xy 114.935 83.185)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "25d87690-1644-4099-859a-3afd0f22701f")
 	)
 	(wire
 		(pts
@@ -1523,6 +1525,16 @@
 		)
 		(uuid "5a97022a-4fed-4ac6-a68c-395dac9f6278")
 	)
+	(polyline
+		(pts
+			(xy 111.76 87.63) (xy 111.76 83.185)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5d2b384f-ec6f-4b5b-903b-33280ef8b113")
+	)
 	(wire
 		(pts
 			(xy 128.27 71.12) (xy 121.92 71.12)
@@ -1615,6 +1627,16 @@
 	)
 	(wire
 		(pts
+			(xy 190.5 120.65) (xy 190.5 115.57)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b72ad281-3a1c-49b0-b497-b3d679da216a")
+	)
+	(wire
+		(pts
 			(xy 156.21 107.95) (xy 148.59 107.95)
 		)
 		(stroke
@@ -1665,6 +1687,16 @@
 	)
 	(wire
 		(pts
+			(xy 116.84 81.28) (xy 116.84 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e26a8ab7-68a2-4572-bb36-7bc0a607af4a")
+	)
+	(wire
+		(pts
 			(xy 133.35 113.03) (xy 128.27 113.03)
 		)
 		(stroke
@@ -1692,6 +1724,16 @@
 			(type default)
 		)
 		(uuid "fd86254c-5389-4e98-b595-9a1bcba1c6d3")
+	)
+	(text "TODO: PTH through panel for shielding"
+		(exclude_from_sim no)
+		(at 115.824 89.916 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "8590739c-06ea-4d62-a088-ae4f2e93b690")
 	)
 	(hierarchical_label "MIDI_TX"
 		(shape output)
@@ -2273,6 +2315,140 @@
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab"
 					(reference "#PWR019")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 190.5 120.65 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "7bf7d345-358b-400e-b712-8d9e9116d8b2")
+		(property "Reference" "#PWR074"
+			(at 190.5 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 190.5 125.73 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 190.5 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 190.5 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 190.5 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "cf673665-c573-47c1-81e3-4c3767bdac07")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab"
+					(reference "#PWR074")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 116.84 81.28 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "7d550d63-d950-42df-a6c7-9d742e047cdd")
+		(property "Reference" "#PWR075"
+			(at 116.84 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 116.84 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 116.84 81.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 116.84 81.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 116.84 81.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "55113231-ee4c-4087-98cd-1470554d91c9")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab"
+					(reference "#PWR075")
 					(unit 1)
 				)
 			)
