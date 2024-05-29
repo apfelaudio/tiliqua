@@ -976,7 +976,7 @@
 			(uuid "2b771f42-291f-4945-a3cf-97a3b89060c5")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/830acc84-6e16-4cb8-9214-1acea5145425"
 					(reference "#PWR067")
 					(unit 1)
@@ -1093,7 +1093,7 @@
 			(uuid "3e304064-4f6d-4d43-b9cb-f2956bd8f7cc")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/830acc84-6e16-4cb8-9214-1acea5145425"
 					(reference "J1")
 					(unit 1)
