@@ -1,8 +1,11 @@
 from amaranth              import *
 from amaranth.lib          import wiring, data
 from amaranth.lib.wiring   import In, Out
+from amaranth.lib.fifo     import SyncFIFO
 from amaranth.hdl.mem      import Memory
 from amaranth.utils        import log2_int
+
+from scipy import signal
 
 from amaranth_future       import stream, fixed
 
@@ -274,8 +277,11 @@ class SVF(wiring.Component):
     """
     Oversampled Chamberlin State Variable Filter.
 
-    Reference: Fig.3 in https://arxiv.org/pdf/2111.05592
+    Filter `cutoff` and `resonance` are tunable at the system sample rate.
 
+    Highpass, lowpass, bandpass routed out on stream payloads `hp`, `lp`, `bp`.
+
+    Reference: Fig.3 in https://arxiv.org/pdf/2111.05592
     """
 
     i: In(stream.Signature(data.StructLayout({
@@ -313,7 +319,7 @@ class SVF(wiring.Component):
                 with m.If(self.i.valid):
                    m.d.sync += x.eq(self.i.payload.x),
                    m.d.sync += oversample.eq(0)
-                   # FIXME: signedness check without working around `fixed`
+                   # FIXME: signedness (>=0)  check without working around `fixed`
                    with m.If(self.i.payload.cutoff.as_value()[15] == 0):
                        m.d.sync += kK.eq(self.i.payload.cutoff)
                    with m.If(self.i.payload.resonance.as_value()[15] == 0):
@@ -543,12 +549,12 @@ class PitchShift(wiring.Component):
 class MatrixMix(wiring.Component):
 
     """
-    Matrix mixer with constant coefficients and configurable
+    Matrix mixer with tunable coefficients and configurable
     input & output channel count. Uses a single multiplier.
 
     Coefficients must fit inside the self.ctype declared below.
-
-    TODO: expose a write port for coefficients?
+    Coefficients can be updated in real-time by writing them
+    to the `c` stream (position `o_x`, `i_y`, value `v`).
     """
 
     def __init__(self, i_channels, o_channels, coefficients):
@@ -673,5 +679,174 @@ class MatrixMix(wiring.Component):
                 ]
                 with m.If(self.o.ready):
                     m.next = 'WAIT-VALID'
+
+        return m
+
+class FIR(wiring.Component):
+
+    """
+    Fixed FIR filter that uses a single multiplier.
+
+    Takes some inspiration from `amlib/dsp/fixedpointfirfilter.py` from
+    `https://github.com/amaranth-farm/amlib`, however this implementation is
+    mostly rewritten. The `amlib` filter is copyright (c) 2021 Hans Baier
+    <hansfbaier@gmail.com> and was licensed under CERN-OHL-W-2.0
+    """
+
+    i: In(stream.Signature(ASQ))
+    o: Out(stream.Signature(ASQ))
+
+    def __init__(self,
+                 fs:               int,
+                 filter_cutoff_hz: int,
+                 filter_order:     int,
+                 filter_type:      str='lowpass',
+                 prescale:         float=1):
+
+        taps = signal.firwin(numtaps=filter_order+1, cutoff=filter_cutoff_hz,
+                             fs=fs, pass_zero=filter_type, window='hamming')
+        self.taps_float = taps
+        self.prescale   = prescale
+
+        super().__init__()
+
+    def elaborate(self, platform):
+        m = Module()
+
+        self.ctype = fixed.SQ(2, ASQ.f_width)
+
+        self.taps = taps = Array(fixed.Const(t*self.prescale, shape=self.ctype)
+                                 for t in self.taps_float)
+        x                = Array(Signal(self.ctype) for t in taps)
+        n                = len(self.taps)
+
+        ix = Signal(range(n+1))
+        a  = Signal(self.ctype)
+        b  = Signal(self.ctype)
+        y  = Signal(self.ctype)
+
+        with m.FSM() as fsm:
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.i.ready.eq(1),
+                with m.If(self.i.valid):
+                    m.d.sync += [x[i+1].eq(x[i]) for i in range(n-1)]
+                    m.d.sync += x[0].eq(self.i.payload)
+                    m.d.sync += [
+                        ix.eq(1),
+                        a.eq(x[0]),
+                        b.eq(taps[0]),
+                        y.eq(0)
+                    ]
+                    m.next = "MAC"
+            with m.State("MAC"):
+                m.d.sync += y.eq(y + (a * b))
+                with m.If(ix == n):
+                    m.next = "WAIT-READY"
+                with m.Else():
+                    m.d.sync += [
+                        a.eq(x[ix]),
+                        b.eq(taps[ix]),
+                        ix.eq(ix + 1)
+                    ]
+            with m.State('WAIT-READY'):
+                m.d.comb += [
+                    self.o.valid.eq(1),
+                    self.o.payload.eq(y)
+                ]
+                with m.If(self.o.ready):
+                    m.next = 'WAIT-VALID'
+
+        return m
+
+class Resample(wiring.Component):
+
+    """
+    Fractional N/M resampler.
+
+    Upsamples by factor N, filters the result, then downsamples by factor M.
+    The upsampling action zero-pads before applying the low-pass filter, so
+    the low-pass filter coefficients are prescaled by N to preserve total energy.
+
+    Takes some inspiration from `amlib/dsp/resampler.py` from
+    `https://github.com/amaranth-farm/amlib`, however this implementation is
+    mostly rewritten. The `amlib` resampler is copyright (c) 2021 Hans Baier
+    <hansfbaier@gmail.com> and was licensed under CERN-OHL-W-2.0
+    """
+
+    i: In(stream.Signature(ASQ))
+    o: Out(stream.Signature(ASQ))
+
+    def __init__(self,
+                 fs_in:  int,
+                 n_up:   int,
+                 m_down: int):
+
+        self.fs_in  = fs_in
+        self.n_up   = n_up
+        self.m_down = m_down
+
+        super().__init__()
+
+    def elaborate(self, platform):
+
+        m = Module()
+
+        m.submodules.filt = filt = FIR(
+            fs=self.fs_in*self.n_up,
+            filter_cutoff_hz=min(self.fs_in/2,
+                                 int((self.fs_in/2)*(self.n_up/self.m_down))),
+            filter_order=8*self.n_up, # order must be scaled by upsampling factor
+            prescale=self.n_up)
+
+        m.submodules.down_fifo = down_fifo = SyncFIFO(
+            width=ASQ.as_shape().width, depth=self.n_up)
+
+        upsampled_signal  = Signal(ASQ)
+        upsample_counter  = Signal(range(self.n_up))
+
+        m.d.comb += [
+            self.i.ready.eq((upsample_counter == 0) & (down_fifo.w_rdy)),
+            down_fifo.w_en.eq(down_fifo.w_rdy & filt.o.valid),
+            filt.o.ready.eq(down_fifo.w_en),
+        ]
+
+        with m.If(filt.i.ready):
+            with m.If(self.i.valid & self.i.ready):
+                m.d.comb += [
+                    filt.i.payload.eq(self.i.payload),
+                    filt.i.valid.eq(1),
+                ]
+                m.d.sync += upsample_counter.eq(self.n_up - 1)
+            with m.Elif(upsample_counter > 0):
+                m.d.comb += [
+                    filt.i.payload.eq(0),
+                    filt.i.valid.eq(1),
+                ]
+                m.d.sync += upsample_counter.eq(upsample_counter - 1)
+
+        downsample_counter = Signal(range(self.m_down+1))
+
+        m.d.comb += [
+            down_fifo.w_data.eq(filt.o.payload),
+            self.o.valid.eq(down_fifo.r_rdy),
+        ]
+
+        with m.If(down_fifo.r_rdy):
+            with m.If(downsample_counter == 0):
+                m.d.comb += [
+                    self.o.payload.eq(down_fifo.r_data),
+                    self.o.valid.eq(1),
+                ]
+            with m.Else():
+                m.d.comb += self.o.valid.eq(0)
+
+        with m.If(down_fifo.r_rdy & self.o.ready):
+            m.d.comb += down_fifo.r_en.eq(1)
+            with m.If(downsample_counter == 0):
+                m.d.sync += downsample_counter.eq(self.m_down - 1)
+            with m.Else():
+                m.d.sync += downsample_counter.eq(downsample_counter - 1)
+        with m.Else():
+            m.d.comb += down_fifo.r_en.eq(0),
 
         return m

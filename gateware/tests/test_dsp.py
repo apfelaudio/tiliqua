@@ -252,3 +252,59 @@ class DSPTests(unittest.TestCase):
         sim.add_process(testbench)
         with sim.write_vcd(vcd_file=open("test_nco.vcd", "w")):
             sim.run()
+
+    def test_fir(self):
+
+        fir = dsp.FIR(fs=48000, filter_cutoff_hz=2000,
+                      filter_order=10)
+
+        def testbench():
+            for n in range(0, 100):
+                x = fixed.Const(0.4*(math.sin(n*0.2) + math.sin(n)), shape=ASQ)
+                yield fir.i.payload.eq(x)
+                yield fir.i.valid.eq(1)
+                yield Tick()
+                yield fir.i.valid.eq(0)
+                yield Tick()
+                while (yield fir.o.valid) != 1:
+                    yield Tick()
+                out0 = yield(fir.o.payload)
+                yield fir.o.ready.eq(1)
+                yield Tick()
+                yield fir.o.ready.eq(0)
+                yield Tick()
+
+        sim = Simulator(fir)
+        sim.add_clock(1e-6)
+        sim.add_process(testbench)
+        with sim.write_vcd(vcd_file=open("test_fir.vcd", "w")):
+            sim.run()
+
+    def test_resample(self):
+
+        N_UP   = 2
+        M_DOWN = 1
+
+        resample = dsp.Resample(fs_in=48000, n_up=N_UP, m_down=M_DOWN)
+
+        def testbench():
+            for n in range(0, 100):
+                x = fixed.Const(0.4*(math.sin(n*0.2) + math.sin(n)), shape=ASQ)
+                yield resample.i.payload.eq(x)
+                yield resample.i.valid.eq(1)
+                yield Tick()
+                yield resample.i.valid.eq(0)
+                yield Tick()
+                for _ in range(N_UP):
+                    while (yield resample.o.valid) != 1:
+                        yield Tick()
+                    yield resample.o.ready.eq(1)
+                    yield Tick()
+                    yield resample.o.ready.eq(0)
+                    yield Tick()
+
+        sim = Simulator(resample)
+        sim.add_clock(1e-6)
+        sim.add_process(testbench)
+        with sim.write_vcd(vcd_file=open("test_resample.vcd", "w")):
+            sim.run()
