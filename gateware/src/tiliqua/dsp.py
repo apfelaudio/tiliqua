@@ -5,6 +5,8 @@ from amaranth.lib.fifo     import SyncFIFO
 from amaranth.hdl.mem      import Memory
 from amaranth.utils        import log2_int
 
+from scipy import signal
+
 from amaranth_future       import stream, fixed
 
 from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
@@ -275,8 +277,11 @@ class SVF(wiring.Component):
     """
     Oversampled Chamberlin State Variable Filter.
 
-    Reference: Fig.3 in https://arxiv.org/pdf/2111.05592
+    Filter `cutoff` and `resonance` are tunable at the system sample rate.
 
+    Highpass, lowpass, bandpass routed out on stream payloads `hp`, `lp`, `bp`.
+
+    Reference: Fig.3 in https://arxiv.org/pdf/2111.05592
     """
 
     i: In(stream.Signature(data.StructLayout({
@@ -314,7 +319,7 @@ class SVF(wiring.Component):
                 with m.If(self.i.valid):
                    m.d.sync += x.eq(self.i.payload.x),
                    m.d.sync += oversample.eq(0)
-                   # FIXME: signedness check without working around `fixed`
+                   # FIXME: signedness (>=0)  check without working around `fixed`
                    with m.If(self.i.payload.cutoff.as_value()[15] == 0):
                        m.d.sync += kK.eq(self.i.payload.cutoff)
                    with m.If(self.i.payload.resonance.as_value()[15] == 0):
@@ -544,12 +549,12 @@ class PitchShift(wiring.Component):
 class MatrixMix(wiring.Component):
 
     """
-    Matrix mixer with constant coefficients and configurable
+    Matrix mixer with tunable coefficients and configurable
     input & output channel count. Uses a single multiplier.
 
     Coefficients must fit inside the self.ctype declared below.
-
-    TODO: expose a write port for coefficients?
+    Coefficients can be updated in real-time by writing them
+    to the `c` stream (position `o_x`, `i_y`, value `v`).
     """
 
     def __init__(self, i_channels, o_channels, coefficients):
@@ -677,11 +682,16 @@ class MatrixMix(wiring.Component):
 
         return m
 
-from scipy import signal
-
 class FIR(wiring.Component):
 
-    # TODO: adjustable headroom for upsampler
+    """
+    Fixed FIR filter that uses a single multiplier.
+
+    Takes some inspiration from `amlib/dsp/fixedpointfirfilter.py` from
+    `https://github.com/amaranth-farm/amlib`, however this implementation is
+    mostly rewritten. The `amlib` filter is copyright (c) 2021 Hans Baier
+    <hansfbaier@gmail.com> and was licensed under CERN-OHL-W-2.0
+    """
 
     i: In(stream.Signature(ASQ))
     o: Out(stream.Signature(ASQ))
@@ -749,6 +759,19 @@ class FIR(wiring.Component):
         return m
 
 class Resample(wiring.Component):
+
+    """
+    Fractional N/M resampler.
+
+    Upsamples by factor N, filters the result, then downsamples by factor M.
+    The upsampling action zero-pads before applying the low-pass filter, so
+    the low-pass filter coefficients are prescaled by N to preserve total energy.
+
+    Takes some inspiration from `amlib/dsp/resampler.py` from
+    `https://github.com/amaranth-farm/amlib`, however this implementation is
+    mostly rewritten. The `amlib` resampler is copyright (c) 2021 Hans Baier
+    <hansfbaier@gmail.com> and was licensed under CERN-OHL-W-2.0
+    """
 
     i: In(stream.Signature(ASQ))
     o: Out(stream.Signature(ASQ))
