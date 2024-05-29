@@ -7201,6 +7201,113 @@
 		)
 	)
 	(symbol
+		(lib_id "support_hardware:SW_SPST_shielded")
+		(at 175.26 44.45 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "039fb657-fa67-47e2-85ef-fcd811af5511")
+		(property "Reference" "SW4"
+			(at 175.26 38.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "SW_Tactile_SPST"
+			(at 175.26 40.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "button:KEY-SMD_3P-L4.5-W7.0-P3.00"
+			(at 175.26 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 175.26 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 175.26 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" ""
+			(at 175.26 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Part Number" ""
+			(at 175.26 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Substitution" ""
+			(at 175.26 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C2874588"
+			(at 175.26 44.45 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "764a9e9a-7907-425a-8188-2db300536593")
+		)
+		(pin "2"
+			(uuid "b05b6388-029f-439a-91e8-d533dd886205")
+		)
+		(pin "3"
+			(uuid "4c876e6b-0e1a-443e-933d-b9191ed62cf6")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "SW4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "MicroMod_Sno_Processor-eagle-import:MICROMOD-2222")
 		(at 58.42 74.93 0)
 		(unit 1)
@@ -7883,6 +7990,113 @@
 		)
 	)
 	(symbol
+		(lib_id "support_hardware:SW_SPST_shielded")
+		(at 175.26 57.15 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2e7b56b4-1961-4cfe-ba59-8e0e9d6e8b7f")
+		(property "Reference" "SW5"
+			(at 175.26 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "SW_Tactile_SPST"
+			(at 175.26 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "button:KEY-SMD_3P-L4.5-W7.0-P3.00"
+			(at 175.26 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 175.26 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 175.26 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" ""
+			(at 175.26 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Part Number" ""
+			(at 175.26 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Substitution" ""
+			(at 175.26 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C2874588"
+			(at 175.26 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1e860d99-a903-4e66-b7d1-c0ecbd0d1960")
+		)
+		(pin "2"
+			(uuid "ba3da523-058b-40b8-b52a-951e4bc6bd67")
+		)
+		(pin "3"
+			(uuid "d9907588-8b05-4796-861f-da5b8b754909")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "SW5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 137.16 127 270)
 		(mirror x)
@@ -7976,7 +8190,7 @@
 				)
 			)
 		)
-		(property "Footprint" "usb:USB-C-SMD_HC-GAP-ACF012-1T-1"
+		(property "Footprint" "usb:USB-C-TH_U264-141N-4BAC10"
 			(at 156.21 134.62 0)
 			(effects
 				(font
@@ -7994,7 +8208,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "CONN RCPT USB2.0 TYPE-C 16POS"
+		(property "Description" ""
 			(at 160.02 134.62 0)
 			(effects
 				(font
@@ -8003,7 +8217,7 @@
 				(hide yes)
 			)
 		)
-		(property "Manufacturer" "DEALON"
+		(property "Manufacturer" ""
 			(at 160.02 134.62 0)
 			(effects
 				(font
@@ -8012,7 +8226,7 @@
 				(hide yes)
 			)
 		)
-		(property "Part Number" "USB-TYPE-C-019"
+		(property "Part Number" ""
 			(at 160.02 134.62 0)
 			(effects
 				(font
@@ -8021,7 +8235,7 @@
 				(hide yes)
 			)
 		)
-		(property "Substitution" "Yuandi TYPE-611A-T3"
+		(property "Substitution" ""
 			(at 160.02 134.62 0)
 			(effects
 				(font
@@ -8030,7 +8244,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C165948"
+		(property "lcsc#" "C692526"
 			(at 160.02 134.62 0)
 			(effects
 				(font
@@ -10429,7 +10643,7 @@
 				)
 			)
 		)
-		(property "Footprint" "usb:USB-C-SMD_HC-GAP-ACF012-1T-1"
+		(property "Footprint" "usb:USB-C-TH_U264-141N-4BAC10"
 			(at 207.01 134.62 0)
 			(effects
 				(font
@@ -10456,7 +10670,7 @@
 				(hide yes)
 			)
 		)
-		(property "Manufacturer" "DEALON"
+		(property "Manufacturer" ""
 			(at 210.82 134.62 0)
 			(effects
 				(font
@@ -10465,7 +10679,7 @@
 				(hide yes)
 			)
 		)
-		(property "Part Number" "USB-TYPE-C-019"
+		(property "Part Number" ""
 			(at 210.82 134.62 0)
 			(effects
 				(font
@@ -10474,7 +10688,7 @@
 				(hide yes)
 			)
 		)
-		(property "Substitution" "Yuandi TYPE-611A-T3"
+		(property "Substitution" ""
 			(at 210.82 134.62 0)
 			(effects
 				(font
@@ -10483,7 +10697,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C165948"
+		(property "lcsc#" "C692526"
 			(at 210.82 134.62 0)
 			(effects
 				(font
