@@ -1433,152 +1433,6 @@
 				)
 			)
 		)
-		(symbol "Device:Polyfuse_Small"
-			(pin_numbers hide)
-			(pin_names
-				(offset 0)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "F"
-				(at -1.905 0 90)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "Polyfuse_Small"
-				(at 1.905 0 90)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 1.27 -5.08 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "~"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Resettable fuse, polymeric positive temperature coefficient, small symbol"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "resettable fuse PTC PPTC polyfuse polyswitch"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "*polyfuse* *PTC*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "Polyfuse_Small_0_1"
-				(rectangle
-					(start -0.508 1.27)
-					(end 0.508 -1.27)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 2.54) (xy 0 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.016 1.27) (xy -1.016 0.762) (xy 1.016 -0.762) (xy 1.016 -1.27)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "Polyfuse_Small_1_1"
-				(pin passive line
-					(at 0 2.54 270)
-					(length 0.635)
-					(name "~"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 0 -2.54 90)
-					(length 0.635)
-					(name "~"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "Device:R"
 			(pin_numbers hide)
 			(pin_names
@@ -1700,31 +1554,30 @@
 				)
 			)
 		)
-		(symbol "Diode:US1G"
-			(pin_numbers hide)
+		(symbol "Device:RotaryEncoder_Switch"
 			(pin_names
-				(offset 1.016) hide)
+				(offset 0.254) hide)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
-			(property "Reference" "D"
-				(at 0 2.54 0)
+			(property "Reference" "SW"
+				(at 0 6.604 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
 				)
 			)
-			(property "Value" "US1G"
-				(at 0 -2.54 0)
+			(property "Value" "RotaryEncoder_Switch"
+				(at 0 -6.604 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
 				)
 			)
-			(property "Footprint" "Diode_SMD:D_SMA"
-				(at 0 -4.445 0)
+			(property "Footprint" ""
+				(at -3.81 4.064 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1732,7 +1585,16 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.diodes.com/assets/Datasheets/ds16008.pdf"
+			(property "Datasheet" "~"
+				(at 0 6.604 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Rotary encoder, dual channel, incremental quadrate outputs, with switch"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1741,7 +1603,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "400V, 1A, General Purpose Rectifier Diode, SMA(DO-214AC)"
+			(property "ki_keywords" "rotary switch encoder switch push button"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1750,7 +1612,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_keywords" "Ultra Fast"
+			(property "ki_fp_filters" "RotaryEncoder*Switch*"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1759,19 +1621,55 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "D*SMA*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
+			(symbol "RotaryEncoder_Switch_0_1"
+				(rectangle
+					(start -5.08 5.08)
+					(end 5.08 -5.08)
+					(stroke
+						(width 0.254)
+						(type default)
 					)
-					(hide yes)
+					(fill
+						(type background)
+					)
 				)
-			)
-			(symbol "US1G_0_1"
+				(circle
+					(center -3.81 0)
+					(radius 0.254)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center -0.381 0)
+					(radius 1.905)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -0.381 2.667)
+					(mid -3.0988 -0.0635)
+					(end -0.381 -2.794)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
 				(polyline
 					(pts
-						(xy -1.27 1.27) (xy -1.27 -1.27)
+						(xy -0.635 -1.778) (xy -0.635 1.778)
 					)
 					(stroke
 						(width 0.254)
@@ -1783,7 +1681,55 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 0) (xy -1.27 0)
+						(xy -0.381 -1.778) (xy -0.381 1.778)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.127 1.778) (xy -0.127 -1.778)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.81 0) (xy 3.429 0)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.81 1.016) (xy 3.81 -1.016)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.08 -2.54) (xy -3.81 -2.54) (xy -3.81 -2.032)
 					)
 					(stroke
 						(width 0)
@@ -1795,7 +1741,19 @@
 				)
 				(polyline
 					(pts
-						(xy 1.27 1.27) (xy 1.27 -1.27) (xy -1.27 0) (xy 1.27 1.27)
+						(xy -5.08 2.54) (xy -3.81 2.54) (xy -3.81 2.032)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.254 -3.048) (xy -0.508 -2.794) (xy 0.127 -2.413)
 					)
 					(stroke
 						(width 0.254)
@@ -1805,28 +1763,92 @@
 						(type none)
 					)
 				)
-			)
-			(symbol "US1G_1_1"
-				(pin passive line
-					(at -3.81 0 0)
-					(length 2.54)
-					(name "K"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
+				(polyline
+					(pts
+						(xy 0.254 2.921) (xy -0.508 2.667) (xy 0.127 2.286)
 					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
 					)
 				)
+				(polyline
+					(pts
+						(xy 5.08 -2.54) (xy 4.318 -2.54) (xy 4.318 -1.016)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 5.08 2.54) (xy 4.318 2.54) (xy 4.318 1.016)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -5.08 0) (xy -3.81 0) (xy -3.81 -1.016) (xy -3.302 -2.032)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -4.318 0) (xy -3.81 0) (xy -3.81 1.016) (xy -3.302 2.032)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 4.318 -1.016)
+					(radius 0.127)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 4.318 1.016)
+					(radius 0.127)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "RotaryEncoder_Switch_1_1"
 				(pin passive line
-					(at 3.81 0 180)
+					(at -7.62 2.54 0)
 					(length 2.54)
 					(name "A"
 						(effects
@@ -1835,7 +1857,79 @@
 							)
 						)
 					)
-					(number "2"
+					(number "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -7.62 -2.54 0)
+					(length 2.54)
+					(name "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -7.62 0 0)
+					(length 2.54)
+					(name "C"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "C"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 2.54 180)
+					(length 2.54)
+					(name "S1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "S1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 7.62 -2.54 180)
+					(length 2.54)
+					(name "S2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "S2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1845,23 +1939,23 @@
 				)
 			)
 		)
-		(symbol "Jumper:Jumper_2_Open"
-			(pin_numbers hide)
+		(symbol "Mechanical:MountingHole"
 			(pin_names
-				(offset 0) hide)
+				(offset 1.016)
+			)
 			(exclude_from_sim yes)
-			(in_bom yes)
+			(in_bom no)
 			(on_board yes)
-			(property "Reference" "JP"
-				(at 0 2.794 0)
+			(property "Reference" "H"
+				(at 0 5.08 0)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
 				)
 			)
-			(property "Value" "Jumper_2_Open"
-				(at 0 -2.286 0)
+			(property "Value" "MountingHole"
+				(at 0 3.175 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1886,7 +1980,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Jumper, 2-pole, open"
+			(property "Description" "Mounting Hole without connection"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1895,7 +1989,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_keywords" "Jumper SPST"
+			(property "ki_keywords" "mounting hole"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1904,7 +1998,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "Jumper* TestPoint*2Pads* TestPoint*Bridge*"
+			(property "ki_fp_filters" "MountingHole*"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1913,79 +2007,16 @@
 					(hide yes)
 				)
 			)
-			(symbol "Jumper_2_Open_0_0"
+			(symbol "MountingHole_0_1"
 				(circle
-					(center -2.032 0)
-					(radius 0.508)
+					(center 0 0)
+					(radius 1.27)
 					(stroke
-						(width 0)
+						(width 1.27)
 						(type default)
 					)
 					(fill
 						(type none)
-					)
-				)
-				(circle
-					(center 2.032 0)
-					(radius 0.508)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "Jumper_2_Open_0_1"
-				(arc
-					(start 1.524 1.27)
-					(mid 0 1.778)
-					(end -1.524 1.27)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "Jumper_2_Open_1_1"
-				(pin passive line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 5.08 0 180)
-					(length 2.54)
-					(name "B"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
 					)
 				)
 			)
@@ -4059,6 +4090,12 @@
 		)
 	)
 	(junction
+		(at 137.16 181.61)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "1b200677-30bd-438d-a8b9-7fb608798a4a")
+	)
+	(junction
 		(at 143.51 134.62)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4071,106 +4108,36 @@
 		(uuid "4c9b9054-f0af-417a-92cf-dbf4ecb4195c")
 	)
 	(junction
-		(at 194.31 137.16)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "4f0cb339-f340-4b3c-98df-752714a9b29a")
-	)
-	(junction
-		(at 57.15 181.61)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "63d95196-ec03-4aab-b3d6-690f3a66fc44")
-	)
-	(junction
-		(at 167.64 78.74)
+		(at 144.78 83.82)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "7278f6a4-f3bd-41ee-8d7b-b90087a26eef")
 	)
 	(junction
-		(at 194.31 134.62)
+		(at 194.31 138.43)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "8db8fb85-6cd7-4055-82cc-90df235d7a85")
+		(uuid "72e2672b-4d58-4e27-af6b-98e3cf448137")
 	)
 	(junction
-		(at 165.1 50.8)
+		(at 194.31 133.35)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "941cf54c-e10b-4594-9ed7-d3b74b905949")
+	)
+	(junction
+		(at 142.24 55.88)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "d34100a2-b6b1-4850-bc0c-6485d0452689")
-	)
-	(no_connect
-		(at 21.59 97.79)
-		(uuid "021daaf3-d842-4ff6-96d3-8d8c3cc8dee9")
-	)
-	(no_connect
-		(at 21.59 59.69)
-		(uuid "05a42f03-fab8-4869-8270-10e71e02025f")
-	)
-	(no_connect
-		(at 99.06 115.57)
-		(uuid "07971330-a9de-4470-af0a-74e21415972d")
-	)
-	(no_connect
-		(at 20.32 26.67)
-		(uuid "0b6c1701-ba35-429f-81c3-8dc20efcdb91")
-	)
-	(no_connect
-		(at 20.32 46.99)
-		(uuid "0b71fe5e-f29c-4fae-9ab6-c8aa26ade694")
-	)
-	(no_connect
-		(at 100.33 44.45)
-		(uuid "0e90a361-4133-4d94-92be-a1996b8a4ac5")
-	)
-	(no_connect
-		(at 100.33 49.53)
-		(uuid "13d9349f-b03e-44d8-a673-7ee4068e5728")
 	)
 	(no_connect
 		(at 35.56 105.41)
 		(uuid "17ff2139-6540-42c0-9a7c-47c5e3ed6fc1")
 	)
 	(no_connect
-		(at 99.06 107.95)
-		(uuid "21b9a3fe-071a-4fa0-9199-7e8b28d08551")
-	)
-	(no_connect
 		(at 35.56 36.83)
 		(uuid "2214270f-285e-4cc2-becb-27da41632fe5")
-	)
-	(no_connect
-		(at 100.33 54.61)
-		(uuid "26b3224f-ef3e-4923-be70-c7055588bc83")
-	)
-	(no_connect
-		(at 100.33 41.91)
-		(uuid "2a534172-0442-485e-be83-c7dd3dfdc61a")
-	)
-	(no_connect
-		(at 99.06 95.25)
-		(uuid "2be5ea49-9dc0-417c-9b43-36db77b546e3")
-	)
-	(no_connect
-		(at 21.59 54.61)
-		(uuid "352628bd-25cd-4a8b-93ba-52cce42b5fa3")
-	)
-	(no_connect
-		(at 101.6 74.93)
-		(uuid "3834619b-ed1f-4e34-8886-102934d58dc2")
-	)
-	(no_connect
-		(at 99.06 100.33)
-		(uuid "38f2e62a-a02f-47ca-bcbc-2fccd0270916")
-	)
-	(no_connect
-		(at 20.32 82.55)
-		(uuid "3a5da1df-a092-44a2-9e31-df138a082a7e")
-	)
-	(no_connect
-		(at 99.06 105.41)
-		(uuid "3c6543f4-aad2-4baa-9483-5bd46e63aac4")
 	)
 	(no_connect
 		(at 144.78 147.32)
@@ -4185,132 +4152,22 @@
 		(uuid "49812a69-1f6c-4753-929f-27dec7ce22e1")
 	)
 	(no_connect
-		(at 20.32 85.09)
-		(uuid "4a10fd28-ed96-4e10-9722-066e6a443e70")
-	)
-	(no_connect
-		(at 99.06 113.03)
-		(uuid "5428ce75-f504-4dd9-afdc-571271a1e26c")
-	)
-	(no_connect
-		(at 20.32 77.47)
-		(uuid "599e9171-6a50-4839-977e-b667c7ee4d9c")
-	)
-	(no_connect
-		(at 100.33 29.21)
-		(uuid "5b0de1e6-4f52-4583-840a-f1cf0e1f009c")
-	)
-	(no_connect
-		(at 101.6 59.69)
-		(uuid "5d711b9e-215c-43b5-9a65-cbf08a26ae10")
-	)
-	(no_connect
-		(at 100.33 34.29)
-		(uuid "62916d50-db24-49e0-b898-879880db85d0")
-	)
-	(no_connect
-		(at 20.32 74.93)
-		(uuid "774bd4dd-cdbc-46d0-bbf8-e63fafb432d7")
-	)
-	(no_connect
-		(at 20.32 29.21)
-		(uuid "95e7bf88-5be0-4962-8504-d0c18ba791c7")
-	)
-	(no_connect
-		(at 20.32 80.01)
-		(uuid "a5c377ac-5482-4ad0-8091-993693bc403c")
-	)
-	(no_connect
-		(at 99.06 85.09)
-		(uuid "a6cd50b5-001b-492f-b28f-0e8de4044c65")
-	)
-	(no_connect
-		(at 99.06 92.71)
-		(uuid "a8051eed-79ca-432d-b4cd-cdd373b52844")
-	)
-	(no_connect
-		(at 100.3137 27.2029)
-		(uuid "ac29f6b8-9701-4a34-9a67-ce9bd5412520")
-	)
-	(no_connect
-		(at 100.33 24.13)
-		(uuid "b8e0602e-0696-471e-bb01-85757b9215ab")
-	)
-	(no_connect
 		(at 195.58 147.32)
 		(uuid "bb09fe05-dc42-40b3-ac06-f20e0217ab79")
-	)
-	(no_connect
-		(at 21.59 52.07)
-		(uuid "bec4248d-b5c2-4390-9128-a8b7ff55a078")
-	)
-	(no_connect
-		(at 100.33 46.99)
-		(uuid "bff55d05-f9c7-4400-aed6-10c5f1ee4334")
-	)
-	(no_connect
-		(at 35.56 41.91)
-		(uuid "c0b32818-8e1b-4627-8de6-5ae1fb2d988f")
-	)
-	(no_connect
-		(at 21.59 62.23)
-		(uuid "cdc9b02d-241c-4213-8c12-ed64076e2354")
-	)
-	(no_connect
-		(at 99.06 90.17)
-		(uuid "d249d51a-9429-4e63-8f9e-5e8ce2831cd3")
-	)
-	(no_connect
-		(at 100.33 57.15)
-		(uuid "d8ec040b-d994-414c-98ef-07fb83ba9075")
-	)
-	(no_connect
-		(at 20.32 44.45)
-		(uuid "df699813-6607-478e-ac6b-0bf096a0dc45")
-	)
-	(no_connect
-		(at 99.06 118.11)
-		(uuid "e0b57dae-2b0a-4ffe-b9cc-a80d42a8b2e7")
-	)
-	(no_connect
-		(at 100.33 36.83)
-		(uuid "e36755eb-47de-49ff-832b-18bf670dfee6")
-	)
-	(no_connect
-		(at 101.6 72.39)
-		(uuid "e4215edc-648a-45ff-83cc-df31f728ee8d")
-	)
-	(no_connect
-		(at 21.59 100.33)
-		(uuid "f0525e35-9678-4d2b-b711-21fcd1337c4d")
-	)
-	(no_connect
-		(at 99.06 102.87)
-		(uuid "f199512a-36ab-47a2-af4a-850ab4e3512c")
 	)
 	(no_connect
 		(at 35.56 34.29)
 		(uuid "f1be68ea-c147-47d6-b658-2981921cdceb")
 	)
-	(no_connect
-		(at 99.06 110.49)
-		(uuid "f30caf78-726b-448b-8fb8-2d5b01d1dc20")
-	)
-	(no_connect
-		(at 101.6 62.23)
-		(uuid "f44f6105-8637-4389-ac97-bd2c703a9735")
-	)
-	(no_connect
-		(at 100.33 31.75)
-		(uuid "f481b460-286d-46b1-bce8-451d34042f1b")
-	)
-	(no_connect
-		(at 99.06 82.55)
-		(uuid "f6b098a6-fc7b-4662-8c96-070c56f0ebb8")
-	)
-	(no_connect
-		(at 99.06 97.79)
-		(uuid "ff55d468-8ec9-4db9-877d-191eab6d371b")
+	(polyline
+		(pts
+			(xy 223.52 40.64) (xy 224.79 40.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0dca061f-e728-430f-a5db-7b971126c453")
 	)
 	(wire
 		(pts
@@ -4354,7 +4211,7 @@
 	)
 	(wire
 		(pts
-			(xy 152.4 96.52) (xy 170.18 96.52)
+			(xy 129.54 101.6) (xy 147.32 101.6)
 		)
 		(stroke
 			(width 0)
@@ -4374,13 +4231,13 @@
 	)
 	(wire
 		(pts
-			(xy 182.88 134.62) (xy 194.31 134.62)
+			(xy 133.35 181.61) (xy 137.16 181.61)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "3a02b8d9-3996-48f3-9455-bd442e1b4b3b")
+		(uuid "37ce6781-ed39-4a12-9456-1908bc1f3158")
 	)
 	(wire
 		(pts
@@ -4394,17 +4251,17 @@
 	)
 	(wire
 		(pts
-			(xy 57.15 181.61) (xy 57.15 184.15)
+			(xy 193.04 119.38) (xy 195.58 119.38)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "3ac16634-3bed-4620-bb0b-a93eeb1988ce")
+		(uuid "40e7839b-901a-4d2f-8e8b-c0bbcc05bbac")
 	)
 	(wire
 		(pts
-			(xy 167.64 78.74) (xy 163.83 78.74)
+			(xy 144.78 83.82) (xy 140.97 83.82)
 		)
 		(stroke
 			(width 0)
@@ -4414,17 +4271,27 @@
 	)
 	(wire
 		(pts
-			(xy 182.88 137.16) (xy 194.31 137.16)
+			(xy 194.31 138.43) (xy 194.31 137.16)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "4ce65ddc-f1a0-40c5-a2fa-f23d836dda06")
+		(uuid "48dd906d-d241-44e9-af95-5aa9a09db598")
+	)
+	(polyline
+		(pts
+			(xy 223.52 46.99) (xy 224.79 46.99)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4fe78f8c-afff-46da-a04c-3409d236c3b6")
 	)
 	(wire
 		(pts
-			(xy 181.61 50.8) (xy 181.61 58.42)
+			(xy 158.75 55.88) (xy 158.75 63.5)
 		)
 		(stroke
 			(width 0)
@@ -4454,7 +4321,17 @@
 	)
 	(wire
 		(pts
-			(xy 170.18 96.52) (xy 170.18 91.44)
+			(xy 236.22 52.07) (xy 238.76 52.07)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5ce3e75a-ad8d-4d81-b1a2-d0bd1305058e")
+	)
+	(wire
+		(pts
+			(xy 147.32 101.6) (xy 147.32 96.52)
 		)
 		(stroke
 			(width 0)
@@ -4474,7 +4351,7 @@
 	)
 	(wire
 		(pts
-			(xy 165.1 45.72) (xy 165.1 50.8)
+			(xy 142.24 50.8) (xy 142.24 55.88)
 		)
 		(stroke
 			(width 0)
@@ -4494,7 +4371,7 @@
 	)
 	(wire
 		(pts
-			(xy 167.64 78.74) (xy 170.18 78.74)
+			(xy 144.78 83.82) (xy 147.32 83.82)
 		)
 		(stroke
 			(width 0)
@@ -4504,7 +4381,7 @@
 	)
 	(wire
 		(pts
-			(xy 194.31 139.7) (xy 194.31 137.16)
+			(xy 194.31 139.7) (xy 194.31 138.43)
 		)
 		(stroke
 			(width 0)
@@ -4514,7 +4391,7 @@
 	)
 	(wire
 		(pts
-			(xy 152.4 93.98) (xy 163.83 93.98)
+			(xy 129.54 99.06) (xy 140.97 99.06)
 		)
 		(stroke
 			(width 0)
@@ -4534,7 +4411,7 @@
 	)
 	(wire
 		(pts
-			(xy 163.83 93.98) (xy 163.83 91.44)
+			(xy 140.97 99.06) (xy 140.97 96.52)
 		)
 		(stroke
 			(width 0)
@@ -4542,35 +4419,35 @@
 		)
 		(uuid "723c1c08-f0cb-4f11-a465-8b07a00f15c8")
 	)
-	(wire
+	(polyline
 		(pts
-			(xy 72.39 181.61) (xy 77.47 181.61)
+			(xy 223.52 16.51) (xy 223.52 40.64)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "89539a37-cf3e-469d-94b4-319693e76805")
+		(uuid "72fb5f9e-7820-4b72-b9f2-f68038734415")
 	)
 	(wire
 		(pts
-			(xy 24.13 180.34) (xy 43.18 180.34)
+			(xy 236.22 49.53) (xy 238.76 49.53)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "991c5af1-ab42-4271-a705-a074ed53708c")
+		(uuid "832efd5d-4524-440e-90ec-c44d77bfb58a")
 	)
 	(wire
 		(pts
-			(xy 50.8 180.34) (xy 57.15 180.34)
+			(xy 190.5 138.43) (xy 194.31 138.43)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "99782dd5-91b3-4722-8eee-f7371ad65768")
+		(uuid "987d181c-cf8b-4425-a964-7bb9c3a57fe8")
 	)
 	(wire
 		(pts
@@ -4594,17 +4471,7 @@
 	)
 	(wire
 		(pts
-			(xy 57.15 180.34) (xy 57.15 181.61)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9c2eaad7-4440-4f4b-b04f-765acc419699")
-	)
-	(wire
-		(pts
-			(xy 152.4 50.8) (xy 165.1 50.8)
+			(xy 129.54 55.88) (xy 142.24 55.88)
 		)
 		(stroke
 			(width 0)
@@ -4612,35 +4479,25 @@
 		)
 		(uuid "9d7478e3-b9a7-46eb-bb50-433d97857ecd")
 	)
-	(wire
+	(polyline
 		(pts
-			(xy 82.55 181.61) (xy 88.9 181.61)
+			(xy 224.79 41.91) (xy 223.52 41.91)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "9e5e5d86-f617-4916-b20f-85fe988c8705")
+		(uuid "9e56df29-7b39-4799-8473-d94c3d7bb145")
 	)
 	(wire
 		(pts
-			(xy 233.68 33.02) (xy 238.76 33.02)
+			(xy 194.31 133.35) (xy 194.31 134.62)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "a0e2e393-2582-4060-addd-f8866c2f93b0")
-	)
-	(wire
-		(pts
-			(xy 57.15 184.15) (xy 50.8 184.15)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b2db9287-4429-45db-bba6-5fe51360a53d")
+		(uuid "a6e45003-07ef-4485-88a3-f0387bfc1d0a")
 	)
 	(wire
 		(pts
@@ -4652,9 +4509,19 @@
 		)
 		(uuid "b47d9a37-763c-4d9a-b780-da4817ea4f5e")
 	)
+	(polyline
+		(pts
+			(xy 93.98 76.2) (xy 93.98 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ba8e991b-ea34-49b0-90dd-6e51f9841e50")
+	)
 	(wire
 		(pts
-			(xy 165.1 50.8) (xy 166.37 50.8)
+			(xy 142.24 55.88) (xy 143.51 55.88)
 		)
 		(stroke
 			(width 0)
@@ -4664,7 +4531,7 @@
 	)
 	(wire
 		(pts
-			(xy 194.31 132.08) (xy 194.31 134.62)
+			(xy 194.31 132.08) (xy 194.31 133.35)
 		)
 		(stroke
 			(width 0)
@@ -4674,33 +4541,43 @@
 	)
 	(wire
 		(pts
-			(xy 57.15 181.61) (xy 62.23 181.61)
+			(xy 236.22 54.61) (xy 238.76 54.61)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "d5db2b9a-85ff-4e5e-bd5b-46bd6c6885e5")
+		(uuid "ce6e50b3-a42a-4076-97d3-74a7a6e1b90e")
 	)
-	(wire
+	(polyline
 		(pts
-			(xy 24.13 184.15) (xy 43.18 184.15)
+			(xy 93.345 76.2) (xy 93.98 76.2)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "d70312b8-3b0e-4cc7-9326-17b0d5409e23")
+		(uuid "d78f2bc7-5ba9-46c0-a8fa-0b9e5783f9d0")
 	)
-	(wire
+	(polyline
 		(pts
-			(xy 181.61 119.38) (xy 195.58 119.38)
+			(xy 224.79 16.51) (xy 223.52 16.51)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "d91e927c-e4c8-47fb-886a-b56e0de4501c")
+		(uuid "db3e0f1b-13ca-4548-bc93-5b64c4962311")
+	)
+	(polyline
+		(pts
+			(xy 93.345 81.28) (xy 93.98 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "db871744-c7f9-483d-a46a-e20d07d9fd98")
 	)
 	(wire
 		(pts
@@ -4722,48 +4599,89 @@
 		)
 		(uuid "dea8d666-79d4-499c-bd4a-1f160d74cc24")
 	)
-	(text "NOPOP\nallows powering board except 12V rails from USB"
+	(wire
+		(pts
+			(xy 190.5 133.35) (xy 194.31 133.35)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "eb569001-d99e-4217-9d87-dbf408da6885")
+	)
+	(polyline
+		(pts
+			(xy 223.52 41.91) (xy 223.52 46.99)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fa4d056b-0905-4e9c-bde9-793625481128")
+	)
+	(text "ECP5 balls A2/B3 moved here\nfrom pin 3/5 on Rev1->Rev2"
 		(exclude_from_sim no)
-		(at 61.976 188.468 0)
+		(at 109.982 79.248 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 		)
-		(uuid "fa8a0706-57ec-4bc9-867e-ef96239ddac6")
+		(uuid "0fa0951f-0875-424e-8247-d42acb84f19c")
 	)
-	(label "ULPI_USB_DP"
-		(at 270.51 36.83 0)
-		(fields_autoplaced yes)
+	(text "CK/D0/D1/D2 assigned\ndifferential pins on ECP5"
+		(exclude_from_sim no)
+		(at 210.312 28.956 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
 		)
-		(uuid "0c589858-7781-486c-a8e7-4af96dc2f4ab")
+		(uuid "4e8778e9-0e6f-4654-90f2-1cdf40387e2b")
 	)
-	(label "ULPI_USB_VBUS"
-		(at 24.13 184.15 0)
-		(fields_autoplaced yes)
+	(text "USB3343: floating ID pin\nis DEVICE mode. Unpopulated\nresisters left here for\nexperimenting with HOST/OTG,\nhowever you also need a PD chip\nto drive CC1/CC2 to do this\nproperly under USB-C"
+		(exclude_from_sim no)
+		(at 157.48 181.61 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
 		)
-		(uuid "22bc55b3-34f1-4ed0-b6c4-5a49f9ac7a81")
+		(uuid "7a1a245e-eadf-4cb8-8ea0-0aa51127e29f")
 	)
-	(label "ULPI_USB_VBUS"
-		(at 181.61 119.38 0)
-		(fields_autoplaced yes)
+	(text "shared with audio ffc\n(pullups are there)"
+		(exclude_from_sim no)
+		(at 209.55 44.45 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
 		)
-		(uuid "2d94b1be-ac27-4d12-b814-ebb277f97f11")
+		(uuid "832ee6b0-476d-4bf5-9664-d3484b7127f6")
+	)
+	(text "TODO"
+		(exclude_from_sim no)
+		(at 223.52 52.07 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.254)
+				(bold yes)
+			)
+		)
+		(uuid "913b033d-11a6-483b-a30a-ff4f70485b99")
+	)
+	(text "[apfelaudio]\nsoldiercrab R2 SoM\n(separate repository)"
+		(exclude_from_sim no)
+		(at 57.404 15.748 0)
+		(effects
+			(font
+				(size 1.778 1.778)
+				(thickness 0.254)
+				(bold yes)
+			)
+		)
+		(uuid "d7636db5-92f9-4ef4-ad98-a51986eed768")
 	)
 	(label "RP2040_USB_DP"
 		(at 127 137.16 0)
@@ -4820,17 +4738,6 @@
 		)
 		(uuid "83ad50f6-463a-43e6-a939-61c61a046819")
 	)
-	(label "ULPI_USB_DM"
-		(at 182.88 134.62 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "8facda15-ea1e-4e42-928f-62c413e9dff8")
-	)
 	(label "RP2040_USB_VBUS"
 		(at 219.71 100.33 0)
 		(fields_autoplaced yes)
@@ -4841,50 +4748,6 @@
 			(justify left bottom)
 		)
 		(uuid "a8ae0ce1-36c4-47cb-83af-0afdfa3e3c4a")
-	)
-	(label "ULPI_USB_VBUS"
-		(at 270.51 41.91 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "b3f3406d-a34e-475b-9c4f-9d51b9f21773")
-	)
-	(label "ULPI_USB_DM"
-		(at 270.51 39.37 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "e1ea3267-feee-4d86-a140-29ec63d2f8fe")
-	)
-	(label "RP2040_USB_VBUS"
-		(at 24.13 180.34 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "f13ecd65-acac-4e5f-8039-48293e7db728")
-	)
-	(label "ULPI_USB_DP"
-		(at 182.88 137.16 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "fe0a9611-d0d2-46e5-9d9c-70915e36c4bd")
 	)
 	(global_label "ECP5_D6"
 		(shape bidirectional)
@@ -4932,7 +4795,7 @@
 	)
 	(global_label "ECP5_A5"
 		(shape bidirectional)
-		(at 238.76 57.15 180)
+		(at 163.83 29.21 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4942,7 +4805,7 @@
 		)
 		(uuid "0c9e4858-8285-45a5-b4ca-027b673de015")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 227.3123 57.15 0)
+			(at 152.3823 29.21 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5084,6 +4947,28 @@
 			)
 		)
 	)
+	(global_label "SC_USB0_VBUS"
+		(shape passive)
+		(at 35.56 41.91 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "18b75ccd-dd55-4ccc-8576-e12692ca8f7e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 19.3533 41.91 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "ECP5_C9"
 		(shape bidirectional)
 		(at 81.28 97.79 0)
@@ -5152,7 +5037,7 @@
 	)
 	(global_label "ECP5_C4"
 		(shape bidirectional)
-		(at 152.4 50.8 180)
+		(at 129.54 55.88 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5162,7 +5047,29 @@
 		)
 		(uuid "21ed822f-5329-435b-91dd-a34529c9f881")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 140.7709 50.8 0)
+			(at 117.9109 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ECP5_B5"
+		(shape bidirectional)
+		(at 238.76 26.67 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "242dab55-994a-4ec0-b743-6621f531ee85")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 227.1309 26.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5238,9 +5145,9 @@
 			)
 		)
 	)
-	(global_label "ECP5_B3"
-		(shape bidirectional)
-		(at 35.56 44.45 180)
+	(global_label "SC_USB0_ID"
+		(shape passive)
+		(at 35.56 92.71 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5248,9 +5155,9 @@
 			)
 			(justify right)
 		)
-		(uuid "31ff8784-50da-43cc-9be4-34ae9bd94dc9")
+		(uuid "3231dfb6-aead-43b3-84bc-4bc45d1c4285")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 23.9309 44.45 0)
+			(at 22.3771 92.71 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5317,6 +5224,28 @@
 		(uuid "40fd7fe9-5299-437c-9eaa-523d4c14e0d4")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 96.8384 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ECP5_B6"
+		(shape bidirectional)
+		(at 238.76 39.37 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "4b815f83-d6fc-4fc1-b506-b7893dd22f98")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 227.1309 39.37 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5590,6 +5519,28 @@
 			)
 		)
 	)
+	(global_label "ECP5_D4"
+		(shape bidirectional)
+		(at 238.76 20.32 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "67167228-596f-41b8-993a-09f16570b20e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 227.1309 20.32 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "ECP5_A14"
 		(shape bidirectional)
 		(at 81.28 29.21 0)
@@ -5608,28 +5559,6 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "ECP5_D4"
-		(shape bidirectional)
-		(at 238.76 52.07 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "68fc8562-e043-49d1-86e8-6ca26b9953fc")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 227.1309 52.07 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
 				(hide yes)
 			)
 		)
@@ -5658,7 +5587,7 @@
 	)
 	(global_label "ECP5_A3"
 		(shape bidirectional)
-		(at 152.4 96.52 180)
+		(at 129.54 101.6 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5668,7 +5597,7 @@
 		)
 		(uuid "6d6e5025-8006-4431-a644-faa47c0dff04")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 140.9523 96.52 0)
+			(at 118.0923 101.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5680,7 +5609,7 @@
 	)
 	(global_label "ECP5_D6"
 		(shape bidirectional)
-		(at 238.76 49.53 180)
+		(at 163.83 21.59 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5690,7 +5619,7 @@
 		)
 		(uuid "6ee3e7c5-c032-4c9a-b40d-e1ef3946f8ea")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 226.3179 49.53 0)
+			(at 151.3879 21.59 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5744,9 +5673,9 @@
 			)
 		)
 	)
-	(global_label "ECP5_A2"
+	(global_label "ECP5_E4"
 		(shape bidirectional)
-		(at 238.76 44.45 180)
+		(at 238.76 17.78 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5754,14 +5683,36 @@
 			)
 			(justify right)
 		)
-		(uuid "79c216cd-c626-417b-9462-a79aeed3295e")
+		(uuid "7b05ad73-1cc6-4d22-af1b-92a5e1f0ee04")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 227.3123 44.45 0)
+			(at 227.2519 17.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ECP5_B3"
+		(shape bidirectional)
+		(at 81.28 80.01 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "7bf522a7-0eb5-4cbb-8dfd-b0d2d3b1dcfb")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 92.9091 80.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -5854,6 +5805,28 @@
 			)
 		)
 	)
+	(global_label "ECP5_A2"
+		(shape bidirectional)
+		(at 238.76 30.48 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "84b2e47c-f438-4982-b040-7eb66aa0bfbe")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 227.3123 30.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "ECP5_C9"
 		(shape bidirectional)
 		(at 238.76 130.81 180)
@@ -5867,28 +5840,6 @@
 		(uuid "8898cf87-8856-414a-ba90-e08ec3312959")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 226.3179 130.81 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "ECP5_C6"
-		(shape bidirectional)
-		(at 238.76 41.91 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "8a219790-9436-48f0-84b0-483cd723c646")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 226.3179 41.91 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5986,28 +5937,6 @@
 			)
 		)
 	)
-	(global_label "ECP5_E4"
-		(shape bidirectional)
-		(at 238.76 54.61 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "92a10aeb-a8f9-4af4-aeb9-51235f643603")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 227.2519 54.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "ECP5_B10"
 		(shape bidirectional)
 		(at 82.55 144.78 0)
@@ -6052,31 +5981,9 @@
 			)
 		)
 	)
-	(global_label "ECP5_C5"
-		(shape bidirectional)
-		(at 238.76 46.99 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a09e01a4-8460-4fb0-8602-f8f3c3ef3fcb")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 226.3179 46.99 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "ECP5_C7"
 		(shape bidirectional)
-		(at 238.76 39.37 180)
+		(at 163.83 11.43 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -6086,7 +5993,7 @@
 		)
 		(uuid "a0cb8ed3-bdcb-4531-b1e3-58cc068356fe")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 226.3179 39.37 0)
+			(at 151.3879 11.43 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6140,28 +6047,6 @@
 			)
 		)
 	)
-	(global_label "ECP5_B3"
-		(shape bidirectional)
-		(at 238.76 67.31 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a700d669-d29a-4fac-b4f8-9265cfb3d3c9")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 227.1309 67.31 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "ECP5_D5"
 		(shape bidirectional)
 		(at 238.76 81.28 180)
@@ -6180,6 +6065,50 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "SC_USB0_DP"
+		(shape passive)
+		(at 190.5 138.43 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "a88fddc5-b1be-4d5d-bb03-b32b5b13b158")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 176.6519 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ECP5_A2"
+		(shape bidirectional)
+		(at 81.28 77.47 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "a896ca82-7840-4d3d-b173-eefe5412f66b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 92.7277 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -6316,28 +6245,6 @@
 			)
 		)
 	)
-	(global_label "ECP5_A2"
-		(shape bidirectional)
-		(at 35.56 46.99 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "b3cb5948-03e2-418d-9a9b-de626770d366")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 24.1123 46.99 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "ECP5_T11_TMS"
 		(shape bidirectional)
 		(at 35.56 69.85 180)
@@ -6362,7 +6269,7 @@
 	)
 	(global_label "ECP5_D7"
 		(shape bidirectional)
-		(at 238.76 36.83 180)
+		(at 163.83 8.89 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -6372,7 +6279,7 @@
 		)
 		(uuid "b97cf862-1594-4b4e-8bb0-931b613a94c6")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 226.3179 36.83 0)
+			(at 151.3879 8.89 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6395,6 +6302,50 @@
 		(uuid "bcb7bb44-05d6-4bb7-95cb-774c0fa70076")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 22.7214 80.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ECP5_C13"
+		(shape bidirectional)
+		(at 238.76 43.18 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "be3f924c-b600-42ec-8fc8-c86028a23e31")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 225.9214 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ECP5_B3"
+		(shape bidirectional)
+		(at 238.76 33.02 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "c08c3b4e-1f4d-409e-bc44-3ad4787dfc0a")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 227.1309 33.02 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6428,7 +6379,7 @@
 	)
 	(global_label "ECP5_B7"
 		(shape bidirectional)
-		(at 152.4 93.98 180)
+		(at 129.54 99.06 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -6438,7 +6389,29 @@
 		)
 		(uuid "c4220595-12a7-461c-80ac-3527876ea9d4")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 139.9579 93.98 0)
+			(at 117.0979 99.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "SC_USB0_DM"
+		(shape passive)
+		(at 35.56 44.45 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "c5bc3ec5-10ee-477f-8d08-eac53c7192d2")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 21.5305 44.45 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6624,6 +6597,28 @@
 			)
 		)
 	)
+	(global_label "SC_USB0_VBUS"
+		(shape passive)
+		(at 193.04 119.38 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "e08c779e-c225-41de-804a-20637dccc542")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 176.8333 119.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "ECP5_D9"
 		(shape bidirectional)
 		(at 35.56 85.09 180)
@@ -6648,7 +6643,7 @@
 	)
 	(global_label "ECP5_A6"
 		(shape bidirectional)
-		(at 238.76 62.23 180)
+		(at 163.83 34.29 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -6658,7 +6653,7 @@
 		)
 		(uuid "e3aac0c8-adc7-43b0-a720-f018b9e41fbb")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 227.3123 62.23 0)
+			(at 152.3823 34.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6712,6 +6707,50 @@
 			)
 		)
 	)
+	(global_label "SC_USB0_ID"
+		(shape passive)
+		(at 133.35 181.61 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "e6b86cfd-d9ec-4fa9-9c4e-d096b6624147")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 120.1671 181.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ECP5_C6"
+		(shape bidirectional)
+		(at 238.76 36.83 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "e6f191e8-1a0d-4317-8503-8a75673306da")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 226.3179 36.83 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "ECP5_D13"
 		(shape bidirectional)
 		(at 238.76 121.92 180)
@@ -6756,9 +6795,9 @@
 			)
 		)
 	)
-	(global_label "ECP5_B6"
-		(shape bidirectional)
-		(at 238.76 64.77 180)
+	(global_label "SC_USB0_DM"
+		(shape passive)
+		(at 190.5 133.35 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -6766,9 +6805,31 @@
 			)
 			(justify right)
 		)
-		(uuid "eaa550f4-6dfa-46fb-9887-a6cbb08141ad")
+		(uuid "ea466405-1a3b-495b-876c-bd70658d85c9")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 227.1309 64.77 0)
+			(at 176.4705 133.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ECP5_C5"
+		(shape bidirectional)
+		(at 238.76 24.13 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "ed2231b2-e703-4ad0-acba-0ad753a0ed56")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 226.3179 24.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6888,28 +6949,6 @@
 			)
 		)
 	)
-	(global_label "ECP5_B5"
-		(shape bidirectional)
-		(at 238.76 59.69 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "f721f068-7818-4433-b7ea-8b3c2d60d8ed")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 227.1309 59.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "ECP5_D7"
 		(shape bidirectional)
 		(at 81.28 92.71 0)
@@ -6954,6 +6993,28 @@
 			)
 		)
 	)
+	(global_label "SC_USB0_DP"
+		(shape passive)
+		(at 35.56 46.99 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "fbb2eb2a-1f9c-4cb1-a65e-781afed7303b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 21.7119 46.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "ECP5_T11_TMS"
 		(shape bidirectional)
 		(at 270.51 97.79 0)
@@ -6972,6 +7033,28 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ECP5_D13"
+		(shape bidirectional)
+		(at 238.76 45.72 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "fdce8808-a6c1-4bd2-a818-311b0e3555ff")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 225.9214 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -7044,7 +7127,7 @@
 	)
 	(symbol
 		(lib_id "OLIMEX_RCL:R")
-		(at 170.18 82.55 90)
+		(at 147.32 87.63 90)
 		(unit 1)
 		(exclude_from_sim yes)
 		(in_bom yes)
@@ -7052,7 +7135,7 @@
 		(dnp no)
 		(uuid "0041bdf2-9075-4707-9353-0f33c40f20e4")
 		(property "Reference" "R30"
-			(at 168.275 82.55 0)
+			(at 145.415 87.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7060,7 +7143,7 @@
 			)
 		)
 		(property "Value" "100R"
-			(at 172.085 82.55 0)
+			(at 149.225 87.63 0)
 			(effects
 				(font
 					(size 1.016 1.016)
@@ -7068,7 +7151,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 171.958 82.55 0)
+			(at 149.098 87.63 0)
 			(effects
 				(font
 					(size 0.762 0.762)
@@ -7077,7 +7160,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 170.18 82.55 90)
+			(at 147.32 87.63 90)
 			(effects
 				(font
 					(size 0.762 0.762)
@@ -7085,7 +7168,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 170.18 82.55 0)
+			(at 147.32 87.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7094,7 +7177,7 @@
 			)
 		)
 		(property "lcsc#" "C25076"
-			(at 170.18 82.55 0)
+			(at 147.32 87.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7109,7 +7192,7 @@
 			(uuid "6152841c-46c5-47c3-83e5-868278fdb353")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "R30")
 					(unit 1)
@@ -7390,7 +7473,7 @@
 			(uuid "b5c7c32d-4053-465a-9e85-d30f5750c75d")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "J8")
 					(unit 1)
@@ -7400,7 +7483,7 @@
 	)
 	(symbol
 		(lib_id "OLIMEX_RCL:R")
-		(at 163.83 82.55 90)
+		(at 140.97 87.63 90)
 		(unit 1)
 		(exclude_from_sim yes)
 		(in_bom yes)
@@ -7408,7 +7491,7 @@
 		(dnp no)
 		(uuid "1ab423ac-7468-41bb-85c9-e1634655f451")
 		(property "Reference" "R29"
-			(at 161.925 82.55 0)
+			(at 139.065 87.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7416,7 +7499,7 @@
 			)
 		)
 		(property "Value" "100R"
-			(at 165.735 82.55 0)
+			(at 142.875 87.63 0)
 			(effects
 				(font
 					(size 1.016 1.016)
@@ -7424,7 +7507,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 165.608 82.55 0)
+			(at 142.748 87.63 0)
 			(effects
 				(font
 					(size 0.762 0.762)
@@ -7433,7 +7516,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 163.83 82.55 90)
+			(at 140.97 87.63 90)
 			(effects
 				(font
 					(size 0.762 0.762)
@@ -7441,7 +7524,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 163.83 82.55 0)
+			(at 140.97 87.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7450,7 +7533,7 @@
 			)
 		)
 		(property "lcsc#" "C25076"
-			(at 163.83 82.55 0)
+			(at 140.97 87.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7465,7 +7548,7 @@
 			(uuid "8cb09886-86f4-42bd-af10-7084ac4d96fd")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "R29")
 					(unit 1)
@@ -7532,7 +7615,7 @@
 			(uuid "14b72ace-c4bd-4a74-8f26-80059948719a")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR061")
 					(unit 1)
@@ -7542,7 +7625,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 165.1 41.91 0)
+		(at 142.24 46.99 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -7550,7 +7633,7 @@
 		(dnp no)
 		(uuid "1b04bd45-4f47-40d9-a44c-1ef9778910f7")
 		(property "Reference" "R27"
-			(at 163.322 43.053 0)
+			(at 140.462 48.133 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7559,7 +7642,7 @@
 			)
 		)
 		(property "Value" "10K"
-			(at 163.322 40.767 0)
+			(at 140.462 45.847 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7568,7 +7651,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 163.322 41.91 90)
+			(at 140.462 46.99 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7577,7 +7660,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 165.1 41.91 0)
+			(at 142.24 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7586,7 +7669,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 165.1 41.91 0)
+			(at 142.24 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7595,7 +7678,7 @@
 			)
 		)
 		(property "Mfg" "Yageo"
-			(at 165.1 41.91 0)
+			(at 142.24 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7604,7 +7687,7 @@
 			)
 		)
 		(property "PN" "RC0402FR-0710KL"
-			(at 165.1 41.91 0)
+			(at 142.24 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7613,7 +7696,7 @@
 			)
 		)
 		(property "lcsc#" "C25744"
-			(at 165.1 41.91 0)
+			(at 142.24 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7628,7 +7711,7 @@
 			(uuid "e353f381-36e0-41ec-86de-dec5c7d2afc3")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "R27")
 					(unit 1)
@@ -7695,7 +7778,7 @@
 			(uuid "34936c60-7a12-445c-974c-462e466d2945")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR052")
 					(unit 1)
@@ -7791,249 +7874,9 @@
 			(uuid "dd8a309e-3d0f-4d4e-bdfa-fe5c6c5239a4")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "R20")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Diode:US1G")
-		(at 46.99 184.15 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "24eeb090-6647-4754-95c8-ead5d986ded9")
-		(property "Reference" "D5"
-			(at 46.99 186.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "1N4007FL"
-			(at 47.117 181.483 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "Diode_SMD:D_SOD-123F"
-			(at 46.99 179.705 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/ds16008.pdf"
-			(at 46.99 184.15 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 46.99 184.15 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "dig#" "1655-1N4007FLCT-ND"
-			(at 36.83 186.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "mfg#" "1N4007FL"
-			(at 34.29 186.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C493190"
-			(at 46.99 184.15 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "31548a5b-ddc2-4a01-8521-2bee3bd1a47c")
-		)
-		(pin "2"
-			(uuid "65064c7e-4d8a-4970-9418-71c354d545f6")
-		)
-		(instances
-			(project "backpack"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
-					(reference "D5")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Jumper:Jumper_2_Open")
-		(at 67.31 181.61 0)
-		(unit 1)
-		(exclude_from_sim yes)
-		(in_bom yes)
-		(on_board yes)
-		(dnp yes)
-		(fields_autoplaced yes)
-		(uuid "3364074c-958d-4111-8c6e-4cbbe2026f59")
-		(property "Reference" "JP1"
-			(at 67.31 175.26 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "ALLOW_USB_VIN"
-			(at 67.31 177.8 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
-			(at 67.31 181.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 67.31 181.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Jumper, 2-pole, open"
-			(at 67.31 181.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "e1094e0d-ad70-4bb6-8e6f-54d5a7fc3d9c")
-		)
-		(pin "2"
-			(uuid "aea41787-a63e-441f-896b-0fbc4934bf65")
-		)
-		(instances
-			(project "backpack"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
-					(reference "JP1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:Polyfuse_Small")
-		(at 80.01 181.61 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "35404783-6b40-4c7b-b2c7-516cce5ac9b2")
-		(property "Reference" "F3"
-			(at 80.01 177.292 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "15V 200mA"
-			(at 80.01 179.324 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Fuse:Fuse_0805_2012Metric"
-			(at 85.09 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 80.01 181.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resettable fuse, polymeric positive temperature coefficient, small symbol"
-			(at 80.01 181.61 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C883103"
-			(at 80.01 181.61 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "83c741ee-b50f-4ec7-9d6b-3f552dabeacf")
-		)
-		(pin "1"
-			(uuid "d736a5ef-b299-4f49-97c5-79f53d2283c4")
-		)
-		(instances
-			(project "backpack"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
-					(reference "F3")
 					(unit 1)
 				)
 			)
@@ -8099,7 +7942,7 @@
 			(uuid "47f088b0-9e84-4d98-8694-96110f735015")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR059")
 					(unit 1)
@@ -8133,7 +7976,7 @@
 				)
 			)
 		)
-		(property "Footprint" "cynthion:USB_C_Receptacle_HRO_TYPE-C-31-M-12"
+		(property "Footprint" "usb:USB-C-SMD_HC-GAP-ACF012-1T-1"
 			(at 156.21 134.62 0)
 			(effects
 				(font
@@ -8248,7 +8091,7 @@
 			(uuid "8fdfcd1d-6630-48bb-8a11-d356672063e8")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "J7")
 					(unit 1)
@@ -8316,7 +8159,7 @@
 			(uuid "d009d71a-439f-4500-812c-d79c85780d49")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR062")
 					(unit 1)
@@ -8383,7 +8226,7 @@
 			(uuid "d7a74ab9-2b85-4bb5-a8ce-5c96c53b98a0")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR054")
 					(unit 1)
@@ -8450,7 +8293,7 @@
 			(uuid "a8c0f1f7-4937-416b-88e8-e71ecf5186b3")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR055")
 					(unit 1)
@@ -8518,7 +8361,7 @@
 			(uuid "53869641-29b3-40bf-b136-fb630dffdcd0")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR056")
 					(unit 1)
@@ -8586,7 +8429,7 @@
 			(uuid "1732bd4d-df01-4eee-a022-94a9619fa69b")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR028")
 					(unit 1)
@@ -8651,9 +8494,169 @@
 			(uuid "9707f9e3-00d6-42e9-9f4b-79e64e8ada36")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR043")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole")
+		(at 203.2 88.9 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "7d916a5a-e3d4-49c2-bc95-12fe05265590")
+		(property "Reference" "H2"
+			(at 205.74 87.6299 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "MountingHole"
+			(at 205.74 90.1699 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2_Pad_Via "
+			(at 203.2 88.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 203.2 88.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Mounting Hole without connection"
+			(at 203.2 88.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "H2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 137.16 177.8 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp yes)
+		(uuid "8128d4ae-a628-4fc2-a6af-73774604ae38")
+		(property "Reference" "R34"
+			(at 139.446 179.578 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0R"
+			(at 137.16 179.832 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 135.382 177.8 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 137.16 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Mfg" "Yageo"
+			(at 137.16 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "PN" ""
+			(at 137.16 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" ""
+			(at 137.16 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "8926acc3-950a-405c-a278-ffd06d5317d9")
+		)
+		(pin "2"
+			(uuid "183d6883-dc11-4de7-9783-ac075882b79f")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "R34")
 					(unit 1)
 				)
 			)
@@ -8719,7 +8722,7 @@
 			(uuid "3c146b5f-6e80-49e2-8071-5172ea286cdb")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR057")
 					(unit 1)
@@ -8785,9 +8788,86 @@
 			(uuid "09404f7c-3238-46ae-96b9-c5bbfa3b7705")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR063")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:RotaryEncoder_Switch")
+		(at 191.77 72.39 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "8d53cf86-fa5b-4463-b97b-2776338c343e")
+		(property "Reference" "SW3"
+			(at 191.77 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "RotaryEncoder_Switch"
+			(at 191.77 64.77 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Rotary_Encoder:RotaryEncoder_Bourns_Horizontal_PEC09-2xxxF-Sxxxx"
+			(at 187.96 68.326 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 191.77 65.786 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Rotary encoder, dual channel, incremental quadrate outputs, with switch"
+			(at 191.77 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "S2"
+			(uuid "2ce772ed-5237-4686-8324-471bb5fab4bd")
+		)
+		(pin "A"
+			(uuid "dc53b6c7-28c5-4d4e-9110-dd54027c40c6")
+		)
+		(pin "C"
+			(uuid "7d9ef7db-87ea-4b7c-bbb5-80f63930ecb1")
+		)
+		(pin "B"
+			(uuid "241edf31-543e-416d-8970-06f74b74b0ff")
+		)
+		(pin "S1"
+			(uuid "79ce3568-3942-46ae-8170-d8e49b596296")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "SW3")
 					(unit 1)
 				)
 			)
@@ -8852,7 +8932,7 @@
 			(uuid "5fdfcb55-cf9b-449f-9861-fb19ba19fb0e")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR024")
 					(unit 1)
@@ -8948,7 +9028,7 @@
 			(uuid "9ee5d34c-b81f-4277-af86-8ecd5ec1feee")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "R21")
 					(unit 1)
@@ -9055,7 +9135,7 @@
 			(uuid "850adfd4-6aa4-48a1-8ea9-ae5a6a425a1e")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "J2")
 					(unit 1)
@@ -9065,7 +9145,7 @@
 	)
 	(symbol
 		(lib_id "power:+3V3")
-		(at 165.1 38.1 0)
+		(at 142.24 43.18 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9074,7 +9154,7 @@
 		(fields_autoplaced yes)
 		(uuid "98ce31f6-c4f5-483e-9143-720845b824e4")
 		(property "Reference" "#PWR039"
-			(at 165.1 41.91 0)
+			(at 142.24 46.99 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9083,7 +9163,7 @@
 			)
 		)
 		(property "Value" "+3V3"
-			(at 165.1 33.02 0)
+			(at 142.24 38.1 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9091,7 +9171,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 165.1 38.1 0)
+			(at 142.24 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9100,7 +9180,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 165.1 38.1 0)
+			(at 142.24 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9109,7 +9189,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 165.1 38.1 0)
+			(at 142.24 43.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9121,7 +9201,7 @@
 			(uuid "17e562b6-e306-4da1-ac01-add21b497b82")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR039")
 					(unit 1)
@@ -9130,103 +9210,8 @@
 		)
 	)
 	(symbol
-		(lib_id "Diode:US1G")
-		(at 46.99 180.34 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "a1d2951b-c251-4ca2-9e94-78869b14cdf9")
-		(property "Reference" "D4"
-			(at 46.99 182.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "1N4007FL"
-			(at 47.117 177.673 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "Diode_SMD:D_SOD-123F"
-			(at 46.99 175.895 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/ds16008.pdf"
-			(at 46.99 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 46.99 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "dig#" "1655-1N4007FLCT-ND"
-			(at 36.83 182.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "mfg#" "1N4007FL"
-			(at 34.29 182.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C493190"
-			(at 46.99 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "868208d9-a41d-4594-95a8-1a7dff26f907")
-		)
-		(pin "2"
-			(uuid "029e0a03-8b4e-41bb-abf4-1b9f0c9f7baa")
-		)
-		(instances
-			(project "backpack"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
-					(reference "D4")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
-		(at 165.1 58.42 0)
+		(at 142.24 63.5 0)
 		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
@@ -9236,7 +9221,7 @@
 		(fields_autoplaced yes)
 		(uuid "a2317b7a-4554-4c4c-9448-6ed179c45a48")
 		(property "Reference" "#PWR040"
-			(at 165.1 64.77 0)
+			(at 142.24 69.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9245,7 +9230,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 165.1 63.5 0)
+			(at 142.24 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9253,7 +9238,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 165.1 58.42 0)
+			(at 142.24 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9262,7 +9247,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 165.1 58.42 0)
+			(at 142.24 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9271,7 +9256,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 165.1 58.42 0)
+			(at 142.24 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9283,9 +9268,105 @@
 			(uuid "73497b04-c199-4789-835b-be97246e3d4c")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR040")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 232.41 52.07 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp yes)
+		(uuid "a51e0ce2-528a-44c9-ab20-f5bfb943b618")
+		(property "Reference" "R32"
+			(at 227.33 50.8 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "0R"
+			(at 230.886 52.07 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 232.41 53.848 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 232.41 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 232.41 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Mfg" "Yageo"
+			(at 232.41 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "PN" "RC0402FR-0710KL"
+			(at 232.41 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C25744"
+			(at 232.41 52.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "14cf67a6-7ab1-4c4d-9d3f-dd367d2d8828")
+		)
+		(pin "2"
+			(uuid "27f3177f-26a0-4033-ad60-396468d6cefc")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "R32")
 					(unit 1)
 				)
 			)
@@ -9350,7 +9431,7 @@
 			(uuid "bf524b1a-2b3d-4f4a-83f4-94df53c3079a")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR021")
 					(unit 1)
@@ -9359,17 +9440,34 @@
 		)
 	)
 	(symbol
-		(lib_id "power:+3V3")
-		(at 167.64 78.74 0)
+		(lib_id "Device:R")
+		(at 232.41 49.53 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "b9aa58a6-09e5-4dec-9b30-8d0923de3cb8")
-		(property "Reference" "#PWR041"
-			(at 167.64 82.55 0)
+		(dnp yes)
+		(uuid "b3a26874-72f9-4bb0-80f2-1ce33d00eb3c")
+		(property "Reference" "R36"
+			(at 227.33 48.26 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "0R"
+			(at 230.886 49.53 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 232.41 51.308 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9377,25 +9475,8 @@
 				(hide yes)
 			)
 		)
-		(property "Value" "+3V3"
-			(at 167.64 73.66 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 167.64 78.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 167.64 78.74 0)
+		(property "Datasheet" "~"
+			(at 232.41 49.53 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9404,7 +9485,103 @@
 			)
 		)
 		(property "Description" ""
-			(at 167.64 78.74 0)
+			(at 232.41 49.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Mfg" "Yageo"
+			(at 232.41 49.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "PN" "RC0402FR-0710KL"
+			(at 232.41 49.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C25744"
+			(at 232.41 49.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "3a0df939-8164-4869-b0de-5d726b46d095")
+		)
+		(pin "2"
+			(uuid "da754ffa-db1d-4637-9883-5012cb1a59fb")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "R36")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 144.78 83.82 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "b9aa58a6-09e5-4dec-9b30-8d0923de3cb8")
+		(property "Reference" "#PWR041"
+			(at 144.78 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 144.78 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 144.78 83.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 144.78 83.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 144.78 83.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9416,7 +9593,7 @@
 			(uuid "9128edc5-3073-4607-a003-38aa7a80ff5d")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR041")
 					(unit 1)
@@ -9484,9 +9661,105 @@
 			(uuid "c55ed6fb-343e-4eb8-aa15-c4bccbab9d1a")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR058")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 232.41 54.61 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp yes)
+		(uuid "c13d919e-690b-43c3-ad57-5d5bd4828aaa")
+		(property "Reference" "R33"
+			(at 227.33 53.34 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "0R"
+			(at 230.886 54.61 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 232.41 56.388 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 232.41 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 232.41 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Mfg" "Yageo"
+			(at 232.41 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "PN" "RC0402FR-0710KL"
+			(at 232.41 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C25744"
+			(at 232.41 54.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "7e84c8f5-05a8-4c8d-bcc2-16d513e6dbeb")
+		)
+		(pin "2"
+			(uuid "7da6cbf1-aaf3-4868-8092-d8e2365ba062")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "R33")
 					(unit 1)
 				)
 			)
@@ -9551,9 +9824,169 @@
 			(uuid "977ec4f8-9bff-4fa5-a029-d627aaf0dc50")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR022")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole")
+		(at 194.31 96.52 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c3b8caa8-4ede-432d-9ae8-56d86f35286a")
+		(property "Reference" "H1"
+			(at 196.85 95.2499 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "MountingHole"
+			(at 196.85 97.7899 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2_Pad_Via "
+			(at 194.31 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 194.31 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Mounting Hole without connection"
+			(at 194.31 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "H1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 137.16 185.42 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp yes)
+		(uuid "c6dee14f-d08b-4ab0-97bb-62ef14874cca")
+		(property "Reference" "R35"
+			(at 139.446 187.198 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0R"
+			(at 137.16 187.452 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 135.382 185.42 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 137.16 185.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 137.16 185.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Mfg" "Yageo"
+			(at 137.16 185.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "PN" ""
+			(at 137.16 185.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" ""
+			(at 137.16 185.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1a839a55-6a61-482c-ad3e-8ccc8a995b49")
+		)
+		(pin "2"
+			(uuid "a5f6e2d0-1e32-41ec-841d-fc221bcc8e00")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "R35")
 					(unit 1)
 				)
 			)
@@ -9619,7 +10052,7 @@
 			(uuid "7fcf8893-f088-4bd8-a2c7-8b0047b2bb54")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR065")
 					(unit 1)
@@ -9629,7 +10062,7 @@
 	)
 	(symbol
 		(lib_id "Device:C")
-		(at 165.1 54.61 0)
+		(at 142.24 59.69 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -9637,7 +10070,7 @@
 		(dnp no)
 		(uuid "ca5d4aae-ef31-41ad-8af8-20eb93bb1f1d")
 		(property "Reference" "C26"
-			(at 166.37 52.07 0)
+			(at 143.51 57.15 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9646,7 +10079,7 @@
 			)
 		)
 		(property "Value" "0.1uF"
-			(at 166.37 57.15 0)
+			(at 143.51 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9655,7 +10088,7 @@
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 166.0652 58.42 0)
+			(at 143.2052 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9664,7 +10097,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 165.1 54.61 0)
+			(at 142.24 59.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9673,7 +10106,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 165.1 54.61 0)
+			(at 142.24 59.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9682,7 +10115,7 @@
 			)
 		)
 		(property "Mfg" "Yageo"
-			(at 96.52 232.41 0)
+			(at 73.66 237.49 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9691,7 +10124,7 @@
 			)
 		)
 		(property "PN" "CC0402KRX5R6BB104"
-			(at 96.52 232.41 0)
+			(at 73.66 237.49 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9700,7 +10133,7 @@
 			)
 		)
 		(property "Tol" "10V / X5R"
-			(at 165.1 54.61 0)
+			(at 142.24 59.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9709,7 +10142,7 @@
 			)
 		)
 		(property "lcsc" ""
-			(at 165.1 54.61 0)
+			(at 142.24 59.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9718,7 +10151,7 @@
 			)
 		)
 		(property "lcsc#" " C307331"
-			(at 165.1 54.61 0)
+			(at 142.24 59.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9733,7 +10166,7 @@
 			(uuid "b4a0cac9-e9b0-4d97-97e1-3f7ecd8da383")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "C26")
 					(unit 1)
@@ -9798,7 +10231,7 @@
 			(uuid "81ad8b66-ba28-4006-9ecb-d03f4b9e6373")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR042")
 					(unit 1)
@@ -9866,7 +10299,7 @@
 			(uuid "5ecd282f-62c8-4bd2-9c4e-13e62e1e4ad8")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR025")
 					(unit 1)
@@ -9962,7 +10395,7 @@
 			(uuid "5fa3f4a5-198c-44ee-8fce-f69dd3d509fd")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "R22")
 					(unit 1)
@@ -9996,7 +10429,7 @@
 				)
 			)
 		)
-		(property "Footprint" "cynthion:USB_C_Receptacle_HRO_TYPE-C-31-M-12"
+		(property "Footprint" "usb:USB-C-SMD_HC-GAP-ACF012-1T-1"
 			(at 207.01 134.62 0)
 			(effects
 				(font
@@ -10111,7 +10544,7 @@
 			(uuid "ca327d48-1965-406a-a200-23e741ed73f4")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "J9")
 					(unit 1)
@@ -10121,7 +10554,7 @@
 	)
 	(symbol
 		(lib_id "support_hardware:SW_SPST_shielded")
-		(at 173.99 50.8 0)
+		(at 151.13 55.88 0)
 		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
@@ -10130,7 +10563,7 @@
 		(dnp no)
 		(uuid "d5023aac-5896-482a-a891-5ab351fd956b")
 		(property "Reference" "SW1"
-			(at 173.99 44.45 0)
+			(at 151.13 49.53 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10138,7 +10571,7 @@
 			)
 		)
 		(property "Value" "SW_Tactile_SPST"
-			(at 173.99 46.99 0)
+			(at 151.13 52.07 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10146,7 +10579,7 @@
 			)
 		)
 		(property "Footprint" "cynthion:SW_Tactile_SPST_Angled_TC-1109DE-B-F"
-			(at 173.99 50.8 0)
+			(at 151.13 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10155,7 +10588,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 173.99 50.8 0)
+			(at 151.13 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10164,7 +10597,7 @@
 			)
 		)
 		(property "Description" "SWITCH TACTILE SPST-NO 0.05A 12V"
-			(at 173.99 50.8 0)
+			(at 151.13 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10173,7 +10606,7 @@
 			)
 		)
 		(property "Manufacturer" "XKB"
-			(at 173.99 50.8 0)
+			(at 151.13 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10182,7 +10615,7 @@
 			)
 		)
 		(property "Part Number" "TC-1109DE-B-F"
-			(at 173.99 50.8 0)
+			(at 151.13 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10191,7 +10624,7 @@
 			)
 		)
 		(property "Substitution" "DEALON TC-1150DL-6.0H-160"
-			(at 173.99 50.8 0)
+			(at 151.13 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10200,7 +10633,7 @@
 			)
 		)
 		(property "lcsc#" "C692468"
-			(at 173.99 50.8 0)
+			(at 151.13 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10218,9 +10651,74 @@
 			(uuid "2e7dd28e-3f54-485a-907e-ea9cd15118bd")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "SW1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 137.16 173.99 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d593274b-cd98-4b2f-bb9d-4d3e7da973d4")
+		(property "Reference" "#PWR04"
+			(at 137.16 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 137.5156 169.5958 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 137.16 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 137.16 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 137.16 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "d7da8c51-08d7-44ed-833e-749bbb9708f4")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "#PWR04")
 					(unit 1)
 				)
 			)
@@ -10286,7 +10784,7 @@
 			(uuid "6404a7cc-c30d-4d93-8a7a-972f7ca549f6")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR027")
 					(unit 1)
@@ -10352,7 +10850,7 @@
 			(uuid "629d7e2c-ad2e-4c9e-bbe7-2eaad6fb876e")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR064")
 					(unit 1)
@@ -10420,9 +10918,76 @@
 			(uuid "d6774419-ec0d-411c-993f-6958bf20a8d4")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR026")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 137.16 189.23 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "dc6e7b0e-5f3e-4371-bae4-99faae3df1a4")
+		(property "Reference" "#PWR03"
+			(at 137.16 195.58 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 137.16 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 137.16 189.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 137.16 189.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 137.16 189.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "90d5168d-2c9b-474c-82a0-38e31e4d4488")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "#PWR03")
 					(unit 1)
 				)
 			)
@@ -10487,7 +11052,7 @@
 			(uuid "ff4ee1e9-4471-4280-8771-637d307f1197")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR023")
 					(unit 1)
@@ -10496,73 +11061,8 @@
 		)
 	)
 	(symbol
-		(lib_id "power:+3V3")
-		(at 233.68 33.02 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "e42d50f7-fba2-4ca8-8158-bbef3893eef2")
-		(property "Reference" "#PWR01"
-			(at 233.68 36.83 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+3V3"
-			(at 233.68 27.94 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 233.68 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 233.68 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 233.68 33.02 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "8776be75-0b59-4427-b476-dde03ecbce60")
-		)
-		(instances
-			(project "backpack"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
-					(reference "#PWR01")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:LED_Small_Filled")
-		(at 163.83 88.9 90)
+		(at 140.97 93.98 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10571,7 +11071,7 @@
 		(fields_autoplaced yes)
 		(uuid "e53e0e4a-98a7-4d15-8e7e-045c48dacc95")
 		(property "Reference" "D8"
-			(at 166.37 87.5664 90)
+			(at 143.51 92.6464 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10580,7 +11080,7 @@
 			)
 		)
 		(property "Value" "LED 0402 RED"
-			(at 166.37 90.1064 90)
+			(at 143.51 95.1864 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10590,7 +11090,7 @@
 			)
 		)
 		(property "Footprint" "LED_SMD:LED_0402_1005Metric"
-			(at 163.83 88.9 90)
+			(at 140.97 93.98 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10599,7 +11099,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 163.83 88.9 90)
+			(at 140.97 93.98 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10608,7 +11108,7 @@
 			)
 		)
 		(property "Description" "Light emitting diode, small symbol, filled shape"
-			(at 163.83 88.9 0)
+			(at 140.97 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10617,7 +11117,7 @@
 			)
 		)
 		(property "lcsc#" "C965790"
-			(at 163.83 88.9 90)
+			(at 140.97 93.98 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10632,7 +11132,7 @@
 			(uuid "e3ca04a8-3048-48e1-9dc5-97a71484dfef")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "D8")
 					(unit 1)
@@ -10728,7 +11228,7 @@
 			(uuid "7f7ec0c1-af06-4bf3-9c86-68b48802a1a4")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "R19")
 					(unit 1)
@@ -10738,7 +11238,7 @@
 	)
 	(symbol
 		(lib_id "Device:LED_Small_Filled")
-		(at 170.18 88.9 90)
+		(at 147.32 93.98 90)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10747,7 +11247,7 @@
 		(fields_autoplaced yes)
 		(uuid "f373a0f5-50b9-445f-9e9c-814ab3a299ce")
 		(property "Reference" "D9"
-			(at 172.72 87.5664 90)
+			(at 149.86 92.6464 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10756,7 +11256,7 @@
 			)
 		)
 		(property "Value" "LED 0402 RED"
-			(at 172.72 90.1064 90)
+			(at 149.86 95.1864 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10766,7 +11266,7 @@
 			)
 		)
 		(property "Footprint" "LED_SMD:LED_0402_1005Metric"
-			(at 170.18 88.9 90)
+			(at 147.32 93.98 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10775,7 +11275,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 170.18 88.9 90)
+			(at 147.32 93.98 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10784,7 +11284,7 @@
 			)
 		)
 		(property "Description" "Light emitting diode, small symbol, filled shape"
-			(at 170.18 88.9 0)
+			(at 147.32 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10793,7 +11293,7 @@
 			)
 		)
 		(property "lcsc#" "C965790"
-			(at 170.18 88.9 90)
+			(at 147.32 93.98 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10808,7 +11308,7 @@
 			(uuid "a9170fad-87c0-457c-acd5-157067fe7d95")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "D9")
 					(unit 1)
@@ -10818,7 +11318,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 181.61 58.42 0)
+		(at 158.75 63.5 0)
 		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
@@ -10828,7 +11328,7 @@
 		(fields_autoplaced yes)
 		(uuid "f8ff195a-2627-4aa2-95f9-3667d3a63d05")
 		(property "Reference" "#PWR038"
-			(at 181.61 64.77 0)
+			(at 158.75 69.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10837,7 +11337,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 181.61 63.5 0)
+			(at 158.75 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10845,7 +11345,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 181.61 58.42 0)
+			(at 158.75 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10854,7 +11354,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 181.61 58.42 0)
+			(at 158.75 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10863,7 +11363,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 181.61 58.42 0)
+			(at 158.75 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10875,7 +11375,7 @@
 			(uuid "a3beb855-cdaf-4e93-b458-e1786de6debd")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR038")
 					(unit 1)
@@ -10982,7 +11482,7 @@
 			(uuid "88d7a0d9-9d68-41ed-898e-c8334e504f81")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "J3")
 					(unit 1)
@@ -11049,7 +11549,7 @@
 			(uuid "e1f04972-98e3-4b0a-b6b2-fd6d8cb043bf")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR053")
 					(unit 1)
@@ -11188,7 +11688,7 @@
 			(uuid "f949f74d-d664-4560-ace0-a1cf6a4404ef")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(page "4")
 				)
@@ -11196,7 +11696,7 @@
 		)
 	)
 	(sheet
-		(at 88.9 179.07)
+		(at 33.02 169.545)
 		(size 33.02 13.97)
 		(fields_autoplaced yes)
 		(stroke
@@ -11208,7 +11708,7 @@
 		)
 		(uuid "4885642e-e1b2-4a9c-a477-910295b2621e")
 		(property "Sheetname" "power"
-			(at 88.9 178.3584 0)
+			(at 33.02 168.8334 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11217,7 +11717,7 @@
 			)
 		)
 		(property "Sheetfile" "power.kicad_sch"
-			(at 88.9 193.6246 0)
+			(at 33.02 184.0996 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11225,228 +11725,10 @@
 				(justify left top)
 			)
 		)
-		(pin "VAUX" passive
-			(at 88.9 181.61 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "8b8a6b38-e3bd-45a5-9e2e-ee6569bdf457")
-		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(page "6")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 238.76 31.75)
-		(size 31.75 36.83)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0.0000)
-		)
-		(uuid "5f28fc0f-df6f-45b5-aac7-18a67e46504e")
-		(property "Sheetname" "usb"
-			(at 238.76 31.0384 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "usb.kicad_sch"
-			(at 238.76 69.1646 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(pin "VDDIO" input
-			(at 238.76 33.02 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "3d945e32-5514-4883-b31d-50d694b4b545")
-		)
-		(pin "ULPI.REFCLK" passive
-			(at 238.76 36.83 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "575dc973-8c86-4e11-ba1a-92f84e30efe2")
-		)
-		(pin "ULPI.~{RESET}" passive
-			(at 238.76 39.37 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "a12b17a9-4266-4691-80ee-4475b8719c8f")
-		)
-		(pin "ULPI.STP" passive
-			(at 238.76 41.91 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "776f925f-e3c9-4856-894c-514cb8c7ce4e")
-		)
-		(pin "ULPI.DIR" passive
-			(at 238.76 44.45 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "7fe02b06-da64-4805-adf7-6623265e679f")
-		)
-		(pin "ULPI.NXT" passive
-			(at 238.76 46.99 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "745e8402-e4da-449b-88b4-8e6cb6e3f187")
-		)
-		(pin "ULPI.DATA7" passive
-			(at 238.76 67.31 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "94b1dcbc-ec3d-435a-922e-7d55c6dad09e")
-		)
-		(pin "ULPI.DATA5" passive
-			(at 238.76 62.23 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "f14a8bb4-5036-4b78-b5dc-70669e0e2402")
-		)
-		(pin "ULPI.DATA6" passive
-			(at 238.76 64.77 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "013561f5-d68d-448a-b021-8da929082ca2")
-		)
-		(pin "ULPI.DATA4" passive
-			(at 238.76 59.69 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "2057bd33-debe-4c96-9836-9c6fa9efcb3c")
-		)
-		(pin "ULPI.DATA3" passive
-			(at 238.76 57.15 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "618fd07a-80f1-4766-9508-f5ed635516c4")
-		)
-		(pin "ULPI.DATA2" passive
-			(at 238.76 54.61 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "5d2a1cc7-458b-40b2-b137-990f13c4130d")
-		)
-		(pin "ULPI.DATA1" passive
-			(at 238.76 52.07 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "e69bedb0-dfd5-4362-920e-d0926bf9690e")
-		)
-		(pin "ULPI.DATA0" passive
-			(at 238.76 49.53 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "76b47b0c-0d2e-4aa9-acc2-b2abd6d11e7e")
-		)
-		(pin "USB_DP" bidirectional
-			(at 270.51 36.83 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-			(uuid "927ac821-9ec8-47bf-b2b3-76345099c30e")
-		)
-		(pin "USB_DM" bidirectional
-			(at 270.51 39.37 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-			(uuid "4557443c-b287-4094-b39c-4be80c1a5f1f")
-		)
-		(pin "USB_VBUS_CONN" input
-			(at 270.51 41.91 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-			(uuid "db45d3ab-2ac9-4fcb-b0b8-abf3aa98bb8d")
-		)
-		(instances
-			(project "backpack"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
-					(page "2")
 				)
 			)
 		)
@@ -11612,7 +11894,7 @@
 			(uuid "f3c546b2-249e-4f11-ae2c-1db098f6242b")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(page "5")
 				)
@@ -11670,9 +11952,177 @@
 			(uuid "32fcbfca-b718-44ed-a6de-a62a339d9339")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 238.76 15.24)
+		(size 35.56 41.91)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "fab2810c-846b-4fd3-91f6-29ac3e93c045")
+		(property "Sheetname" "gpdi"
+			(at 238.76 14.5284 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "gpdi.kicad_sch"
+			(at 238.76 57.7346 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "GPDI_D1-" output
+			(at 238.76 26.67 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "951e9e94-845d-4f86-8ded-523f38556c64")
+		)
+		(pin "GPDI_D0+" output
+			(at 238.76 30.48 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "054bfec6-c508-40fa-a35d-8b1760df0dc9")
+		)
+		(pin "GPDI_D0-" output
+			(at 238.76 33.02 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "52e2a5e5-0f56-4619-a1e8-fe3a7aa29173")
+		)
+		(pin "GPDI_CK+" output
+			(at 238.76 36.83 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "9e03590b-1b59-46ab-aaa6-187321e40f9b")
+		)
+		(pin "GPDI_CK-" output
+			(at 238.76 39.37 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "2a0c48b3-e0aa-458e-accb-d0389285e33f")
+		)
+		(pin "GPDI_D2+" output
+			(at 238.76 17.78 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "999c34db-7747-42ed-b1d8-2ab8cc92d454")
+		)
+		(pin "GPDI_D2-" output
+			(at 238.76 20.32 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "0eabd11a-08d2-4f8f-8fe8-46fbd2e9311d")
+		)
+		(pin "GPDI_D1+" output
+			(at 238.76 24.13 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "d55730be-9718-45c9-8215-2d457ca3a0dd")
+		)
+		(pin "GPDI_SDA_3V3" bidirectional
+			(at 238.76 45.72 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "d146e701-d502-4267-b1ef-5c503b343358")
+		)
+		(pin "GPDI_SCL_3V3" bidirectional
+			(at 238.76 43.18 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "7ef5fa39-9523-4e28-b71e-5fe9ac8eea17")
+		)
+		(pin "GPDI_UTIL" bidirectional
+			(at 238.76 52.07 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "022bd81a-9ddc-47d7-9397-f6dd45da7ca7")
+		)
+		(pin "GPDI_HPD" bidirectional
+			(at 238.76 54.61 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "96d5efb8-f0de-405a-bc88-32b67508ecef")
+		)
+		(pin "GPDI_CEC" bidirectional
+			(at 238.76 49.53 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "19e9e7fc-cbae-4aa6-8172-cd8adfa142d0")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(page "6")
 				)
 			)
 		)

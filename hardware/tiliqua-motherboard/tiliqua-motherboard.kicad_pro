@@ -692,10 +692,6 @@
       "Root"
     ],
     [
-      "5f28fc0f-df6f-45b5-aac7-18a67e46504e",
-      "usb"
-    ],
-    [
       "dd79b704-4c8d-4498-8ec1-0bb3e9e805ab",
       "midi"
     ],
@@ -710,6 +706,10 @@
     [
       "4885642e-e1b2-4a9c-a477-910295b2621e",
       "power"
+    ],
+    [
+      "fab2810c-846b-4fd3-91f6-29ac3e93c045",
+      "gpdi"
     ]
   ],
   "text_variables": {}
