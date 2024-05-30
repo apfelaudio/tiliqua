@@ -3136,7 +3136,7 @@
 				)
 			)
 		)
-		(property "Footprint" "pj3410:pj324m"
+		(property "Footprint" "jacks:AUDIO-TH_PJ-325M"
 			(at 190.5 102.87 0)
 			(effects
 				(font
@@ -3145,7 +3145,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://datasheet.lcsc.com/lcsc/2110120730_XKB-Connectivity-PJ-324M0_C2884986.pdf"
+		(property "Datasheet" ""
 			(at 190.5 102.87 0)
 			(effects
 				(font
@@ -3163,7 +3163,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C2884986"
+		(property "lcsc#" ""
 			(at 190.5 107.95 0)
 			(effects
 				(font
@@ -3172,7 +3172,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg#" "PJ-324M0"
+		(property "mfg#" ""
 			(at 190.5 107.95 0)
 			(effects
 				(font
@@ -3308,7 +3308,7 @@
 				)
 			)
 		)
-		(property "Value" "AUDIO JACK PJ-324M0"
+		(property "Value" ""
 			(at 116.205 61.595 0)
 			(effects
 				(font
@@ -3316,7 +3316,7 @@
 				)
 			)
 		)
-		(property "Footprint" "pj3410:pj324m"
+		(property "Footprint" "jacks:AUDIO-TH_PJ-325M"
 			(at 116.84 66.04 0)
 			(effects
 				(font
@@ -3325,7 +3325,7 @@
 				(hide yes)
 			)
 		)
-		(property "Datasheet" "https://datasheet.lcsc.com/lcsc/2110120730_XKB-Connectivity-PJ-324M0_C2884986.pdf"
+		(property "Datasheet" ""
 			(at 116.84 66.04 0)
 			(effects
 				(font
@@ -3343,7 +3343,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C2884986"
+		(property "lcsc#" ""
 			(at 116.84 71.12 0)
 			(effects
 				(font
@@ -3352,7 +3352,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg#" "PJ-324M0"
+		(property "mfg#" ""
 			(at 116.84 71.12 0)
 			(effects
 				(font
