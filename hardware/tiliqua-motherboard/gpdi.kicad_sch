@@ -2794,7 +2794,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_Video:HDMI_Micro-D_Molex_46765-1x01"
+		(property "Footprint" "Connector_Video:HDMI_A_Amphenol_10029449-x01xLF_Horizontal"
 			(at 172.085 91.44 0)
 			(effects
 				(font
