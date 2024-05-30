@@ -2501,6 +2501,10 @@
 		(uuid "9ddd84b2-3d8d-4769-a50e-3346e138b32c")
 	)
 	(no_connect
+		(at 212.09 177.8)
+		(uuid "b42d4b27-c545-44cd-9218-b404c7355e06")
+	)
+	(no_connect
 		(at 238.76 49.53)
 		(uuid "b8e5adc2-efd9-4bb2-8c54-b6a42f44219e")
 	)
@@ -5651,6 +5655,73 @@
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR062")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole_Pad")
+		(at 212.09 175.26 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "6dc91d02-eb2a-4b6a-84fe-793f971243d5")
+		(property "Reference" "H3"
+			(at 214.63 172.7199 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "MountingHole"
+			(at 214.63 175.2599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2_Pad_Via"
+			(at 212.09 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 212.09 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Mounting Hole with connection"
+			(at 212.09 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "152a8150-768b-43c3-8d13-e4d03391afcc")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "H3")
 					(unit 1)
 				)
 			)

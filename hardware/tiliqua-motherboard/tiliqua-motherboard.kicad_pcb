@@ -3429,6 +3429,114 @@
 			)
 		)
 	)
+	(footprint "MountingHole:MountingHole_3.7mm_Pad"
+		(layer "F.Cu")
+		(uuid "1385db8e-6594-4d79-8825-56420ee5d7a5")
+		(at 23.365 47.2)
+		(descr "Mounting Hole 3.7mm")
+		(tags "mounting hole 3.7mm")
+		(property "Reference" "H3"
+			(at 0 -4.7 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "6eb9b117-408a-41e5-8b41-5831a003a29a")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "Value" "MountingHole_3.7mm_Pad"
+			(at 0 4.7 0)
+			(layer "F.Fab")
+			(uuid "762efe5c-6922-4260-9d3e-45beaf6ce3e5")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "Footprint" "MountingHole:MountingHole_3.7mm_Pad"
+			(at 0 0 0)
+			(unlocked yes)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "09f0a816-00eb-4837-83b9-cb17112100fd")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(unlocked yes)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "251bf241-a601-4041-8443-eb49abf394d1")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 0)
+			(unlocked yes)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "e962a4f6-fa73-4d58-9bfa-a27e04d2a842")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(attr exclude_from_pos_files exclude_from_bom)
+		(fp_circle
+			(center 0 0)
+			(end 3.7 0)
+			(stroke
+				(width 0.15)
+				(type solid)
+			)
+			(fill none)
+			(layer "Cmts.User")
+			(uuid "c76c363e-598e-4067-a107-e5eb82aa4af6")
+		)
+		(fp_circle
+			(center 0 0)
+			(end 3.95 0)
+			(stroke
+				(width 0.05)
+				(type solid)
+			)
+			(fill none)
+			(layer "F.CrtYd")
+			(uuid "14facbe1-3329-452d-9c1d-9b328638392a")
+		)
+		(fp_text user "${REFERENCE}"
+			(at 0 0 0)
+			(layer "F.Fab")
+			(uuid "418b395d-e95c-437c-8a40-32cb4d07cf96")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(pad "1" thru_hole circle
+			(at 0 0)
+			(size 6 6)
+			(drill 3.7)
+			(layers "*.Cu" "*.Mask")
+			(remove_unused_layers no)
+			(uuid "c7152763-db21-4d88-b3ec-059f9c5e48cb")
+		)
+	)
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "169941c6-1c51-48da-9784-3a5f14e5d7bf")
@@ -12083,7 +12191,7 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "capacitor")
 		(property "Reference" "C18"
-			(at 0 -1.16 360)
+			(at 0 -1.16 0)
 			(layer "F.SilkS")
 			(hide yes)
 			(uuid "1920d793-7b2c-4750-8936-4e3e4812f836")
@@ -12095,7 +12203,7 @@
 			)
 		)
 		(property "Value" "22nF"
-			(at 0 1.16 360)
+			(at 0 1.16 0)
 			(layer "F.Fab")
 			(uuid "cd9d5a6d-fe2a-49bb-b940-07175ba114ec")
 			(effects
@@ -12260,7 +12368,7 @@
 			(uuid "5151eae2-2386-423f-ae0b-c9ee8070cf69")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(uuid "1cc60002-5fc6-4cd6-8b9b-58523fe28ad8")
 			(effects
@@ -15150,7 +15258,7 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "capacitor")
 		(property "Reference" "C21"
-			(at 0 -1.16 360)
+			(at 0 -1.16 0)
 			(layer "F.SilkS")
 			(hide yes)
 			(uuid "41d4dde9-1a1a-48c6-8154-24b1103cd456")
@@ -15162,7 +15270,7 @@
 			)
 		)
 		(property "Value" "22nF"
-			(at 0 1.16 360)
+			(at 0 1.16 0)
 			(layer "F.Fab")
 			(uuid "6ebd76b8-e2f3-4042-a398-a47a78cc50c6")
 			(effects
@@ -15327,7 +15435,7 @@
 			(uuid "66d0cbc6-d9ef-4ca5-9ab6-e24360e7f7b9")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(uuid "16fa5142-4a11-4e2c-a346-4856acf83f98")
 			(effects
@@ -22598,7 +22706,7 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "capacitor")
 		(property "Reference" "C35"
-			(at 0 -1.16 360)
+			(at 0 -1.16 0)
 			(layer "F.SilkS")
 			(hide yes)
 			(uuid "04eb9186-d48a-47c1-a776-7b55e5283b8f")
@@ -22610,7 +22718,7 @@
 			)
 		)
 		(property "Value" "22nF"
-			(at 0 1.16 360)
+			(at 0 1.16 0)
 			(layer "F.Fab")
 			(uuid "57218d0d-4214-47fc-9bc7-fe5cb6555ea1")
 			(effects
@@ -22775,7 +22883,7 @@
 			(uuid "87f78584-255b-4414-8c48-36e8167c63bd")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(uuid "eaa2a805-6910-4a1b-ab02-334c287e95e9")
 			(effects
@@ -23995,7 +24103,7 @@
 			(pintype "bidirectional")
 			(uuid "0cb24ab9-25aa-4ade-93d5-31a266d1b260")
 		)
-		(model "/home/seb/dev/backpack/hardware/libs/m2.pretty/21992304.step"
+		(model "/home/seb/dev/tiliqua/hardware/libs/m2.pretty/21992304.step"
 			(offset
 				(xyz 0 2 0)
 			)
@@ -24004,6 +24112,17 @@
 			)
 			(rotate
 				(xyz -90 0 0)
+			)
+		)
+		(model "/home/seb/dev/tiliqua/hardware/libs/soldiercrab_r2.step"
+			(offset
+				(xyz 135.1 -102.5 2.6)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 180)
 			)
 		)
 	)
@@ -28938,7 +29057,7 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "capacitor")
 		(property "Reference" "C19"
-			(at 0 -1.16 360)
+			(at 0 -1.16 0)
 			(layer "F.SilkS")
 			(hide yes)
 			(uuid "a05681e9-a630-4c07-8b20-d4af2e964bc9")
@@ -28950,7 +29069,7 @@
 			)
 		)
 		(property "Value" "22nF"
-			(at 0 1.16 360)
+			(at 0 1.16 0)
 			(layer "F.Fab")
 			(uuid "ffec6d58-2d5a-4a69-8957-501b4d4228df")
 			(effects
@@ -29115,7 +29234,7 @@
 			(uuid "ed3fbc50-dbae-497a-af61-b3a7ece8f499")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(uuid "d6967aaf-05a4-47b0-a3ab-3bd36c5aa1d6")
 			(effects
@@ -33822,7 +33941,7 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "capacitor")
 		(property "Reference" "C17"
-			(at 0 -1.16 360)
+			(at 0 -1.16 0)
 			(layer "F.SilkS")
 			(hide yes)
 			(uuid "81e8dd87-881d-4b67-8720-d3f145b40cb3")
@@ -33834,7 +33953,7 @@
 			)
 		)
 		(property "Value" "22nF"
-			(at 0 1.16 360)
+			(at 0 1.16 0)
 			(layer "F.Fab")
 			(uuid "a0c99efa-5989-453d-88bb-584e29710d37")
 			(effects
@@ -33999,7 +34118,7 @@
 			(uuid "bb18fe5c-f7c7-49bc-9533-2c3e93dd1acb")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(uuid "432178a7-3c87-4dca-8ae2-904818446df5")
 			(effects
@@ -35815,7 +35934,7 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC_7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "capacitor")
 		(property "Reference" "C20"
-			(at 0 -1.16 360)
+			(at 0 -1.16 0)
 			(layer "F.SilkS")
 			(hide yes)
 			(uuid "34f9be1e-8d0d-487c-82a4-43a398b9929b")
@@ -35827,7 +35946,7 @@
 			)
 		)
 		(property "Value" "22nF"
-			(at 0 1.16 360)
+			(at 0 1.16 0)
 			(layer "F.Fab")
 			(uuid "dd8ef5c0-cf01-4020-9d72-9e8002aa48b9")
 			(effects
@@ -35992,7 +36111,7 @@
 			(uuid "23b23a4e-c7b8-44f8-8b14-04793198133c")
 		)
 		(fp_text user "${REFERENCE}"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(uuid "b7187b52-e0f9-4f6e-b05b-8507d1943218")
 			(effects
@@ -46560,6 +46679,10 @@
 				(xy 0.506158 0.520263) (xy 0.558414 0.508877) (xy 27.844446 0.490502)
 			)
 		)
+	)
+	(group ""
+		(uuid "db6ab069-2fe3-470d-b9a5-2b10b128ed67")
+		(members "1385db8e-6594-4d79-8825-56420ee5d7a5" "e6682f84-920e-4183-84c3-b0ba0c4dea12")
 	)
 	(group ""
 		(uuid "e6682f84-920e-4183-84c3-b0ba0c4dea12")
