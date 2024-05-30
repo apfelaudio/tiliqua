@@ -710,6 +710,18 @@
     [
       "fab2810c-846b-4fd3-91f6-29ac3e93c045",
       "gpdi"
+    ],
+    [
+      "17daa742-f20a-4e98-a58b-fde576cacd93",
+      "encoder"
+    ],
+    [
+      "cdf6c5cd-4778-4bd4-bc0a-19e7e0b15b0b",
+      "led_driver"
+    ],
+    [
+      "d2a2a9e8-d4aa-4c38-99cd-33ac9e017277",
+      "usbc"
     ]
   ],
   "text_variables": {}

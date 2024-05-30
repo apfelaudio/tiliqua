@@ -762,6 +762,32 @@
 		)
 		(uuid "f42e55ec-e6ad-430c-97f9-cad0d44569fd")
 	)
+	(rectangle
+		(start 99.695 48.26)
+		(end 158.75 100.33)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid 1fb87130-2e02-49aa-aabb-de024ef82fef)
+	)
+	(text "FFC connection to backpack eurorack-pmod"
+		(exclude_from_sim no)
+		(at 87.63 46.99 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+				(thickness 0.508)
+				(bold yes)
+				(italic yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "ecf3c78f-8dc0-4f97-89d3-a306fc02e451")
+	)
 	(hierarchical_label "PMOD_GNDA"
 		(shape passive)
 		(at 116.84 63.5 180)
