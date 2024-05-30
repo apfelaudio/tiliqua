@@ -4629,6 +4629,16 @@
 		)
 		(uuid "0fa0951f-0875-424e-8247-d42acb84f19c")
 	)
+	(text "TODO: PTH through panel for shielding"
+		(exclude_from_sim no)
+		(at 191.516 79.756 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "4b912f64-3635-4414-8ac6-d1487f9d49fb")
+	)
 	(text "CK/D0/D1/D2 assigned\ndifferential pins on ECP5"
 		(exclude_from_sim no)
 		(at 210.312 28.956 0)
@@ -5081,7 +5091,7 @@
 	)
 	(global_label "ECP5_B8"
 		(shape bidirectional)
-		(at 238.76 78.74 180)
+		(at 232.41 69.85 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5091,7 +5101,7 @@
 		)
 		(uuid "2b35789c-3597-40d9-8c0c-56dc3c116d4f")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 227.1309 78.74 0)
+			(at 220.7809 69.85 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -11940,16 +11950,6 @@
 				(justify left)
 			)
 			(uuid "73f5a9f8-00e5-48dc-8832-7f5d5dc4d6e8")
-		)
-		(pin "MIDI_TX" output
-			(at 238.76 78.74 180)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-			(uuid "32fcbfca-b718-44ed-a6de-a62a339d9339")
 		)
 		(instances
 			(project "tiliqua-motherboard"
