@@ -4154,7 +4154,7 @@
 				)
 			)
 		)
-		(property "Footprint" "cynthion:SW_Tactile_SPST_Angled_TC-1109DE-B-F"
+		(property "Footprint" "button:KEY-SMD_3P-L4.5-W7.0-P3.00"
 			(at 186.69 33.02 0)
 			(effects
 				(font
@@ -4172,7 +4172,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "SWITCH TACTILE SPST-NO 0.05A 12V"
+		(property "Description" ""
 			(at 186.69 33.02 0)
 			(effects
 				(font
@@ -4181,7 +4181,7 @@
 				(hide yes)
 			)
 		)
-		(property "Manufacturer" "XKB"
+		(property "Manufacturer" ""
 			(at 186.69 33.02 0)
 			(effects
 				(font
@@ -4190,7 +4190,7 @@
 				(hide yes)
 			)
 		)
-		(property "Part Number" "TC-1109DE-B-F"
+		(property "Part Number" ""
 			(at 186.69 33.02 0)
 			(effects
 				(font
@@ -4199,7 +4199,7 @@
 				(hide yes)
 			)
 		)
-		(property "Substitution" "DEALON TC-1150DL-6.0H-160"
+		(property "Substitution" ""
 			(at 186.69 33.02 0)
 			(effects
 				(font
@@ -4208,7 +4208,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C692468"
+		(property "lcsc#" "C2874588"
 			(at 186.69 33.02 0)
 			(effects
 				(font
