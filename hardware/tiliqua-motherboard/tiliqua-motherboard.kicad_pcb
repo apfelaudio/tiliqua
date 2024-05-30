@@ -5930,7 +5930,7 @@
 	(footprint "Connector_PinSocket_2.54mm:PinSocket_2x06_P2.54mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "36a37baf-5dc0-4dce-8615-57044468abb0")
-		(at 4.74 55.35)
+		(at 4.74 42.765)
 		(descr "Through hole angled socket strip, 2x06, 2.54mm pitch, 8.51mm socket length, double cols (from Kicad 4.0.7), script generated")
 		(tags "Through hole angled socket strip THT 2x06 2.54mm double row")
 		(property "Reference" "J3"
@@ -11436,7 +11436,7 @@
 	(footprint "Connector_Video:HDMI_Micro-D_Molex_46765-1x01"
 		(layer "F.Cu")
 		(uuid "5ae7db2a-a85d-4740-abdc-b519ec7d05be")
-		(at 1.580118 46.85 -90)
+		(at 1.580118 34.265 -90)
 		(descr "HDMI, Micro, Type D, THT, 0.4mm pitch, 19 ckt, right angle (http://www.molex.com/pdm_docs/sd/467651301_sd.pdf)")
 		(tags "hdmi micro type d right angle tht")
 		(property "Reference" "J10"
@@ -11983,7 +11983,7 @@
 			)
 			(polygon
 				(pts
-					(xy 4.220118 44.5) (xy 4.220118 49.2) (xy -0.119882 49.2) (xy -0.119882 44.5)
+					(xy 4.220118 31.915) (xy 4.220118 36.615) (xy -0.119882 36.615) (xy -0.119882 31.915)
 				)
 			)
 		)
@@ -14821,7 +14821,7 @@
 	(footprint "pj3410:pj324m"
 		(layer "F.Cu")
 		(uuid "7d805ed1-9940-4c9f-9612-1830d3aa6037")
-		(at 6.75 6.05 90)
+		(at 6.65 88.85 90)
 		(property "Reference" "J4"
 			(at -2.575 8.365 90)
 			(layer "F.SilkS")
@@ -15673,7 +15673,7 @@
 	(footprint "Rotary_Encoder:RotaryEncoder_Bourns_Horizontal_PEC09-2xxxF-Sxxxx"
 		(layer "F.Cu")
 		(uuid "804bfb95-70a5-425f-a35f-885937a85562")
-		(at 4.94 15.95 180)
+		(at 4.94 2.45 180)
 		(descr "Bourns rotary encoder, PEC09, with switch, horizontal shaft, https://www.bourns.com/products/encoders/contacting-encoders/product/PEC09")
 		(tags "rotary encoder")
 		(property "Reference" "SW3"
@@ -16893,7 +16893,7 @@
 	(footprint "Connector_PinSocket_2.54mm:PinSocket_2x06_P2.54mm_Horizontal"
 		(layer "F.Cu")
 		(uuid "83778e86-0e9d-4618-989d-e91f3c201bdf")
-		(at 4.74 78.21)
+		(at 4.74 65.625)
 		(descr "Through hole angled socket strip, 2x06, 2.54mm pitch, 8.51mm socket length, double cols (from Kicad 4.0.7), script generated")
 		(tags "Through hole angled socket strip THT 2x06 2.54mm double row")
 		(property "Reference" "J2"
@@ -22438,7 +22438,7 @@
 	(footprint "usb:USB-C-TH_U264-141N-4BAC10"
 		(layer "F.Cu")
 		(uuid "ab2349cb-3fa1-4aad-a76f-df0aedab1d8a")
-		(at 8.737315 36.818453 90)
+		(at 8.737315 24.233453 90)
 		(property "Reference" "J9"
 			(at 0.01725 -10.92 90)
 			(unlocked yes)
@@ -22503,7 +22503,7 @@
 			)
 		)
 		(property "Manufacturer" "DEALON"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "f0f1d990-6f73-4ade-b178-19272cd13a73")
@@ -22515,7 +22515,7 @@
 			)
 		)
 		(property "Part Number" "USB-TYPE-C-019"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "fbc6f548-b0ff-49ae-b054-80e6f9ee613f")
@@ -22527,7 +22527,7 @@
 			)
 		)
 		(property "Substitution" "Yuandi TYPE-611A-T3"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "12e39015-4a51-4d62-a3e3-ab72bab3b3d9")
@@ -31048,7 +31048,7 @@
 	(footprint "usb:USB-C-TH_U264-141N-4BAC10"
 		(layer "F.Cu")
 		(uuid "f4b731ed-0570-4097-8469-bca15b48f136")
-		(at 8.646388 28.889138 90)
+		(at 8.646388 16.304138 90)
 		(property "Reference" "J7"
 			(at 0.01725 -10.92 90)
 			(unlocked yes)
@@ -31113,7 +31113,7 @@
 			)
 		)
 		(property "Manufacturer" "DEALON"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "f0f1d990-6f73-4ade-b178-19272cd13a73")
@@ -31125,7 +31125,7 @@
 			)
 		)
 		(property "Part Number" "USB-TYPE-C-019"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "fbc6f548-b0ff-49ae-b054-80e6f9ee613f")
@@ -31137,7 +31137,7 @@
 			)
 		)
 		(property "Substitution" "Yuandi TYPE-611A-T3"
-			(at 0 0 360)
+			(at 0 0 0)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "12e39015-4a51-4d62-a3e3-ab72bab3b3d9")
@@ -33192,7 +33192,7 @@
 	(footprint "button:KEY-SMD_3P-L4.5-W7.0-P3.00"
 		(layer "B.Cu")
 		(uuid "3a01d3ae-0d0e-4d53-99e7-2291f864d50d")
-		(at 2.120659 25.342217 90)
+		(at -74.951617 -18.818369 90)
 		(property "Reference" "SW5"
 			(at 0 3.025 -90)
 			(unlocked yes)
@@ -36894,7 +36894,7 @@
 	(footprint "button:KEY-SMD_3P-L4.5-W7.0-P3.00"
 		(layer "B.Cu")
 		(uuid "936bf84d-6354-4ef3-a23c-0eb35c688138")
-		(at 2.221026 33.110586 90)
+		(at -74.85125 -11.05 90)
 		(property "Reference" "SW5"
 			(at 0 3.025 -90)
 			(unlocked yes)
@@ -38907,14 +38907,6 @@
 		(uuid "070c2aa0-3a7f-464c-bc75-8248150b9d41")
 	)
 	(segment
-		(start 6.39 48.93)
-		(end 6.39 49.085)
-		(width 0.2)
-		(layer "F.Cu")
-		(net 1)
-		(uuid "1198c791-7012-4c42-a756-215ca2881dcd")
-	)
-	(segment
 		(start -87.6 51.7)
 		(end -87.6 50.59)
 		(width 0.6)
@@ -38977,14 +38969,6 @@
 		(layer "F.Cu")
 		(net 1)
 		(uuid "5c32c7a9-1388-4f90-b6d8-a95a8c3febae")
-	)
-	(segment
-		(start 6.39 49.085)
-		(end 5.475 50)
-		(width 0.2)
-		(layer "F.Cu")
-		(net 1)
-		(uuid "68c97cdf-bec8-41cf-a5db-88aa02dd6dae")
 	)
 	(segment
 		(start 19.73 86.96)
@@ -40850,6 +40834,14 @@
 		(uuid "cd88f2f6-92eb-4572-8480-d74c46297323")
 	)
 	(segment
+		(start 6.39 48.93)
+		(end 6.39 49.085)
+		(width 0.2)
+		(layer "F.Cu")
+		(net 93)
+		(uuid "1198c791-7012-4c42-a756-215ca2881dcd")
+	)
+	(segment
 		(start 12.179172 63.225)
 		(end 12.425 62.979172)
 		(width 0.2)
@@ -40864,6 +40856,14 @@
 		(layer "F.Cu")
 		(net 93)
 		(uuid "60fe0322-afe5-4a06-abdc-8cc8d258ec4c")
+	)
+	(segment
+		(start 6.39 49.085)
+		(end 5.475 50)
+		(width 0.2)
+		(layer "F.Cu")
+		(net 93)
+		(uuid "68c97cdf-bec8-41cf-a5db-88aa02dd6dae")
 	)
 	(segment
 		(start 12.425 62.979172)
