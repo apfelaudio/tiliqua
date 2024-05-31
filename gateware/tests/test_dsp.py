@@ -282,8 +282,8 @@ class DSPTests(unittest.TestCase):
 
     def test_resample(self):
 
-        N_UP   = 2
-        M_DOWN = 1
+        N_UP   = 3
+        M_DOWN = 2
 
         resample = dsp.Resample(fs_in=48000, n_up=N_UP, m_down=M_DOWN)
 
@@ -295,13 +295,10 @@ class DSPTests(unittest.TestCase):
                 yield Tick()
                 yield resample.i.valid.eq(0)
                 yield Tick()
-                for _ in range(N_UP):
-                    while (yield resample.o.valid) != 1:
-                        yield Tick()
-                    yield resample.o.ready.eq(1)
+                yield resample.o.ready.eq(1)
+                while (yield resample.i.ready) != 1:
                     yield Tick()
-                    yield resample.o.ready.eq(0)
-                    yield Tick()
+                yield Tick()
 
         sim = Simulator(resample)
         sim.add_clock(1e-6)
