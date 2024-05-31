@@ -492,7 +492,7 @@
       "plot": "../fab/",
       "pos_files": "../fab/place/",
       "specctra_dsn": "",
-      "step": "tiliqua-motherboard-new.step",
+      "step": "tiliqua-motherboard-new3.step",
       "svg": "",
       "vrml": ""
     },
