@@ -779,11 +779,13 @@ class Resample(wiring.Component):
     def __init__(self,
                  fs_in:  int,
                  n_up:   int,
-                 m_down: int):
+                 m_down: int,
+                 bw:     float=0.4):
 
         self.fs_in  = fs_in
         self.n_up   = n_up
         self.m_down = m_down
+        self.bw     = bw
 
         super().__init__()
 
@@ -793,8 +795,8 @@ class Resample(wiring.Component):
 
         m.submodules.filt = filt = FIR(
             fs=self.fs_in*self.n_up,
-            filter_cutoff_hz=min(self.fs_in/2,
-                                 int((self.fs_in/2)*(self.n_up/self.m_down))),
+            filter_cutoff_hz=min(self.fs_in*self.bw,
+                                 int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
             filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
             prescale=self.n_up)
 

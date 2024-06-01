@@ -423,13 +423,34 @@ class NCOTop(Elaboratable):
                           [0.0, 0.0, 1.0, 0.0],
                           [0.0, 0.0, 0.0, 1.0]])
 
+        N_UP = 2
+        M_DOWN = 2
+
+        m.submodules.resample_up0 = resample_up0 = dsp.Resample(
+                fs_in=48000, n_up=N_UP, m_down=1)
+        m.submodules.resample_up1 = resample_up1 = dsp.Resample(
+                fs_in=48000, n_up=N_UP, m_down=1)
+
+        m.submodules.down0 = resample_down0 = dsp.Resample(
+                fs_in=48000*N_UP, n_up=4, m_down=M_DOWN)
+        m.submodules.down1 = resample_down1 = dsp.Resample(
+                fs_in=48000*N_UP, n_up=4, m_down=M_DOWN)
+        m.submodules.down2 = resample_down2 = dsp.Resample(
+                fs_in=48000*N_UP, n_up=4, m_down=M_DOWN)
+        m.submodules.down3 = resample_down3 = dsp.Resample(
+                fs_in=48000*N_UP, n_up=4, m_down=M_DOWN)
+
         wiring.connect(m, audio_stream.istream, split4.i)
+
+        wiring.connect(m, split4.o[0], resample_up0.i)
+        wiring.connect(m, split4.o[1], resample_up1.i)
         wiring.connect(m, split4.o[2], dsp.ASQ_READY)
         wiring.connect(m, split4.o[3], dsp.ASQ_READY)
 
-        wiring.connect(m, split4.o[0], v_oct.i)
+
+        wiring.connect(m, resample_up0.o, v_oct.i)
         wiring.connect(m, v_oct.o, merge2.i[0])
-        wiring.connect(m, split4.o[1], merge2.i[1])
+        wiring.connect(m, resample_up1.o, merge2.i[1])
         wiring.connect(m, merge2.o, nco.i)
         wiring.connect(m, nco.o, rep4.i)
         wiring.connect(m, rep4.o[0], waveshapers[0].i)
@@ -437,10 +458,15 @@ class NCOTop(Elaboratable):
         wiring.connect(m, rep4.o[2], waveshapers[2].i)
         wiring.connect(m, rep4.o[3], waveshapers[3].i)
 
-        wiring.connect(m, waveshapers[0].o, merge4.i[0])
-        wiring.connect(m, waveshapers[1].o, merge4.i[1])
-        wiring.connect(m, waveshapers[2].o, merge4.i[2])
-        wiring.connect(m, waveshapers[3].o, merge4.i[3])
+        wiring.connect(m, waveshapers[0].o, resample_down0.i)
+        wiring.connect(m, waveshapers[1].o, resample_down1.i)
+        wiring.connect(m, waveshapers[2].o, resample_down2.i)
+        wiring.connect(m, waveshapers[3].o, resample_down3.i)
+
+        wiring.connect(m, resample_down0.o, merge4.i[0])
+        wiring.connect(m, resample_down1.o, merge4.i[1])
+        wiring.connect(m, resample_down2.o, merge4.i[2])
+        wiring.connect(m, resample_down3.o, merge4.i[3])
 
         wiring.connect(m, merge4.o, matrix_mix.i)
 
