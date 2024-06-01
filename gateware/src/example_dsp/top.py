@@ -18,6 +18,11 @@ from tiliqua.tiliqua_platform import TiliquaPlatform
 from tiliqua                  import eurorack_pmod, dsp
 from tiliqua.eurorack_pmod    import ASQ
 
+# for sim
+from amaranth.back import verilog
+from tiliqua       import sim
+
+
 class MirrorTop(Elaboratable):
     """Route audio inputs straight to outputs (in the audio domain)."""
 
@@ -349,14 +354,22 @@ class NCOTop(Elaboratable):
 
     """Audio-rate NCO."""
 
+    def __init__(self):
+        self.pmod0 = sim.FakeEurorackPmod()
+        super().__init__()
+
     def elaborate(self, platform):
         m = Module()
 
+        """
         m.submodules.car = platform.clock_domain_generator()
-
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True)
+        """
+
+        m.submodules.car = sim.FakeTiliquaDomainGenerator()
+        m.submodules.pmod0 = pmod0 = self.pmod0
 
         m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
@@ -416,15 +429,8 @@ class NCOTop(Elaboratable):
 
         m.submodules += waveshapers
 
-        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
-            i_channels=4, o_channels=4,
-            coefficients=[[1.0, 0.0, 0.0, 0.0],
-                          [0.0, 1.0, 0.0, 0.0],
-                          [0.0, 0.0, 1.0, 0.0],
-                          [0.0, 0.0, 0.0, 1.0]])
-
-        N_UP = 2
-        M_DOWN = 2
+        N_UP = 4
+        M_DOWN = 4
 
         m.submodules.resample_up0 = resample_up0 = dsp.Resample(
                 fs_in=48000, n_up=N_UP, m_down=1)
@@ -432,13 +438,13 @@ class NCOTop(Elaboratable):
                 fs_in=48000, n_up=N_UP, m_down=1)
 
         m.submodules.down0 = resample_down0 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=4, m_down=M_DOWN)
+                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
         m.submodules.down1 = resample_down1 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=4, m_down=M_DOWN)
+                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
         m.submodules.down2 = resample_down2 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=4, m_down=M_DOWN)
+                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
         m.submodules.down3 = resample_down3 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=4, m_down=M_DOWN)
+                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
 
         wiring.connect(m, audio_stream.istream, split4.i)
 
@@ -446,7 +452,6 @@ class NCOTop(Elaboratable):
         wiring.connect(m, split4.o[1], resample_up1.i)
         wiring.connect(m, split4.o[2], dsp.ASQ_READY)
         wiring.connect(m, split4.o[3], dsp.ASQ_READY)
-
 
         wiring.connect(m, resample_up0.o, v_oct.i)
         wiring.connect(m, v_oct.o, merge2.i[0])
@@ -468,9 +473,7 @@ class NCOTop(Elaboratable):
         wiring.connect(m, resample_down2.o, merge4.i[2])
         wiring.connect(m, resample_down3.o, merge4.i[3])
 
-        wiring.connect(m, merge4.o, matrix_mix.i)
-
-        wiring.connect(m, matrix_mix.o, audio_stream.ostream)
+        wiring.connect(m, merge4.o, audio_stream.ostream)
 
         return m
 
@@ -519,3 +522,22 @@ def build_nco():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     TiliquaPlatform().build(NCOTop())
+
+def verilog_nco():
+    top = NCOTop()
+    with open("nco.v", "w") as f:
+        f.write(verilog.convert(top, ports=[
+            ClockSignal("audio"),
+            ResetSignal("audio"),
+            ClockSignal("sync"),
+            ResetSignal("sync"),
+            top.pmod0.fs_strobe,
+            top.pmod0.sample_inject[0]._target,
+            top.pmod0.sample_inject[1]._target,
+            top.pmod0.sample_inject[2]._target,
+            top.pmod0.sample_inject[3]._target,
+            top.pmod0.sample_extract[0]._target,
+            top.pmod0.sample_extract[1]._target,
+            top.pmod0.sample_extract[2]._target,
+            top.pmod0.sample_extract[3]._target,
+        ]))
