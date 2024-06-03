@@ -23,119 +23,102 @@ from amaranth.back import verilog
 from tiliqua       import sim
 
 
-class MirrorTop(Elaboratable):
+class Mirror(wiring.Component):
+
     """Route audio inputs straight to outputs (in the audio domain)."""
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
-
-        wiring.connect(m, audio_stream.istream, audio_stream.ostream)
-
+        wiring.connect(m, wiring.flipped(self.i), wiring.flipped(self.o))
         return m
 
-class SVFTop(Elaboratable):
+class ResonantFilter(wiring.Component):
 
     """High-, Low-, Bandpass with cutoff & resonance control."""
 
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
     def elaborate(self, platform):
 
         m = Module()
-
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
         m.submodules.svf0 = svf0 = dsp.SVF()
 
         # connect without 'wiring.connect' so we can see the payload field names.
 
         m.d.comb += [
-            svf0.i.valid.eq(audio_stream.istream.valid),
+            svf0.i.valid.eq(self.i.valid),
             audio_stream.istream.ready.eq(svf0.i.ready),
 
-            svf0.i.payload.x.eq(audio_stream.istream.payload[0]),
-            svf0.i.payload.cutoff.eq(audio_stream.istream.payload[1]),
-            svf0.i.payload.resonance.eq(audio_stream.istream.payload[2]),
+            svf0.i.payload.x.eq(self.i.payload[0]),
+            svf0.i.payload.cutoff.eq(self.i.payload[1]),
+            svf0.i.payload.resonance.eq(self.i.payload[2]),
         ]
 
         m.d.comb += [
-            svf0.o.ready.eq(audio_stream.ostream.ready),
-            audio_stream.ostream.valid.eq(svf0.o.valid),
+            svf0.o.ready.eq(self.o.ready),
+            self.o.valid.eq(svf0.o.valid),
 
-            audio_stream.ostream.payload[0].eq(svf0.o.payload.lp),
-            audio_stream.ostream.payload[1].eq(svf0.o.payload.hp),
-            audio_stream.ostream.payload[2].eq(svf0.o.payload.bp),
+            self.o.payload[0].eq(svf0.o.payload.lp),
+            self.o.payload[1].eq(svf0.o.payload.hp),
+            self.o.payload[2].eq(svf0.o.payload.bp),
         ]
 
         return m
 
-class VCATop(Elaboratable):
+class DualVCA(wiring.Component):
 
     """Audio-rate VCA."""
 
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
-        m.submodules.merge2 = merge2 = dsp.Merge(n_channels=2)
+        m.submodules.merge2a = merge2a = dsp.Merge(n_channels=2)
+        m.submodules.merge2b = merge2b = dsp.Merge(n_channels=2)
 
         m.submodules.vca0 = vca0 = dsp.VCA()
+        m.submodules.vca1 = vca1 = dsp.VCA()
 
         # connect with 'wiring.connect' to show how this works.
 
-        wiring.connect(m, audio_stream.istream, split4.i)
+        wiring.connect(m, wiring.flipped(self.i), split4.i)
 
-        wiring.connect(m, split4.o[0], merge2.i[0])
-        wiring.connect(m, split4.o[1], merge2.i[1])
-        wiring.connect(m, split4.o[2], dsp.ASQ_READY)
-        wiring.connect(m, split4.o[3], dsp.ASQ_READY)
+        wiring.connect(m, split4.o[0], merge2a.i[0])
+        wiring.connect(m, split4.o[1], merge2a.i[1])
+        wiring.connect(m, split4.o[2], merge2b.i[0])
+        wiring.connect(m, split4.o[3], merge2b.i[1])
 
-        wiring.connect(m, merge2.o, vca0.i)
+        wiring.connect(m, merge2a.o, vca0.i)
         wiring.connect(m, vca0.o, merge4.i[0])
 
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[1])
+        wiring.connect(m, merge2b.o, vca1.i)
+        wiring.connect(m, vca1.o, merge4.i[1])
+
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
-        wiring.connect(m, merge4.o, audio_stream.ostream)
+        wiring.connect(m, merge4.o, wiring.flipped(self.o))
 
         return m
 
-class PitchTop(Elaboratable):
+class Pitch(wiring.Component):
 
     """Pitch shifter with CV-controlled pitch."""
 
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
@@ -144,7 +127,7 @@ class PitchTop(Elaboratable):
         m.submodules.pitch_shift = pitch_shift = dsp.PitchShift(
             delayln=delay_line, xfade=delay_line.max_delay//4)
 
-        wiring.connect(m, audio_stream.istream, split4.i)
+        wiring.connect(m, wiring.flipped(self.i), split4.i)
 
         # write audio samples to delay line
         wiring.connect(m, split4.o[0], delay_line.sw)
@@ -166,24 +149,19 @@ class PitchTop(Elaboratable):
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
 
-        wiring.connect(m, merge4.o, audio_stream.ostream)
+        wiring.connect(m, merge4.o, wiring.flipped(self.o))
 
         return m
 
-class MatrixTop(Elaboratable):
+class Matrix(wiring.Component):
 
     """Matrix mixer with fixed coefficients."""
 
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=4, o_channels=4,
@@ -192,27 +170,22 @@ class MatrixTop(Elaboratable):
                           [0.2, 0.1, 0.4, 0.3],
                           [0.3, 0.2, 0.1, 0.4]])
 
-        wiring.connect(m, audio_stream.istream, matrix_mix.i)
-        wiring.connect(m, matrix_mix.o, audio_stream.ostream)
+        wiring.connect(m, wiring.flipped(self.i), matrix_mix.i)
+        wiring.connect(m, matrix_mix.o, wiring.flipped(self.o))
 
         return m
 
-class DiffuserTop(Elaboratable):
+class Diffuser(wiring.Component):
 
     """
     4-channel feedback delay, diffused by a matrix mixer.
     """
 
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
         # quadrants in the below matrix are:
         #
@@ -254,7 +227,7 @@ class DiffuserTop(Elaboratable):
         m.submodules.split8 = split8 = dsp.Split(n_channels=8)
         m.submodules.merge8 = merge8 = dsp.Merge(n_channels=8)
 
-        wiring.connect(m, audio_stream.istream, split4.i)
+        wiring.connect(m, wiring.flipped(self.i), split4.i)
 
         # matrix <-> independent streams
         wiring.connect(m, matrix_mix.o, split8.i)
@@ -272,22 +245,17 @@ class DiffuserTop(Elaboratable):
             # matrix -> delay [4-7]
             wiring.connect(m, split8.o[4+n], delay_lines[n].sw)
 
-        wiring.connect(m, merge4.o, audio_stream.ostream)
+        wiring.connect(m, merge4.o, wiring.flipped(self.o))
 
         return m
 
-class WaveshaperTop(Elaboratable):
+class WaveshaperTop(wiring.Component):
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
@@ -300,14 +268,14 @@ class WaveshaperTop(Elaboratable):
         m.submodules.waveshaper1 = waveshaper1 = dsp.WaveShaper(lut_function=scaled_tanh)
 
         m.d.comb += [
-            vca0.i.valid.eq(audio_stream.istream.valid),
-            vca1.i.valid.eq(audio_stream.istream.valid),
-            audio_stream.istream.ready.eq(vca0.i.ready),
+            vca0.i.valid.eq(self.i.valid),
+            vca1.i.valid.eq(self.i.valid),
+            self.i.ready.eq(vca0.i.ready),
 
-            vca0.i.payload.x.eq(audio_stream.istream.payload[0]),
-            vca1.i.payload.x.eq(audio_stream.istream.payload[1]),
-            vca0.i.payload.gain.eq(audio_stream.istream.payload[2] << 2),
-            vca1.i.payload.gain.eq(audio_stream.istream.payload[2] << 2),
+            vca0.i.payload.x.eq(self.i.payload[0]),
+            vca1.i.payload.x.eq(self.i.payload[1]),
+            vca0.i.payload.gain.eq(self.i.payload[2] << 2),
+            vca1.i.payload.gain.eq(self.i.payload[2] << 2),
         ]
 
         wiring.connect(m, vca0.o, waveshaper0.i)
@@ -318,25 +286,16 @@ class WaveshaperTop(Elaboratable):
 
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
-        wiring.connect(m, merge4.o, audio_stream.ostream)
+        wiring.connect(m, merge4.o, wiring.flipped(self.o))
 
         return m
 
-class TouchMixTop(Elaboratable):
+class TouchMixTop(wiring.Component):
 
     """Matrix mixer, combine touch inputs in interesting ways."""
 
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.car = platform.clock_domain_generator()
-
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True,
-                touch_enabled=True)
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=4, o_channels=4,
@@ -345,33 +304,21 @@ class TouchMixTop(Elaboratable):
                           [-0.5, 0.5, 0.25, 0.3],
                           [-0.5, 0.5, 0.25, 0.4]])
 
-        wiring.connect(m, audio_stream.istream, matrix_mix.i)
-        wiring.connect(m, matrix_mix.o, audio_stream.ostream)
+        wiring.connect(m, wiring.flipped(self.i), matrix_mix.i)
+        wiring.connect(m, matrix_mix.o, wiring.flipped(self.o))
 
         return m
 
-class NCOTop(Elaboratable):
 
-    """Audio-rate NCO."""
+class QuadNCO(wiring.Component):
 
-    def __init__(self):
-        self.pmod0 = sim.FakeEurorackPmod()
-        super().__init__()
+    """Audio-rate NCO with oversampling. 4 different waveform outputs."""
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
     def elaborate(self, platform):
         m = Module()
-
-        """
-        m.submodules.car = platform.clock_domain_generator()
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-        """
-
-        m.submodules.car = sim.FakeTiliquaDomainGenerator()
-        m.submodules.pmod0 = pmod0 = self.pmod0
-
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
 
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
@@ -402,7 +349,6 @@ class NCOTop(Elaboratable):
                 lut_function=v_oct_lut, lut_size=128, continuous=False)
 
         amplitude = 0.4
-
 
         def sine_osc(x):
             return amplitude*math.sin(math.pi*x)
@@ -446,7 +392,7 @@ class NCOTop(Elaboratable):
         m.submodules.down3 = resample_down3 = dsp.Resample(
                 fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
 
-        wiring.connect(m, audio_stream.istream, split4.i)
+        wiring.connect(m, wiring.flipped(self.i), split4.i)
 
         wiring.connect(m, split4.o[0], resample_up0.i)
         wiring.connect(m, split4.o[1], resample_up1.i)
@@ -473,58 +419,81 @@ class NCOTop(Elaboratable):
         wiring.connect(m, resample_down2.o, merge4.i[2])
         wiring.connect(m, resample_down3.o, merge4.i[3])
 
-        wiring.connect(m, merge4.o, audio_stream.ostream)
+        wiring.connect(m, merge4.o, wiring.flipped(self.o))
 
         return m
 
+class SimTop(Elaboratable):
+
+    def __init__(self, core):
+        self.pmod0 = sim.FakeEurorackPmod()
+        self.core = core()
+        super().__init__()
+
+    def elaborate(self, platform):
+        m = Module()
+        m.submodules.car = sim.FakeTiliquaDomainGenerator()
+        m.submodules.pmod0 = pmod0 = self.pmod0
+        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
+        m.submodules.core = self.core
+        wiring.connect(m, audio_stream.istream, self.core.i)
+        wiring.connect(m, self.core.o, audio_stream.ostream)
+        return m
+
+class CoreTop(Elaboratable):
+
+    def __init__(self, core, touch=False):
+        self.core = core()
+        self.touch = touch
+        super().__init__()
+
+    def elaborate(self, platform):
+        m = Module()
+        m.submodules.car = platform.clock_domain_generator()
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True,
+                touch_enabled=self.touch)
+        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
+        m.submodules.core = self.core
+        wiring.connect(m, audio_stream.istream, self.core.i)
+        wiring.connect(m, self.core.o, audio_stream.ostream)
+        return m
+
+def build(cls_core, touch=False):
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    TiliquaPlatform().build(CoreTop(cls_core, touch=touch))
 
 def build_mirror():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(MirrorTop())
+    build(Mirror)
 
 def build_svf():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(SVFTop())
+    build(ResonantFilter)
 
 def build_vca():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(VCATop())
+    build(DualVCA)
 
 def build_pitch():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(PitchTop())
+    build(Pitch)
 
 def build_matrix():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(MatrixTop())
+    build(Matrix)
 
 def build_diffuser():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(DiffuserTop())
+    build(Diffuser)
 
 def build_waveshaper():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(WaveshaperTop())
+    build(WaveshaperTop)
 
 def build_touchmix():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(TouchMixTop())
+    build(TouchMixTop, touch=True)
 
 def build_nco():
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(NCOTop())
+    build(QuadNCO)
 
 def verilog_nco():
-    top = NCOTop()
+    top = SimTop(QuadNCO)
     with open("nco.v", "w") as f:
         f.write(verilog.convert(top, ports=[
             ClockSignal("audio"),
