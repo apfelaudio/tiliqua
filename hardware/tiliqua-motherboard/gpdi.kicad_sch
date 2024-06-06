@@ -1937,6 +1937,94 @@
 		)
 		(uuid "e82a1299-32a9-476f-885e-cb8d8a644d58")
 	)
+	(label "CONN_D2+"
+		(at 158.75 71.12 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 0.508 0.508)
+			)
+			(justify left bottom)
+		)
+		(uuid "0ac67635-fd23-4d14-9b58-499688d4231b")
+	)
+	(label "CONN_CK-"
+		(at 158.75 88.9 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 0.508 0.508)
+			)
+			(justify left bottom)
+		)
+		(uuid "2f0df83a-47d6-4f7e-9143-92d4d4360eb4")
+	)
+	(label "CONN_D2-"
+		(at 158.75 73.66 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 0.508 0.508)
+			)
+			(justify left bottom)
+		)
+		(uuid "551b781b-16cc-40f0-90c4-d083e4aa9cf8")
+	)
+	(label "CONN_D1-"
+		(at 158.75 78.74 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 0.508 0.508)
+			)
+			(justify left bottom)
+		)
+		(uuid "6ad213f6-3951-415b-92dc-38d830f84a32")
+	)
+	(label "CONN_D0+"
+		(at 158.75 81.28 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 0.508 0.508)
+			)
+			(justify left bottom)
+		)
+		(uuid "7ecb77c4-70a7-47c7-9d93-32d13b5a37a5")
+	)
+	(label "CONN_D1+"
+		(at 158.75 76.2 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 0.508 0.508)
+			)
+			(justify left bottom)
+		)
+		(uuid "ddc2cf63-d2fc-4b90-be58-3c6411dfe2c9")
+	)
+	(label "CONN_CK+"
+		(at 158.75 86.36 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 0.508 0.508)
+			)
+			(justify left bottom)
+		)
+		(uuid "e5e2f1e8-1d7e-4d0e-87ca-7326a6343e4d")
+	)
+	(label "CONN_D0-"
+		(at 158.75 83.82 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 0.508 0.508)
+			)
+			(justify left bottom)
+		)
+		(uuid "fb49f4af-9513-47b5-b7ed-1766d345eb2b")
+	)
 	(hierarchical_label "GPDI_SDA_3V3"
 		(shape bidirectional)
 		(at 74.93 101.6 180)
