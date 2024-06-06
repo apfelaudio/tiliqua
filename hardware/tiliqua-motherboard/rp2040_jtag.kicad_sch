@@ -4598,7 +4598,7 @@
 		)
 		(uuid "05e54f0a-00d1-4b52-baf2-febc793646b6")
 	)
-	(label "RP2040_USB_DP"
+	(label "RP2040_USB_D+"
 		(at 236.22 40.64 0)
 		(fields_autoplaced yes)
 		(effects
@@ -4609,7 +4609,7 @@
 		)
 		(uuid "3bd3f113-6e71-4e88-866e-a32be75045aa")
 	)
-	(label "RP2040_USB_DM"
+	(label "RP2040_USB_D-"
 		(at 236.22 38.1 0)
 		(fields_autoplaced yes)
 		(effects
@@ -4620,7 +4620,7 @@
 		)
 		(uuid "3d73efee-48a5-47bd-aa69-0c0b1ba3763a")
 	)
-	(label "RP2040_USB_DM"
+	(label "RP2040_USB_D-"
 		(at 25.4 81.28 0)
 		(fields_autoplaced yes)
 		(effects
@@ -4642,7 +4642,7 @@
 		)
 		(uuid "662f7d63-0f1b-4639-9299-7121dfc0dcbd")
 	)
-	(label "RP2040_USB_DP"
+	(label "RP2040_USB_D+"
 		(at 25.4 83.82 0)
 		(fields_autoplaced yes)
 		(effects
