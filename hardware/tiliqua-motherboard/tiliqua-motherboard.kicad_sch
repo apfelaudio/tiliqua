@@ -2501,10 +2501,6 @@
 		(uuid "9ddd84b2-3d8d-4769-a50e-3346e138b32c")
 	)
 	(no_connect
-		(at 212.09 177.8)
-		(uuid "b42d4b27-c545-44cd-9218-b404c7355e06")
-	)
-	(no_connect
 		(at 238.76 49.53)
 		(uuid "b8e5adc2-efd9-4bb2-8c54-b6a42f44219e")
 	)
@@ -5768,7 +5764,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "MountingHole:MountingHole_2.2mm_M2_Pad_Via"
+		(property "Footprint" "m2:mounting_hole"
 			(at 212.09 175.26 0)
 			(effects
 				(font
@@ -7007,6 +7003,73 @@
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR026")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 212.09 177.8 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "dbaa9250-cd45-455c-891b-fc0915342bb8")
+		(property "Reference" "#PWR035"
+			(at 212.09 184.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 212.09 182.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 212.09 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 212.09 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 212.09 177.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "a3455ba9-89e7-431c-a183-8a7c77ed2c4b")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "#PWR035")
 					(unit 1)
 				)
 			)
