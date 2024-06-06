@@ -3673,7 +3673,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Diode_SMD:D_SOD-123F"
+		(property "Footprint" "Diode_SMD:D_SOD-123"
 			(at 148.59 111.76 90)
 			(effects
 				(font
@@ -3693,6 +3693,15 @@
 		)
 		(property "Description" "Zener diode, small symbol, filled shape"
 			(at 148.59 111.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C173412"
+			(at 148.59 111.76 90)
 			(effects
 				(font
 					(size 1.27 1.27)
