@@ -3266,7 +3266,7 @@
 			)
 		)
 	)
-	(global_label "SC_USB0_DM"
+	(global_label "SC_USB0_D-"
 		(shape passive)
 		(at 238.76 88.9 180)
 		(fields_autoplaced yes)
@@ -3278,7 +3278,7 @@
 		)
 		(uuid "2c790dd4-3006-469e-b221-7a95519fc3ca")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 224.7305 88.9 0)
+			(at 224.6095 88.9 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4564,7 +4564,7 @@
 			)
 		)
 	)
-	(global_label "SC_USB0_DM"
+	(global_label "SC_USB0_D-"
 		(shape passive)
 		(at 119.38 73.66 180)
 		(fields_autoplaced yes)
@@ -4576,7 +4576,7 @@
 		)
 		(uuid "c5bc3ec5-10ee-477f-8d08-eac53c7192d2")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 105.3505 73.66 0)
+			(at 105.2295 73.66 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4674,7 +4674,7 @@
 			)
 		)
 	)
-	(global_label "SC_USB0_DP"
+	(global_label "SC_USB0_D+"
 		(shape passive)
 		(at 238.76 91.44 180)
 		(fields_autoplaced yes)
@@ -4686,7 +4686,7 @@
 		)
 		(uuid "d5c6c1af-fb32-4f95-bb7b-6fec76c9c48e")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 224.9119 91.44 0)
+			(at 224.6095 91.44 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5114,7 +5114,7 @@
 			)
 		)
 	)
-	(global_label "SC_USB0_DP"
+	(global_label "SC_USB0_D+"
 		(shape passive)
 		(at 119.38 76.2 180)
 		(fields_autoplaced yes)
@@ -5126,7 +5126,7 @@
 		)
 		(uuid "fbb2eb2a-1f9c-4cb1-a65e-781afed7303b")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 105.5319 76.2 0)
+			(at 105.2295 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
