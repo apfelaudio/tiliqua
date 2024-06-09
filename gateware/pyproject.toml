@@ -17,14 +17,6 @@ test = [
 
 [tool.pdm.scripts]
 test = { cmd = "pytest" }
-build_example_usb_audio = { call = "example_usb_audio.top:build()" }
-build_example_mirror = { call = "example_dsp.top:build_mirror()" }
-build_example_svf = { call = "example_dsp.top:build_svf()" }
-build_example_vca = { call = "example_dsp.top:build_vca()" }
-build_example_delay = { call = "example_dsp.top:build_delay()" }
-build_example_pitch = { call = "example_dsp.top:build_pitch()" }
-build_example_matrix = { call = "example_dsp.top:build_matrix()" }
-build_example_diffuser = { call = "example_dsp.top:build_diffuser()" }
-build_example_waveshaper = { call = "example_dsp.top:build_waveshaper()" }
-build_example_touchmix = { call = "example_dsp.top:build_touchmix()" }
-build_example_nco = { call = "example_dsp.top:build_nco()" }
+build_usb_audio = { call = "example_usb_audio.top:build()" }
+build_dsp_core = { call = "example_dsp.top:build(sys.argv[1])" }
+sim_dsp_core = { call = "example_dsp.top:simulate(sys.argv[1])" }
