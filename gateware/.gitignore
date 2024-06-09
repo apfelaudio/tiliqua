@@ -1,4 +1,5 @@
-# VCD traces
+# waveform traces
+*.fst
 *.vcd
 
 # Byte-compiled / optimized / DLL files

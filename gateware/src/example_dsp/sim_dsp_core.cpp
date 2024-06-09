@@ -2,7 +2,7 @@
 #include <verilated_fst_c.h>
 #endif
 
-#include "Vnco.h"
+#include "Vcore.h"
 #include "verilated.h"
 
 #include <cmath>
@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
 
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
-    Vnco* top = new Vnco{contextp};
+    Vcore* top = new Vcore{contextp};
 
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
     Verilated::traceEverOn(true);

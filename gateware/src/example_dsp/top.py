@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: BSD--3-Clause
 
 import os
+import sys
+import subprocess
 
 import math
 
@@ -249,7 +251,9 @@ class Diffuser(wiring.Component):
 
         return m
 
-class WaveshaperTop(wiring.Component):
+class DualWaveshaper(wiring.Component):
+
+    """Soft distortion, channel 1/2 inputs, 3 is overdrive gain."""
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -293,6 +297,9 @@ class WaveshaperTop(wiring.Component):
 class TouchMixTop(wiring.Component):
 
     """Matrix mixer, combine touch inputs in interesting ways."""
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
     def elaborate(self, platform):
         m = Module()
@@ -460,41 +467,48 @@ class CoreTop(Elaboratable):
         wiring.connect(m, self.core.o, audio_stream.ostream)
         return m
 
-def build(cls_core, touch=False):
+def get_core(name):
+    """Get top-level DSP core attributes by a short name."""
+
+    cores = {
+        #             (touch, class name)
+        "mirror":     (False, Mirror),
+        "svf":        (False, ResonantFilter),
+        "vca":        (False, DualVCA),
+        "pitch":      (False, Pitch),
+        "matrix":     (False, Matrix),
+        "diffuser":   (False, Diffuser),
+        "touchmix":   (True,  TouchMixTop),
+        "waveshaper": (False, DualWaveshaper),
+        "nco":        (False, QuadNCO),
+    }
+
+    if name not in cores:
+        print(f"provided core '{name}' is not one of {list(cores)}")
+        sys.exit(-1)
+
+    return cores[name]
+
+def build(core_name: str):
+    """Build a bitstream for a top-level DSP core."""
+
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
+    touch, cls_core = get_core(core_name)
     TiliquaPlatform().build(CoreTop(cls_core, touch=touch))
 
-def build_mirror():
-    build(Mirror)
+def simulate(core_name: str):
+    """Simulate a top-level DSP core using Verilator."""
 
-def build_svf():
-    build(ResonantFilter)
+    _, cls_core = get_core(core_name)
+    build_dst = "build"
+    dst = f"{build_dst}/core.v"
+    print(f"write verilog implementation of '{core_name}' to '{dst}'...")
 
-def build_vca():
-    build(DualVCA)
+    top = SimTop(cls_core)
 
-def build_pitch():
-    build(Pitch)
-
-def build_matrix():
-    build(Matrix)
-
-def build_diffuser():
-    build(Diffuser)
-
-def build_waveshaper():
-    build(WaveshaperTop)
-
-def build_touchmix():
-    build(TouchMixTop, touch=True)
-
-def build_nco():
-    build(QuadNCO)
-
-def verilog_nco():
-    top = SimTop(QuadNCO)
-    with open("nco.v", "w") as f:
+    os.makedirs(build_dst, exist_ok=True)
+    with open(dst, "w") as f:
         f.write(verilog.convert(top, ports=[
             ClockSignal("audio"),
             ResetSignal("audio"),
@@ -510,3 +524,30 @@ def verilog_nco():
             top.pmod0.sample_extract[2]._target,
             top.pmod0.sample_extract[3]._target,
         ]))
+
+    verilator_dst = "build/obj_dir"
+
+    print(f"verilate '{dst}' into C++ binary...")
+    subprocess.check_call(["verilator",
+                           "-Wno-COMBDLY",
+                           "-Wno-CASEINCOMPLETE",
+                           "-Wno-CASEOVERLAP",
+                           "-Wno-WIDTHEXPAND",
+                           "-Wno-WIDTHTRUNC",
+                           "-Wno-TIMESCALEMOD",
+                           "-Wno-PINMISSING",
+                           "-cc",
+                           "--trace-fst",
+                           "--exe",
+                           "--Mdir", f"{verilator_dst}",
+                           "--build",
+                           "-j", "0",
+                           "../../src/example_dsp/sim_dsp_core.cpp",
+                           f"{dst}"],
+                          env=os.environ)
+
+    print(f"run verilated binary '{verilator_dst}/Vcore'...")
+    subprocess.check_call([f"{verilator_dst}/Vcore"],
+                          env=os.environ)
+
+    print(f"done.")
