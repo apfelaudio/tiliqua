@@ -1073,6 +1073,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 138.43 73.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "5"
 			(uuid "d76aa472-a548-4969-baf7-c3a588bc1ce1")
 		)

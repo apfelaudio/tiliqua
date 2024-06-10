@@ -2603,6 +2603,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 181.61 80.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "66f4ed36-410d-4173-b2ce-b6381dcad1d1")
 		)
@@ -2774,7 +2783,16 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C25900"
+			(at 101.6 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 101.6 78.74 0)
 			(effects
 				(font
@@ -2878,6 +2896,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 165.1 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "5cf1021c-638a-4372-a072-83d14e76295e")
 		)
@@ -2965,6 +2992,15 @@
 			)
 		)
 		(property "mfg#" "XL-1005UGC"
+			(at 165.1 97.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 165.1 97.79 0)
 			(effects
 				(font
@@ -3136,6 +3172,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 167.64 100.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "e781ef60-1ede-4b65-bb60-5f6788941ce0")
 		)
@@ -3223,6 +3268,15 @@
 			)
 		)
 		(property "mfg#" "XL-1005UGC"
+			(at 170.18 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 170.18 82.55 0)
 			(effects
 				(font
@@ -3326,6 +3380,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 167.64 110.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "659a971a-5df1-4773-b954-91736356bdd6")
 		)
@@ -3414,6 +3477,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 85.09 0)
 			(effects
 				(font
@@ -3536,6 +3608,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 181.61 115.57 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "72ec77ef-e53c-485d-81f5-36295e4fcc0f")
 		)
@@ -3649,6 +3730,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 172.72 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "38ad38b9-c7a2-4a62-9726-a6b72575dae6")
 		)
@@ -3737,6 +3827,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 82.55 0)
 			(effects
 				(font
@@ -3850,6 +3949,15 @@
 			)
 		)
 		(property "mfg#" "XL-1005SURC"
+			(at 167.64 90.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 167.64 90.17 0)
 			(effects
 				(font
@@ -4021,6 +4129,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 181.61 102.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "8e781435-4dd6-43fe-afc1-93989119e1d8")
 		)
@@ -4134,6 +4251,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 167.64 80.01 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "2dd9c757-44ca-4ca7-85b6-520be6d2cad8")
 		)
@@ -4222,6 +4348,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 90.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 90.17 0)
 			(effects
 				(font
@@ -4343,6 +4478,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 165.1 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "734faf08-4778-4bcd-9b0c-8cad8c363904")
 		)
@@ -4431,6 +4575,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 113.03 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 113.03 0)
 			(effects
 				(font
@@ -4553,6 +4706,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 181.61 105.41 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "72ec77ef-e53c-485d-81f5-36295e4fcc0d")
 		)
@@ -4659,6 +4821,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 100.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 100.33 0)
 			(effects
 				(font
@@ -5116,6 +5287,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 172.72 105.41 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "c149b72d-e308-4d10-959d-59173f72d063")
 		)
@@ -5204,6 +5384,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 77.47 0)
 			(effects
 				(font
@@ -5449,6 +5638,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 75.565 90.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "1f6749b5-f95e-42f6-8eb2-d40fa09dcdcd")
 		)
@@ -5537,6 +5735,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 92.71 0)
 			(effects
 				(font
@@ -5726,6 +5933,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 172.72 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "8485893f-a2e9-429f-acbb-63237d28522d")
 		)
@@ -5813,6 +6029,15 @@
 			)
 		)
 		(property "mfg#" "XL-1005SURC"
+			(at 172.72 115.57 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 172.72 115.57 0)
 			(effects
 				(font
@@ -5916,6 +6141,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 71.12 90.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "a4fe7d30-bf14-499d-ad04-6dac5ac74823")
 		)
@@ -6004,6 +6238,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 110.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 110.49 0)
 			(effects
 				(font
@@ -6126,6 +6369,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 181.61 97.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "bc64650e-a75d-4a8b-9f6b-b4028248f941")
 		)
@@ -6232,6 +6484,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 107.95 0)
 			(effects
 				(font
@@ -6347,6 +6608,15 @@
 			)
 		)
 		(property "mfg#" "PCA9635PW,118"
+			(at 149.86 97.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 149.86 97.79 0)
 			(effects
 				(font
@@ -6528,6 +6798,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 165.1 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "43f7bb74-2025-48d7-b892-fecf89a3200c")
 		)
@@ -6616,6 +6895,15 @@
 			)
 		)
 		(property "lcsc#" "C326871"
+			(at 181.61 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 87.63 0)
 			(effects
 				(font
@@ -6806,6 +7094,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 181.61 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "72ec77ef-e53c-485d-81f5-36295e4fcc10")
 		)
@@ -6919,6 +7216,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 170.18 92.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "2bff4474-02e1-4dd2-884e-e35d88e8b875")
 		)
@@ -7006,6 +7312,15 @@
 			)
 		)
 		(property "mfg#" "XL-1005UGC"
+			(at 170.18 102.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 170.18 102.87 0)
 			(effects
 				(font
@@ -7168,6 +7483,15 @@
 			)
 		)
 		(property "mfg#" "XL-1005UGC"
+			(at 170.18 113.03 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 170.18 113.03 0)
 			(effects
 				(font
