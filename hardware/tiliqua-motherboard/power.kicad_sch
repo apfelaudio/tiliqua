@@ -3584,6 +3584,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 77.47 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "d7162dfd-d069-447f-b64f-42d3537a7549")
 		)
@@ -3745,6 +3754,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 129.54 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "37214b14-f089-4b31-8740-1bfeb94331b1")
 		)
@@ -3812,8 +3830,17 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C844996"
 			(at 102.87 114.3 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
+			(at 102.87 114.3 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3915,6 +3942,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 181.61 116.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "32602eee-817f-44fe-997b-f08f3beedd3c")
 		)
@@ -3995,6 +4031,15 @@
 			)
 		)
 		(property "mfg#" "C1608X7R1E104KT000N"
+			(at 101.727 43.307 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 101.727 43.307 0)
 			(effects
 				(font
@@ -4164,6 +4209,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 66.04 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "c7317cc6-099e-4395-b034-1d7116bbbf9d")
 		)
@@ -4307,7 +4361,16 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C25776"
+			(at 118.11 125.73 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 118.11 125.73 0)
 			(effects
 				(font
@@ -4411,6 +4474,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 66.04 48.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "b3d6dce8-aa77-406d-9549-9c899725c45a")
 		)
@@ -4471,6 +4543,24 @@
 			)
 		)
 		(property "Description" "1A Low Dropout regulator, positive, 3.3V fixed output, SOT-223"
+			(at 238.76 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
+			(at 238.76 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C347222"
 			(at 238.76 114.3 0)
 			(effects
 				(font
@@ -4636,6 +4726,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 226.06 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "7826d384-1c14-43de-b0c6-6da0be3e30d5")
 		)
@@ -4722,6 +4821,15 @@
 			)
 		)
 		(property "lcsc#" "C14709"
+			(at 77.47 46.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 77.47 46.99 0)
 			(effects
 				(font
@@ -4824,6 +4932,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 77.47 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "a40823ce-1612-4185-b2d1-df0d07893cf2")
 		)
@@ -4903,6 +5020,15 @@
 			)
 		)
 		(property "mfg#" "C1608X7R1E104KT000N"
+			(at 139.7 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 139.7 120.65 0)
 			(effects
 				(font
@@ -5139,6 +5265,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 77.47 48.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "cb4dbaa5-cc80-4de5-96d3-1a64d015cef8")
 		)
@@ -5216,6 +5351,15 @@
 			)
 		)
 		(property "mfg#" "C1608X7R1E104KT000N"
+			(at 88.9 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 88.9 114.3 0)
 			(effects
 				(font
@@ -5378,6 +5522,15 @@
 			)
 		)
 		(property "lcsc#" "C782264"
+			(at 97.917 43.307 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 97.917 43.307 0)
 			(effects
 				(font
@@ -5803,6 +5956,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 45.72 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "f1ac1a56-086f-4180-8dea-aed82c3adf67")
 		)
@@ -5926,7 +6088,7 @@
 				)
 			)
 		)
-		(property "Value" "157K"
+		(property "Value" "157K (158K)"
 			(at 118.11 118.11 90)
 			(effects
 				(font
@@ -5970,7 +6132,16 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C861679"
+			(at 118.11 118.11 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 118.11 118.11 0)
 			(effects
 				(font
@@ -6074,6 +6245,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 254 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "907f3640-c0c0-4fc6-be10-583df919a799")
 		)
@@ -6143,6 +6323,15 @@
 			)
 		)
 		(property "lcsc#" "C2071868"
+			(at 72.39 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 72.39 114.3 0)
 			(effects
 				(font
@@ -6307,6 +6496,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 55.88 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "2"
 			(uuid "18aa4490-5c39-4a21-a82a-13efa9aacf6c")
 		)
@@ -6460,6 +6658,15 @@
 			)
 		)
 		(property "lcsc#" "C14709"
+			(at 181.61 110.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 181.61 110.49 0)
 			(effects
 				(font
@@ -6630,6 +6837,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 262.89 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "be90a858-4de0-4b3b-9f23-537c55cd5584")
 		)
@@ -6707,6 +6923,15 @@
 			)
 		)
 		(property "mfg#" "C1608X7R1E104KT000N"
+			(at 109.22 118.11 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 109.22 118.11 0)
 			(effects
 				(font
@@ -6802,6 +7027,15 @@
 			)
 		)
 		(property "lcsc#" "C782264"
+			(at 219.71 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 219.71 120.65 0)
 			(effects
 				(font
@@ -6947,6 +7181,15 @@
 		)
 		(property "lcsc#" "C883103"
 			(at 55.88 48.26 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
+			(at 55.88 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)

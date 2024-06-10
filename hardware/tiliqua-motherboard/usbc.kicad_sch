@@ -2646,7 +2646,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "900K"
+		(property "Value" "900K (910K)"
 			(at 167.64 83.566 90)
 			(effects
 				(font
@@ -2700,7 +2700,16 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C25800"
+			(at 170.18 81.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 170.18 81.28 0)
 			(effects
 				(font
@@ -2909,6 +2918,24 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 167.64 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C176957"
+			(at 167.64 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "4"
 			(uuid "a07d57aa-c30f-40f2-a8c0-104402fd2aaa")
 		)
@@ -3081,6 +3108,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 118.11 85.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "5e894378-c190-45dd-b85d-9b2f5526701e")
 		)
@@ -3168,7 +3204,16 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C25744"
+			(at 120.65 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 120.65 53.34 0)
 			(effects
 				(font
@@ -3398,7 +3443,16 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C25744"
+			(at 128.27 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 128.27 53.34 0)
 			(effects
 				(font
@@ -3486,6 +3540,15 @@
 			)
 		)
 		(property "mfg#" "C1608X7R1E104KT000N"
+			(at 195.58 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 195.58 58.42 0)
 			(effects
 				(font
@@ -3787,6 +3850,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 190.5 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "dfda6122-d69e-47ea-a0fe-5950e46fb5ba")
 		)
@@ -3849,6 +3921,24 @@
 			)
 		)
 		(property "Description" "USB Type-C Configuration Channel Logic and Port Control with VCONN, X2QFN-12"
+			(at 147.32 88.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
+			(at 147.32 88.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C2674422"
 			(at 147.32 88.9 0)
 			(effects
 				(font
@@ -3950,6 +4040,24 @@
 			)
 		)
 		(property "Description" "USB 2.0-only 14P Type-C Receptacle connector"
+			(at 203.2 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
+			(at 203.2 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C692526"
 			(at 203.2 96.52 0)
 			(effects
 				(font

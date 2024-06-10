@@ -5289,6 +5289,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 142.24 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "592aa17c-00ca-441b-8daa-3c3bab3f7800")
 		)
@@ -5644,7 +5653,16 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C25900"
+			(at 232.41 64.77 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 232.41 64.77 0)
 			(effects
 				(font
@@ -5743,7 +5761,7 @@
 		(exclude_from_sim yes)
 		(in_bom no)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(fields_autoplaced yes)
 		(uuid "6dc91d02-eb2a-4b6a-84fe-793f971243d5")
 		(property "Reference" "H3"
@@ -5783,6 +5801,15 @@
 			)
 		)
 		(property "Description" "Mounting Hole with connection"
+			(at 212.09 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 212.09 175.26 0)
 			(effects
 				(font
@@ -5943,7 +5970,7 @@
 		(exclude_from_sim yes)
 		(in_bom no)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(fields_autoplaced yes)
 		(uuid "7d916a5a-e3d4-49c2-bc95-12fe05265590")
 		(property "Reference" "H2"
@@ -5983,6 +6010,15 @@
 			)
 		)
 		(property "Description" "Mounting Hole with connection"
+			(at 250.19 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 250.19 173.99 0)
 			(effects
 				(font
@@ -6208,7 +6244,16 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C25900"
+			(at 229.87 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 229.87 62.23 0)
 			(effects
 				(font
@@ -6286,6 +6331,15 @@
 			)
 		)
 		(property "lcsc#" "C2897426"
+			(at 48.26 128.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 48.26 128.27 0)
 			(effects
 				(font
@@ -6545,7 +6599,7 @@
 		(exclude_from_sim yes)
 		(in_bom no)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(fields_autoplaced yes)
 		(uuid "c3b8caa8-4ede-432d-9ae8-56d86f35286a")
 		(property "Reference" "H1"
@@ -6585,6 +6639,15 @@
 			)
 		)
 		(property "Description" "Mounting Hole with connection"
+			(at 228.6 173.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 228.6 173.99 0)
 			(effects
 				(font
@@ -7196,6 +7259,15 @@
 			)
 		)
 		(property "lcsc#" "C2897426"
+			(at 48.26 156.21 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
 			(at 48.26 156.21 0)
 			(effects
 				(font
