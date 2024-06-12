@@ -19,4 +19,5 @@ test = [
 test = { cmd = "pytest" }
 build_usb_audio = { call = "example_usb_audio.top:build()" }
 build_dsp_core = { call = "example_dsp.top:build(sys.argv[1])" }
+ecpix5_build_dsp_core = { call = "example_dsp.top:build_ecpix5(sys.argv[1])" }
 sim_dsp_core = { call = "example_dsp.top:simulate(sys.argv[1])" }

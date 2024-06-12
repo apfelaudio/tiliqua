@@ -432,6 +432,8 @@ class QuadNCO(wiring.Component):
 
 class SimTop(Elaboratable):
 
+    """Top-level design for DSP core examples targeting sim/verilator."""
+
     def __init__(self, core):
         self.pmod0 = sim.FakeEurorackPmod()
         self.core = core()
@@ -447,7 +449,9 @@ class SimTop(Elaboratable):
         wiring.connect(m, self.core.o, audio_stream.ostream)
         return m
 
-class CoreTop(Elaboratable):
+class TiliquaTop(Elaboratable):
+
+    """Top-level design targeting Tiliqua."""
 
     def __init__(self, core, touch=False):
         self.core = core()
@@ -459,6 +463,28 @@ class CoreTop(Elaboratable):
         m.submodules.car = platform.clock_domain_generator()
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True,
+                touch_enabled=self.touch)
+        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
+        m.submodules.core = self.core
+        wiring.connect(m, audio_stream.istream, self.core.i)
+        wiring.connect(m, self.core.o, audio_stream.ostream)
+        return m
+
+class GenericTop(Elaboratable):
+
+    """Top-level design targeting any FPGA board with a eurorack-pmod."""
+
+    def __init__(self, core, touch=False):
+        self.core = core()
+        self.touch = touch
+        super().__init__()
+
+    def elaborate(self, platform):
+        m = Module()
+        m.submodules.car = platform.clock_domain_generator()
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=eurorack_pmod.pins_from_pmod_connector_with_ribbon(platform, 0),
                 hardware_r33=True,
                 touch_enabled=self.touch)
         m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
@@ -490,12 +516,19 @@ def get_core(name):
     return cores[name]
 
 def build(core_name: str):
-    """Build a bitstream for a top-level DSP core."""
-
+    """Tiliqua: build a bitstream for a top-level DSP core."""
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     touch, cls_core = get_core(core_name)
-    TiliquaPlatform().build(CoreTop(cls_core, touch=touch))
+    TiliquaPlatform().build(TiliquaTop(cls_core, touch=touch))
+
+def build_ecpix5(core_name: str):
+    """ECPIX5 (85k): build a bitstream for a top-level DSP core."""
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    touch, cls_core = get_core(core_name)
+    from example_dsp.ecpix5 import ECPIX5_85F_Platform
+    ECPIX5_85F_Platform().build(GenericTop(cls_core, touch=touch))
 
 def simulate(core_name: str):
     """Simulate a top-level DSP core using Verilator."""
