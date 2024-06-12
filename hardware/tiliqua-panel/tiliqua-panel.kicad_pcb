@@ -76,7 +76,7 @@
 			(mirror no)
 			(drillshape 0)
 			(scaleselection 1)
-			(outputdirectory "fab/")
+			(outputdirectory "../fab/tiliqua-panel-r2/")
 		)
 	)
 	(net 0 "")

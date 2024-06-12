@@ -484,7 +484,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "fab/",
+      "plot": "../fab/tiliqua-panel-r2/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "",
