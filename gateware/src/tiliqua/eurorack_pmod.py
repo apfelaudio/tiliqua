@@ -200,7 +200,7 @@ class EurorackPmod(wiring.Component):
 
             # Ports (clk + reset)
             i_clk_256fs = ClockSignal("audio"),
-            i_clk_fs = clk_fs, #FIXME: deprecate
+            i_strobe = self.fs_strobe,
             i_rst = ResetSignal("audio"),
 
             # Pads (tristate, may require different logic to hook these

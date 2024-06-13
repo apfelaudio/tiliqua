@@ -54,7 +54,7 @@ class ResonantFilter(wiring.Component):
 
         m.d.comb += [
             svf0.i.valid.eq(self.i.valid),
-            audio_stream.istream.ready.eq(svf0.i.ready),
+            self.i.ready.eq(svf0.i.ready),
 
             svf0.i.payload.x.eq(self.i.payload[0]),
             svf0.i.payload.cutoff.eq(self.i.payload[1]),
