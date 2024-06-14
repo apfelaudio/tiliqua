@@ -30,11 +30,10 @@ from luna.gateware.usb.stream                 import USBInStreamInterface
 from luna.gateware.stream.generator           import StreamSerializer
 from luna.gateware.stream                     import StreamInterface
 from luna.gateware.architecture.car           import PHYResetController
-from luna.gateware.debug.ila                  import AsyncSerialILA
 
 from tiliqua.tiliqua_platform import TiliquaPlatform
 from tiliqua.eurorack_pmod import EurorackPmod
-from vendor.ila import AsyncSerialILAFrontend
+from vendor.ila import AsyncSerialILA, AsyncSerialILAFrontend
 
 from example_usb_audio.util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
 from example_usb_audio.usb_stream_to_channels import USBStreamToChannels
