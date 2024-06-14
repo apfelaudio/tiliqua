@@ -30,9 +30,11 @@ from luna.gateware.usb.stream                 import USBInStreamInterface
 from luna.gateware.stream.generator           import StreamSerializer
 from luna.gateware.stream                     import StreamInterface
 from luna.gateware.architecture.car           import PHYResetController
+from luna.gateware.debug.ila                  import AsyncSerialILA
 
 from tiliqua.tiliqua_platform import TiliquaPlatform
 from tiliqua.eurorack_pmod import EurorackPmod
+from vendor.ila import AsyncSerialILAFrontend
 
 from example_usb_audio.util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
 from example_usb_audio.usb_stream_to_channels import USBStreamToChannels
@@ -552,6 +554,35 @@ class USB2AudioInterface(Elaboratable):
                     with m.Else():
                         m.d.usb += touch_ch.eq(touch_ch + 1)
                         m.next = "B0"
+
+        #######
+        # ILA #
+        #######
+
+        test_signal = Signal(32, reset=0xDEADBEEF)
+        pmod_sample_o0 = Signal(16)
+
+        m.d.comb += pmod_sample_o0.eq(pmod0.sample_o[0])
+
+        ila_signals = [
+            test_signal,
+            pmod_sample_o0,
+        ]
+
+        print(pmod0.sample_o[0])
+        print(dir(pmod0.sample_o[0]))
+
+        self.ila = AsyncSerialILA(signals=ila_signals,
+                                  sample_depth=8192, divisor=521,
+                                  domain='usb', sample_rate=60e6) # ~115200 baud on USB clock
+        m.submodules += self.ila
+
+        m.d.comb += [
+            self.ila.trigger.eq(pmod0.sample_o[0] > Const(1000)),
+            #self.ila.trigger.eq(usb_audio_in_active),
+            platform.request("uart").tx.o.eq(self.ila.tx), # needs FFSync?
+        ]
+
         return m
 
 class UAC2RequestHandlers(USBRequestHandler):
@@ -657,4 +688,7 @@ class UAC2RequestHandlers(USBRequestHandler):
 def build():
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(USB2AudioInterface())
+    top = USB2AudioInterface()
+    TiliquaPlatform().build(top)
+    frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
+    frontend.emit_vcd("out.vcd")
