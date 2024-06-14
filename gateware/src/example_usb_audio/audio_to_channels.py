@@ -82,7 +82,7 @@ class AudioToChannels(Elaboratable):
                         # sample conversion. Better to just switch native rate of I2S driver.
                         self.to_usb.payload.eq(
                             Cat(Const(0, N_ZFILL), adc_latched[channel*SW:(channel+1)*SW])),
-                        self.to_usb.channel_no.eq(channel),
+                        self.to_usb.channel_nr.eq(channel),
                         self.to_usb.valid.eq(1),
                     ]
                     m.next = f'CH{channel}-SEND'
@@ -107,10 +107,10 @@ class AudioToChannels(Elaboratable):
             fifo = AsyncFIFO(width=SW, depth=64, w_domain="usb", r_domain="audio")
             setattr(m.submodules, f'dac_fifo{n}', fifo)
 
-            # (usb domain) if the channel_no matches, demux it into the correct channel FIFO
+            # (usb domain) if the channel_nr matches, demux it into the correct channel FIFO
             m.d.comb += [
                 fifo.w_data.eq(self.from_usb.payload[N_ZFILL:]),
-                fifo.w_en.eq((self.from_usb.channel_no == n) &
+                fifo.w_en.eq((self.from_usb.channel_nr == n) &
                              self.from_usb.valid),
             ]
 
@@ -129,7 +129,7 @@ class AudioToChannels(Elaboratable):
 
         # FIXME: make this less lenient
         m.d.comb += self.from_usb.ready.eq(
-            m.submodules.dac_fifo0.w_rdy | m.submodules.dac_fifo1.w_rdy |
-            m.submodules.dac_fifo2.w_rdy | m.submodules.dac_fifo3.w_rdy)
+            m.submodules.dac_fifo0.w_rdy & m.submodules.dac_fifo1.w_rdy &
+            m.submodules.dac_fifo2.w_rdy & m.submodules.dac_fifo3.w_rdy)
 
         return m

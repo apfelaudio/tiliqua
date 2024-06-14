@@ -433,10 +433,36 @@ class USB2AudioInterface(Elaboratable):
         m.submodules.channels_to_usb_stream = channels_to_usb_stream = \
             DomainRenamer("usb")(ChannelsToUSBStream(self.NR_CHANNELS))
 
+        def detect_active_audio_in(m, name: str, usb, ep2_in):
+            audio_in_seen   = Signal(name=f"{name}_audio_in_seen")
+            audio_in_active = Signal(name=f"{name}_audio_in_active")
+
+            # detect if we don't have a USB audio IN packet
+            with m.If(usb.sof_detected):
+                m.d.usb += [
+                    audio_in_active.eq(audio_in_seen),
+                    audio_in_seen.eq(0),
+                ]
+
+            with m.If(ep2_in.data_requested):
+                m.d.usb += audio_in_seen.eq(1)
+
+            return audio_in_active
+
+            usb_audio_in_active  = detect_active_audio_in(m, "usb", usb, ep2_in)
+
+        usb_audio_in_active = detect_active_audio_in(m, "usb", usb, ep2_in)
+
         m.d.comb += [
             # Wire USB <-> stream synchronizers
             usb_to_channel_stream.usb_stream_in.stream_eq(ep1_out.stream),
             ep2_in.stream.stream_eq(channels_to_usb_stream.usb_stream_out),
+
+            channels_to_usb_stream.no_channels_in.eq(self.NR_CHANNELS),
+            channels_to_usb_stream.data_requested_in.eq(ep2_in.data_requested),
+            channels_to_usb_stream.frame_finished_in.eq(ep2_in.frame_finished),
+            channels_to_usb_stream.audio_in_active.eq(usb_audio_in_active),
+            usb_to_channel_stream.no_channels_in.eq(self.NR_CHANNELS),
         ]
 
         m.submodules.pmod0 = pmod0 = EurorackPmod(
