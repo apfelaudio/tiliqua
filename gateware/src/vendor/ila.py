@@ -70,18 +70,18 @@ class IntegratedLogicAnalyzer(Elaboratable):
         on the rising edge of the clock.
     """
 
-    def __init__(self, *, signals, sample_depth, domain="sync", sample_rate=60e6, samples_pretrigger=1, timestamp_bits=24):
+    def __init__(self, *, signals, sample_depth, domain="sync", sample_rate=60e6, samples_pretrigger=1, ts_delta_bits=11):
         self.domain             = domain
         self.signals            = signals
         self.inputs             = Cat(*signals)
-        self.sample_width       = len(self.inputs) + timestamp_bits
+        self.sample_width       = len(self.inputs) + ts_delta_bits
         self.sample_depth       = sample_depth
         self.samples_pretrigger = samples_pretrigger
         self.sample_rate        = sample_rate
         self.sample_period      = 1 / sample_rate
-        self.timestamp_bits     = timestamp_bits
-        self.timestamp_max      = 2**timestamp_bits - 1
-        self.timestamp          = Signal(timestamp_bits, reset=0)
+        self.ts_delta_bits     = ts_delta_bits
+        self.ts_delta_max      = 2**ts_delta_bits - 1
+        self.ts_delta          = Signal(ts_delta_bits, reset=0)
 
         #
         # Create a backing store for our samples.
@@ -123,12 +123,16 @@ class IntegratedLogicAnalyzer(Elaboratable):
         write_position = Signal(range(0, self.sample_depth))
 
         last_inputs = Signal.like(self.inputs)
-        m.d.sync += last_inputs.eq(delayed_inputs)
+        last_ts_delta = Signal.like(self.ts_delta)
+        m.d.sync += [
+            last_inputs.eq(delayed_inputs),
+            last_ts_delta.eq(self.ts_delta),
+        ]
 
         # Set up our write port to capture the input signals,
         # and our read port to provide the output.
         m.d.comb += [
-            write_port.data        .eq(Cat(last_inputs, self.timestamp)),
+            write_port.data        .eq(Cat(last_inputs, last_ts_delta)),
             write_port.addr        .eq(write_position),
 
             self.captured_sample   .eq(read_port.data),
@@ -152,7 +156,7 @@ class IntegratedLogicAnalyzer(Elaboratable):
                     m.d.sync += [
                         write_port.en  .eq(1),
                         write_position .eq(0),
-                        self.timestamp .eq(0),
+                        self.ts_delta  .eq(0),
 
                         self.complete  .eq(0),
                     ]
@@ -160,22 +164,22 @@ class IntegratedLogicAnalyzer(Elaboratable):
             # SAMPLE: do our sampling
             with m.State('SAMPLE'):
 
-                m.d.sync += self.timestamp.eq(self.timestamp + 1),
-
-                with m.If(last_inputs != delayed_inputs):
-                    # Write any unique samples. Timestamp always increases.
+                with m.If((last_inputs != delayed_inputs) |
+                          (self.ts_delta == self.ts_delta_max)):
                     m.d.sync += [
+                        self.ts_delta .eq(0),
                         write_port.en  .eq(1),
                         write_position .eq(write_position + 1),
                     ]
                 with m.Else():
-                    m.d.sync += write_port.en.eq(0),
+                    m.d.sync += [
+                        self.ts_delta.eq(self.ts_delta + 1),
+                        write_port.en.eq(0),
+                    ]
 
                 # If this is the last sample, we're done. Finish up.
-                with m.If((write_position + 1 == self.sample_depth) |
-                          (self.timestamp == self.timestamp_max)):
+                with m.If(write_position + 1 == self.sample_depth):
                     m.next = "IDLE"
-
                     m.d.sync += [
                         self.complete .eq(1),
                         write_port.en .eq(0)
@@ -241,7 +245,7 @@ class StreamILA(Elaboratable):
         self.sample_depth   = self.ila.sample_depth
         self.sample_rate    = self.ila.sample_rate
         self.sample_period  = self.ila.sample_period
-        self.timestamp_bits = self.ila.timestamp_bits
+        self.ts_delta_bits  = self.ila.ts_delta_bits
 
         # Bolster our bits per sample "word" up to a power of two.
         self.bits_per_sample = 2 ** ((self.ila.sample_width - 1).bit_length())
@@ -406,7 +410,7 @@ class AsyncSerialILA(Elaboratable):
         self.sample_period    = self.ila.sample_period
         self.bits_per_sample  = self.ila.bits_per_sample
         self.bytes_per_sample = self.ila.bytes_per_sample
-        self.timestamp_bits   = self.ila.timestamp_bits
+        self.ts_delta_bits   = self.ila.ts_delta_bits
 
         # Expose our ILA's trigger and status ports directly.
         self.trigger  = self.ila.trigger
@@ -466,7 +470,7 @@ class ILAFrontend(metaclass=ABCMeta):
 
             sample[signal.name] = signal_bits
 
-        sample["__timestamp"] = raw_sample[position : position + self.ila.timestamp_bits]
+        sample["__ts_delta"] = raw_sample[position : position + self.ila.ts_delta_bits]
 
         return sample
 
@@ -488,9 +492,12 @@ class ILAFrontend(metaclass=ABCMeta):
         if self.samples is None:
             self.refresh()
 
+        timestamp = 0
+
         # Iterate over each sample...
         for sample in self.samples:
-            yield (self.ila.sample_period * sample["__timestamp"].to_int()), sample
+            yield timestamp, sample
+            timestamp += self.ila.sample_period * (sample["__ts_delta"].to_int() + 1)
 
 
     def print_samples(self):
@@ -524,9 +531,6 @@ class ILAFrontend(metaclass=ABCMeta):
 
         # Create our basic VCD.
         with VCDWriter(stream, timescale=f"1 ns", date='today') as writer:
-            first_timestamp = math.inf
-            last_timestamp  = 0
-
             signals = {}
 
             # If we're adding a clock...
@@ -538,8 +542,8 @@ class ILAFrontend(metaclass=ABCMeta):
             for signal in self.ila.signals:
                 signals[signal.name] = writer.register_var('ila', signal.name, 'integer', size=len(signal))
 
-            signals["__timestamp"] = writer.register_var(
-                    'ila', '__timestamp', 'integer', size=self.ila.timestamp_bits)
+            signals["__ts_delta"] = writer.register_var(
+                    'ila', '__ts_delta', 'integer', size=self.ila.ts_delta_bits)
 
             # Dump the each of our samples into the VCD.
             clock_time = 0
@@ -551,7 +555,6 @@ class ILAFrontend(metaclass=ABCMeta):
                     if add_clock:
                         while clock_time < timestamp:
                             writer.change(clock_signal, clock_time / 1e-9, clock_value)
-
                             clock_value ^= 1
                             clock_time  += (self.ila.sample_period / 2)
 

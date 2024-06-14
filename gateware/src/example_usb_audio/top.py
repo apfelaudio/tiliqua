@@ -564,16 +564,16 @@ class USB2AudioInterface(Elaboratable):
         m.d.comb += pmod_sample_o0.eq(pmod0.sample_o[0])
 
         ila_signals = [
-            test_signal,
+            #test_signal,
             pmod_sample_o0,
             pmod0.fs_strobe,
             m.submodules.audio_to_channels.dac_fifo_level,
 
             # channel stream
-            #usb_to_channel_stream.channel_stream_out.channel_nr,
+            usb_to_channel_stream.channel_stream_out.channel_nr,
             #usb_to_channel_stream.channel_stream_out.payload,
-            #usb_to_channel_stream.channel_stream_out.valid,
-            #usb_to_channel_stream.garbage_seen_out,
+            usb_to_channel_stream.channel_stream_out.valid,
+            usb_to_channel_stream.garbage_seen_out,
 
             # interface from IsochronousOutStreamEndpoint
             #usb_to_channel_stream.usb_stream_in.first,
@@ -583,9 +583,13 @@ class USB2AudioInterface(Elaboratable):
             #usb_to_channel_stream.usb_stream_in.ready,
 
             # interface to IsochronousOutStreamEndpoint
-            ep1_out.interface.rx.next,
-            ep1_out.interface.rx.valid,
-            ep1_out.interface.rx.payload,
+            #ep1_out.interface.rx.next,
+            #ep1_out.interface.rx.valid,
+            #ep1_out.interface.rx.payload,
+
+            #audio_clock_counter,
+            bitPos,
+            ep1_in.value,
         ]
 
         self.ila = AsyncSerialILA(signals=ila_signals,
@@ -707,4 +711,5 @@ def build():
     top = USB2AudioInterface()
     TiliquaPlatform().build(top)
     frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
+    frontend.print_samples()
     frontend.emit_vcd("out.vcd")
