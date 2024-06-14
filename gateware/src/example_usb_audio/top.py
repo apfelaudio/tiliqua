@@ -558,7 +558,7 @@ class USB2AudioInterface(Elaboratable):
         # ILA #
         #######
 
-        test_signal = Signal(32, reset=0xDEADBEEF)
+        test_signal = Signal(16, reset=0xFEED)
         pmod_sample_o0 = Signal(16)
 
         m.d.comb += pmod_sample_o0.eq(pmod0.sample_o[0])
@@ -566,10 +566,12 @@ class USB2AudioInterface(Elaboratable):
         ila_signals = [
             test_signal,
             pmod_sample_o0,
+            pmod0.fs_strobe,
+            m.submodules.audio_to_channels.dac_fifo_level,
+            usb_to_channel_stream.channel_stream_out.channel_nr,
+            usb_to_channel_stream.channel_stream_out.payload,
+            usb_to_channel_stream.channel_stream_out.valid,
         ]
-
-        print(pmod0.sample_o[0])
-        print(dir(pmod0.sample_o[0]))
 
         self.ila = AsyncSerialILA(signals=ila_signals,
                                   sample_depth=8192, divisor=521,

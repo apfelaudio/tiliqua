@@ -1,7 +1,13 @@
 #
-# This file is part of LUNA.
+# This file was lifted from LUNA and modified to support sending compressed
+# ILA bitstreams over the serial port, which is necessary to be able to
+# analyze audio-frequency signals at a high system clock rate (i.e 60MHz USB).
+#
+# Basically we just use RLE and only sample signals to the BRAM when they change.
+# The timestamp of each sample is stored alongside its reading in BRAM.
 #
 # Copyright (c) 2020 Great Scott Gadgets <info@greatscottgadgets.com>
+# Copyright (c) 2024 Sebastian Holzapfel <info@apfelaudio.com>
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
@@ -64,15 +70,18 @@ class IntegratedLogicAnalyzer(Elaboratable):
         on the rising edge of the clock.
     """
 
-    def __init__(self, *, signals, sample_depth, domain="sync", sample_rate=60e6, samples_pretrigger=1):
+    def __init__(self, *, signals, sample_depth, domain="sync", sample_rate=60e6, samples_pretrigger=1, timestamp_bits=24):
         self.domain             = domain
         self.signals            = signals
         self.inputs             = Cat(*signals)
-        self.sample_width       = len(self.inputs)
+        self.sample_width       = len(self.inputs) + timestamp_bits
         self.sample_depth       = sample_depth
         self.samples_pretrigger = samples_pretrigger
         self.sample_rate        = sample_rate
         self.sample_period      = 1 / sample_rate
+        self.timestamp_bits     = timestamp_bits
+        self.timestamp_max      = 2**timestamp_bits - 1
+        self.timestamp          = Signal(timestamp_bits, reset=0)
 
         #
         # Create a backing store for our samples.
@@ -116,12 +125,15 @@ class IntegratedLogicAnalyzer(Elaboratable):
         # Set up our write port to capture the input signals,
         # and our read port to provide the output.
         m.d.comb += [
-            write_port.data        .eq(delayed_inputs),
+            write_port.data        .eq(Cat(delayed_inputs, self.timestamp)),
             write_port.addr        .eq(write_position),
 
             self.captured_sample   .eq(read_port.data),
             read_port.addr         .eq(self.captured_sample_number)
         ]
+
+        last_inputs = Signal.like(self.inputs)
+        m.d.sync += last_inputs.eq(delayed_inputs)
 
         # Don't sample unless our FSM asserts our sample signal explicitly.
         m.d.sync += write_port.en.eq(0)
@@ -140,6 +152,7 @@ class IntegratedLogicAnalyzer(Elaboratable):
                     m.d.sync += [
                         write_port.en  .eq(1),
                         write_position .eq(0),
+                        self.timestamp .eq(0),
 
                         self.complete  .eq(0),
                     ]
@@ -147,14 +160,18 @@ class IntegratedLogicAnalyzer(Elaboratable):
             # SAMPLE: do our sampling
             with m.State('SAMPLE'):
 
-                # Sample until we run out of samples.
-                m.d.sync += [
-                    write_port.en  .eq(1),
-                    write_position .eq(write_position + 1),
-                ]
+                m.d.sync += self.timestamp.eq(self.timestamp + 1),
+
+                with m.If(last_inputs != delayed_inputs):
+                    # Write any unique samples. Timestamp always increases.
+                    m.d.sync += [
+                        write_port.en  .eq(1),
+                        write_position .eq(write_position + 1),
+                    ]
 
                 # If this is the last sample, we're done. Finish up.
-                with m.If(write_position + 1 == self.sample_depth):
+                with m.If((write_position + 1 == self.sample_depth) |
+                          (self.timestamp == self.timestamp_max)):
                     m.next = "IDLE"
 
                     m.d.sync += [
@@ -197,23 +214,18 @@ class StreamILA(Elaboratable):
 
     domain: string
         The clock domain in which the ILA should operate.
-    o_domain: string
-        The clock domain in which the output stream will be generated.
-        If omitted, defaults to the same domain as the core ILA.
     samples_pretrigger: int
         The number of our samples which should be captured _before_ the trigger.
         This also can act like an implicit synchronizer; so asynchronous inputs
         are allowed if this number is >= 2.
     """
 
-    def __init__(self, *, signals, sample_depth, o_domain=None, **kwargs):
+    def __init__(self, *, signals, sample_depth, **kwargs):
         # Extract the domain from our keyword arguments, and then translate it to sync
         # before we pass it back below. We'll use a DomainRenamer at the boundary to
         # handle non-sync domains.
         self.domain = kwargs.get('domain', 'sync')
         kwargs['domain'] = 'sync'
-
-        self._o_domain = o_domain if o_domain else self.domain
 
         # Create our core integrated logic analyzer.
         self.ila = IntegratedLogicAnalyzer(
@@ -222,11 +234,12 @@ class StreamILA(Elaboratable):
             **kwargs)
 
         # Copy some core parameters from our inner ILA.
-        self.signals       = signals
-        self.sample_width  = self.ila.sample_width
-        self.sample_depth  = self.ila.sample_depth
-        self.sample_rate   = self.ila.sample_rate
-        self.sample_period = self.ila.sample_period
+        self.signals        = signals
+        self.sample_width   = self.ila.sample_width
+        self.sample_depth   = self.ila.sample_depth
+        self.sample_rate    = self.ila.sample_rate
+        self.sample_period  = self.ila.sample_period
+        self.timestamp_bits = self.ila.timestamp_bits
 
         # Bolster our bits per sample "word" up to a power of two.
         self.bits_per_sample = 2 ** ((self.ila.sample_width - 1).bit_length())
@@ -248,10 +261,7 @@ class StreamILA(Elaboratable):
         m  = Module()
         m.submodules.ila = ila = self.ila
 
-        if self._o_domain == self.domain:
-            in_domain_stream = self.stream
-        else:
-            in_domain_stream = StreamInterface(payload_width=self.bits_per_sample)
+        in_domain_stream = self.stream
 
         # Count where we are in the current transmission.
         current_sample_number = Signal(range(0, ila.sample_depth))
@@ -260,8 +270,13 @@ class StreamILA(Elaboratable):
         # sample value to the UART.
         m.d.comb += [
             ila.captured_sample_number  .eq(current_sample_number),
-            in_domain_stream.payload    .eq(ila.captured_sample)
         ]
+
+        # Add a synchronization word as a 'fake' first sample.
+        with m.If(current_sample_number == 0):
+            m.d.comb += in_domain_stream.payload.eq(0xDEADBEEF)
+        with m.Else():
+            m.d.comb += in_domain_stream.payload.eq(ila.captured_sample)
 
         with m.FSM():
 
@@ -316,41 +331,6 @@ class StreamILA(Elaboratable):
                             m.next = "IDLE"
                     with m.Else():
                         m.d.sync += data_valid.eq(1)
-
-
-        # If we're not streaming out of the same domain we're capturing from,
-        # we'll add some clock-domain crossing hardware.
-        if self._o_domain != self.domain:
-            in_domain_signals  = Cat(
-                in_domain_stream.first,
-                in_domain_stream.payload,
-                in_domain_stream.last
-            )
-            out_domain_signals = Cat(
-                self.stream.first,
-                self.stream.payload,
-                self.stream.last
-            )
-
-            # Create our async FIFO...
-            m.submodules.cdc = fifo = AsyncFIFOBuffered(
-                width=len(in_domain_signals),
-                depth=16,
-                w_domain="sync",
-                r_domain=self._o_domain
-            )
-
-            m.d.comb += [
-                # ... fill it from our in-domain stream...
-                fifo.w_data             .eq(in_domain_signals),
-                fifo.w_en               .eq(in_domain_stream.valid),
-                in_domain_stream.ready  .eq(fifo.w_rdy),
-
-                # ... and output it into our outupt stream.
-                out_domain_signals      .eq(fifo.r_data),
-                self.stream.valid       .eq(fifo.r_rdy),
-                fifo.r_en               .eq(self.stream.ready)
-            ]
 
         # Convert our sync domain to the domain requested by the user, if necessary.
         if self.domain != "sync":
@@ -424,6 +404,7 @@ class AsyncSerialILA(Elaboratable):
         self.sample_period    = self.ila.sample_period
         self.bits_per_sample  = self.ila.bits_per_sample
         self.bytes_per_sample = self.ila.bytes_per_sample
+        self.timestamp_bits   = self.ila.timestamp_bits
 
         # Expose our ILA's trigger and status ports directly.
         self.trigger  = self.ila.trigger
@@ -483,6 +464,8 @@ class ILAFrontend(metaclass=ABCMeta):
 
             sample[signal.name] = signal_bits
 
+        sample["__timestamp"] = raw_sample[position : position + self.ila.timestamp_bits]
+
         return sample
 
 
@@ -503,14 +486,9 @@ class ILAFrontend(metaclass=ABCMeta):
         if self.samples is None:
             self.refresh()
 
-        timestamp = 0
-
         # Iterate over each sample...
         for sample in self.samples:
-            yield timestamp, sample
-
-            # ... and advance the timestamp by the relevant interval.
-            timestamp += self.ila.sample_period
+            yield (self.ila.sample_period * sample["__timestamp"].to_int()), sample
 
 
     def print_samples(self):
@@ -557,6 +535,9 @@ class ILAFrontend(metaclass=ABCMeta):
             # Create named values for each of our signals.
             for signal in self.ila.signals:
                 signals[signal.name] = writer.register_var('ila', signal.name, 'integer', size=len(signal))
+
+            signals["__timestamp"] = writer.register_var(
+                    'ila', '__timestamp', 'integer', size=self.ila.timestamp_bits)
 
             # Dump the each of our samples into the VCD.
             clock_time = 0
@@ -656,9 +637,9 @@ class AsyncSerialILAFrontend(ILAFrontend):
         # Iterate over each sample, and yield its value as a bits object.
         for i in range(0, len(all_samples), sample_width_bytes):
             raw_sample    = all_samples[i:i + sample_width_bytes]
-            sample_length = len(Cat(self.ila.signals))
-
-            yield bits.from_bytes(raw_sample, length=sample_length, byteorder='little')
+            sample_length_bits = self.ila.sample_width
+            yield bits.from_bytes(raw_sample, length=sample_length_bits,
+                                  byteorder='little')
 
 
     def _read_samples(self):

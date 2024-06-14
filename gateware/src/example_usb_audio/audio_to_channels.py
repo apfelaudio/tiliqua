@@ -18,6 +18,7 @@ class AudioToChannels(Elaboratable):
         self.to_usb = to_usb_stream
         self.from_usb = from_usb_stream
         self.eurorack_pmod = eurorack_pmod
+        self.dac_fifo_level = Signal(16)
 
     def elaborate(self, platform) -> Module:
 
@@ -126,6 +127,8 @@ class AudioToChannels(Elaboratable):
                         output.eq(fifo.r_data),
                     ]
                     m.next = 'READ'
+
+        m.d.comb += self.dac_fifo_level.eq(m.submodules.dac_fifo0.r_level)
 
         # FIXME: make this less lenient
         m.d.comb += self.from_usb.ready.eq(
