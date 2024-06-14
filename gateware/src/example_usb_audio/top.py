@@ -43,7 +43,7 @@ from example_usb_audio.audio_to_channels      import AudioToChannels
 class USB2AudioInterface(Elaboratable):
     """ USB Audio Class v2 interface """
     NR_CHANNELS = 4
-    MAX_PACKET_SIZE = 512 # NR_CHANNELS * 24 + 4
+    MAX_PACKET_SIZE = int(224 // 8 * NR_CHANNELS)
     MAX_PACKET_SIZE_MIDI = 64
 
     def create_descriptors(self):
@@ -390,8 +390,8 @@ class USB2AudioInterface(Elaboratable):
         # we need to capture 32 micro frames to get to the precision
         # required by the USB standard, so and that is 0xc000, so we
         # need 16 bits here
-        audio_clock_counter = Signal(16)
-        sof_counter         = Signal(5)
+        audio_clock_counter = Signal(24)
+        sof_counter         = Signal(8)
 
         audio_clock_usb = Signal()
         m.submodules.audio_clock_usb_sync = FFSynchronizer(ClockSignal("audio"), audio_clock_usb, o_domain="usb")
@@ -417,7 +417,8 @@ class USB2AudioInterface(Elaboratable):
             # so it wraps automatically every 32 SOFs
             with m.If(sof_counter == 0):
                 m.d.usb += [
-                    feedbackValue.eq(audio_clock_counter << 3),
+                    # FIFO feedback?
+                    feedbackValue.eq(audio_clock_counter + 1),
                     audio_clock_counter.eq(0),
                 ]
 
