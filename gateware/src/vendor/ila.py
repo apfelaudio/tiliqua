@@ -122,18 +122,18 @@ class IntegratedLogicAnalyzer(Elaboratable):
         # Counter that keeps track of our write position.
         write_position = Signal(range(0, self.sample_depth))
 
+        last_inputs = Signal.like(self.inputs)
+        m.d.sync += last_inputs.eq(delayed_inputs)
+
         # Set up our write port to capture the input signals,
         # and our read port to provide the output.
         m.d.comb += [
-            write_port.data        .eq(Cat(delayed_inputs, self.timestamp)),
+            write_port.data        .eq(Cat(last_inputs, self.timestamp)),
             write_port.addr        .eq(write_position),
 
             self.captured_sample   .eq(read_port.data),
             read_port.addr         .eq(self.captured_sample_number)
         ]
-
-        last_inputs = Signal.like(self.inputs)
-        m.d.sync += last_inputs.eq(delayed_inputs)
 
         # Don't sample unless our FSM asserts our sample signal explicitly.
         m.d.sync += write_port.en.eq(0)
@@ -168,6 +168,8 @@ class IntegratedLogicAnalyzer(Elaboratable):
                         write_port.en  .eq(1),
                         write_position .eq(write_position + 1),
                     ]
+                with m.Else():
+                    m.d.sync += write_port.en.eq(0),
 
                 # If this is the last sample, we're done. Finish up.
                 with m.If((write_position + 1 == self.sample_depth) |

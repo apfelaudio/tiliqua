@@ -568,9 +568,24 @@ class USB2AudioInterface(Elaboratable):
             pmod_sample_o0,
             pmod0.fs_strobe,
             m.submodules.audio_to_channels.dac_fifo_level,
-            usb_to_channel_stream.channel_stream_out.channel_nr,
-            usb_to_channel_stream.channel_stream_out.payload,
-            usb_to_channel_stream.channel_stream_out.valid,
+
+            # channel stream
+            #usb_to_channel_stream.channel_stream_out.channel_nr,
+            #usb_to_channel_stream.channel_stream_out.payload,
+            #usb_to_channel_stream.channel_stream_out.valid,
+            #usb_to_channel_stream.garbage_seen_out,
+
+            # interface from IsochronousOutStreamEndpoint
+            #usb_to_channel_stream.usb_stream_in.first,
+            #usb_to_channel_stream.usb_stream_in.valid,
+            #usb_to_channel_stream.usb_stream_in.payload,
+            #usb_to_channel_stream.usb_stream_in.last,
+            #usb_to_channel_stream.usb_stream_in.ready,
+
+            # interface to IsochronousOutStreamEndpoint
+            ep1_out.interface.rx.next,
+            ep1_out.interface.rx.valid,
+            ep1_out.interface.rx.payload,
         ]
 
         self.ila = AsyncSerialILA(signals=ila_signals,
