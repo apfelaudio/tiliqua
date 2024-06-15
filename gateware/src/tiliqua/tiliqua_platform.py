@@ -44,7 +44,7 @@ class _TiliquaPlatform(LatticeECP5Platform):
         # MIDI I/O
         UARTResource(1,
             rx="D5", tx="B8",
-            attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
+            attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="NONE")
         ),
 
         # USB

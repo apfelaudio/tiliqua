@@ -17,7 +17,7 @@ from amaranth.lib.wiring   import In, Out
 from amaranth_future       import stream, fixed
 
 from tiliqua.tiliqua_platform import TiliquaPlatform
-from tiliqua                  import eurorack_pmod, dsp
+from tiliqua                  import eurorack_pmod, dsp, midi
 from tiliqua.eurorack_pmod    import ASQ
 
 # for sim
@@ -430,6 +430,49 @@ class QuadNCO(wiring.Component):
 
         return m
 
+class MidiCVTop(wiring.Component):
+
+    """Convert serial MIDI messages to CV voltages."""
+
+    # TODO: this core is in progress
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    i_midi: In(stream.Signature(midi.MidiMessage))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [
+            self.i.ready.eq(1),
+            self.o.valid.eq(1),
+            self.i_midi.ready.eq(1),
+        ]
+
+        with m.If(self.i_midi.valid):
+            msg = self.i_midi.payload
+            with m.Switch(msg.midi_type):
+                with m.Case(midi.MessageType.NOTE_ON):
+                    m.d.sync += [
+                        self.o.payload[0].eq(fixed.Const(0.25, shape=ASQ)),
+                        self.o.payload[1].as_value().eq(
+                            msg.midi_payload.note_on.note),
+                        self.o.payload[2].as_value().eq(
+                            msg.midi_payload.note_on.velocity),
+                    ]
+                with m.Case(midi.MessageType.NOTE_OFF):
+                    m.d.sync += [
+                        self.o.payload[0].eq(fixed.Const(0.0, shape=ASQ))
+                    ]
+                with m.Case(midi.MessageType.PITCH_BEND):
+                    m.d.sync += [
+                        self.o.payload[3].as_value().eq(
+                            msg.midi_payload.pitch_bend.msb),
+                    ]
+
+        return m
+
 class SimTop(Elaboratable):
 
     def __init__(self, core):
@@ -465,6 +508,16 @@ class CoreTop(Elaboratable):
         m.submodules.core = self.core
         wiring.connect(m, audio_stream.istream, self.core.i)
         wiring.connect(m, self.core.o, audio_stream.ostream)
+
+        if hasattr(self.core, "i_midi"):
+            uart_pins = platform.request("uart", 1)
+            m.submodules.serialrx = serialrx = midi.SerialRx(
+                    system_clk_hz=60e6, pins=uart_pins)
+            m.submodules.midi_decode = midi_decode = midi.MidiDecode()
+            wiring.connect(m, serialrx.o, midi_decode.i)
+            wiring.connect(m, midi_decode.o, self.core.i_midi)
+            m.d.comb += platform.request("led_a").o.eq(~uart_pins.rx.i),
+
         return m
 
 def get_core(name):
@@ -481,6 +534,7 @@ def get_core(name):
         "touchmix":   (True,  TouchMixTop),
         "waveshaper": (False, DualWaveshaper),
         "nco":        (False, QuadNCO),
+        "midicv":     (False, MidiCVTop),
     }
 
     if name not in cores:
