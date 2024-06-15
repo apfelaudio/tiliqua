@@ -2820,6 +2820,17 @@
 		)
 		(uuid "2bd5e72e-0268-4df2-b316-1a1ae73f23bf")
 	)
+	(text "i2caddr: 0x47"
+		(exclude_from_sim no)
+		(at 255.27 81.788 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "49db8057-12e4-4bf0-bbf5-39caacad8053")
+	)
 	(text "CK/D0/D1/D2 assigned\ndifferential pins on ECP5"
 		(exclude_from_sim no)
 		(at 205.232 28.194 0)
@@ -2839,6 +2850,17 @@
 			)
 		)
 		(uuid "5b6e6fb5-45bd-4e71-9a44-7333500a4603")
+	)
+	(text "i2caddr: 0x05"
+		(exclude_from_sim no)
+		(at 255.27 68.834 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "97f9a959-0652-4efd-a139-80518aab4340")
 	)
 	(text "B6"
 		(exclude_from_sim no)
@@ -2891,6 +2913,17 @@
 			)
 		)
 		(uuid "d8506908-4c96-4d5b-96e2-055066908c42")
+	)
+	(text "i2caddr: 0x50"
+		(exclude_from_sim no)
+		(at 255.27 45.212 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f4342444-d73b-4f35-9d89-5fa99cefa407")
 	)
 	(global_label "ECP5_D6"
 		(shape bidirectional)

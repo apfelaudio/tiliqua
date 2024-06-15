@@ -2464,17 +2464,6 @@
 		)
 		(uuid "fb9fb09e-b2fe-402e-a4d5-70e46048a20c")
 	)
-	(text "i2caddr: 0x03"
-		(exclude_from_sim no)
-		(at 125.73 109.22 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "3734bdaa-f5fb-4b42-9c57-abe406e14a94")
-	)
 	(text "off by default"
 		(exclude_from_sim no)
 		(at 94.996 86.106 0)
