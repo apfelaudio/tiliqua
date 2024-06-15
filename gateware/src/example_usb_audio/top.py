@@ -33,6 +33,7 @@ from luna.gateware.architecture.car           import PHYResetController
 
 from tiliqua.tiliqua_platform import TiliquaPlatform
 from tiliqua.eurorack_pmod import EurorackPmod
+from vendor.ila import AsyncSerialILA, AsyncSerialILAFrontend
 
 from example_usb_audio.util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
 from example_usb_audio.usb_stream_to_channels import USBStreamToChannels
@@ -43,8 +44,12 @@ from example_usb_audio.audio_to_channels      import AudioToChannels
 class USB2AudioInterface(Elaboratable):
     """ USB Audio Class v2 interface """
     NR_CHANNELS = 4
-    MAX_PACKET_SIZE = 512 # NR_CHANNELS * 24 + 4
+    MAX_PACKET_SIZE = int(224 // 8 * NR_CHANNELS)
     MAX_PACKET_SIZE_MIDI = 64
+
+    def __init__(self, use_ila):
+        self.use_ila = False
+        super().__init__()
 
     def create_descriptors(self):
         """ Creates the descriptors that describe our audio topology. """
@@ -390,7 +395,7 @@ class USB2AudioInterface(Elaboratable):
         # we need to capture 32 micro frames to get to the precision
         # required by the USB standard, so and that is 0xc000, so we
         # need 16 bits here
-        audio_clock_counter = Signal(16)
+        audio_clock_counter = Signal(24)
         sof_counter         = Signal(5)
 
         audio_clock_usb = Signal()
@@ -417,6 +422,7 @@ class USB2AudioInterface(Elaboratable):
             # so it wraps automatically every 32 SOFs
             with m.If(sof_counter == 0):
                 m.d.usb += [
+                    # FIFO feedback?
                     feedbackValue.eq(audio_clock_counter << 3),
                     audio_clock_counter.eq(0),
                 ]
@@ -432,10 +438,36 @@ class USB2AudioInterface(Elaboratable):
         m.submodules.channels_to_usb_stream = channels_to_usb_stream = \
             DomainRenamer("usb")(ChannelsToUSBStream(self.NR_CHANNELS))
 
+        def detect_active_audio_in(m, name: str, usb, ep2_in):
+            audio_in_seen   = Signal(name=f"{name}_audio_in_seen")
+            audio_in_active = Signal(name=f"{name}_audio_in_active")
+
+            # detect if we don't have a USB audio IN packet
+            with m.If(usb.sof_detected):
+                m.d.usb += [
+                    audio_in_active.eq(audio_in_seen),
+                    audio_in_seen.eq(0),
+                ]
+
+            with m.If(ep2_in.data_requested):
+                m.d.usb += audio_in_seen.eq(1)
+
+            return audio_in_active
+
+            usb_audio_in_active  = detect_active_audio_in(m, "usb", usb, ep2_in)
+
+        usb_audio_in_active = detect_active_audio_in(m, "usb", usb, ep2_in)
+
         m.d.comb += [
             # Wire USB <-> stream synchronizers
             usb_to_channel_stream.usb_stream_in.stream_eq(ep1_out.stream),
             ep2_in.stream.stream_eq(channels_to_usb_stream.usb_stream_out),
+
+            channels_to_usb_stream.no_channels_in.eq(self.NR_CHANNELS),
+            channels_to_usb_stream.data_requested_in.eq(ep2_in.data_requested),
+            channels_to_usb_stream.frame_finished_in.eq(ep2_in.frame_finished),
+            channels_to_usb_stream.audio_in_active.eq(usb_audio_in_active),
+            usb_to_channel_stream.no_channels_in.eq(self.NR_CHANNELS),
         ]
 
         m.submodules.pmod0 = pmod0 = EurorackPmod(
@@ -525,6 +557,59 @@ class USB2AudioInterface(Elaboratable):
                     with m.Else():
                         m.d.usb += touch_ch.eq(touch_ch + 1)
                         m.next = "B0"
+
+        if self.use_ila:
+
+            #######
+            # ILA #
+            #######
+
+            test_signal = Signal(16, reset=0xFEED)
+            pmod_sample_o0 = Signal(16)
+
+            m.d.comb += pmod_sample_o0.eq(pmod0.sample_o[0])
+
+            ila_signals = [
+                test_signal,
+                pmod_sample_o0,
+                pmod0.fs_strobe,
+                m.submodules.audio_to_channels.dac_fifo_level,
+
+                # channel stream
+                #usb_to_channel_stream.channel_stream_out.channel_nr,
+                #usb_to_channel_stream.channel_stream_out.payload,
+                #usb_to_channel_stream.channel_stream_out.valid,
+                #usb_to_channel_stream.garbage_seen_out,
+
+                # interface from IsochronousOutStreamEndpoint
+                #usb_to_channel_stream.usb_stream_in.first,
+                #usb_to_channel_stream.usb_stream_in.valid,
+                #usb_to_channel_stream.usb_stream_in.payload,
+                #usb_to_channel_stream.usb_stream_in.last,
+                #usb_to_channel_stream.usb_stream_in.ready,
+
+                # interface to IsochronousOutStreamEndpoint
+                #ep1_out.interface.rx.next,
+                #ep1_out.interface.rx.valid,
+                #ep1_out.interface.rx.payload,
+
+                usb.sof_detected,
+                sof_counter,
+                feedbackValue,
+                bitPos,
+            ]
+
+            self.ila = AsyncSerialILA(signals=ila_signals,
+                                      sample_depth=8192, divisor=521,
+                                      domain='usb', sample_rate=60e6) # ~115200 baud on USB clock
+            m.submodules += self.ila
+
+            m.d.comb += [
+                self.ila.trigger.eq(pmod0.sample_o[0] > Const(1000)),
+                #self.ila.trigger.eq(usb_audio_in_active),
+                platform.request("uart").tx.o.eq(self.ila.tx), # needs FFSync?
+            ]
+
         return m
 
 class UAC2RequestHandlers(USBRequestHandler):
@@ -627,7 +712,13 @@ class UAC2RequestHandlers(USBRequestHandler):
 
                 return m
 
-def build():
+def build(ila=False):
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
-    TiliquaPlatform().build(USB2AudioInterface())
+    top = USB2AudioInterface(use_ila=ila)
+    TiliquaPlatform().build(top)
+    if ila:
+        # TODO: program bitstream with openFPGAloader before starting frontend
+        # TODO: make serial port selectable
+        frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
+        frontend.emit_vcd("out.vcd")
