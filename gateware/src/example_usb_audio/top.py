@@ -47,6 +47,10 @@ class USB2AudioInterface(Elaboratable):
     MAX_PACKET_SIZE = int(224 // 8 * NR_CHANNELS)
     MAX_PACKET_SIZE_MIDI = 64
 
+    def __init__(self, use_ila):
+        self.use_ila = False
+        super().__init__()
+
     def create_descriptors(self):
         """ Creates the descriptors that describe our audio topology. """
 
@@ -392,7 +396,7 @@ class USB2AudioInterface(Elaboratable):
         # required by the USB standard, so and that is 0xc000, so we
         # need 16 bits here
         audio_clock_counter = Signal(24)
-        sof_counter         = Signal(8)
+        sof_counter         = Signal(5)
 
         audio_clock_usb = Signal()
         m.submodules.audio_clock_usb_sync = FFSynchronizer(ClockSignal("audio"), audio_clock_usb, o_domain="usb")
@@ -419,7 +423,7 @@ class USB2AudioInterface(Elaboratable):
             with m.If(sof_counter == 0):
                 m.d.usb += [
                     # FIFO feedback?
-                    feedbackValue.eq(audio_clock_counter + 1),
+                    feedbackValue.eq(audio_clock_counter << 3),
                     audio_clock_counter.eq(0),
                 ]
 
@@ -554,50 +558,57 @@ class USB2AudioInterface(Elaboratable):
                         m.d.usb += touch_ch.eq(touch_ch + 1)
                         m.next = "B0"
 
-        #######
-        # ILA #
-        #######
+        if self.use_ila:
 
-        test_signal = Signal(16, reset=0xFEED)
-        pmod_sample_o0 = Signal(16)
+            #######
+            # ILA #
+            #######
 
-        m.d.comb += pmod_sample_o0.eq(pmod0.sample_o[0])
+            test_signal = Signal(16, reset=0xFEED)
+            pmod_sample_o0 = Signal(16)
 
-        ila_signals = [
-            test_signal,
-            pmod_sample_o0,
-            pmod0.fs_strobe,
-            m.submodules.audio_to_channels.dac_fifo_level,
+            m.d.comb += pmod_sample_o0.eq(pmod0.sample_o[0])
 
-            # channel stream
-            #usb_to_channel_stream.channel_stream_out.channel_nr,
-            #usb_to_channel_stream.channel_stream_out.payload,
-            #usb_to_channel_stream.channel_stream_out.valid,
-            #usb_to_channel_stream.garbage_seen_out,
+            ila_signals = [
+                test_signal,
+                pmod_sample_o0,
+                pmod0.fs_strobe,
+                m.submodules.audio_to_channels.dac_fifo_level,
 
-            # interface from IsochronousOutStreamEndpoint
-            #usb_to_channel_stream.usb_stream_in.first,
-            #usb_to_channel_stream.usb_stream_in.valid,
-            #usb_to_channel_stream.usb_stream_in.payload,
-            #usb_to_channel_stream.usb_stream_in.last,
-            #usb_to_channel_stream.usb_stream_in.ready,
+                # channel stream
+                #usb_to_channel_stream.channel_stream_out.channel_nr,
+                #usb_to_channel_stream.channel_stream_out.payload,
+                #usb_to_channel_stream.channel_stream_out.valid,
+                #usb_to_channel_stream.garbage_seen_out,
 
-            # interface to IsochronousOutStreamEndpoint
-            ep1_out.interface.rx.next,
-            ep1_out.interface.rx.valid,
-            ep1_out.interface.rx.payload,
-        ]
+                # interface from IsochronousOutStreamEndpoint
+                #usb_to_channel_stream.usb_stream_in.first,
+                #usb_to_channel_stream.usb_stream_in.valid,
+                #usb_to_channel_stream.usb_stream_in.payload,
+                #usb_to_channel_stream.usb_stream_in.last,
+                #usb_to_channel_stream.usb_stream_in.ready,
 
-        self.ila = AsyncSerialILA(signals=ila_signals,
-                                  sample_depth=8192, divisor=521,
-                                  domain='usb', sample_rate=60e6) # ~115200 baud on USB clock
-        m.submodules += self.ila
+                # interface to IsochronousOutStreamEndpoint
+                #ep1_out.interface.rx.next,
+                #ep1_out.interface.rx.valid,
+                #ep1_out.interface.rx.payload,
 
-        m.d.comb += [
-            self.ila.trigger.eq(pmod0.sample_o[0] > Const(1000)),
-            #self.ila.trigger.eq(usb_audio_in_active),
-            platform.request("uart").tx.o.eq(self.ila.tx), # needs FFSync?
-        ]
+                usb.sof_detected,
+                sof_counter,
+                feedbackValue,
+                bitPos,
+            ]
+
+            self.ila = AsyncSerialILA(signals=ila_signals,
+                                      sample_depth=8192, divisor=521,
+                                      domain='usb', sample_rate=60e6) # ~115200 baud on USB clock
+            m.submodules += self.ila
+
+            m.d.comb += [
+                self.ila.trigger.eq(pmod0.sample_o[0] > Const(1000)),
+                #self.ila.trigger.eq(usb_audio_in_active),
+                platform.request("uart").tx.o.eq(self.ila.tx), # needs FFSync?
+            ]
 
         return m
 
@@ -701,10 +712,13 @@ class UAC2RequestHandlers(USBRequestHandler):
 
                 return m
 
-def build():
+def build(ila=False):
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
-    top = USB2AudioInterface()
+    top = USB2AudioInterface(use_ila=ila)
     TiliquaPlatform().build(top)
-    frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
-    frontend.emit_vcd("out.vcd")
+    if ila:
+        # TODO: program bitstream with openFPGAloader before starting frontend
+        # TODO: make serial port selectable
+        frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
+        frontend.emit_vcd("out.vcd")
