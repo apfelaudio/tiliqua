@@ -1,3 +1,10 @@
+// Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
+//
+// SPDX-License-Identifier: CERN-OHL-S-2.0
+//
+
+// Simple verilator wrapper for simulating self-contained Tiliqua DSP core.
+
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
 #include <verilated_fst_c.h>
 #endif

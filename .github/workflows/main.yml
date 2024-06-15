@@ -49,3 +49,20 @@ jobs:
           pdm install
           pdm sim_dsp_core nco
         working-directory: gateware
+
+  ubuntu-bitstream-dsp-midicv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pdm-project/setup-pdm@v3
+      - uses: YosysHQ/setup-oss-cad-suite@v3
+      - run: git submodule update --init --recursive
+      - run: yosys --version
+      - run: |
+          pdm install
+          pdm build_dsp_core midicv
+        working-directory: gateware
+      - uses: actions/upload-artifact@v3
+        with:
+          name: example-dsp-midicv.bit
+          path: gateware/build/top.bit

@@ -1,3 +1,10 @@
+# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
+#
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+#
+
+"""Utilities for simulating Tiliqua designs."""
+
 from amaranth              import *
 from amaranth.build        import *
 from amaranth.lib          import wiring, data

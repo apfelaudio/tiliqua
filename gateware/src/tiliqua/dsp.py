@@ -1,3 +1,10 @@
+# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
+#
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+#
+
+"""Streaming DSP library with a strong focus on audio."""
+
 from amaranth              import *
 from amaranth.lib          import wiring, data
 from amaranth.lib.wiring   import In, Out

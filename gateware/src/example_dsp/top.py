@@ -1,6 +1,9 @@
-# Copyright (c) 2024 Seb Holzapfel <me@sebholzapfel.com>
+# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
-# SPDX-License-Identifier: BSD--3-Clause
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+#
+
+"""Collection of designs showing how to use the DSP library."""
 
 import os
 import sys
@@ -17,13 +20,12 @@ from amaranth.lib.wiring   import In, Out
 from amaranth_future       import stream, fixed
 
 from tiliqua.tiliqua_platform import TiliquaPlatform
-from tiliqua                  import eurorack_pmod, dsp
+from tiliqua                  import eurorack_pmod, dsp, midi
 from tiliqua.eurorack_pmod    import ASQ
 
 # for sim
 from amaranth.back import verilog
 from tiliqua       import sim
-
 
 class Mirror(wiring.Component):
 
@@ -430,6 +432,86 @@ class QuadNCO(wiring.Component):
 
         return m
 
+class MidiCVTop(wiring.Component):
+
+    """
+    Simple monophonic MIDI to CV conversion.
+
+    Output mapping is:
+    Output 0: Gate
+    Output 1: V/oct CV
+    Output 2: Velocity
+    Output 3: Mod Wheel (CC1)
+    """
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    # Note: MIDI is valid at a much lower rate than audio streams
+    i_midi: In(stream.Signature(midi.MidiMessage))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [
+            # Always forward our audio payload
+            self.i.ready.eq(1),
+            self.o.valid.eq(1),
+
+            # Always ready for MIDI messages
+            self.i_midi.ready.eq(1),
+        ]
+
+        # Create a LUT from midi note to voltage (output ASQ).
+        lut = []
+        for i in range(128):
+            volts_per_note = 1.0/12.0
+            volts = i*volts_per_note - 5
+            # convert volts to audio sample
+            x = volts/(2**15/4000)
+            lut.append(fixed.Const(x, shape=ASQ)._value)
+
+        # Store it in a memory where the address is the midi note,
+        # and the data coming out is directly routed to V/Oct out.
+        m.submodules.mem = mem = Memory(
+            width=ASQ.as_shape().width, depth=len(lut), init=lut)
+        rport = mem.read_port(transparent=True)
+        m.d.comb += [
+            rport.en.eq(1),
+        ]
+
+        # Route memory straight out to our note payload.
+        m.d.sync += self.o.payload[1].as_value().eq(rport.data),
+
+        with m.If(self.i_midi.valid):
+            msg = self.i_midi.payload
+            with m.Switch(msg.midi_type):
+                with m.Case(midi.MessageType.NOTE_ON):
+                    m.d.sync += [
+                        # Gate output on
+                        self.o.payload[0].eq(fixed.Const(0.5, shape=ASQ)),
+                        # Set velocity output
+                        self.o.payload[2].as_value().eq(
+                            msg.midi_payload.note_on.velocity << 8),
+                        # Set note index in LUT
+                        rport.addr.eq(msg.midi_payload.note_on.note),
+                    ]
+                with m.Case(midi.MessageType.NOTE_OFF):
+                    # Zero gate and velocity on NOTE_OFF
+                    m.d.sync += [
+                        self.o.payload[0].eq(0),
+                        self.o.payload[2].eq(0),
+                    ]
+                with m.Case(midi.MessageType.CONTROL_CHANGE):
+                    # mod wheel is CC 1
+                    with m.If(msg.midi_payload.control_change.controller_number == 1):
+                        m.d.sync += [
+                            self.o.payload[3].as_value().eq(
+                                msg.midi_payload.control_change.data << 8),
+                        ]
+
+        return m
+
 class SimTop(Elaboratable):
 
     def __init__(self, core):
@@ -465,6 +547,18 @@ class CoreTop(Elaboratable):
         m.submodules.core = self.core
         wiring.connect(m, audio_stream.istream, self.core.i)
         wiring.connect(m, self.core.o, audio_stream.ostream)
+
+        if hasattr(self.core, "i_midi"):
+            # For now, if a core requests midi input, we connect it up
+            # to the type-A serial MIDI RX input. In theory this bytestream
+            # could also come from LUNA in host or device mode.
+            uart_pins = platform.request("uart", 1)
+            m.submodules.serialrx = serialrx = midi.SerialRx(
+                    system_clk_hz=60e6, pins=uart_pins)
+            m.submodules.midi_decode = midi_decode = midi.MidiDecode()
+            wiring.connect(m, serialrx.o, midi_decode.i)
+            wiring.connect(m, midi_decode.o, self.core.i_midi)
+
         return m
 
 def get_core(name):
@@ -481,6 +575,7 @@ def get_core(name):
         "touchmix":   (True,  TouchMixTop),
         "waveshaper": (False, DualWaveshaper),
         "nco":        (False, QuadNCO),
+        "midicv":     (False, MidiCVTop),
     }
 
     if name not in cores:
@@ -495,7 +590,8 @@ def build(core_name: str):
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     touch, cls_core = get_core(core_name)
-    TiliquaPlatform().build(CoreTop(cls_core, touch=touch))
+    top = CoreTop(cls_core, touch=touch)
+    TiliquaPlatform().build(top)
 
 def simulate(core_name: str):
     """Simulate a top-level DSP core using Verilator."""

@@ -1,6 +1,9 @@
-# Copyright (c) 2024 Seb Holzapfel <me@sebholzapfel.com>
+# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
-# SPDX-License-Identifier: BSD--3-Clause
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+#
+
+"""Amaranth wrapper and clock domain crossing for `eurorack-pmod` hardware."""
 
 import os
 
