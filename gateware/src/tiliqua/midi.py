@@ -21,38 +21,38 @@ class MessageType(enum.Enum, shape=unsigned(4)):
     SYSEX            = 0xF
 
 class MidiMessage(data.Struct):
-    midi_type:    MessageType # 4 bit message type
-    midi_channel: unsigned(4) # 4 bit midi channel
     midi_payload: data.UnionLayout({
         "note_off": data.StructLayout({
+            "velocity": unsigned(8),
             "note": unsigned(8),
-            "velocity": unsigned(8)
         }),
         "note_on": data.StructLayout({
+            "velocity": unsigned(8),
             "note": unsigned(8),
-            "velocity": unsigned(8)
         }),
         "poly_pressure": data.StructLayout({
+            "pressure": unsigned(8),
             "note": unsigned(8),
-            "pressure": unsigned(8)
         }),
         "control_change": data.StructLayout({
+            "data": unsigned(8),
             "controller_number": unsigned(8),
-            "data": unsigned(8)
         }),
         "program_change": data.StructLayout({
+            "_unused": unsigned(8),
             "program_number": unsigned(8),
-            "_unused": unsigned(8)
         }),
         "channel_pressure": data.StructLayout({
+            "_unused": unsigned(8),
             "pressure": unsigned(8),
-            "_unused": unsigned(8)
         }),
         "pitch_bend": data.StructLayout({
+            "msb": unsigned(8),
             "lsb": unsigned(8),
-            "msb": unsigned(8)
         }),
     })
+    midi_channel: unsigned(4) # 4 bit midi channel
+    midi_type:    MessageType # 4 bit message type
 
 class SerialRx(wiring.Component):
 
@@ -103,8 +103,8 @@ class MidiDecode(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 # all valid command messages have highest bit set
-                with m.If(self.i.valid & (self.i.payload & 0x80)):
-                    m.d.sync += self.o.payload.as_value()[:8].eq(self.i.payload)
+                with m.If(self.i.valid & self.i.payload[7]):
+                    m.d.sync += self.o.payload.as_value()[16:24].eq(self.i.payload)
                     m.next = 'READ0'
                     # skip anything that looks suspicious
             with m.State('READ0'):
@@ -115,7 +115,7 @@ class MidiDecode(wiring.Component):
             with m.State('READ1'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                    m.d.sync += self.o.payload.as_value()[16:24].eq(self.i.payload)
+                    m.d.sync += self.o.payload.as_value()[:8].eq(self.i.payload)
                     m.next = 'WAIT-READY'
             with m.State('WAIT-READY'):
                 m.d.comb += self.o.valid.eq(1),

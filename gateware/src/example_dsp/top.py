@@ -24,6 +24,7 @@ from tiliqua.eurorack_pmod    import ASQ
 from amaranth.back import verilog
 from tiliqua       import sim
 
+from vendor.ila import AsyncSerialILA, AsyncSerialILAFrontend
 
 class Mirror(wiring.Component):
 
@@ -457,9 +458,9 @@ class MidiCVTop(wiring.Component):
                     m.d.sync += [
                         self.o.payload[0].eq(fixed.Const(0.25, shape=ASQ)),
                         self.o.payload[1].as_value().eq(
-                            msg.midi_payload.note_on.note),
+                            msg.midi_payload.note_on.note << 8),
                         self.o.payload[2].as_value().eq(
-                            msg.midi_payload.note_on.velocity),
+                            msg.midi_payload.note_on.velocity << 8),
                     ]
                 with m.Case(midi.MessageType.NOTE_OFF):
                     m.d.sync += [
@@ -468,7 +469,7 @@ class MidiCVTop(wiring.Component):
                 with m.Case(midi.MessageType.PITCH_BEND):
                     m.d.sync += [
                         self.o.payload[3].as_value().eq(
-                            msg.midi_payload.pitch_bend.msb),
+                            msg.midi_payload.pitch_bend.msb << 8),
                     ]
 
         return m
@@ -518,6 +519,27 @@ class CoreTop(Elaboratable):
             wiring.connect(m, midi_decode.o, self.core.i_midi)
             m.d.comb += platform.request("led_a").o.eq(~uart_pins.rx.i),
 
+            msg_type = Signal(unsigned(4))
+            m.d.comb += msg_type.eq(midi_decode.o.payload.midi_type)
+            ila_signals = [
+                uart_pins.rx.i,
+                serialrx.phy.data,
+                serialrx.phy.rdy,
+                serialrx.phy.ack,
+                midi_decode.i.payload,
+                midi_decode.i.valid,
+                midi_decode.o.payload.as_value(),
+                msg_type,
+            ]
+            self.ila = AsyncSerialILA(signals=ila_signals,
+                                      sample_depth=8192, divisor=521,
+                                      domain='usb', sample_rate=60e6)
+            m.submodules += self.ila
+            m.d.comb += [
+                self.ila.trigger.eq(~uart_pins.rx.i),
+                platform.request("uart", 0).tx.o.eq(self.ila.tx),
+            ]
+
         return m
 
 def get_core(name):
@@ -549,7 +571,10 @@ def build(core_name: str):
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     touch, cls_core = get_core(core_name)
-    TiliquaPlatform().build(CoreTop(cls_core, touch=touch))
+    top = CoreTop(cls_core, touch=touch)
+    TiliquaPlatform().build(top)
+    frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
+    frontend.emit_vcd("out.vcd")
 
 def simulate(core_name: str):
     """Simulate a top-level DSP core using Verilator."""
