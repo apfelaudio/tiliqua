@@ -1,4 +1,9 @@
-# Helpers for dealing with MIDI over serial or USB.
+# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
+#
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+#
+
+"""Helpers for dealing with MIDI over serial or USB."""
 
 from amaranth import *
 from amaranth.lib.fifo import SyncFIFOBuffered

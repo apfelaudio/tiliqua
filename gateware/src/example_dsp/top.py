@@ -1,6 +1,9 @@
-# Copyright (c) 2024 Seb Holzapfel <me@sebholzapfel.com>
+# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
-# SPDX-License-Identifier: BSD--3-Clause
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+#
+
+"""Collection of designs showing how to use the DSP library."""
 
 import os
 import sys
@@ -23,8 +26,6 @@ from tiliqua.eurorack_pmod    import ASQ
 # for sim
 from amaranth.back import verilog
 from tiliqua       import sim
-
-from vendor.ila import AsyncSerialILA, AsyncSerialILAFrontend
 
 class Mirror(wiring.Component):
 
@@ -548,34 +549,15 @@ class CoreTop(Elaboratable):
         wiring.connect(m, self.core.o, audio_stream.ostream)
 
         if hasattr(self.core, "i_midi"):
+            # For now, if a core requests midi input, we connect it up
+            # to the type-A serial MIDI RX input. In theory this bytestream
+            # could also come from LUNA in host or device mode.
             uart_pins = platform.request("uart", 1)
             m.submodules.serialrx = serialrx = midi.SerialRx(
                     system_clk_hz=60e6, pins=uart_pins)
             m.submodules.midi_decode = midi_decode = midi.MidiDecode()
             wiring.connect(m, serialrx.o, midi_decode.i)
             wiring.connect(m, midi_decode.o, self.core.i_midi)
-            m.d.comb += platform.request("led_a").o.eq(~uart_pins.rx.i),
-
-            msg_type = Signal(unsigned(4))
-            m.d.comb += msg_type.eq(midi_decode.o.payload.midi_type)
-            ila_signals = [
-                uart_pins.rx.i,
-                serialrx.phy.data,
-                serialrx.phy.rdy,
-                serialrx.phy.ack,
-                midi_decode.i.payload,
-                midi_decode.i.valid,
-                midi_decode.o.payload.as_value(),
-                msg_type,
-            ]
-            self.ila = AsyncSerialILA(signals=ila_signals,
-                                      sample_depth=8192, divisor=521,
-                                      domain='usb', sample_rate=60e6)
-            m.submodules += self.ila
-            m.d.comb += [
-                self.ila.trigger.eq(~uart_pins.rx.i),
-                platform.request("uart", 0).tx.o.eq(self.ila.tx),
-            ]
 
         return m
 
@@ -610,8 +592,6 @@ def build(core_name: str):
     touch, cls_core = get_core(core_name)
     top = CoreTop(cls_core, touch=touch)
     TiliquaPlatform().build(top)
-    frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
-    frontend.emit_vcd("out.vcd")
 
 def simulate(core_name: str):
     """Simulate a top-level DSP core using Verilator."""
