@@ -436,6 +436,12 @@ class MidiPolyTop(wiring.Component):
 
     """
     Simple polyphonic MIDI synthesizer.
+
+    Each voice is routed to a separate output channel and goes through
+    a filter that can be modulated by the note velocity or mod wheel.
+
+    TODO: Add DC blockers on output channels. When SVF cutoff is zero the
+    outputs stick at DC.
     """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -464,15 +470,31 @@ class MidiPolyTop(wiring.Component):
 
         # Create our MIDI voice tracker, oscillators, VCA
         voice_tracker = midi.MidiVoiceTracker(max_voices=max_voices)
-        ncos = [dsp.SawNCO(shift=2) for _ in range(max_voices)]
-        vcas = [dsp.VCA() for _ in range(max_voices)]
+        ncos = [dsp.SawNCO(shift=0) for _ in range(max_voices)]
+        svfs = [dsp.SVF() for _ in range(max_voices)]
         merge4 = dsp.Merge(n_channels=4)
-        m.submodules += [voice_tracker, ncos, vcas, merge4]
+        m.submodules += [voice_tracker, ncos, svfs, merge4]
 
         # Connect MIDI stream -> voice tracker
         wiring.connect(m, wiring.flipped(self.i_midi), voice_tracker.i)
 
+        # Use CC1 (mod wheel) as upper bound on filter cutoff.
+        last_cc1 = Signal(8, reset=255)
+        with m.If(self.i_midi.valid):
+            msg = self.i_midi.payload
+            with m.Switch(msg.midi_type):
+                with m.Case(midi.MessageType.CONTROL_CHANGE):
+                    # mod wheel is CC 1
+                    with m.If(msg.midi_payload.control_change.controller_number == 1):
+                        m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
+
         for n in range(max_voices):
+
+            # Filter cutoff on all channels is min(mod wheel, note velocity)
+            with m.If(last_cc1 < voice_tracker.o[n].payload.velocity):
+                m.d.comb += svfs[n].i.payload.cutoff.sas_value().eq(last_cc1 << 4)
+            with m.Else():
+                m.d.comb += svfs[n].i.payload.cutoff.sas_value().eq(voice_tracker.o[n].payload.velocity << 4)
 
             m.d.comb += [
                 # Connect voice.note -> note to frequency LUT
@@ -483,15 +505,17 @@ class MidiPolyTop(wiring.Component):
                 ncos[n].i.valid.eq(self.i.valid),
                 ncos[n].i.payload.freq_inc.eq(rports[n].data),
 
-                # Connect voice.vel and NCO.o -> VCA.i
-                vcas[n].i.valid.eq(ncos[n].o.valid),
-                vcas[n].i.payload[0].eq(ncos[n].o.payload),
-                vcas[n].i.payload[1].eq(voice_tracker.o[n].payload.velocity << 8),
-                ncos[n].o.ready.eq(vcas[n].i.ready),
-            ]
+                # Connect voice.vel and NCO.o -> SVF.i
+                svfs[n].i.valid.eq(ncos[n].o.valid),
+                svfs[n].i.payload.x.eq(ncos[n].o.payload >> 2),
+                svfs[n].i.payload.resonance.sas_value().eq(8000),
+                ncos[n].o.ready.eq(svfs[n].i.ready),
 
-            # Connect vcas -> merge4
-            wiring.connect(m, vcas[n].o, merge4.i[n]),
+                # Connect SVF -> merge4 channel
+                svfs[n].o.ready.eq(merge4.i[n].ready),
+                merge4.i[n].valid.eq(svfs[n].o.valid),
+                merge4.i[n].payload.eq(svfs[n].o.payload.lp),
+            ]
 
         # One channel per voice -> output
         wiring.connect(m, merge4.o, wiring.flipped(self.o)),
