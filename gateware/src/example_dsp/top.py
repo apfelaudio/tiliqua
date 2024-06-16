@@ -434,6 +434,10 @@ class QuadNCO(wiring.Component):
 
 class MidiPolyTop(wiring.Component):
 
+    """
+    Simple polyphonic MIDI synthesizer.
+    """
+
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
@@ -443,33 +447,53 @@ class MidiPolyTop(wiring.Component):
         m = Module()
 
         max_voices = 4
-        m.submodules.voice_tracker = voice_tracker = midi.MidiVoiceTracker(max_voices=max_voices)
-        ncos = [dsp.SawNCO(shift=4) for _ in range(max_voices)]
-        vcas = [dsp.VCA() for _ in range(max_voices)]
-        m.submodules += ncos
-        m.submodules += vcas
-        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
-        # MIDI -> voice tracker
+        # Create LUTs from midi note to freq_inc (ASQ tuning into NCO).
+        # Store it in memories where the address is the midi note,
+        # and the data coming out is directly routed to NCO freq_inc.
+        lut = []
+        sample_rate_hz = 48000
+        for i in range(128):
+            freq = 440 * 2**((i-69)/12.0)
+            freq_inc = freq * (1.0 / sample_rate_hz)
+            lut.append(fixed.Const(freq_inc, shape=ASQ)._value)
+        mems = [Memory(width=ASQ.as_shape().width, depth=len(lut), init=lut)
+                for _ in range(max_voices)]
+        rports = [mems[n].read_port(transparent=True) for n in range(max_voices)]
+        m.submodules += mems
+
+        # Create our MIDI voice tracker, oscillators, VCA
+        voice_tracker = midi.MidiVoiceTracker(max_voices=max_voices)
+        ncos = [dsp.SawNCO(shift=2) for _ in range(max_voices)]
+        vcas = [dsp.VCA() for _ in range(max_voices)]
+        merge4 = dsp.Merge(n_channels=4)
+        m.submodules += [voice_tracker, ncos, vcas, merge4]
+
+        # Connect MIDI stream -> voice tracker
         wiring.connect(m, wiring.flipped(self.i_midi), voice_tracker.i)
 
         for n in range(max_voices):
 
             m.d.comb += [
-                # voice.note -> NCO.i
-                ncos[n].i.valid.eq(self.i.valid),
-                ncos[n].i.payload.freq_inc.eq(voice_tracker.o[n].payload.note),
+                # Connect voice.note -> note to frequency LUT
+                rports[n].en.eq(1),
+                rports[n].addr.eq(voice_tracker.o[n].payload.note),
 
-                # voice.vel and NCO.o -> VCA.i
+                # Connect LUT output -> NCO.i (clocked at i.valid for normal sample rate)
+                ncos[n].i.valid.eq(self.i.valid),
+                ncos[n].i.payload.freq_inc.eq(rports[n].data),
+
+                # Connect voice.vel and NCO.o -> VCA.i
                 vcas[n].i.valid.eq(ncos[n].o.valid),
                 vcas[n].i.payload[0].eq(ncos[n].o.payload),
                 vcas[n].i.payload[1].eq(voice_tracker.o[n].payload.velocity << 8),
                 ncos[n].o.ready.eq(vcas[n].i.ready),
             ]
 
-            # vcas -> merge4
+            # Connect vcas -> merge4
             wiring.connect(m, vcas[n].o, merge4.i[n]),
 
+        # One channel per voice -> output
         wiring.connect(m, merge4.o, wiring.flipped(self.o)),
 
         return m
