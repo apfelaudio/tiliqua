@@ -5,13 +5,13 @@
 
 """Helpers for dealing with MIDI over serial or USB."""
 
-from amaranth import *
-from amaranth.lib.fifo import SyncFIFOBuffered
+from amaranth              import *
+from amaranth.lib.fifo     import SyncFIFOBuffered
 from amaranth.lib          import wiring, data, enum
 from amaranth.lib.wiring   import In, Out
 
-from amaranth_future import stream
-from vendor.serial import AsyncSerialRX
+from amaranth_future       import stream
+from vendor.serial         import AsyncSerialRX
 
 MIDI_BAUD_RATE = 31250
 
@@ -126,5 +126,73 @@ class MidiDecode(wiring.Component):
                 m.d.comb += self.o.valid.eq(1),
                 with m.If(self.o.ready):
                     m.next = 'WAIT-VALID'
+
+        return m
+
+class MidiVoice(data.Struct):
+    note:     unsigned(8)
+    velocity: unsigned(8)
+
+class MidiVoiceTracker(wiring.Component):
+
+    """
+    Read a stream of MIDI messages. Decode it into `max_voices` independent
+    streams, one stream per voice, with voice culling. Outgoing streams have
+    'valid' wired to 1, be careful how you synchronize them.
+    """
+
+    def __init__(self, max_voices=8):
+        self.max_voices = max_voices
+        super().__init__({
+            "i": In(stream.Signature(MidiMessage)),
+            "o": Out(stream.Signature(MidiVoice)).array(max_voices),
+        });
+
+    def elaborate(self, platform):
+        m = Module()
+
+        c_voice = Signal(range(self.max_voices))
+        msg = Signal(MidiMessage)
+
+        for n in range(self.max_voices):
+            m.d.comb += self.o[n].valid.eq(1)
+
+        with m.FSM() as fsm:
+
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.i.ready.eq(1),
+                with m.If(self.i.valid):
+                    with m.Switch(self.i.payload.midi_type):
+                        with m.Case(MessageType.NOTE_ON):
+                            m.d.sync += msg.eq(self.i.payload)
+                            m.next = 'NOTE-ON'
+                        with m.Case(MessageType.NOTE_OFF):
+                            m.d.sync += msg.eq(self.i.payload)
+                            m.next = 'NOTE-OFF'
+
+            with m.State('NOTE-ON'):
+                # Simple round robin selection of voice location
+                # TODO: if there is a slot that previously had this note, write
+                # the new velocity there for retriggering.
+                with m.If(c_voice == self.max_voices - 1):
+                    m.d.sync += c_voice.eq(0)
+                with m.Else():
+                    m.d.sync += c_voice.eq(c_voice + 1)
+                # Set voice in current location to MIDI payload attributes
+                with m.Switch(c_voice):
+                    for n in range(self.max_voices):
+                        with m.Case(n):
+                            m.d.sync += [
+                                self.o[n].payload.note.eq(msg.midi_payload.note_on.note),
+                                self.o[n].payload.velocity.eq(msg.midi_payload.note_on.velocity),
+                            ]
+                m.next = 'WAIT-VALID'
+
+            with m.State('NOTE-OFF'):
+                # Cull any voice that matches the MIDI payload note #
+                for n in range(self.max_voices):
+                    with m.If(self.o[n].payload.note == msg.midi_payload.note_on.note):
+                        m.d.sync += self.o[n].payload.velocity.eq(0)
+                m.next = 'WAIT-VALID'
 
         return m
