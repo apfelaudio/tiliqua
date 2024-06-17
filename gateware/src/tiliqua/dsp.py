@@ -320,6 +320,13 @@ class SVF(wiring.Component):
         n_oversample = 2
         oversample = Signal(8)
 
+        # shared multiplier for z = a*b+c
+        mac_a = Signal(dtype)
+        mac_b = Signal(dtype)
+        mac_c = Signal(dtype)
+        mac_z = Signal(dtype)
+        m.d.comb += mac_z.eq(mac_a*mac_b + mac_c)
+
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
@@ -333,13 +340,28 @@ class SVF(wiring.Component):
                        m.d.sync += kQinv.eq(self.i.payload.resonance)
                    m.next = 'MAC0'
             with m.State('MAC0'):
-                m.d.sync += alp.eq(abp*kK + alp)
+                m.d.comb += [
+                    mac_a.eq(abp),
+                    mac_b.eq(kK),
+                    mac_c.eq(alp),
+                ]
+                m.d.sync += alp.eq(mac_z)
                 m.next = 'MAC1'
             with m.State('MAC1'):
-                m.d.sync += ahp.eq(x - alp - kQinv*abp)
+                m.d.comb += [
+                    mac_a.eq(abp),
+                    mac_b.eq(-kQinv),
+                    mac_c.eq(x - alp),
+                ]
+                m.d.sync += ahp.eq(mac_z)
                 m.next = 'MAC2'
             with m.State('MAC2'):
-                m.d.sync += abp.eq(ahp*kK + abp)
+                m.d.comb += [
+                    mac_a.eq(ahp),
+                    mac_b.eq(kK),
+                    mac_c.eq(abp),
+                ]
+                m.d.sync += abp.eq(mac_z)
                 with m.If(oversample != n_oversample - 1):
                     m.d.sync += oversample.eq(oversample + 1)
                     m.next = 'MAC0'
@@ -627,8 +649,8 @@ class MatrixMix(wiring.Component):
         # coefficient update logic
 
         m.d.comb += [
-            self.c.ready.eq(1),
-            rport.addr.eq(Cat(self.c.payload.o_x, self.c.payload.i_y)),
+            self.c.ready.eq(1), # TODO: replace: state == WAIT-VALID || WAIT-READY
+            wport.addr.eq(Cat(self.c.payload.o_x, self.c.payload.i_y)),
             wport.en.eq(self.c.valid),
             wport.data.eq(self.c.payload.v),
         ]

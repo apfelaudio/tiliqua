@@ -452,7 +452,7 @@ class MidiPolyTop(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        max_voices = 4
+        max_voices = 8
 
         # Create LUTs from midi note to freq_inc (ASQ tuning into NCO).
         # Store it in memories where the address is the midi note,
@@ -472,8 +472,8 @@ class MidiPolyTop(wiring.Component):
         voice_tracker = midi.MidiVoiceTracker(max_voices=max_voices)
         ncos = [dsp.SawNCO(shift=0) for _ in range(max_voices)]
         svfs = [dsp.SVF() for _ in range(max_voices)]
-        merge4 = dsp.Merge(n_channels=4)
-        m.submodules += [voice_tracker, ncos, svfs, merge4]
+        merge = dsp.Merge(n_channels=max_voices)
+        m.submodules += [voice_tracker, ncos, svfs, merge]
 
         # Connect MIDI stream -> voice tracker
         wiring.connect(m, wiring.flipped(self.i_midi), voice_tracker.i)
@@ -511,14 +511,26 @@ class MidiPolyTop(wiring.Component):
                 svfs[n].i.payload.resonance.sas_value().eq(8000),
                 ncos[n].o.ready.eq(svfs[n].i.ready),
 
-                # Connect SVF -> merge4 channel
-                svfs[n].o.ready.eq(merge4.i[n].ready),
-                merge4.i[n].valid.eq(svfs[n].o.valid),
-                merge4.i[n].payload.eq(svfs[n].o.payload.lp),
+                # Connect SVF -> merge channel
+                svfs[n].o.ready.eq(merge.i[n].ready),
+                merge.i[n].valid.eq(svfs[n].o.valid),
+                merge.i[n].payload.eq(svfs[n].o.payload.lp),
             ]
 
-        # One channel per voice -> output
-        wiring.connect(m, merge4.o, wiring.flipped(self.o)),
+        # Output mixer
+        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
+            i_channels=max_voices, o_channels=4,
+            coefficients=[[0.0, 0.0, 0.0,  -0.25],
+                          [0.0, 0.0, 0.25, 0.0],
+                          [0.0, 0.0, 0.0,  -0.25],
+                          [0.0, 0.0, -0.25, 0.0],
+                          [0.0, 0.0, 0.0,  0.25],
+                          [0.0, 0.0, 0.25, 0.0],
+                          [0.0, 0.0, 0.0,  0.25],
+                          [0.0, 0.0, -0.25, 0.0]])
+
+        wiring.connect(m, merge.o, matrix_mix.i),
+        wiring.connect(m, matrix_mix.o, wiring.flipped(self.o)),
 
         return m
 
