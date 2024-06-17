@@ -437,11 +437,12 @@ class MidiPolyTop(wiring.Component):
     """
     Simple polyphonic MIDI synthesizer.
 
-    Each voice is routed to a separate output channel and goes through
-    a filter that can be modulated by the note velocity or mod wheel.
+    Each voice is a separate stream and goes through filters
+    that can be modulated by the note velocity or mod wheel.
 
-    TODO: Add DC blockers on output channels. When SVF cutoff is zero the
-    outputs stick at DC.
+    At the end we mix down to stereo, spreading the voices
+    left/right in the stereo field for a wider effect.
+
     """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -452,7 +453,7 @@ class MidiPolyTop(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        max_voices = 8
+        n_voices = 8
 
         # Create LUTs from midi note to freq_inc (ASQ tuning into NCO).
         # Store it in memories where the address is the midi note,
@@ -464,15 +465,15 @@ class MidiPolyTop(wiring.Component):
             freq_inc = freq * (1.0 / sample_rate_hz)
             lut.append(fixed.Const(freq_inc, shape=ASQ)._value)
         mems = [Memory(width=ASQ.as_shape().width, depth=len(lut), init=lut)
-                for _ in range(max_voices)]
-        rports = [mems[n].read_port(transparent=True) for n in range(max_voices)]
+                for _ in range(n_voices)]
+        rports = [mems[n].read_port(transparent=True) for n in range(n_voices)]
         m.submodules += mems
 
         # Create our MIDI voice tracker, oscillators, VCA
-        voice_tracker = midi.MidiVoiceTracker(max_voices=max_voices)
-        ncos = [dsp.SawNCO(shift=0) for _ in range(max_voices)]
-        svfs = [dsp.SVF() for _ in range(max_voices)]
-        merge = dsp.Merge(n_channels=max_voices)
+        voice_tracker = midi.MidiVoiceTracker(max_voices=n_voices)
+        ncos = [dsp.SawNCO(shift=0) for _ in range(n_voices)]
+        svfs = [dsp.SVF() for _ in range(n_voices)]
+        merge = dsp.Merge(n_channels=n_voices)
         m.submodules += [voice_tracker, ncos, svfs, merge]
 
         # Connect MIDI stream -> voice tracker
@@ -488,7 +489,7 @@ class MidiPolyTop(wiring.Component):
                     with m.If(msg.midi_payload.control_change.controller_number == 1):
                         m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
 
-        for n in range(max_voices):
+        for n in range(n_voices):
 
             # Filter cutoff on all channels is min(mod wheel, note velocity)
             with m.If(last_cc1 < voice_tracker.o[n].payload.velocity):
@@ -507,7 +508,7 @@ class MidiPolyTop(wiring.Component):
 
                 # Connect voice.vel and NCO.o -> SVF.i
                 svfs[n].i.valid.eq(ncos[n].o.valid),
-                svfs[n].i.payload.x.eq(ncos[n].o.payload >> 2),
+                svfs[n].i.payload.x.eq(ncos[n].o.payload >> 1),
                 svfs[n].i.payload.resonance.sas_value().eq(8000),
                 ncos[n].o.ready.eq(svfs[n].i.ready),
 
@@ -517,20 +518,40 @@ class MidiPolyTop(wiring.Component):
                 merge.i[n].payload.eq(svfs[n].o.payload.lp),
             ]
 
-        # Output mixer
+        # Voice mixdown to stereo
+        o_channels = 2
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
-            i_channels=max_voices, o_channels=4,
-            coefficients=[[0.0, 0.0, 0.0,  -0.25],
-                          [0.0, 0.0, 0.25, 0.0],
-                          [0.0, 0.0, 0.0,  -0.25],
-                          [0.0, 0.0, -0.25, 0.0],
-                          [0.0, 0.0, 0.0,  0.25],
-                          [0.0, 0.0, 0.25, 0.0],
-                          [0.0, 0.0, 0.0,  0.25],
-                          [0.0, 0.0, -0.25, 0.0]])
-
+            i_channels=n_voices, o_channels=o_channels,
+            coefficients=[[o_channels/n_voices, 0.0                ],
+                          [0.0,                 o_channels/n_voices],
+                          [o_channels/n_voices, 0.0                ],
+                          [0.0,                 o_channels/n_voices],
+                          [o_channels/n_voices, 0.0                ],
+                          [0.0,                 o_channels/n_voices],
+                          [o_channels/n_voices, 0.0                ],
+                          [0.0,                 o_channels/n_voices]])
         wiring.connect(m, merge.o, matrix_mix.i),
-        wiring.connect(m, matrix_mix.o, wiring.flipped(self.o)),
+
+        # Stereo HPF to remove DC from any voices in 'zero cutoff'
+        # Route to audio output channels 2 & 3
+        output_hpfs = [dsp.SVF() for _ in range(o_channels)]
+        m.submodules += output_hpfs
+        m.d.comb += [
+            matrix_mix.o.ready.eq(output_hpfs[0].i.ready & output_hpfs[1].i.ready),
+            output_hpfs[0].i.valid.eq(matrix_mix.o.valid),
+            output_hpfs[1].i.valid.eq(matrix_mix.o.valid),
+            output_hpfs[0].i.payload.x.eq(matrix_mix.o.payload[0]),
+            output_hpfs[1].i.payload.x.eq(matrix_mix.o.payload[1]),
+            output_hpfs[0].i.payload.cutoff.sas_value().eq(50),
+            output_hpfs[1].i.payload.cutoff.sas_value().eq(50),
+            output_hpfs[0].i.payload.resonance.sas_value().eq(20000),
+            output_hpfs[1].i.payload.resonance.sas_value().eq(20000),
+            output_hpfs[0].o.ready.eq(self.o.ready),
+            output_hpfs[1].o.ready.eq(self.o.ready),
+            self.o.payload[2].eq(output_hpfs[0].o.payload.hp << 2),
+            self.o.payload[3].eq(output_hpfs[1].o.payload.hp << 2),
+            self.o.valid.eq(output_hpfs[0].o.valid & output_hpfs[1].o.valid),
+        ]
 
         return m
 
