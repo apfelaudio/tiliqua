@@ -5,7 +5,7 @@
 groups = ["default", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:193bd8bf83fa1662341f73903a7a62f7c4534cecb15245bc474449392f92ddd4"
+content_hash = "sha256:49199a4d76fe79f5a024e6b86638fde9af608c3f754ec071c52e30a947f1f941"
 
 [[package]]
 name = "amaranth"
@@ -166,6 +166,38 @@ dependencies = [
     "pyusb>1.1.1",
     "pyvcd>=0.2.4",
     "usb-protocol~=0.9",
+]
+
+[[package]]
+name = "luna-soc"
+version = "0.1.0"
+requires_python = ">=3.8"
+git = "https://github.com/greatscottgadgets/luna-soc"
+ref = "main"
+revision = "3132c898e85eaf9cbb9edad2b2b9000179baa2f1"
+summary = "Amaranth HDL libary for building SoCs with LUNA USB peripherals."
+groups = ["default"]
+dependencies = [
+    "luna-usb~=0.1",
+]
+
+[[package]]
+name = "luna-usb"
+version = "0.1.0"
+requires_python = ">=3.8"
+summary = "Amaranth HDL framework for FPGA-based USB solutions"
+groups = ["default"]
+dependencies = [
+    "amaranth~=0.4.0",
+    "libusb1>1.9.2",
+    "pyserial>=3.5",
+    "pyusb>1.1.1",
+    "pyvcd>=0.2.4",
+    "usb-protocol~=0.9",
+]
+files = [
+    {file = "luna_usb-0.1.0-py3-none-any.whl", hash = "sha256:53c36c4a067606f05bb1e618d338613455084f7fdaf5a24b34a847854c1bff86"},
+    {file = "luna_usb-0.1.0.tar.gz", hash = "sha256:894755977597473df686e456c7104ffb332b5a357f01d4b714031ee42d838d41"},
 ]
 
 [[package]]
