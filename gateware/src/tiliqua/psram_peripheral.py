@@ -1,3 +1,6 @@
+# This file re-uses some of `interfaces/psram` from LUNA.
+#
+# Copyright (c) 2020 Great Scott Gadgets <info@greatscottgadgets.com>
 # Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -5,12 +8,12 @@
 from amaranth       import *
 from amaranth.utils import log2_int
 
-from luna.gateware.interface.psram import HyperRAMDQSPHY, HyperRAMDQSInterface
-
 from luna_soc.gateware.vendor.lambdasoc.periph    import Peripheral
 from luna_soc.gateware.vendor.amaranth_soc        import wishbone
 from luna_soc.gateware.vendor.amaranth_soc.memory import MemoryMap
 from luna_soc.gateware.vendor.amaranth_soc.periph import ConstantMap
+
+from vendor.psram import HyperRAMDQSPHY, HyperRAMDQSInterface
 
 class FakeHyperRAMDQSInterface(Elaboratable):
 
@@ -104,7 +107,7 @@ class FakeHyperRAMDQSInterface(Elaboratable):
 class PSRAMPeripheral(Peripheral, Elaboratable):
 
     """
-    PSRAM peripheral with multiple masters and burst support.
+    Wishbone PSRAM peripheral with multiple masters and burst support.
 
     You can add this to an SoC as an ordinary peripheral, however it also
     has an internal arbiter (for multiple DMA masters) using add_master().
