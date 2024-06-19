@@ -110,19 +110,28 @@ class MidiDecode(wiring.Component):
                 # all valid command messages have highest bit set
                 with m.If(self.i.valid & self.i.payload[7]):
                     m.d.sync += self.o.payload.as_value()[16:24].eq(self.i.payload)
+                    # TODO: handle 0-byte payload messages
                     m.next = 'READ0'
-                    # skip anything that looks suspicious
+                    # skip anything that doesn't look like a command message
             with m.State('READ0'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
                     m.d.sync += self.o.payload.as_value()[8:16].eq(self.i.payload)
-                    m.next = 'READ1'
+                    with m.Switch(self.o.payload.midi_type):
+                        # 1-byte payload
+                        with m.Case(MessageType.CHANNEL_PRESSURE,
+                                    MessageType.PROGRAM_CHANGE):
+                            m.next = 'WAIT-READY'
+                        # 2-byte payload
+                        with m.Default():
+                            m.next = 'READ1'
             with m.State('READ1'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
                     m.d.sync += self.o.payload.as_value()[:8].eq(self.i.payload)
                     m.next = 'WAIT-READY'
             with m.State('WAIT-READY'):
+                # TODO: skip if it's a command we don't know how to parse.
                 m.d.comb += self.o.valid.eq(1),
                 with m.If(self.o.ready):
                     m.next = 'WAIT-VALID'
