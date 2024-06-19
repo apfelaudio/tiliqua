@@ -104,18 +104,27 @@ class MidiDecode(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
+        # If we're half-way through a message and don't get the rest of it
+        # for this timeout, we give up and ignore the message.
+        timeout = Signal(24)
+        timeout_cycles = 60000 # 1msec
+        m.d.sync += timeout.eq(timeout-1)
+
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 # all valid command messages have highest bit set
                 with m.If(self.i.valid & self.i.payload[7]):
+                    m.d.sync += timeout.eq(timeout_cycles)
                     m.d.sync += self.o.payload.as_value()[16:24].eq(self.i.payload)
                     # TODO: handle 0-byte payload messages
                     m.next = 'READ0'
                     # skip anything that doesn't look like a command message
             with m.State('READ0'):
                 m.d.comb += self.i.ready.eq(1),
-                with m.If(self.i.valid):
+                with m.If(timeout == 0):
+                    m.next = 'WAIT-VALID'
+                with m.Elif(self.i.valid):
                     m.d.sync += self.o.payload.as_value()[8:16].eq(self.i.payload)
                     with m.Switch(self.o.payload.midi_type):
                         # 1-byte payload
@@ -127,7 +136,9 @@ class MidiDecode(wiring.Component):
                             m.next = 'READ1'
             with m.State('READ1'):
                 m.d.comb += self.i.ready.eq(1),
-                with m.If(self.i.valid):
+                with m.If(timeout == 0):
+                    m.next = 'WAIT-VALID'
+                with m.Elif(self.i.valid):
                     m.d.sync += self.o.payload.as_value()[:8].eq(self.i.payload)
                     m.next = 'WAIT-READY'
             with m.State('WAIT-READY'):
