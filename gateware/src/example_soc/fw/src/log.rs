@@ -48,12 +48,19 @@ where
     }
 
     fn log(&self, record: &Record) {
+
         if !self.enabled(record.metadata()) {
             return;
         }
 
+        let color = match record.level() {
+            Level::Error => "31", // red
+            Level::Warn  => "33", // yellow
+            _            => "32", // green
+        };
+
         match self.writer.borrow_mut().as_mut() {
-            Some(writer) => match writeln!(writer, "{}\t{}", record.level(), record.args()) {
+            Some(writer) => match writeln!(writer, "[\x1B[{}m{}\x1B[0m] {}\r", color, record.level(), record.args()) {
                 Ok(()) => (),
                 Err(_e) => {
                     panic!("Logger failed to write to device");

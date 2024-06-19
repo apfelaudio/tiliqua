@@ -19,7 +19,7 @@ test = [
 
 [tool.pdm.scripts]
 test = { cmd = "pytest" }
-build_soc = { call = "example_soc.top:build()" }
+build_soc = { shell = "./scripts/build_soc.sh" }
 build_usb_audio = { call = "example_usb_audio.top:build(ila=False)" }
 build_usb_audio_ila = { call = "example_usb_audio.top:build(ila=True)" }
 build_dsp_core = { call = "example_dsp.top:build(sys.argv[1])" }

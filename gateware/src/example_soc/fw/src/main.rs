@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
 
+use core::panic::PanicInfo;
+
 use tiliqua_pac as pac;
 use lunasoc_hal as hal;
 
@@ -9,15 +11,28 @@ use hal::hal::delay::DelayUs;
 use tiliqua_fw::Serial0;
 use tiliqua_fw::Timer0;
 
-use log::info;
+use log::{info, error};
 
-use panic_halt as _;
 use riscv_rt::entry;
 
 #[riscv_rt::pre_init]
 unsafe fn pre_main() {
     pac::cpu::vexriscv::flush_icache();
     pac::cpu::vexriscv::flush_dcache();
+}
+
+#[cfg(not(test))]
+#[panic_handler]
+fn panic(panic_info: &PanicInfo) -> ! {
+    if let Some(location) = panic_info.location() {
+        error!("panic(): file '{}' at line {}",
+            location.file(),
+            location.line(),
+        );
+    } else {
+        error!("panic(): no location information");
+    }
+    loop {}
 }
 
 #[entry]

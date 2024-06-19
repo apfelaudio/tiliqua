@@ -2,7 +2,7 @@
 #
 #	 cargo install svd2rust form
 
-SVD := ../../../build/example_soc.svd
+SVD := ../../../build/soc.svd
 
 svd2rust:
 	rm -rf build src/generated.rs src/generated/

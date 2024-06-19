@@ -66,3 +66,27 @@ jobs:
         with:
           name: example-dsp-midicv.bit
           path: gateware/build/top.bit
+
+  ubuntu-bitstream-soc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pdm-project/setup-pdm@v3
+      - uses: YosysHQ/setup-oss-cad-suite@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            override: True
+            components: rustfmt, clippy, llvm-tools
+            target: riscv32imac-unknown-none-elf
+      - run: cargo install cargo-binutils svd2rust form
+      - run: git submodule update --init --recursive
+      - run: yosys --version
+      - run: |
+          pdm install
+          pdm build_soc
+        working-directory: gateware
+      - uses: actions/upload-artifact@v3
+        with:
+          name: example-soc.bit
+          path: gateware/build/top.bit
