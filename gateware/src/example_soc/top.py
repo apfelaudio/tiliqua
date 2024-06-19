@@ -18,6 +18,7 @@ from luna_soc.gateware.csr                       import GpioPeripheral, LedPerip
 from luna_soc.util.readbin                       import get_mem_data
 
 from tiliqua.tiliqua_platform                    import TiliquaPlatform
+from tiliqua.psram_peripheral                    import PSRAMPeripheral
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
@@ -50,6 +51,11 @@ class HelloSoc(Elaboratable):
             internal_sram_size=32768,
             internal_sram_init=firmware
         )
+
+        # ... add memory-mapped psram/hyperram peripheral (128Mbit)
+        psram_base = 0x20000000
+        self.soc.psram = PSRAMPeripheral(size=16*1024*1024)
+        self.soc.add_peripheral(self.soc.psram, addr=psram_base)
 
         # ... add our LED peripheral, for simple output ...
         self.leds = LedPeripheral()

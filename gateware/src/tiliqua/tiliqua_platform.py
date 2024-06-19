@@ -18,6 +18,8 @@ class _TiliquaPlatform(LatticeECP5Platform):
     default_clk = "clk48"
     default_rst = "rst"
 
+    ram_timings = dict(clock_skew = 127)
+
     resources   = [
         # BOOTSEL (shared)
         Resource("rst", 0, PinsN("C4", dir="i"), Attrs(IO_TYPE="LVCMOS33")),
@@ -106,14 +108,16 @@ class TiliquaDomainGenerator(Elaboratable):
         m.domains.fast   = ClockDomain()
         m.domains.audio  = ClockDomain()
         m.domains.raw48  = ClockDomain()
+        m.domains.hdmi   = ClockDomain()
+        m.domains.hdmi5x = ClockDomain()
 
 
         clk48 = platform.request(platform.default_clk, dir='i').i
         reset  = platform.request(platform.default_rst, dir='i').i
         #reset  = Signal(1, reset=0)
 
-        # ecppll -i 48 --clkout0 60 --clkout1 60 --reset -f pll60.v
-        # 60MHz for USB (currently also fast + sync domains)
+        # ecppll -i 48 --clkout0 60 --clkout1 120 --clkout2 40 --clkout3 200 --reset -f pll60.v
+        # 60MHz for USB (currently also sync domain. fast is for DQS)
 
         m.d.comb += [
             ClockSignal("raw48").eq(clk48),
@@ -128,7 +132,9 @@ class TiliquaDomainGenerator(Elaboratable):
 
                 # Generated clock outputs.
                 o_CLKOP=feedback60,
-                o_CLKOS=ClockSignal("usb"),
+                o_CLKOS=ClockSignal("fast"),
+                o_CLKOS2=ClockSignal("hdmi"),
+                o_CLKOS3=ClockSignal("hdmi5x"),
 
                 # Status.
                 o_LOCK=locked60,
@@ -148,9 +154,17 @@ class TiliquaDomainGenerator(Elaboratable):
                 p_CLKOP_CPHASE=4,
                 p_CLKOP_FPHASE=0,
                 p_CLKOS_ENABLE="ENABLED",
-                p_CLKOS_DIV=10,
+                p_CLKOS_DIV=5,
                 p_CLKOS_CPHASE=4,
                 p_CLKOS_FPHASE=0,
+                p_CLKOS2_ENABLE="ENABLED",
+                p_CLKOS2_DIV=15,
+                p_CLKOS2_CPHASE=4,
+                p_CLKOS2_FPHASE=0,
+                p_CLKOS3_ENABLE="ENABLED",
+                p_CLKOS3_DIV=3,
+                p_CLKOS3_CPHASE=4,
+                p_CLKOS3_FPHASE=0,
                 p_FEEDBK_PATH="CLKOP",
                 p_CLKFB_DIV=5,
 
@@ -177,7 +191,6 @@ class TiliquaDomainGenerator(Elaboratable):
                 a_ICP_CURRENT="12",
                 a_LPF_RESISTOR="8"
         )
-
 
         # ecppll -i 48 --clkout0 12.288 --highres --reset -f pll2.v
         # 12.288MHz for 256*Fs Audio domain (48KHz Fs)
@@ -246,11 +259,14 @@ class TiliquaDomainGenerator(Elaboratable):
 
         # Derived clocks and resets
         m.d.comb += [
-            ClockSignal("sync")  .eq(ClockSignal("usb")),
-            ClockSignal("fast")  .eq(ClockSignal("usb")),
+            ClockSignal("sync")  .eq(feedback60),
+            ClockSignal("usb")   .eq(feedback60),
+
             ResetSignal("sync")  .eq(~locked60),
             ResetSignal("fast")  .eq(~locked60),
             ResetSignal("usb")   .eq(~locked60),
+            ResetSignal("hdmi")  .eq(~locked60),
+            ResetSignal("hdmi5x").eq(~locked60),
 
             ResetSignal("audio")   .eq(~locked12),
         ]
