@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
       - run: yosys --version
@@ -15,7 +15,7 @@ jobs:
           pdm install
           pdm build_usb_audio
         working-directory: gateware
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: example-usb-audio.bit
           path: gateware/build/top.bit
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
       - run: yosys --version
@@ -32,7 +32,7 @@ jobs:
           pdm install
           pdm build_dsp_core nco
         working-directory: gateware
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: example-dsp-svf.bit
           path: gateware/build/top.bit
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
       - run: yosys --version
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
       - run: yosys --version
@@ -62,7 +62,7 @@ jobs:
           pdm install
           pdm build_dsp_core midicv
         working-directory: gateware
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: example-dsp-midicv.bit
           path: gateware/build/top.bit
@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v3
+      - uses: pdm-project/setup-pdm@v4
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - uses: actions-rs/toolchain@v1
         with:
@@ -86,7 +86,7 @@ jobs:
           pdm install
           pdm build_soc
         working-directory: gateware
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: example-soc.bit
           path: gateware/build/top.bit
