@@ -305,3 +305,26 @@ class DSPTests(unittest.TestCase):
         sim.add_process(testbench)
         with sim.write_vcd(vcd_file=open("test_resample.vcd", "w")):
             sim.run()
+
+    def test_boxcar(self):
+
+        boxcar = dsp.Boxcar(n=4, dc_block=True)
+
+        def testbench():
+            for n in range(0, 1024):
+                x = fixed.Const(0.1+0.4*(math.sin(n*0.2) + math.sin(n)), shape=ASQ)
+                yield boxcar.i.payload.eq(x)
+                yield boxcar.i.valid.eq(1)
+                yield Tick()
+                yield boxcar.i.valid.eq(0)
+                yield Tick()
+                yield boxcar.o.ready.eq(1)
+                while (yield boxcar.i.ready) != 1:
+                    yield Tick()
+                yield Tick()
+
+        sim = Simulator(boxcar)
+        sim.add_clock(1e-6)
+        sim.add_process(testbench)
+        with sim.write_vcd(vcd_file=open("test_boxcar.vcd", "w")):
+            sim.run()

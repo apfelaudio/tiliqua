@@ -877,3 +877,68 @@ class Resample(wiring.Component):
                 m.d.sync += downsample_counter.eq(downsample_counter - 1)
 
         return m
+
+class Boxcar(wiring.Component):
+
+    """
+    Simple Boxcar Average.
+
+    Average of previous N samples, implemented with an accumulator.
+    Requires no multiplies, often useful for simple smoothing.
+
+    Can be used in low- or high-pass mode.
+    """
+
+    i: In(stream.Signature(ASQ))
+    o: Out(stream.Signature(ASQ))
+
+    def __init__(self, n: int=32, hpf=False):
+        # pow2 constraint on N allows us to shift instead of divide
+        assert(2**log2_int(n) == n)
+        self.n = n
+        self.hpf = hpf
+        super().__init__()
+
+    def elaborate(self, platform):
+
+        m = Module()
+
+        # accumulator should be large enough to fit N samples
+        accumulator = Signal(fixed.SQ(2 + log2_int(self.n), ASQ.f_width))
+        fifo_r_asq  = Signal(ASQ)
+        fifo_r_en_l = Signal()
+
+        # delay element
+        fifo = m.submodules.fifo = fifo = SyncFIFO(
+            width=ASQ.as_shape().width, depth=self.n)
+
+        # route input -> fifo
+        wiring.connect(m, wiring.flipped(self.i), wiring.flipped(stream.fifo_w_stream(fifo)))
+
+        # accumulator maintenance
+        m.d.sync += fifo_r_en_l.eq(fifo.r_en)
+        m.d.comb += fifo_r_asq.sas_value().eq(fifo.r_data) # raw -> ASQ
+        with m.If(self.i.valid & self.i.ready):
+            with m.If(fifo_r_en_l):
+                # sample in + out simultaneously (normal case)
+                m.d.sync += accumulator.eq(accumulator + self.i.payload - fifo_r_asq)
+            with m.Else():
+                # sample in only
+                m.d.sync += accumulator.eq(accumulator + self.i.payload)
+        with m.Elif(fifo_r_en_l):
+            # sample out only
+            m.d.sync += accumulator.eq(accumulator - fifo_r_asq)
+
+        # output route to output, accumulator division
+        if self.hpf:
+            # boxcar hpf
+            m.d.comb += self.o.payload.eq(fifo_r_asq - (accumulator >> log2_int(self.n))),
+        else:
+            # normal averaging lpf
+            m.d.comb += self.o.payload.eq(accumulator >> log2_int(self.n)),
+        m.d.comb += [
+            self.o.valid.eq(fifo.level == self.n), # VERIFY
+            fifo.r_en.eq(self.o.valid & self.o.ready),
+        ]
+
+        return m

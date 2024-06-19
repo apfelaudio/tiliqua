@@ -199,14 +199,14 @@ class Diffuser(wiring.Component):
 
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=8, o_channels=8,
-            coefficients=[[0.2, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0, 0.0], # in0
-                          [0.0, 0.2, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0], #  |
-                          [0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.8, 0.0], #  |
-                          [0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.8], # in3
-                          [0.8, 0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4], # ds0
-                          [0.0, 0.8, 0.0, 0.0,-0.4, 0.4,-0.4,-0.4], #  |
-                          [0.0, 0.0, 0.8, 0.0,-0.4,-0.4, 0.4,-0.4], #  |
-                          [0.0, 0.0, 0.0, 0.8,-0.4,-0.4,-0.4, 0.4]])# ds3
+            coefficients=[[0.6, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0, 0.0], # in0
+                          [0.0, 0.6, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0], #  |
+                          [0.0, 0.0, 0.6, 0.0, 0.0, 0.0, 0.8, 0.0], #  |
+                          [0.0, 0.0, 0.0, 0.6, 0.0, 0.0, 0.0, 0.8], # in3
+                          [0.4, 0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4], # ds0
+                          [0.0, 0.4, 0.0, 0.0,-0.4, 0.4,-0.4,-0.4], #  |
+                          [0.0, 0.0, 0.4, 0.0,-0.4,-0.4, 0.4,-0.4], #  |
+                          [0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4, 0.4]])# ds3
                           # out0 ------- out3  sw0 ---------- sw3
 
         delay_lines = [
@@ -453,7 +453,11 @@ class MidiPolyTop(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
+        # supported simultaneous voices
         n_voices = 8
+
+        # delay effect on output mix
+        diffuser = True
 
         # Create LUTs from midi note to freq_inc (ASQ tuning into NCO).
         # Store it in memories where the address is the midi note,
@@ -469,12 +473,14 @@ class MidiPolyTop(wiring.Component):
         rports = [mems[n].read_port(transparent=True) for n in range(n_voices)]
         m.submodules += mems
 
-        # Create our MIDI voice tracker, oscillators, VCA
         voice_tracker = midi.MidiVoiceTracker(max_voices=n_voices)
+        # 1 smoother per oscillator for filter cutoff, to prevent pops.
+        boxcars = [dsp.Boxcar(n=16) for _ in range(n_voices)]
+        # 1 oscillator and filter per oscillator
         ncos = [dsp.SawNCO(shift=0) for _ in range(n_voices)]
         svfs = [dsp.SVF() for _ in range(n_voices)]
         merge = dsp.Merge(n_channels=n_voices)
-        m.submodules += [voice_tracker, ncos, svfs, merge]
+        m.submodules += [voice_tracker, boxcars, ncos, svfs, merge]
 
         # Connect MIDI stream -> voice tracker
         wiring.connect(m, wiring.flipped(self.i_midi), voice_tracker.i)
@@ -492,10 +498,11 @@ class MidiPolyTop(wiring.Component):
         for n in range(n_voices):
 
             # Filter cutoff on all channels is min(mod wheel, note velocity)
+            # Cutoff itself is smoothed by boxcars before being sent to SVF cutoff.
             with m.If(last_cc1 < voice_tracker.o[n].payload.velocity):
-                m.d.comb += svfs[n].i.payload.cutoff.sas_value().eq(last_cc1 << 4)
+                m.d.comb += boxcars[n].i.payload.sas_value().eq(last_cc1 << 4)
             with m.Else():
-                m.d.comb += svfs[n].i.payload.cutoff.sas_value().eq(voice_tracker.o[n].payload.velocity << 4)
+                m.d.comb += boxcars[n].i.payload.sas_value().eq(voice_tracker.o[n].payload.velocity << 4)
 
             m.d.comb += [
                 # Connect voice.note -> note to frequency LUT
@@ -505,10 +512,17 @@ class MidiPolyTop(wiring.Component):
                 # Connect LUT output -> NCO.i (clocked at i.valid for normal sample rate)
                 ncos[n].i.valid.eq(self.i.valid),
                 ncos[n].i.payload.freq_inc.eq(rports[n].data),
+                # For fun, phase mod on audio in #0
+                ncos[n].i.payload.phase.eq(self.i.payload[0]),
+
+                # Boxcar synchronization (don't let it block anything)
+                boxcars[n].i.valid.eq(ncos[n].o.valid),
+                boxcars[n].o.ready.eq(svfs[n].i.ready),
 
                 # Connect voice.vel and NCO.o -> SVF.i
                 svfs[n].i.valid.eq(ncos[n].o.valid),
                 svfs[n].i.payload.x.eq(ncos[n].o.payload >> 1),
+                svfs[n].i.payload.cutoff.eq(boxcars[n].o.payload),
                 svfs[n].i.payload.resonance.sas_value().eq(8000),
                 ncos[n].o.ready.eq(svfs[n].i.ready),
 
@@ -527,11 +541,18 @@ class MidiPolyTop(wiring.Component):
             coefficients=coefficients)
         wiring.connect(m, merge.o, matrix_mix.i),
 
+        # Optional output delay (diffuser)
+        if diffuser:
+            m.submodules.diffuser = diffuser = Diffuser()
+            wiring.connect(m, diffuser.o, wiring.flipped(self.o))
+        out = self.o if diffuser == False else diffuser.i
+
         # Stereo HPF to remove DC from any voices in 'zero cutoff'
         # Route to audio output channels 2 & 3
         output_hpfs = [dsp.SVF() for _ in range(o_channels)]
         m.submodules += output_hpfs
         m.d.comb += [
+            self.i.ready.eq(1),
             matrix_mix.o.ready.eq(output_hpfs[0].i.ready & output_hpfs[1].i.ready),
             output_hpfs[0].i.valid.eq(matrix_mix.o.valid),
             output_hpfs[1].i.valid.eq(matrix_mix.o.valid),
@@ -541,11 +562,13 @@ class MidiPolyTop(wiring.Component):
             output_hpfs[1].i.payload.cutoff.sas_value().eq(50),
             output_hpfs[0].i.payload.resonance.sas_value().eq(20000),
             output_hpfs[1].i.payload.resonance.sas_value().eq(20000),
-            output_hpfs[0].o.ready.eq(self.o.ready),
-            output_hpfs[1].o.ready.eq(self.o.ready),
-            self.o.payload[2].eq(output_hpfs[0].o.payload.hp << 2),
-            self.o.payload[3].eq(output_hpfs[1].o.payload.hp << 2),
-            self.o.valid.eq(output_hpfs[0].o.valid & output_hpfs[1].o.valid),
+
+            # output connections
+            output_hpfs[0].o.ready.eq(out.ready),
+            output_hpfs[1].o.ready.eq(out.ready),
+            out.payload[2].eq(output_hpfs[0].o.payload.hp << 2),
+            out.payload[3].eq(output_hpfs[1].o.payload.hp << 2),
+            out.valid.eq(output_hpfs[0].o.valid & output_hpfs[1].o.valid),
         ]
 
         return m
