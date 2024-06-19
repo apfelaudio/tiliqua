@@ -518,18 +518,13 @@ class MidiPolyTop(wiring.Component):
                 merge.i[n].payload.eq(svfs[n].o.payload.lp),
             ]
 
-        # Voice mixdown to stereo
+        # Voice mixdown to stereo. Alternate left/right
         o_channels = 2
+        coefficients = [[o_channels/n_voices, 0.0                ],
+                        [0.0,                 o_channels/n_voices]] * (n_voices // 2)
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=n_voices, o_channels=o_channels,
-            coefficients=[[o_channels/n_voices, 0.0                ],
-                          [0.0,                 o_channels/n_voices],
-                          [o_channels/n_voices, 0.0                ],
-                          [0.0,                 o_channels/n_voices],
-                          [o_channels/n_voices, 0.0                ],
-                          [0.0,                 o_channels/n_voices],
-                          [o_channels/n_voices, 0.0                ],
-                          [0.0,                 o_channels/n_voices]])
+            coefficients=coefficients)
         wiring.connect(m, merge.o, matrix_mix.i),
 
         # Stereo HPF to remove DC from any voices in 'zero cutoff'
