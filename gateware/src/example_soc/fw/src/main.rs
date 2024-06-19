@@ -35,6 +35,18 @@ fn panic(panic_info: &PanicInfo) -> ! {
     loop {}
 }
 
+#[export_name = "ExceptionHandler"]
+fn exception_handler(trap_frame: &riscv_rt::TrapFrame) -> ! {
+    error!("exception_handler(): TrapFrame.ra={:x}", trap_frame.ra);
+    loop {}
+}
+
+#[export_name = "DefaultHandler"]
+fn default_isr_handler() -> ! {
+    error!("default_isr_handler()");
+    loop {}
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
@@ -49,7 +61,45 @@ fn main() -> ! {
     let mut direction = true;
     let mut led_state = 0b110000;
 
-    info!("Peripherals initialized, entering main loop.");
+    info!("Peripherals initialized.");
+
+    info!("PSRAM memtest...");
+
+    // PSRAM memtest
+
+    unsafe {
+        const HRAM_BASE: usize = 0x20000000;
+        let hram_ptr = HRAM_BASE as *mut u32;
+
+        timer.enable();
+        timer.set_timeout_ticks(0xFFFFFFFF);
+
+        let start = timer.counter();
+
+        for i in 0..(1024*1024*4) {
+            hram_ptr.offset(i).write_volatile(i as u32);
+        }
+
+        let endwrite = timer.counter();
+
+        for i in 0..(1024*1024*4) {
+            if (i as u32) != hram_ptr.offset(i).read_volatile() {
+                info!("hyperram FL @ {:#x}", i);
+            }
+        }
+
+        let endread = timer.counter();
+
+        let write_ticks = start-endwrite;
+        let read_ticks = endwrite-endread;
+
+        let sysclk = pac::clock::sysclk();
+
+        info!("write speed {} KByte/sec", ((sysclk as u64) * (16*1024) as u64) / write_ticks as u64);
+
+        info!("read speed {} KByte/sec", ((sysclk as u64) * (16*1024 as u64)) / (read_ticks as u64));
+
+    }
 
     loop {
         timer.delay_ms(100).unwrap();
