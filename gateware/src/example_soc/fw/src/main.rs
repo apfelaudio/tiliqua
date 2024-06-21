@@ -47,10 +47,65 @@ fn default_isr_handler() -> ! {
     loop {}
 }
 
+
+pub struct I2cDevice {
+    inner: pac::I2C0,
+}
+
+use embedded_hal::i2c::{Operation, ErrorKind};
+
+impl I2cDevice {
+
+    fn transaction(
+        &mut self,
+        address: u8,
+        operations: &mut [Operation<'_>],
+    ) -> Result<(), ErrorKind> {
+
+        self.inner.address().write(|w| unsafe { w.address().bits(address) } );
+        for op in operations.iter() {
+            match op {
+                Operation::Write(bytes) => {
+                    for b in bytes.iter() {
+                        self.inner.transaction_data().write(
+                            |w| unsafe { w.transaction_data().bits(0x0000u16 | *b as u16) } );
+                    }
+                }
+                Operation::Read(bytes) => {
+                    for b in bytes.iter() {
+                        self.inner.transaction_data().write(
+                            |w| unsafe { w.transaction_data().bits(0x0100u16 | *b as u16) } );
+                    }
+                },
+            }
+        }
+
+        // Start executing transactions
+        self.inner.start().write(|w| w.start().bit(true) );
+
+        // Wait for completion
+        while self.inner.busy().read().busy().bit() { }
+
+        // Copy out recieved bytes
+        for op in operations.iter_mut() {
+            match op {
+                Operation::Read(bytes) => {
+                    for b in bytes.iter_mut() {
+                        *b = self.inner.rx_data().read().bits() as u8;
+                    }
+                },
+                _ => {}
+            }
+        }
+
+
+        Ok(())
+    }
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
-    let i2c0 = &peripherals.I2C0;
 
     // initialize logging
     let serial = Serial0::new(peripherals.UART);
@@ -101,6 +156,10 @@ fn main() -> ! {
 
     }
 
+    let mut i2cdev = I2cDevice {
+        inner: peripherals.I2C0
+    };
+
     loop {
 
         let bytes = [
@@ -131,7 +190,8 @@ fn main() -> ! {
            0xAAu8, // LEDOUT3
         ];
 
-        // write to the LED expander
+
+        /*
 
         i2c0.address().write(|w| unsafe { w.address().bits(0x5) } );
 
@@ -176,6 +236,21 @@ fn main() -> ! {
         info!("eeprom1: 0x{:x}", i2c0.rx_data().read().bits());
         info!("err: {}", i2c0.err().read().err().bit());
         i2c0.err().write(|w| w.err().bit(false) );
+
+        */
+
+        // write to the LED expander
+        i2cdev.transaction(0x5, &mut [Operation::Write(&bytes)]);
+
+        // read some data from EEPROM
+        let mut eeprom_bytes: [u8; 8] = [0; 8];
+        i2cdev.transaction(0x52, &mut [Operation::Write(&[0xFAu8]),
+                                       Operation::Read(&mut eeprom_bytes)]);
+        let mut ix = 0;
+        for byte in eeprom_bytes {
+            info!("eeprom{}: 0x{:x}", ix, byte);
+            ix += 1;
+        }
 
         if direction {
             led_state >>= 1;
