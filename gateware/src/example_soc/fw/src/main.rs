@@ -51,6 +51,7 @@ fn default_isr_handler() -> ! {
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
     let leds = &peripherals.LEDS;
+    let i2c0 = &peripherals.I2C0;
 
     // initialize logging
     let serial = Serial0::new(peripherals.UART);
@@ -102,6 +103,49 @@ fn main() -> ! {
     }
 
     loop {
+
+        let bytes = [
+           0x80u8, // Auto-increment starting from MODE1
+           0x81u8, // MODE1
+           0x01u8, // MODE2
+           0x10u8, // PWM0
+           0x10u8, // PWM1
+           0x10u8, // PWM2
+           0x10u8, // PWM3
+           0x10u8, // PWM4
+           0x10u8, // PWM5
+           0x10u8, // PWM6
+           0x10u8, // PWM7
+           0x10u8, // PWM8
+           0x10u8, // PWM9
+           0x10u8, // PWM10
+           0x10u8, // PWM11
+           0x10u8, // PWM12
+           0x10u8, // PWM13
+           0x10u8, // PWM14
+           0x10u8, // PWM15
+           0xFFu8, // GRPPWM
+           0x00u8, // GRPFREQ
+           0xAAu8, // LEDOUT0
+           0xAAu8, // LEDOUT1
+           0xAAu8, // LEDOUT2
+           0xAAu8, // LEDOUT3
+        ];
+
+        i2c0.address().write(|w| unsafe { w.address().bits(0x5) } );
+
+        for b in bytes {
+            // MSB is r=1 / w=0
+            i2c0.transaction_data().write(
+                |w| unsafe { w.transaction_data().bits(0x0000u16 | b as u16) } );
+        }
+
+        i2c0.start().write(|w| unsafe { w.start().bit(true) } );
+
+        while i2c0.busy().read().busy().bit() {
+            timer.delay_ms(1).unwrap();
+        }
+
         timer.delay_ms(100).unwrap();
 
         if direction {
