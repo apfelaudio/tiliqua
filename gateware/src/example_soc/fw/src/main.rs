@@ -50,7 +50,6 @@ fn default_isr_handler() -> ! {
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
-    let leds = &peripherals.LEDS;
     let i2c0 = &peripherals.I2C0;
 
     // initialize logging
@@ -142,11 +141,15 @@ fn main() -> ! {
                 |w| unsafe { w.transaction_data().bits(0x0000u16 | b as u16) } );
         }
 
-        i2c0.start().write(|w| unsafe { w.start().bit(true) } );
+        i2c0.start().write(|w| w.start().bit(true) );
 
         while i2c0.busy().read().busy().bit() {
             timer.delay_ms(1).unwrap();
         }
+
+        info!("wrote to leds");
+        info!("err: {}", i2c0.err().read().err().bit());
+        i2c0.err().write(|w| w.err().bit(false) );
 
         timer.delay_ms(100).unwrap();
 
@@ -163,14 +166,16 @@ fn main() -> ! {
         i2c0.transaction_data().write(
             |w| unsafe { w.transaction_data().bits(0x0100u16) } );
 
-        i2c0.start().write(|w| unsafe { w.start().bit(true) } );
+        i2c0.start().write(|w| w.start().bit(true) );
 
         while i2c0.busy().read().busy().bit() {
             timer.delay_ms(1).unwrap();
         }
 
-        info!("byte0: {}", i2c0.rx_data().read().bits());
-        info!("byte1: {}", i2c0.rx_data().read().bits());
+        info!("eeprom0: 0x{:x}", i2c0.rx_data().read().bits());
+        info!("eeprom1: 0x{:x}", i2c0.rx_data().read().bits());
+        info!("err: {}", i2c0.err().read().err().bit());
+        i2c0.err().write(|w| w.err().bit(false) );
 
         if direction {
             led_state >>= 1;
@@ -186,7 +191,6 @@ fn main() -> ! {
             }
         }
 
-        //leds.output().write(|w| unsafe { w.output().bits(led_state) });
         counter += 1;
     }
 }

@@ -56,11 +56,14 @@ class I2CPeripheral(Peripheral, Elaboratable):
         m.submodules.rx_fifo = self._rx_fifo
         m.submodules.transactions = self._transactions
 
+        err = Signal()
+
         with m.If(self._address.w_stb):
             m.d.sync += self.address.eq(self._address.w_data)
 
+        m.d.comb += self._err.r_data.eq(err)
         with m.If(self._err.w_stb):
-            m.d.sync += self._err.r_data.eq(self._err.w_data)
+            m.d.sync += err.eq(self._err.w_data)
 
         m.d.comb += [
             # Transactions FIFO <- CSRs
@@ -178,7 +181,7 @@ class I2CPeripheral(Peripheral, Elaboratable):
 
             with m.State("ABORT"):
                 with m.If(~i2c.busy):
-                    m.d.sync += self._err.r_data.eq(1)
+                    m.d.sync += err.eq(1)
                     m.d.comb += i2c.stop.eq(1)
                     m.next = "DRAIN-FIFOS"
 
