@@ -60,7 +60,7 @@ fn main() -> ! {
     let mut timer = Timer0::new(peripherals.TIMER, pac::clock::sysclk());
     let mut counter = 0;
     let mut direction = true;
-    let mut led_state = 0b110000;
+    let mut led_state = 0xc000u16;
 
     info!("Peripherals initialized.");
 
@@ -108,22 +108,22 @@ fn main() -> ! {
            0x80u8, // Auto-increment starting from MODE1
            0x81u8, // MODE1
            0x01u8, // MODE2
-           0x10u8, // PWM0
-           0x10u8, // PWM1
-           0x10u8, // PWM2
-           0x10u8, // PWM3
-           0x10u8, // PWM4
-           0x10u8, // PWM5
-           0x10u8, // PWM6
-           0x10u8, // PWM7
-           0x10u8, // PWM8
-           0x10u8, // PWM9
-           0x10u8, // PWM10
-           0x10u8, // PWM11
-           0x10u8, // PWM12
-           0x10u8, // PWM13
-           0x10u8, // PWM14
-           0x10u8, // PWM15
+           (led_state >>  0) as u8, // PWM0
+           (led_state >>  1) as u8, // PWM1
+           (led_state >>  2) as u8, // PWM2
+           (led_state >>  3) as u8, // PWM3
+           (led_state >>  4) as u8, // PWM4
+           (led_state >>  5) as u8, // PWM5
+           (led_state >>  6) as u8, // PWM6
+           (led_state >>  7) as u8, // PWM7
+           (led_state >>  8) as u8, // PWM8
+           (led_state >>  9) as u8, // PWM9
+           (led_state >> 10) as u8, // PWM10
+           (led_state >> 11) as u8, // PWM11
+           (led_state >> 12) as u8, // PWM12
+           (led_state >> 13) as u8, // PWM13
+           (led_state >> 14) as u8, // PWM14
+           (led_state >> 15) as u8, // PWM15
            0xFFu8, // GRPPWM
            0x00u8, // GRPFREQ
            0xAAu8, // LEDOUT0
@@ -150,19 +150,19 @@ fn main() -> ! {
 
         if direction {
             led_state >>= 1;
-            if led_state == 0b000011 {
+            if led_state == 0x0003 {
                 direction = false;
                 info!("left: {}", counter);
             }
         } else {
             led_state <<= 1;
-            if led_state == 0b110000 {
+            if led_state == 0xc000 {
                 direction = true;
                 info!("right: {}", counter);
             }
         }
 
-        leds.output().write(|w| unsafe { w.output().bits(led_state) });
+        //leds.output().write(|w| unsafe { w.output().bits(led_state) });
         counter += 1;
     }
 }
