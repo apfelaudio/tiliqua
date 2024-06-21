@@ -132,6 +132,8 @@ fn main() -> ! {
            0xAAu8, // LEDOUT3
         ];
 
+        // write to the LED expander
+
         i2c0.address().write(|w| unsafe { w.address().bits(0x5) } );
 
         for b in bytes {
@@ -147,6 +149,28 @@ fn main() -> ! {
         }
 
         timer.delay_ms(100).unwrap();
+
+        // read mfg ID from EEPROM
+
+        i2c0.address().write(|w| unsafe { w.address().bits(0x52) } );
+
+        i2c0.transaction_data().write(
+            |w| unsafe { w.transaction_data().bits(0x00FAu16) } );
+
+        i2c0.transaction_data().write(
+            |w| unsafe { w.transaction_data().bits(0x0100u16) } );
+
+        i2c0.transaction_data().write(
+            |w| unsafe { w.transaction_data().bits(0x0100u16) } );
+
+        i2c0.start().write(|w| unsafe { w.start().bit(true) } );
+
+        while i2c0.busy().read().busy().bit() {
+            timer.delay_ms(1).unwrap();
+        }
+
+        info!("byte0: {}", i2c0.rx_data().read().bits());
+        info!("byte1: {}", i2c0.rx_data().read().bits());
 
         if direction {
             led_state >>= 1;
