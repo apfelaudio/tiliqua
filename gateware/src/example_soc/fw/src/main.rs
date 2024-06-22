@@ -15,6 +15,9 @@ use log::{info, error};
 
 use riscv_rt::entry;
 
+use tiliqua_fw::i2c::I2cDevice;
+use embedded_hal::i2c::Operation;
+
 #[riscv_rt::pre_init]
 unsafe fn pre_main() {
     pac::cpu::vexriscv::flush_icache();
@@ -48,60 +51,6 @@ fn default_isr_handler() -> ! {
 }
 
 
-pub struct I2cDevice {
-    inner: pac::I2C0,
-}
-
-use embedded_hal::i2c::{Operation, ErrorKind};
-
-impl I2cDevice {
-
-    fn transaction(
-        &mut self,
-        address: u8,
-        operations: &mut [Operation<'_>],
-    ) -> Result<(), ErrorKind> {
-
-        self.inner.address().write(|w| unsafe { w.address().bits(address) } );
-        for op in operations.iter() {
-            match op {
-                Operation::Write(bytes) => {
-                    for b in bytes.iter() {
-                        self.inner.transaction_data().write(
-                            |w| unsafe { w.transaction_data().bits(0x0000u16 | *b as u16) } );
-                    }
-                }
-                Operation::Read(bytes) => {
-                    for b in bytes.iter() {
-                        self.inner.transaction_data().write(
-                            |w| unsafe { w.transaction_data().bits(0x0100u16 | *b as u16) } );
-                    }
-                },
-            }
-        }
-
-        // Start executing transactions
-        self.inner.start().write(|w| w.start().bit(true) );
-
-        // Wait for completion
-        while self.inner.busy().read().busy().bit() { }
-
-        // Copy out recieved bytes
-        for op in operations.iter_mut() {
-            match op {
-                Operation::Read(bytes) => {
-                    for b in bytes.iter_mut() {
-                        *b = self.inner.rx_data().read().bits() as u8;
-                    }
-                },
-                _ => {}
-            }
-        }
-
-
-        Ok(())
-    }
-}
 
 #[entry]
 fn main() -> ! {
@@ -156,9 +105,7 @@ fn main() -> ! {
 
     }
 
-    let mut i2cdev = I2cDevice {
-        inner: peripherals.I2C0
-    };
+    let mut i2cdev = I2cDevice::new(peripherals.I2C0);
 
     loop {
 
@@ -190,62 +137,15 @@ fn main() -> ! {
            0xAAu8, // LEDOUT3
         ];
 
-
-        /*
-
-        i2c0.address().write(|w| unsafe { w.address().bits(0x5) } );
-
-        for b in bytes {
-            // MSB is r=1 / w=0
-            i2c0.transaction_data().write(
-                |w| unsafe { w.transaction_data().bits(0x0000u16 | b as u16) } );
-        }
-
-        i2c0.start().write(|w| w.start().bit(true) );
-
-        while i2c0.busy().read().busy().bit() {
-            timer.delay_ms(1).unwrap();
-        }
-
-        info!("wrote to leds");
-        info!("err: {}", i2c0.err().read().err().bit());
-        i2c0.err().write(|w| w.err().bit(false) );
-
         timer.delay_ms(100).unwrap();
 
-        // read mfg ID from EEPROM
-
-        i2c0.address().write(|w| unsafe { w.address().bits(0x52) } );
-
-        i2c0.transaction_data().write(
-            |w| unsafe { w.transaction_data().bits(0x00FAu16) } );
-
-        i2c0.transaction_data().write(
-            |w| unsafe { w.transaction_data().bits(0x0100u16) } );
-
-        i2c0.transaction_data().write(
-            |w| unsafe { w.transaction_data().bits(0x0100u16) } );
-
-        i2c0.start().write(|w| w.start().bit(true) );
-
-        while i2c0.busy().read().busy().bit() {
-            timer.delay_ms(1).unwrap();
-        }
-
-        info!("eeprom0: 0x{:x}", i2c0.rx_data().read().bits());
-        info!("eeprom1: 0x{:x}", i2c0.rx_data().read().bits());
-        info!("err: {}", i2c0.err().read().err().bit());
-        i2c0.err().write(|w| w.err().bit(false) );
-
-        */
-
         // write to the LED expander
-        i2cdev.transaction(0x5, &mut [Operation::Write(&bytes)]);
+        let _ = i2cdev.transaction(0x5, &mut [Operation::Write(&bytes)]);
 
         // read some data from EEPROM
         let mut eeprom_bytes: [u8; 8] = [0; 8];
-        i2cdev.transaction(0x52, &mut [Operation::Write(&[0xFAu8]),
-                                       Operation::Read(&mut eeprom_bytes)]);
+        let _ = i2cdev.transaction(0x52, &mut [Operation::Write(&[0xFAu8]),
+                                               Operation::Read(&mut eeprom_bytes)]);
         let mut ix = 0;
         for byte in eeprom_bytes {
             info!("eeprom{}: 0x{:x}", ix, byte);

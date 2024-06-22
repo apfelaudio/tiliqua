@@ -13,3 +13,4 @@ lunasoc_hal::impl_timer! {
 }
 
 pub mod log;
+pub mod i2c;

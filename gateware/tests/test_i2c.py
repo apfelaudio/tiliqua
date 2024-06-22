@@ -2,7 +2,7 @@ import unittest
 
 from amaranth              import *
 from amaranth.sim          import *
-from vendor                import i2c
+from tiliqua               import i2c
 
 class I2CTests(unittest.TestCase):
 

@@ -20,7 +20,7 @@ from luna_soc.util.readbin                       import get_mem_data
 from tiliqua.tiliqua_platform                    import TiliquaPlatform
 from tiliqua.psram_peripheral                    import PSRAMPeripheral
 
-from vendor.i2c                                  import I2CPeripheral
+from tiliqua.i2c                                 import I2CPeripheral
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
