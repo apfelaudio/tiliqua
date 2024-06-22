@@ -20,6 +20,8 @@ from luna_soc.util.readbin                       import get_mem_data
 from tiliqua.tiliqua_platform                    import TiliquaPlatform
 from tiliqua.psram_peripheral                    import PSRAMPeripheral
 
+from tiliqua.i2c                                 import I2CPeripheral
+
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
 }
@@ -33,6 +35,12 @@ class HelloSoc(Elaboratable):
         self.uart_pins = Record([
             ('rx', [('i', 1)]),
             ('tx', [('o', 1)])
+        ])
+
+        # create a stand-in for our I2C pins
+        self.i2c_pins = Record([
+            ('sda', [('i', 1), ('o', 1), ('oe', 1)]),
+            ('scl', [('i', 1), ('o', 1), ('oe', 1)]),
         ])
 
         # create our SoC
@@ -61,6 +69,10 @@ class HelloSoc(Elaboratable):
         self.leds = LedPeripheral()
         self.soc.add_peripheral(self.leds, addr=0xf0001000)
 
+        # ... add an I2C transciever
+        self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
+        self.soc.add_peripheral(self.i2c0, addr=0xf0002000)
+
         super().__init__()
 
     def elaborate(self, platform):
@@ -78,6 +90,17 @@ class HelloSoc(Elaboratable):
         ]
         if hasattr(uart_io.tx, 'oe'):
             m.d.comb += uart_io.tx.oe.eq(~self.soc.uart._phy.tx.rdy),
+
+        ep = platform.request("audio_ffc", 0)
+        m.d.comb += [
+            ep.pdn.eq(1),
+            ep.i2c_sda.o.eq(self.i2c_pins.sda.o),
+            ep.i2c_sda.oe.eq(self.i2c_pins.sda.oe),
+            self.i2c_pins.sda.i.eq(ep.i2c_sda.i),
+            ep.i2c_scl.o.eq(self.i2c_pins.scl.o),
+            ep.i2c_scl.oe.eq(self.i2c_pins.scl.oe),
+            self.i2c_pins.scl.i.eq(ep.i2c_scl.i),
+        ]
 
         return m
 

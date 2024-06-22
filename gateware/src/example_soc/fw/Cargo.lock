@@ -212,6 +212,7 @@ dependencies = [
 name = "tiliqua-fw"
 version = "0.1.0"
 dependencies = [
+ "embedded-hal 1.0.0-alpha.9",
  "log",
  "lunasoc-hal",
  "panic-halt",
