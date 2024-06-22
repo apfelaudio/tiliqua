@@ -94,13 +94,21 @@ class LxVideo(Elaboratable):
         m.submodules.vsync_ff = FFSynchronizer(
                 i=phy_vsync_hdmi, o=phy_vsync_sync, o_domain="sync")
 
+        def add_sv(f):
+            path = os.path.join(os.path.dirname(os.path.realpath(__file__)), f)
+            platform.add_file(f"build/{f}", open(path))
+
+
         if not self.sim:
-            lxvid_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "lxvid.v")
-            platform.add_file("build/lxvid.v", open(lxvid_path))
+
+            add_sv("vtg.sv")
+            add_sv("simple_720p.sv")
+            add_sv("tmds_encoder_dvi.sv")
+            add_sv("dvi_generator.sv")
 
             gpdi = gpdi_from_pmod(platform, 0)
 
-            m.submodules.vlxvid = Instance("lxvid",
+            m.submodules.vlxvid = Instance("vtg",
                 i_clk_sys = ClockSignal("sync"),
                 i_clk_hdmi = ClockSignal("hdmi"),
                 i_clk_hdmi5x = ClockSignal("hdmi5x"),
@@ -128,7 +136,8 @@ class LxVideo(Elaboratable):
                 i_phy_b = phy_b,
             )
         else:
-            m.submodules.vlxvid = Instance("lxvid",
+
+            m.submodules.vlxvid = Instance("vtg",
                 i_clk_sys = ClockSignal("sync"),
                 i_clk_hdmi = ClockSignal("hdmi"),
                 i_clk_hdmi5x = ClockSignal("hdmi5x"),

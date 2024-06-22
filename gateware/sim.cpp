@@ -71,7 +71,8 @@ int main(int argc, char** argv) {
     uint32_t frames = 0;
 
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
-        if (mod % 3 == 0) {
+        if (mod % 2 == 0) {
+
             top->clk_hdmi = !top->clk_hdmi;
             if (top->clk_hdmi) {
                 uint32_t x = top->video_hcount;
@@ -89,8 +90,6 @@ int main(int argc, char** argv) {
                     ++frames;
                 }
             }
-        }
-        if (mod % 2 == 0) {
 
             top->clk_sync = !top->clk_sync;
 
