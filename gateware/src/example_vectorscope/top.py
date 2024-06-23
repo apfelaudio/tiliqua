@@ -8,7 +8,7 @@ import math
 
 from amaranth              import *
 from amaranth.build        import *
-from amaranth.lib          import wiring, data
+from amaranth.lib          import wiring, data, memory
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import AsyncFIFO, SyncFIFO
 from amaranth.lib.cdc      import FFSynchronizer
@@ -248,11 +248,37 @@ class LxVideo(Elaboratable):
             with m.Else():
                 m.d.hdmi += last_word.eq(last_word >> 8)
 
+        import colorsys
+        n_i = 16
+        n_c = 16
+        rs, gs, bs = [], [], []
+        for i in range(n_i):
+            for c in range(n_c):
+                r, g, b = colorsys.hls_to_rgb(float(c)/n_c, float(1.35**(i+1))/(1.35**n_i), 0.75)
+                rs.append(int(r*255))
+                gs.append(int(g*255))
+                bs.append(int(b*255))
+
+        print(rs)
+        print(gs)
+        print(bs)
+
+        m.submodules.palette_r = palette_r = memory.Memory(shape=unsigned(8), depth=256, init=rs)
+        m.submodules.palette_g = palette_g = memory.Memory(shape=unsigned(8), depth=256, init=gs)
+        m.submodules.palette_b = palette_b = memory.Memory(shape=unsigned(8), depth=256, init=bs)
+
+        rd_port_r = palette_r.read_port(domain="comb")
+        rd_port_g = palette_g.read_port(domain="comb")
+        rd_port_b = palette_b.read_port(domain="comb")
+
+        m.d.comb += rd_port_r.addr.eq(Cat(last_word[0:4], last_word[4:8]))
+        m.d.comb += rd_port_g.addr.eq(Cat(last_word[0:4], last_word[4:8]))
+        m.d.comb += rd_port_b.addr.eq(Cat(last_word[0:4], last_word[4:8]))
 
         m.d.comb += [
-            phy_r.eq(last_word[0:8]),
-            phy_g.eq(last_word[0:8]),
-            phy_b.eq(last_word[0:8]),
+            phy_r.eq(rd_port_r.data),
+            phy_g.eq(rd_port_g.data),
+            phy_b.eq(rd_port_b.data),
         ]
 
         return m
@@ -343,7 +369,11 @@ class Persistance(Elaboratable):
                 ]
 
                 for n in range(4):
-                    m.d.comb += pixb[n].eq(pixa[n] >> 1)
+                    # color
+                    m.d.comb += pixb[n][0:4].eq(pixa[n][0:4])
+                    # intensity
+                    with m.If(pixa[n][4:8] > 0):
+                        m.d.comb += pixb[n][4:8].eq(pixa[n][4:8] - 1)
 
                 m.d.comb += [
                     bus.stb.eq(1),
@@ -393,6 +423,8 @@ class Draw(Elaboratable):
 
         self.sample_x = Signal(signed(16))
         self.sample_y = Signal(signed(16))
+        self.sample_p = Signal(signed(16))
+        self.sample_c = Signal(signed(16))
 
         self.enable = Signal(1, reset=0)
 
@@ -411,6 +443,8 @@ class Draw(Elaboratable):
 
         sample_x = self.sample_x
         sample_y = self.sample_y
+        sample_p = self.sample_p
+        sample_c = self.sample_c
 
         pmod0 = self.pmod0
 
@@ -421,24 +455,24 @@ class Draw(Elaboratable):
         N_UP=6
         m.submodules.resample0 = resample0 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
         m.submodules.resample1 = resample1 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
+        m.submodules.resample2 = resample2 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
+        m.submodules.resample3 = resample3 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
 
         wiring.connect(m, astream.istream, split.i)
 
         wiring.connect(m, split.o[0], resample0.i)
         wiring.connect(m, split.o[1], resample1.i)
-        wiring.connect(m, split.o[2], dsp.ASQ_READY)
-        wiring.connect(m, split.o[3], dsp.ASQ_READY)
+        wiring.connect(m, split.o[2], resample2.i)
+        wiring.connect(m, split.o[3], resample3.i)
 
-        wiring.connect(m, resample0.o,   merge.i[0])
-        wiring.connect(m, resample1.o,   merge.i[1])
-        wiring.connect(m, dsp.ASQ_VALID, merge.i[2])
-        wiring.connect(m, dsp.ASQ_VALID, merge.i[3])
+        wiring.connect(m, resample0.o, merge.i[0])
+        wiring.connect(m, resample1.o, merge.i[1])
+        wiring.connect(m, resample2.o, merge.i[2])
+        wiring.connect(m, resample3.o, merge.i[3])
 
 
         px_read = self.px_read
         px_sum = self.px_sum
-
-        inc = 64
 
         with m.FSM() as fsm:
 
@@ -453,6 +487,8 @@ class Draw(Elaboratable):
                     m.d.sync += [
                         sample_x.eq(merge.o.payload[0].sas_value()>>6),
                         sample_y.eq(merge.o.payload[1].sas_value()>>6),
+                        sample_p.eq(merge.o.payload[2].sas_value()),
+                        sample_c.eq(merge.o.payload[3].sas_value()),
                     ]
                     m.next = 'LATCH1'
 
@@ -495,12 +531,20 @@ class Draw(Elaboratable):
                     bus.we.eq(1),
                 ]
 
-                with m.If(px_sum + inc >= 0xFF):
-                    m.d.comb += bus.dat_w.eq(px_read | (Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))),
+                new_color = Signal(unsigned(4))
+                white = Signal(unsigned(4))
+                m.d.comb += white.eq(0xf)
+                m.d.comb += new_color.eq(sample_c>>10)
+                inc=4
+                with m.If(px_sum[4:8] + inc >= 0xF):
+                    m.d.comb += bus.dat_w.eq(
+                        (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
+                        (Cat(new_color, white) << (sample_x[0:2]*8))
+                         )
                 with m.Else():
                     m.d.comb += bus.dat_w.eq(
                         (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
-                        ((px_sum + inc) << (sample_x[0:2]*8))
+                        (Cat(new_color, (px_sum[4:8] + inc)) << (sample_x[0:2]*8))
                          )
 
                 """
@@ -852,4 +896,6 @@ def verilog_vectorscope():
             "pmod0_fs_strobe":      (top.pmod0.fs_strobe,               None),
             "pmod0_sample_i0":      (top.pmod0.sample_inject[0]._target,None),
             "pmod0_sample_i1":      (top.pmod0.sample_inject[1]._target,None),
+            "pmod0_sample_i2":      (top.pmod0.sample_inject[2]._target,None),
+            "pmod0_sample_i3":      (top.pmod0.sample_inject[3]._target,None),
             }))

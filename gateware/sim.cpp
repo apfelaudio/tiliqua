@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     tfp->open("simx.fst");
 #endif
     //uint64_t sim_time = 1000000000000;
-    uint64_t sim_time =  200000000000;
+    uint64_t sim_time =  400000000000;
 
     contextp->timeInc(1);
     top->rst_sync = 1;
@@ -81,6 +81,14 @@ int main(int argc, char** argv) {
                     image_data[y*imx*3 + x*3 + 0] = top->video_r;
                     image_data[y*imx*3 + x*3 + 1] = top->video_g;
                     image_data[y*imx*3 + x*3 + 2] = top->video_b;
+
+                    /*
+                    if (top->video_r != 0 ||
+                        top->video_g != 0 ||
+                        top->video_b != 0) {
+                        printf("%d %d %d\n", top->video_r, top->video_g, top->video_b);
+                    }
+                    */
                 }
                 if (x == imx-1 && y == imy-1) {
                     char name[64];
@@ -105,7 +113,11 @@ int main(int argc, char** argv) {
                         (psram_data[top->psram_address_ptr+2] << 16)  |
                         (psram_data[top->psram_address_ptr+1] << 8)   |
                         (psram_data[top->psram_address_ptr+0] << 0);
-                    //printf("read %x@%x\n", top->psram_read_data_view, top->psram_address_ptr);
+                    /*
+                    if (top->psram_read_data_view != 0) {
+                        printf("read %x@%x\n", top->psram_read_data_view, top->psram_address_ptr);
+                    }
+                    */
                     top->eval();
                 }
 
@@ -121,8 +133,10 @@ int main(int argc, char** argv) {
                 if (mod_pmod % 312 == 0) {
                     ++pmod_clocks;
                     top->pmod0_fs_strobe = 1;
-                    top->pmod0_sample_i0 = (int16_t)20000.0*sin((float)pmod_clocks / 2000.0);
-                    top->pmod0_sample_i1 = (int16_t)20000.0*cos((float)pmod_clocks /   50.0);
+                    top->pmod0_sample_i0 = (int16_t)20000.0*sin((float)pmod_clocks / 6000.0);
+                    top->pmod0_sample_i1 = (int16_t)20000.0*cos((float)pmod_clocks /  300.0);
+                    // color
+                    top->pmod0_sample_i3 = (int16_t)20000.0*cos((float)pmod_clocks /  600.0);
                 } else {
                     if (top->pmod0_fs_strobe) {
                         top->pmod0_fs_strobe = 0;
