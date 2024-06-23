@@ -10,13 +10,13 @@ use hal::hal::delay::DelayNs;
 
 use tiliqua_fw::Serial0;
 use tiliqua_fw::Timer0;
+use tiliqua_fw::I2c0;
 
 use log::{info, error};
 
 use riscv_rt::entry;
 
-use tiliqua_fw::i2c::I2cDevice;
-use embedded_hal::i2c::Operation;
+use embedded_hal::i2c::{I2c, Operation};
 
 #[riscv_rt::pre_init]
 unsafe fn pre_main() {
@@ -105,7 +105,7 @@ fn main() -> ! {
 
     }
 
-    let mut i2cdev = I2cDevice::new(peripherals.I2C0);
+    let mut i2cdev = I2c0::new(peripherals.I2C0);
 
     loop {
 

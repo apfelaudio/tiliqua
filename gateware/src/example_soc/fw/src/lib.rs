@@ -12,5 +12,8 @@ tiliqua_hal::impl_timer! {
     Timer0: pac::TIMER,
 }
 
+tiliqua_hal::impl_i2c! {
+    I2c0: pac::I2C0,
+}
+
 pub mod log;
-pub mod i2c;
