@@ -4,9 +4,9 @@
 use core::panic::PanicInfo;
 
 use tiliqua_pac as pac;
-use lunasoc_hal as hal;
+use tiliqua_hal as hal;
 
-use hal::hal::delay::DelayUs;
+use hal::hal::delay::DelayNs;
 
 use tiliqua_fw::Serial0;
 use tiliqua_fw::Timer0;
@@ -137,7 +137,7 @@ fn main() -> ! {
            0xAAu8, // LEDOUT3
         ];
 
-        timer.delay_ms(100).unwrap();
+        timer.delay_ms(100);
 
         // write to the LED expander
         let _ = i2cdev.transaction(0x5, &mut [Operation::Write(&bytes)]);
