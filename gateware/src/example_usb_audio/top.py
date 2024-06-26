@@ -479,18 +479,6 @@ class USB2AudioInterface(Elaboratable):
                 to_usb_stream=channels_to_usb_stream.channel_stream_in,
                 from_usb_stream=usb_to_channel_stream.channel_stream_out)
 
-        if "tiliqua" in platform.name.lower():
-            # Basic blinky for testing
-            # maybe try this in audio domain as well if things don't work
-            blinky_period = Signal(32, reset=0)
-            m.d.usb += [
-                blinky_period.eq(blinky_period + 1),
-            ]
-            m.d.comb += [
-                platform.request("led_a").o.eq(ResetSignal("usb") | blinky_period[21]),
-                platform.request("led_b").o.eq(ResetSignal("audio") | blinky_period[22])
-            ]
-
         jack_period = Signal(32)
         jack_usb = Signal(8)
         m.submodules.jack_sync = FFSynchronizer(pmod0.jack, jack_usb, o_domain="usb")

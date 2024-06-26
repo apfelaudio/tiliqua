@@ -85,6 +85,10 @@ class _TiliquaPlatform(LatticeECP5Platform):
         # DVI: Hotplug Detect
         Resource("dvi_hpd", 0, Pins("A5", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
 
+        # TRS MIDI RX
+        Resource("midi", 0,
+                 Subsignal("rx", Pins("D5", dir="i"), Attrs(IO_TYPE="LVCMOS33"))),
+
         # Motherboard PCBA I2C bus. Includes:
         # - address 0x05: PCA9635 LED driver
         # - address 0x47: TUSB322I USB-C controller
@@ -97,12 +101,6 @@ class _TiliquaPlatform(LatticeECP5Platform):
         # RP2040 UART bridge
         UARTResource(0,
             rx="A4", tx="B4",
-            attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
-        ),
-
-        # TRS MIDI RX
-        UARTResource(1,
-            rx="D5", tx="-",
             attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
         ),
 

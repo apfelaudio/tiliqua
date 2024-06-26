@@ -22,5 +22,5 @@ test = { cmd = "pytest" }
 build_soc = { shell = "./scripts/build_soc.sh" }
 build_usb_audio = { call = "example_usb_audio.top:build(ila=False)" }
 build_usb_audio_ila = { call = "example_usb_audio.top:build(ila=True)" }
-build_dsp_core = { call = "example_dsp.top:build(sys.argv[1])" }
-sim_dsp_core = { call = "example_dsp.top:simulate(sys.argv[1])" }
+build_dsp_core = { call = "example_dsp.top:build()" }
+sim_dsp_core = { call = "example_dsp.top:simulate()" }

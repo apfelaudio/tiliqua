@@ -62,6 +62,10 @@ class EncoderPeripheral(Peripheral, Elaboratable):
         m.d.comb += self.iq_decode.iq.eq(Cat(self.pins.i.i, self.pins.q.i))
         m.d.comb += self._step.r_data.eq(d_steps)
 
+        button_sync = Signal()
+        m.submodules += FFSynchronizer(self.pins.s.i, button_sync, reset=0)
+        m.d.comb += self._button.r_data.eq(button_sync)
+
         with m.If(self._step.r_stb):
             m.d.sync += read_occurred.eq(1)
 
