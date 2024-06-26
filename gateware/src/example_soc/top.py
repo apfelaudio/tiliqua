@@ -21,6 +21,7 @@ from tiliqua.tiliqua_platform                    import TiliquaPlatform
 from tiliqua.psram_peripheral                    import PSRAMPeripheral
 
 from tiliqua.i2c                                 import I2CPeripheral
+from tiliqua.encoder                             import EncoderPeripheral
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
@@ -41,6 +42,12 @@ class HelloSoc(Elaboratable):
         self.i2c_pins = Record([
             ('sda', [('i', 1), ('o', 1), ('oe', 1)]),
             ('scl', [('i', 1), ('o', 1), ('oe', 1)]),
+        ])
+
+        self.encoder_pins = Record([
+            ('i', [('i', 1)]),
+            ('q', [('i', 1)]),
+            ('s', [('i', 1)])
         ])
 
         # create our SoC
@@ -73,6 +80,9 @@ class HelloSoc(Elaboratable):
         self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
         self.soc.add_peripheral(self.i2c0, addr=0xf0002000)
 
+        self.encoder0 = EncoderPeripheral(pins=self.encoder_pins)
+        self.soc.add_peripheral(self.encoder0, addr=0xf0003000)
+
         super().__init__()
 
     def elaborate(self, platform):
@@ -91,13 +101,22 @@ class HelloSoc(Elaboratable):
         if hasattr(uart_io.tx, 'oe'):
             m.d.comb += uart_io.tx.oe.eq(~self.soc.uart._phy.tx.rdy),
 
+        """
         m.d.comb += [
             platform.request("vbus_en").o.eq(platform.request("enc_s").i)
+        ]
+        """
+
+        enc = platform.request("encoder", 0)
+        m.d.comb += [
+            self.encoder_pins.i.i.eq(enc.i.i),
+            self.encoder_pins.q.i.eq(enc.q.i),
+            self.encoder_pins.s.i.eq(enc.s.i),
         ]
 
         ep = platform.request("audio_ffc", 0)
         m.d.comb += [
-            ep.pdn.eq(0),
+            ep.pdn.o.eq(0),
             ep.i2c_sda.o.eq(self.i2c_pins.sda.o),
             ep.i2c_sda.oe.eq(self.i2c_pins.sda.oe),
             self.i2c_pins.sda.i.eq(ep.i2c_sda.i),

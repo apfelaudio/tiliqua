@@ -107,28 +107,36 @@ fn main() -> ! {
 
     let mut i2cdev = I2cDevice::new(peripherals.I2C0);
 
+    let mut enc = peripherals.ENCODER0;
+
+    let mut enc_val: i8 = 0;
+
     loop {
+
+        enc_val += enc.step().read().bits() as i8;
+        let v: i8 = enc_val >> 1;
+        info!("v: {}", v);
 
         let bytes = [
            0x80u8, // Auto-increment starting from MODE1
            0x81u8, // MODE1
            0x01u8, // MODE2
-           (led_state >>  0) as u8, // PWM0
-           (led_state >>  1) as u8, // PWM1
-           (led_state >>  2) as u8, // PWM2
-           (led_state >>  3) as u8, // PWM3
-           (led_state >>  4) as u8, // PWM4
-           (led_state >>  5) as u8, // PWM5
-           (led_state >>  6) as u8, // PWM6
-           (led_state >>  7) as u8, // PWM7
-           (led_state >>  8) as u8, // PWM8
-           (led_state >>  9) as u8, // PWM9
-           (led_state >> 10) as u8, // PWM10
-           (led_state >> 11) as u8, // PWM11
-           (led_state >> 12) as u8, // PWM12
-           (led_state >> 13) as u8, // PWM13
-           (led_state >> 14) as u8, // PWM14
-           (led_state >> 15) as u8, // PWM15
+           if v > 1  {0x2f} else {0x00}, // PWM0
+           if v > 2  {0x00} else {0x00}, // PWM0
+           if v > 3  {0x2f} else {0x00}, // PWM0
+           if v > 4  {0x00} else {0x00}, // PWM0
+           if v > 12 {0x2f} else {0x00}, // PWM0
+           if v > 11 {0x00} else {0x00}, // PWM0
+           if v > 10 {0x2f} else {0x00}, // PWM0
+           if v > 9  {0x00} else {0x00}, // PWM0
+           if v > 13 {0x2f} else {0x00}, // PWM0
+           if v > 14 {0x00} else {0x00}, // PWM0
+           if v > 15 {0x2f} else {0x00}, // PWM0
+           if v > 16 {0x00} else {0x00}, // PWM0
+           if v > 8  {0x2f} else {0x00}, // PWM0
+           if v > 7  {0x00} else {0x00}, // PWM0
+           if v > 6  {0x2f} else {0x00}, // PWM0
+           if v > 5  {0x00} else {0x00}, // PWM0
            0xFFu8, // GRPPWM
            0x00u8, // GRPFREQ
            0xAAu8, // LEDOUT0
@@ -137,11 +145,12 @@ fn main() -> ! {
            0xAAu8, // LEDOUT3
         ];
 
-        timer.delay_ms(100).unwrap();
+        timer.delay_ms(10).unwrap();
 
         // write to the LED expander
         let _ = i2cdev.transaction(0x5, &mut [Operation::Write(&bytes)]);
 
+        /*
         // read some data from the TUSB322I
         let mut eeprom_bytes: [u8; 1] = [0; 1];
         let _ = i2cdev.transaction(0x47, &mut [Operation::Write(&[0x09u8]),
@@ -151,6 +160,8 @@ fn main() -> ! {
             info!("usb_id{}: 0x{:x}", ix, byte);
             ix += 1;
         }
+        */
+
 
         if direction {
             led_state >>= 1;

@@ -38,6 +38,14 @@ class _TiliquaPlatform(LatticeECP5Platform):
         Resource("enc_b", 0, PinsN("C7", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
         Resource("enc_s", 0, PinsN("A6", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
 
+        Resource("encoder", 0,
+                 Subsignal("i", PinsN("D7", dir="i"),
+                           Attrs(IO_STANDARD="LVCMOS33")),
+                 Subsignal("q", PinsN("C7", dir="i"),
+                           Attrs(IO_STANDARD="LVCMOS33")),
+                 Subsignal("s", PinsN("A6", dir="i"),
+                           Attrs(IO_STANDARD="LVCMOS33"))),
+
         Resource("vbus_en", 0, PinsN("D6", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
 
         # RP2040 bridge
