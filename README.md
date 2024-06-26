@@ -20,7 +20,7 @@
 - Jack insertion detection on input & output jacks.
 - 2x expansion ports (PMOD compatible) for up to 24 simultaneous audio channels (with extra eurorack-pmods).
 
-<img src="doc/img/tiliqua-rear-left.jpg" width="500">
+<img src="doc/img/tiliqua-rear-left.jpg" width="700">
 
 ## Where do I get a Tiliqua?
 
