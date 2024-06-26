@@ -22,6 +22,7 @@ from tiliqua.psram_peripheral                    import PSRAMPeripheral
 
 from tiliqua.i2c                                 import I2CPeripheral
 from tiliqua.encoder                             import EncoderPeripheral
+from tiliqua                                     import eurorack_pmod
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
@@ -114,16 +115,23 @@ class HelloSoc(Elaboratable):
             self.encoder_pins.s.i.eq(enc.s.i),
         ]
 
-        ep = platform.request("audio_ffc", 0)
+        # connect i2c peripheral to mobo i2c
+        mobo_i2c = platform.request("mobo_i2c", 0)
         m.d.comb += [
-            ep.pdn.o.eq(0),
-            ep.i2c_sda.o.eq(self.i2c_pins.sda.o),
-            ep.i2c_sda.oe.eq(self.i2c_pins.sda.oe),
-            self.i2c_pins.sda.i.eq(ep.i2c_sda.i),
-            ep.i2c_scl.o.eq(self.i2c_pins.scl.o),
-            ep.i2c_scl.oe.eq(self.i2c_pins.scl.oe),
-            self.i2c_pins.scl.i.eq(ep.i2c_scl.i),
+            mobo_i2c.pdn.o.eq(0),
+            mobo_i2c.sda.o.eq(self.i2c_pins.sda.o),
+            mobo_i2c.sda.oe.eq(self.i2c_pins.sda.oe),
+            self.i2c_pins.sda.i.eq(mobo_i2c.sda.i),
+            mobo_i2c.scl.o.eq(self.i2c_pins.scl.o),
+            mobo_i2c.scl.oe.eq(self.i2c_pins.scl.oe),
+            self.i2c_pins.scl.i.eq(mobo_i2c.scl.i),
         ]
+
+        # add a eurorack pmod that does nothing
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True,
+                touch_enabled=True)
 
         return m
 

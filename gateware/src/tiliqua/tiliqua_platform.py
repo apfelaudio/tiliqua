@@ -68,9 +68,15 @@ class _TiliquaPlatform(LatticeECP5Platform):
             Subsignal("lrck",   Pins("C10", dir="o")),
             Subsignal("bick",   Pins("D9",  dir="o")),
             Subsignal("mclk",   Pins("B11", dir="o")),
+            Subsignal("pdn",    Pins("C11", dir="o")),
+            Subsignal("i2c_sda",    Pins("D13", dir="io")),
+            Subsignal("i2c_scl",    Pins("C13", dir="io")),
+        ),
+
+        Resource("mobo_i2c", 0,
             Subsignal("pdn",    Pins("A3", dir="o")),
-            Subsignal("i2c_sda",    Pins("A7", dir="io")),
-            Subsignal("i2c_scl",    Pins("B8", dir="io")),
+            Subsignal("sda",    Pins("A7", dir="io")),
+            Subsignal("scl",    Pins("B8", dir="io")),
         ),
 
         # Use LUNA -- interface/flash.py for this
