@@ -93,7 +93,7 @@ class HelloSoc(Elaboratable):
 
         ep = platform.request("audio_ffc", 0)
         m.d.comb += [
-            ep.pdn.eq(1),
+            ep.pdn.eq(0),
             ep.i2c_sda.o.eq(self.i2c_pins.sda.o),
             ep.i2c_sda.oe.eq(self.i2c_pins.sda.oe),
             self.i2c_pins.sda.i.eq(ep.i2c_sda.i),

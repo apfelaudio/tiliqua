@@ -43,12 +43,6 @@ class _TiliquaPlatform(LatticeECP5Platform):
             attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
         ),
 
-        # MIDI I/O
-        UARTResource(1,
-            rx="D5", tx="B8",
-            attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
-        ),
-
         # USB
         ULPIResource("ulpi", 0,
             data="N1 M2 M1 L2 L1 K2 K1 K3",
@@ -63,9 +57,9 @@ class _TiliquaPlatform(LatticeECP5Platform):
             Subsignal("lrck",   Pins("C10", dir="o")),
             Subsignal("bick",   Pins("D9",  dir="o")),
             Subsignal("mclk",   Pins("B11", dir="o")),
-            Subsignal("pdn",    Pins("C11", dir="o")),
-            Subsignal("i2c_sda",    Pins("D13", dir="io")),
-            Subsignal("i2c_scl",    Pins("C13", dir="io")),
+            Subsignal("pdn",    Pins("A3", dir="o")),
+            Subsignal("i2c_sda",    Pins("A7", dir="io")),
+            Subsignal("i2c_scl",    Pins("B8", dir="io")),
         ),
 
         # Use LUNA -- interface/flash.py for this
