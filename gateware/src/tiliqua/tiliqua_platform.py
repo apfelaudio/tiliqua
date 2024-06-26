@@ -34,8 +34,11 @@ class _TiliquaPlatform(LatticeECP5Platform):
         Resource("led_a", 0, PinsN("T14", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
         Resource("led_b", 0, PinsN("T15", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
 
-        # Button B
-        # Resource("button_b", 0, PinsN("C4", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("enc_a", 0, PinsN("D7", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("enc_b", 0, PinsN("C7", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("enc_s", 0, PinsN("A6", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
+
+        Resource("vbus_en", 0, PinsN("D6", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
 
         # RP2040 bridge
         UARTResource(0,

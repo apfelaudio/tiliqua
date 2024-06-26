@@ -142,13 +142,13 @@ fn main() -> ! {
         // write to the LED expander
         let _ = i2cdev.transaction(0x5, &mut [Operation::Write(&bytes)]);
 
-        // read some data from EEPROM
-        let mut eeprom_bytes: [u8; 8] = [0; 8];
-        let _ = i2cdev.transaction(0x52, &mut [Operation::Write(&[0xFAu8]),
+        // read some data from the TUSB322I
+        let mut eeprom_bytes: [u8; 1] = [0; 1];
+        let _ = i2cdev.transaction(0x47, &mut [Operation::Write(&[0x09u8]),
                                                Operation::Read(&mut eeprom_bytes)]);
         let mut ix = 0;
         for byte in eeprom_bytes {
-            info!("eeprom{}: 0x{:x}", ix, byte);
+            info!("usb_id{}: 0x{:x}", ix, byte);
             ix += 1;
         }
 

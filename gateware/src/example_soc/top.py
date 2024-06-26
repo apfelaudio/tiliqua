@@ -91,6 +91,10 @@ class HelloSoc(Elaboratable):
         if hasattr(uart_io.tx, 'oe'):
             m.d.comb += uart_io.tx.oe.eq(~self.soc.uart._phy.tx.rdy),
 
+        m.d.comb += [
+            platform.request("vbus_en").o.eq(platform.request("enc_s").i)
+        ]
+
         ep = platform.request("audio_ffc", 0)
         m.d.comb += [
             ep.pdn.eq(0),
