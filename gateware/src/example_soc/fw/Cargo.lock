@@ -35,17 +35,17 @@ dependencies = [
 
 [[package]]
 name = "embedded-hal"
-version = "1.0.0-alpha.9"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "129b101ddfee640565f7c07b301a31d95aa21e5acef21a491c307139f5fa4c91"
+checksum = "361a90feb7004eca4019fb28352a9465666b24f840f5c3cddf0ff13920590b89"
 
 [[package]]
 name = "embedded-hal-nb"
-version = "1.0.0-alpha.1"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e0760ec0a3bf76859d5e33f39542af103f157d5b2ecfb00ace56dd461472e3a"
+checksum = "fba4268c14288c828995299e59b12babdbe170f6c6d73731af1b4648142e8605"
 dependencies = [
- "embedded-hal 1.0.0-alpha.9",
+ "embedded-hal 1.0.0",
  "nb 1.1.0",
 ]
 
@@ -60,18 +60,6 @@ name = "log"
 version = "0.4.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
-
-[[package]]
-name = "lunasoc-hal"
-version = "0.0.0"
-source = "git+https://github.com/greatscottgadgets/cynthion.git#11d02c678893caff8ccab190e95ee56a673d5e35"
-dependencies = [
- "embedded-hal 0.2.7",
- "embedded-hal 1.0.0-alpha.9",
- "embedded-hal-nb",
- "nb 1.1.0",
- "riscv",
-]
 
 [[package]]
 name = "memchr"
@@ -212,12 +200,23 @@ dependencies = [
 name = "tiliqua-fw"
 version = "0.1.0"
 dependencies = [
- "embedded-hal 1.0.0-alpha.9",
+ "embedded-hal 1.0.0",
  "log",
- "lunasoc-hal",
  "panic-halt",
  "riscv",
  "riscv-rt",
+ "tiliqua-hal",
+ "tiliqua-pac",
+]
+
+[[package]]
+name = "tiliqua-hal"
+version = "0.0.0"
+dependencies = [
+ "embedded-hal 1.0.0",
+ "embedded-hal-nb",
+ "nb 1.1.0",
+ "riscv",
  "tiliqua-pac",
 ]
 

@@ -2,15 +2,18 @@
 #![no_main]
 
 pub use tiliqua_pac as pac;
-pub use lunasoc_hal as hal;
+pub use tiliqua_hal as hal;
 
-lunasoc_hal::impl_serial! {
+tiliqua_hal::impl_serial! {
     Serial0: pac::UART,
 }
 
-lunasoc_hal::impl_timer! {
+tiliqua_hal::impl_timer! {
     Timer0: pac::TIMER,
 }
 
+tiliqua_hal::impl_i2c! {
+    I2c0: pac::I2C0,
+}
+
 pub mod log;
-pub mod i2c;

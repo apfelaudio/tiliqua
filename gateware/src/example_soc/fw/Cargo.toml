@@ -4,11 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-embedded-hal = "=1.0.0-alpha.9"
+log = "0.4.17"
+embedded-hal = "=1.0.0"
 riscv = { version = "=0.10.1", features = ["critical-section-single-hart"] }
 riscv-rt = { version = "=0.11.0" }
 panic-halt = "0.2.0"
 tiliqua-pac = { path="../pac", default-features = false, features = ["critical-section", "vexriscv"] }
-lunasoc-hal = { git = "https://github.com/greatscottgadgets/cynthion.git", default-features = false, features = ["vexriscv"]}
-
-log = "0.4.17"
+tiliqua-hal = { path="../hal", default-features = false, features = ["vexriscv"]}
