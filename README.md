@@ -4,7 +4,7 @@
 
 **[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful, hackable FPGA-based audio multitool for Eurorack.**
 
-<img src="doc/img/tiliqua-front-left.jpg" width="300">
+<img src="doc/img/tiliqua-front-left.jpg" width="500">
 
 ## Technical
 - 8 (4 in + 4 out) DC-coupled audio channels, 192KHz / 32bit sampling supported.
@@ -20,7 +20,7 @@
 - Jack insertion detection on input & output jacks.
 - 2x expansion ports (PMOD compatible) for up to 24 simultaneous audio channels (with extra eurorack-pmods).
 
-<img src="doc/img/tiliqua-rear-left.jpg" width="400">
+<img src="doc/img/tiliqua-rear-left.jpg" width="500">
 
 ## Where do I get a Tiliqua?
 
