@@ -107,7 +107,15 @@ fn main() -> ! {
 
     let mut i2cdev = I2c0::new(peripherals.I2C0);
 
+    let encoder = peripherals.ENCODER0;
+    let mut encoder_rotation: i16 = 0;
+
     loop {
+
+        encoder_rotation += (encoder.step().read().bits() as i8) as i16;
+        info!("encoder button={} rotation={}",
+              encoder.button().read().bits(),
+              encoder_rotation);
 
         let bytes = [
            0x80u8, // Auto-increment starting from MODE1

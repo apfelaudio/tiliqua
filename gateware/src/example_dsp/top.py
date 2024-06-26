@@ -693,9 +693,9 @@ class CoreTop(Elaboratable):
             # For now, if a core requests midi input, we connect it up
             # to the type-A serial MIDI RX input. In theory this bytestream
             # could also come from LUNA in host or device mode.
-            uart_pins = platform.request("uart", 1)
+            midi_pins = platform.request("midi")
             m.submodules.serialrx = serialrx = midi.SerialRx(
-                    system_clk_hz=60e6, pins=uart_pins)
+                    system_clk_hz=60e6, pins=midi_pins)
             m.submodules.midi_decode = midi_decode = midi.MidiDecode()
             wiring.connect(m, serialrx.o, midi_decode.i)
             wiring.connect(m, midi_decode.o, self.core.i_midi)
@@ -726,18 +726,18 @@ def get_core(name):
 
     return cores[name]
 
-def build(core_name: str):
+def build():
     """Build a bitstream for a top-level DSP core."""
-
+    core_name = '' if len(sys.argv) < 2 else sys.argv[1]
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     touch, cls_core = get_core(core_name)
     top = CoreTop(cls_core, touch=touch)
     TiliquaPlatform().build(top)
 
-def simulate(core_name: str):
+def simulate():
     """Simulate a top-level DSP core using Verilator."""
-
+    core_name = '' if len(sys.argv) < 2 else sys.argv[1]
     _, cls_core = get_core(core_name)
     build_dst = "build"
     dst = f"{build_dst}/core.v"
