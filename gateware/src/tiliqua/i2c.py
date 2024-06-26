@@ -67,6 +67,7 @@ class I2CPeripheral(Peripheral, Elaboratable):
 
     TODO
     ----
+    - Add more types of error flags than simply NACK.
     - Add an 'abort' CSR to let the SoC drain our FIFOs if it decides
       to abort a transaction midway through writing it (e.g. FIFOs full).
     - Revise 'READ_RECV_VALUE' state. It should never ack the last read
