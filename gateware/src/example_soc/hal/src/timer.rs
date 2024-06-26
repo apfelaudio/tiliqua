@@ -120,10 +120,14 @@ macro_rules! impl_timer {
                 }
             }
 
-            // trait: hal::delay::DelayUs
+            // trait: hal::delay::DelayNs
             impl $crate::hal::delay::DelayNs for $TIMERX {
                 fn delay_ns(&mut self, ns: u32) {
-                    let ticks: u32 = self.clk / 1_000 * ns;
+
+                    // Be careful not to overflow.
+                    let ticks: u32 = (self.clk / 1_000_000) * (ns / 1_000);
+
+                    // TODO: add low clamp for 1usec?
 
                     // start timer
                     self.registers.reload().write(|w| unsafe { w.reload().bits(0) });
