@@ -31,8 +31,8 @@ class _TiliquaPlatform(LatticeECP5Platform):
         Resource("self_program", 0, PinsN("T13", dir="o"), Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")),
 
         # LEDs
-        Resource("led_a", 0, PinsN("B7", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
-        Resource("led_b", 0, PinsN("A3", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("led_a", 0, PinsN("T14", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("led_b", 0, PinsN("T15", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
 
         # Button B
         # Resource("button_b", 0, PinsN("C4", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
@@ -51,9 +51,9 @@ class _TiliquaPlatform(LatticeECP5Platform):
 
         # USB
         ULPIResource("ulpi", 0,
-            data="D6 D4 E4 A5 B5 A6 B6 B3",
-            clk="D7", clk_dir="o", dir="A2", nxt="C5",
-            stp="C6", rst="C7", rst_invert=True,
+            data="N1 M2 M1 L2 L1 K2 K1 K3",
+            clk="T3", clk_dir="o", dir="P2", nxt="P1",
+            stp="R2", rst="T2", rst_invert=True,
             attrs=Attrs(IO_TYPE="LVCMOS33")),
 
         # FFC connector to eurorack-pmod on the back.
