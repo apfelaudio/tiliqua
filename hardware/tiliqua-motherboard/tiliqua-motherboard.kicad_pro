@@ -48,7 +48,7 @@
         "silk_text_thickness": 0.1,
         "silk_text_upright": false,
         "zones": {
-          "min_clearance": 0.254
+          "min_clearance": 0.22
         }
       },
       "diff_pair_dimensions": [
@@ -117,7 +117,7 @@
         "max_error": 0.005,
         "min_clearance": 0.0,
         "min_connection": 0.0,
-        "min_copper_edge_clearance": 0.5,
+        "min_copper_edge_clearance": 0.4,
         "min_hole_clearance": 0.25,
         "min_hole_to_hole": 0.25,
         "min_microvia_diameter": 0.2,
@@ -489,10 +489,10 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "../fab/",
-      "pos_files": "../fab/place/",
+      "plot": "../fab/tiliqua-motherboard-r2/",
+      "pos_files": "../fab/tiliqua-motherboard-r2/",
       "specctra_dsn": "",
-      "step": "tiliqua-motherboard.step",
+      "step": "tiliqua-motherboard-new3.step",
       "svg": "",
       "vrml": ""
     },
@@ -692,10 +692,6 @@
       "Root"
     ],
     [
-      "5f28fc0f-df6f-45b5-aac7-18a67e46504e",
-      "usb"
-    ],
-    [
       "dd79b704-4c8d-4498-8ec1-0bb3e9e805ab",
       "midi"
     ],
@@ -710,6 +706,22 @@
     [
       "4885642e-e1b2-4a9c-a477-910295b2621e",
       "power"
+    ],
+    [
+      "fab2810c-846b-4fd3-91f6-29ac3e93c045",
+      "gpdi"
+    ],
+    [
+      "17daa742-f20a-4e98-a58b-fde576cacd93",
+      "encoder"
+    ],
+    [
+      "cdf6c5cd-4778-4bd4-bc0a-19e7e0b15b0b",
+      "led_driver"
+    ],
+    [
+      "d2a2a9e8-d4aa-4c38-99cd-33ac9e017277",
+      "usbc"
     ]
   ],
   "text_variables": {}

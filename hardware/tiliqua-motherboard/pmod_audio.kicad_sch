@@ -762,6 +762,32 @@
 		)
 		(uuid "f42e55ec-e6ad-430c-97f9-cad0d44569fd")
 	)
+	(rectangle
+		(start 99.695 48.26)
+		(end 158.75 100.33)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid 1fb87130-2e02-49aa-aabb-de024ef82fef)
+	)
+	(text "FFC connection to backpack eurorack-pmod"
+		(exclude_from_sim no)
+		(at 87.63 46.99 0)
+		(effects
+			(font
+				(size 2.54 2.54)
+				(thickness 0.508)
+				(bold yes)
+				(italic yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "ecf3c78f-8dc0-4f97-89d3-a306fc02e451")
+	)
 	(hierarchical_label "PMOD_GNDA"
 		(shape passive)
 		(at 116.84 63.5 180)
@@ -976,7 +1002,7 @@
 			(uuid "2b771f42-291f-4945-a3cf-97a3b89060c5")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/830acc84-6e16-4cb8-9214-1acea5145425"
 					(reference "#PWR067")
 					(unit 1)
@@ -1047,6 +1073,15 @@
 				(hide yes)
 			)
 		)
+		(property "Tol" ""
+			(at 138.43 73.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "5"
 			(uuid "d76aa472-a548-4969-baf7-c3a588bc1ce1")
 		)
@@ -1093,7 +1128,7 @@
 			(uuid "3e304064-4f6d-4d43-b9cb-f2956bd8f7cc")
 		)
 		(instances
-			(project "backpack"
+			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/830acc84-6e16-4cb8-9214-1acea5145425"
 					(reference "J1")
 					(unit 1)

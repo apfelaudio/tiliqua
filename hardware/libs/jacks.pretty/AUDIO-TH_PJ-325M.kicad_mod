@@ -1,0 +1,161 @@
+(footprint "AUDIO-TH_PJ-325M"
+	(version 20240108)
+	(generator "pcbnew")
+	(generator_version "8.0")
+	(layer "F.Cu")
+	(property "Reference" "J?"
+		(at -1.924 -4.027 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "f0863401-a93c-4ecd-8e1b-9d710ab995cb")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "AUDIO-TH_PJ-325M"
+		(at -1.924 5.727 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "0ee438f1-61a8-48b5-8751-caff59b320d3")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Footprint" "AUDIO-TH_PJ-325M"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "90b4457c-9ca5-4dd9-b538-3aafa5e2623b")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "c4cc0637-d62d-45f0-9da7-a5ae09e3b511")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "7fa03800-92a9-4908-86f3-3aab4d0249e5")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(fp_line
+		(start -11.2 -3)
+		(end -11.2 3)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "ae062ead-b080-42dd-bb0e-ce8d58b9cd57")
+	)
+	(fp_line
+		(start -7.2 -3)
+		(end -11.2 -3)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "2a54f81c-70cf-40da-8f8e-009c07395944")
+	)
+	(fp_line
+		(start -7.2 3)
+		(end -11.2 3)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "0fc13979-490a-4daf-9743-12139ccb728a")
+	)
+	(fp_rect
+		(start -7.1 -3.2)
+		(end 7.3 4.9)
+		(stroke
+			(width 0.254)
+			(type default)
+		)
+		(fill none)
+		(layer "F.SilkS")
+		(uuid "8df2a6e3-e2ac-40ae-bf78-65b5109ddfe3")
+	)
+	(pad "G" thru_hole oval
+		(at -5.9 1)
+		(size 1.5 3.5)
+		(drill oval 1 2.2)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "35cee7b4-c231-4743-b433-21d2d5922ffe")
+	)
+	(pad "S" thru_hole oval
+		(at 2.2 -1)
+		(size 1.5 3.5)
+		(drill oval 1 2.2)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "05fb3179-d383-47bb-a0a7-6133e5e565f0")
+	)
+	(pad "SN" thru_hole oval
+		(at 0.3 1)
+		(size 1.5 3.5)
+		(drill oval 1 2.2)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "51edcab1-3284-48ba-863a-f2a1c9be0447")
+	)
+	(pad "T" thru_hole oval
+		(at -3.4 -1)
+		(size 1.5 3.5)
+		(drill oval 1 2.2)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "ca0de366-2958-4a01-aa4c-9d4d092d8a07")
+	)
+	(pad "TN" thru_hole oval
+		(at 5.9 1)
+		(size 1.5 3.5)
+		(drill oval 1 2.2)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "0f0ede9f-62aa-4cf3-a558-85edebed6070")
+	)
+	(model "/home/seb/dev/tiliqua/hardware/libs/Unnamed-yJn7-U1.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)
