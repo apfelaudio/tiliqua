@@ -21,6 +21,8 @@ from tiliqua.tiliqua_platform                    import TiliquaPlatform
 from tiliqua.psram_peripheral                    import PSRAMPeripheral
 
 from tiliqua.i2c                                 import I2CPeripheral
+from tiliqua.encoder                             import EncoderPeripheral
+from tiliqua                                     import eurorack_pmod
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
@@ -41,6 +43,12 @@ class HelloSoc(Elaboratable):
         self.i2c_pins = Record([
             ('sda', [('i', 1), ('o', 1), ('oe', 1)]),
             ('scl', [('i', 1), ('o', 1), ('oe', 1)]),
+        ])
+
+        self.encoder_pins = Record([
+            ('i', [('i', 1)]),
+            ('q', [('i', 1)]),
+            ('s', [('i', 1)])
         ])
 
         # create our SoC
@@ -73,6 +81,9 @@ class HelloSoc(Elaboratable):
         self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
         self.soc.add_peripheral(self.i2c0, addr=0xf0002000)
 
+        self.encoder0 = EncoderPeripheral(pins=self.encoder_pins)
+        self.soc.add_peripheral(self.encoder0, addr=0xf0003000)
+
         super().__init__()
 
     def elaborate(self, platform):
@@ -82,7 +93,7 @@ class HelloSoc(Elaboratable):
         # generate our domain clocks/resets
         m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ)
 
-        # connect up our UART
+        # Connect up our UART
         uart_io = platform.request("uart", 0)
         m.d.comb += [
             uart_io.tx.o.eq(self.uart_pins.tx),
@@ -91,16 +102,33 @@ class HelloSoc(Elaboratable):
         if hasattr(uart_io.tx, 'oe'):
             m.d.comb += uart_io.tx.oe.eq(~self.soc.uart._phy.tx.rdy),
 
-        ep = platform.request("audio_ffc", 0)
+        # Connect up the rotary encoder + switch
+        enc = platform.request("encoder", 0)
         m.d.comb += [
-            ep.pdn.eq(1),
-            ep.i2c_sda.o.eq(self.i2c_pins.sda.o),
-            ep.i2c_sda.oe.eq(self.i2c_pins.sda.oe),
-            self.i2c_pins.sda.i.eq(ep.i2c_sda.i),
-            ep.i2c_scl.o.eq(self.i2c_pins.scl.o),
-            ep.i2c_scl.oe.eq(self.i2c_pins.scl.oe),
-            self.i2c_pins.scl.i.eq(ep.i2c_scl.i),
+            self.encoder_pins.i.i.eq(enc.i.i),
+            self.encoder_pins.q.i.eq(enc.q.i),
+            self.encoder_pins.s.i.eq(enc.s.i),
         ]
+
+        # Connect i2c peripheral to mobo i2c
+        mobo_i2c = platform.request("mobo_i2c")
+        m.d.comb += [
+            mobo_i2c.sda.o.eq(self.i2c_pins.sda.o),
+            mobo_i2c.sda.oe.eq(self.i2c_pins.sda.oe),
+            self.i2c_pins.sda.i.eq(mobo_i2c.sda.i),
+            mobo_i2c.scl.o.eq(self.i2c_pins.scl.o),
+            mobo_i2c.scl.oe.eq(self.i2c_pins.scl.oe),
+            self.i2c_pins.scl.i.eq(mobo_i2c.scl.i),
+        ]
+
+        # Enable LED driver on motherboard
+        m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
+
+        # add a eurorack pmod that does nothing
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True,
+                touch_enabled=True)
 
         return m
 

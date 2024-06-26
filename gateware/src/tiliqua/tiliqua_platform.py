@@ -1,7 +1,8 @@
-# Copyright (c) 2024 Sebastian Holzapfel <me@sebholzapfel.com>
+# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
+#
 # SPDX-License-Identifier: BSD-3-Clause
 
-""" tiliqua platform definitions. CAR includes extra 12.288MHz PLL for audio clock. """
+""" soldiercrab / tiliqua platform definitions and PLL configuration. """
 
 from amaranth import *
 from amaranth.build import *
@@ -10,6 +11,46 @@ from amaranth.vendor import LatticeECP5Platform
 from amaranth_boards.resources import *
 
 from luna.gateware.platform.core import LUNAPlatform
+
+# Connections inside soldiercrab SoM.
+# TODO: move this to dedicated class and use Connector() construct for card edge.
+resources_soldiercrab = [
+    # 48MHz master
+    Resource("clk48", 0, Pins("A8", dir="i"), Clock(48e6), Attrs(IO_TYPE="LVCMOS33")),
+
+    # PROGRAMN, triggers warm self-reconfiguration
+    Resource("self_program", 0, PinsN("T13", dir="o"), Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")),
+
+    # Indicator LEDs
+    Resource("led_a", 0, PinsN("T14", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
+    Resource("led_b", 0, PinsN("T15", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
+
+    # USB2 PHY
+    ULPIResource("ulpi", 0,
+        data="N1 M2 M1 L2 L1 K2 K1 K3",
+        clk="T3", clk_dir="o", dir="P2", nxt="P1",
+        stp="R2", rst="T2", rst_invert=True,
+        attrs=Attrs(IO_TYPE="LVCMOS33")),
+
+    # oSPIRAM / HyperRAM
+    Resource("ram", 0,
+        Subsignal("clk",   DiffPairs("C3", "D3", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
+        Subsignal("dq",    Pins("F2 B1 C2 E1 E3 E2 F3 G4", dir="io")),
+        Subsignal("rwds",  Pins( "D1", dir="io")),
+        Subsignal("cs",    PinsN("B2", dir="o")),
+        Subsignal("reset", PinsN("C1", dir="o")),
+        Attrs(IO_TYPE="LVCMOS33", SLEWRATE="FAST")
+    ),
+
+    # Configuration SPI flash
+    Resource("spi_flash", 0,
+        # Note: SCK needs to go through a USRMCLK instance.
+        Subsignal("sdi",  Pins("T8",  dir="o")),
+        Subsignal("sdo",  Pins("T7",  dir="i")),
+        Subsignal("cs",   PinsN("N8", dir="o")),
+        Attrs(IO_TYPE="LVCMOS33")
+    ),
+]
 
 class _TiliquaPlatform(LatticeECP5Platform):
     device      = "LFE5U-45F"
@@ -20,41 +61,50 @@ class _TiliquaPlatform(LatticeECP5Platform):
 
     ram_timings = dict(clock_skew = 127)
 
-    resources   = [
-        # BOOTSEL (shared)
+    resources   = resources_soldiercrab + [
+
+        # TODO: this pin is N/C, remove it
         Resource("rst", 0, PinsN("C4", dir="i"), Attrs(IO_TYPE="LVCMOS33")),
 
-        # 48MHz master
-        Resource("clk48", 0, Pins("A8", dir="i"), Clock(48e6), Attrs(IO_TYPE="LVCMOS33")),
+        # Quadrature rotary encoder and switch. These are already debounced by an RC filter.
+        Resource("encoder", 0,
+                 Subsignal("i", PinsN("D7", dir="i")),
+                 Subsignal("q", PinsN("C7", dir="i")),
+                 Subsignal("s", PinsN("A6", dir="i")),
+                 Attrs(IO_TYPE="LVCMOS33")),
 
-        # PROGRAMN, used to trigger self-reconfiguration
-        Resource("self_program", 0, PinsN("T13", dir="o"), Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")),
+        # USB: 5V supply OUT enable (only touch this if you're sure you are a USB host!)
+        Resource("usb_vbus_en", 0, PinsN("D6", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
 
-        # LEDs
-        Resource("led_a", 0, PinsN("B7", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
-        Resource("led_b", 0, PinsN("A3", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
+        # USB: Interrupt line from TUSB322I
+        Resource("usb_int", 0, PinsN("B7", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
 
-        # Button B
-        # Resource("button_b", 0, PinsN("C4", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
+        # Output enable for LEDs driven by PCA9635 on motherboard PCBA
+        Resource("mobo_leds_oe", 0, PinsN("A3", dir="o")),
 
-        # RP2040 bridge
+        # DVI: Hotplug Detect
+        Resource("dvi_hpd", 0, Pins("A5", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
+
+        # Motherboard PCBA I2C bus. Includes:
+        # - address 0x05: PCA9635 LED driver
+        # - address 0x47: TUSB322I USB-C controller
+        # - address 0x50: DVI EDID EEPROM (through 3V3 <-> 5V translator)
+        Resource("mobo_i2c", 0,
+            Subsignal("sda",    Pins("A7", dir="io")),
+            Subsignal("scl",    Pins("B8", dir="io")),
+        ),
+
+        # RP2040 UART bridge
         UARTResource(0,
             rx="A4", tx="B4",
             attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
         ),
 
-        # MIDI I/O
+        # TRS MIDI RX
         UARTResource(1,
-            rx="D5", tx="B8",
+            rx="D5", tx="-",
             attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
         ),
-
-        # USB
-        ULPIResource("ulpi", 0,
-            data="D6 D4 E4 A5 B5 A6 B6 B3",
-            clk="D7", clk_dir="o", dir="A2", nxt="C5",
-            stp="C6", rst="C7", rst_invert=True,
-            attrs=Attrs(IO_TYPE="LVCMOS33")),
 
         # FFC connector to eurorack-pmod on the back.
         Resource("audio_ffc", 0,
@@ -68,26 +118,25 @@ class _TiliquaPlatform(LatticeECP5Platform):
             Subsignal("i2c_scl",    Pins("C13", dir="io")),
         ),
 
-        # Use LUNA -- interface/flash.py for this
-        Resource("spi_flash", 0,
-            # SCK needs to go through a USRMCLK instance.
-            Subsignal("sdi",  Pins("T8",  dir="o")),
-            Subsignal("sdo",  Pins("T7",  dir="i")),
-            Subsignal("cs",   PinsN("N8", dir="o")),
-            Attrs(IO_TYPE="LVCMOS33")
-        ),
-
-        # HyperRAM
-        Resource("ram", 0,
-            Subsignal("clk",   DiffPairs("C3", "D3", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
-            Subsignal("dq",    Pins("F2 B1 C2 E1 E3 E2 F3 G4", dir="io")),
-            Subsignal("rwds",  Pins( "D1", dir="io")),
-            Subsignal("cs",    PinsN("B2", dir="o")),
-            Subsignal("reset", PinsN("C1", dir="o")),
-            Attrs(IO_TYPE="LVCMOS33", SLEWRATE="FAST")
-        ),
+        # DVI
+        # Note: the pins themselves are assigned correctly for use in differential
+        # mode, however it seems nextpnr does not support simultaneously setting
+        # OPENDRAIN="ON" which is technically how a DVI transmitter is supposed to
+        # electrically behave. Maybe instead of LVCMOS33D, something else?
+        Resource("dvi", 0,
+            Subsignal("pd0", Pins("A2", dir="o")),
+            Subsignal("nd0", Pins("B3", dir="o")),
+            Subsignal("pd1", Pins("C5", dir="o")),
+            Subsignal("nd1", Pins("B5", dir="o")),
+            Subsignal("pd2", Pins("E4", dir="o")),
+            Subsignal("nd2", Pins("D4", dir="o")),
+            Subsignal("pck", Pins("C6", dir="o")),
+            Subsignal("nck", Pins("B6", dir="o")),
+            Attrs(IO_TYPE="LVCMOS33", OPENDRAIN="ON", SLEWRATE="FAST")
+         ),
     ]
 
+    # Expansion connectors ex0 and ex1
     connectors  = [
         Connector("pmod", 0, "A9 A13 B14 C14 - - B9 B13 A14 D14 - -"),
         Connector("pmod", 1, "A10 B15 C15 C16 - - B10 A15 B16 D16 - -"),
