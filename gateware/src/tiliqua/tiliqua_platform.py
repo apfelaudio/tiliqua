@@ -77,10 +77,15 @@ class TiliquaPlatform(LatticeECP5Platform):
         ),
 
         Resource("gpdi", 0,
-            Subsignal("d0", Pins("A2", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
-            Subsignal("d1", Pins("C5", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
-            Subsignal("d2", Pins("E4", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
-            Subsignal("ck", Pins("C6", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
+            Subsignal("d0", Pins("A2", dir="o")),
+            Subsignal("nd0", Pins("B3", dir="o")),
+            Subsignal("d1", Pins("C5", dir="o")),
+            Subsignal("nd1", Pins("B5", dir="o")),
+            Subsignal("d2", Pins("E4", dir="o")),
+            Subsignal("nd2", Pins("D4", dir="o")),
+            Subsignal("ck", Pins("C6", dir="o")),
+            Subsignal("nck", Pins("B6", dir="o")),
+            Attrs(IO_TYPE="LVCMOS33", OPENDRAIN="ON", SLEWRATE="FAST", DRIVE="16")
         ),
     ]
 

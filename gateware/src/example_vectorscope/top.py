@@ -123,6 +123,10 @@ class LxVideo(Elaboratable):
                 o_gpdi_data0_p = gpdi.d0.o,
                 o_gpdi_data1_p = gpdi.d1.o,
                 o_gpdi_data2_p = gpdi.d2.o,
+                o_gpdi_clk_n = gpdi.nck.o,
+                o_gpdi_data0_n = gpdi.nd0.o,
+                o_gpdi_data1_n = gpdi.nd1.o,
+                o_gpdi_data2_n = gpdi.nd2.o,
 
                 o_vtg_hcount = vtg_hcount,
                 o_vtg_vcount = vtg_vcount,
