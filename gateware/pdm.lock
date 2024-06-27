@@ -5,7 +5,7 @@
 groups = ["default", "test"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:49199a4d76fe79f5a024e6b86638fde9af608c3f754ec071c52e30a947f1f941"
+content_hash = "sha256:f70d64fc851dff017600db9596798c48e829ada47988abae84fd1ed19d7a1aba"
 
 [[package]]
 name = "amaranth"
@@ -151,24 +151,6 @@ files = [
 ]
 
 [[package]]
-name = "luna"
-version = "0.1.0"
-requires_python = ">=3.8"
-git = "https://github.com/schnommus/luna"
-ref = "seb/isochronous-rebase-12-06-24"
-revision = "f29124b1fd6aaf6b4dc39ae7d8d91baee6cf553c"
-summary = "Amaranth HDL framework for FPGA-based USB solutions"
-groups = ["default"]
-dependencies = [
-    "amaranth~=0.4.0",
-    "libusb1>1.9.2",
-    "pyserial>=3.5",
-    "pyusb>1.1.1",
-    "pyvcd>=0.2.4",
-    "usb-protocol~=0.9",
-]
-
-[[package]]
 name = "luna-soc"
 version = "0.1.0"
 requires_python = ">=3.8"
@@ -185,6 +167,9 @@ dependencies = [
 name = "luna-usb"
 version = "0.1.0"
 requires_python = ">=3.8"
+git = "https://github.com/schnommus/luna"
+ref = "seb/isochronous-rebase-12-06-24"
+revision = "f29124b1fd6aaf6b4dc39ae7d8d91baee6cf553c"
 summary = "Amaranth HDL framework for FPGA-based USB solutions"
 groups = ["default"]
 dependencies = [
@@ -194,10 +179,6 @@ dependencies = [
     "pyusb>1.1.1",
     "pyvcd>=0.2.4",
     "usb-protocol~=0.9",
-]
-files = [
-    {file = "luna_usb-0.1.0-py3-none-any.whl", hash = "sha256:53c36c4a067606f05bb1e618d338613455084f7fdaf5a24b34a847854c1bff86"},
-    {file = "luna_usb-0.1.0.tar.gz", hash = "sha256:894755977597473df686e456c7104ffb332b5a357f01d4b714031ee42d838d41"},
 ]
 
 [[package]]
