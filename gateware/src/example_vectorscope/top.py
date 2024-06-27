@@ -87,7 +87,7 @@ class LxVideo(Elaboratable):
         phy_g = self.phy_g
         phy_b = self.phy_b
 
-        ophy_de_hdmi = Signal()
+        phy_de_hdmi = Signal()
         phy_vsync_hdmi = Signal()
         phy_vsync_sync = Signal()
 
@@ -131,7 +131,7 @@ class LxVideo(Elaboratable):
                 o_vtg_hcount = vtg_hcount,
                 o_vtg_vcount = vtg_vcount,
                 o_phy_vsync  = phy_vsync_hdmi,
-                o_phy_de  = ophy_de_hdmi,
+                o_phy_de  = phy_de_hdmi,
 
                 i_phy_r = phy_r,
                 i_phy_g = phy_g,
@@ -151,16 +151,12 @@ class LxVideo(Elaboratable):
                 o_vtg_hcount = vtg_hcount,
                 o_vtg_vcount = vtg_vcount,
                 o_phy_vsync  = phy_vsync_hdmi,
-                o_phy_de  = ophy_de_hdmi,
+                o_phy_de  = phy_de_hdmi,
 
                 i_phy_r = phy_r,
                 i_phy_g = phy_g,
                 i_phy_b = phy_b,
             )
-
-        phy_de_hdmi = Signal()
-        m.d.comb += phy_de_hdmi.eq((vtg_hcount < 720) &
-                                   (vtg_vcount < 720))
 
         # how?
 
