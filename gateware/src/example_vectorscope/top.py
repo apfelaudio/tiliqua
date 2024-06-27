@@ -106,7 +106,9 @@ class LxVideo(Elaboratable):
             add_sv("tmds_encoder_dvi.sv")
             add_sv("dvi_generator.sv")
 
-            gpdi = gpdi_from_pmod(platform, 0)
+            #gpdi = gpdi_from_pmod(platform, 0)
+
+            gpdi = platform.request("gpdi", 0)
 
             m.submodules.vlxvid = Instance("vtg",
                 i_clk_sys = ClockSignal("sync"),
@@ -117,14 +119,10 @@ class LxVideo(Elaboratable):
                 i_rst_hdmi = ResetSignal("hdmi"),
                 i_rst_hdmi5x = ResetSignal("hdmi5x"),
 
-                o_gpdi_clk_n = gpdi.clk_n.o,
-                o_gpdi_clk_p = gpdi.clk_p.o,
-                o_gpdi_data0_n = gpdi.data0_n.o,
-                o_gpdi_data0_p = gpdi.data0_p.o,
-                o_gpdi_data1_n = gpdi.data1_n.o,
-                o_gpdi_data1_p = gpdi.data1_p.o,
-                o_gpdi_data2_n = gpdi.data2_n.o,
-                o_gpdi_data2_p = gpdi.data2_p.o,
+                o_gpdi_clk_p = gpdi.ck.o,
+                o_gpdi_data0_p = gpdi.d0.o,
+                o_gpdi_data1_p = gpdi.d1.o,
+                o_gpdi_data2_p = gpdi.d2.o,
 
                 o_vtg_hcount = vtg_hcount,
                 o_vtg_vcount = vtg_vcount,

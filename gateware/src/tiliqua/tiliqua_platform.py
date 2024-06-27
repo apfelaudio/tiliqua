@@ -45,13 +45,6 @@ class TiliquaPlatform(LatticeECP5Platform):
             attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
         ),
 
-        # USB
-        ULPIResource("ulpi", 0,
-            data="D6 D4 E4 A5 B5 A6 B6 B3",
-            clk="D7", clk_dir="o", dir="A2", nxt="C5",
-            stp="C6", rst="C7", rst_invert=True,
-            attrs=Attrs(IO_TYPE="LVCMOS33")),
-
         # FFC connector to eurorack-pmod on the back.
         Resource("audio_ffc", 0,
             Subsignal("sdin1",  Pins("D8",  dir="o")),
@@ -81,6 +74,13 @@ class TiliquaPlatform(LatticeECP5Platform):
             Subsignal("cs",    PinsN("B2", dir="o")),
             Subsignal("reset", PinsN("C1", dir="o")),
             Attrs(IO_TYPE="LVCMOS33", SLEWRATE="FAST")
+        ),
+
+        Resource("gpdi", 0,
+            Subsignal("d0", Pins("A2", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
+            Subsignal("d1", Pins("C5", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
+            Subsignal("d2", Pins("E4", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
+            Subsignal("ck", Pins("C6", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
         ),
     ]
 
