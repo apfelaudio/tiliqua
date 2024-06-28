@@ -24,3 +24,5 @@ build_usb_audio = { call = "example_usb_audio.top:build(ila=False)" }
 build_usb_audio_ila = { call = "example_usb_audio.top:build(ila=True)" }
 build_dsp_core = { call = "example_dsp.top:build()" }
 sim_dsp_core = { call = "example_dsp.top:simulate()" }
+vectorscope_build = { call = "example_vectorscope.top:build()" }
+vectorscope_sim = { call = "example_vectorscope.top:sim()" }

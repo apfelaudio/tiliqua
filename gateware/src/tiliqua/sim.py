@@ -41,5 +41,6 @@ class FakeTiliquaDomainGenerator(Elaboratable):
 
         m.domains.sync   = ClockDomain()
         m.domains.audio  = ClockDomain()
+        m.domains.hdmi   = ClockDomain()
 
         return m
