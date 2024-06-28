@@ -207,7 +207,7 @@ class FramebufferPHY(Elaboratable):
                 i_data_in_ch0 = s_dvi_b,
                 i_data_in_ch1 = s_dvi_g,
                 i_data_in_ch2 = s_dvi_r,
-                i_ctrl_in_ch0 = Cat(s_dvi_vsync, s_dvi_hsync),
+                i_ctrl_in_ch0 = Cat(s_dvi_hsync, s_dvi_vsync),
                 i_ctrl_in_ch1 = 0,
                 i_ctrl_in_ch2 = 0,
 
