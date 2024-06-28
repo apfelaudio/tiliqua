@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
     contextp->timeInc(1);
     top->rst = 1;
-    top->hdmi_rst = 1;
+    top->dvi_rst = 1;
     top->audio_rst = 1;
     top->eval();
 
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 
     contextp->timeInc(1);
     top->rst = 0;
-    top->hdmi_rst = 0;
+    top->dvi_rst = 0;
     top->audio_rst = 0;
     top->eval();
 
@@ -60,10 +60,10 @@ int main(int argc, char** argv) {
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
         if (mod % 2 == 0) {
 
-            top->hdmi_clk = !top->hdmi_clk;
-            if (top->hdmi_clk) {
-                uint32_t x = top->vtg_hcount;
-                uint32_t y = top->vtg_vcount;
+            top->dvi_clk = !top->dvi_clk;
+            if (top->dvi_clk) {
+                uint32_t x = top->x;
+                uint32_t y = top->y;
                 if (x < imx && y < imy) {
                     image_data[y*imx*3 + x*3 + 0] = top->phy_r;
                     image_data[y*imx*3 + x*3 + 1] = top->phy_g;

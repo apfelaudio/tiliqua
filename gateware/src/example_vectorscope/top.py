@@ -35,6 +35,74 @@ from amaranth.back import verilog
 
 from tiliqua.sim import FakeEurorackPmod, FakeTiliquaDomainGenerator
 
+from dataclasses import dataclass
+
+@dataclass
+class DVITimings:
+    h_active:      int
+    h_sync_start:  int
+    h_sync_end:    int
+    h_total:       int
+    v_active:      int
+    v_sync_start:  int
+    v_sync_end:    int
+    v_total:       int
+    refresh_rate:  float
+    pixel_clk_mhz: float
+
+DVI_TIMINGS = {
+    "720x720p60": DVITimings(
+        h_active      = 720,
+        h_sync_start  = 760,
+        h_sync_end    = 780,
+        h_total       = 820,
+        v_active      = 720,
+        v_sync_start  = 744,
+        v_sync_end    = 748,
+        v_total       = 760,
+        refresh_rate  = 60.0,
+        pixel_clk_mhz = 37.39
+    ),
+}
+
+class DVITimingGenerator(wiring.Component):
+
+    x: Out(unsigned(12))
+    y: Out(unsigned(12))
+    hsync: Out(unsigned(1))
+    vsync: Out(unsigned(1))
+    de: Out(unsigned(1))
+
+    def __init__(self, timings: DVITimings):
+        self.timings = timings
+        super().__init__()
+
+    def elaborate(self, platform) -> Module:
+        m = Module()
+
+        timings = self.timings
+
+        with m.If(self.x == (timings.h_total-1)):
+            m.d.sync += self.x.eq(0)
+            with m.If(self.y == (timings.v_total-1)):
+                m.d.sync += self.y.eq(0)
+            with m.Else():
+                m.d.sync += self.y.eq(self.y+1)
+        with m.Else():
+            m.d.sync += self.x.eq(self.x+1)
+
+        m.d.comb += [
+            self.hsync.eq((self.x >= (timings.h_sync_start-1)) &
+                          (self.x < (timings.h_sync_end-1))),
+            self.vsync.eq((self.y >= (timings.v_sync_start-1)) &
+                          (self.y < (timings.v_sync_end-1))),
+            self.de.eq((self.x <= (timings.h_active-1)) &
+                       (self.y <= (timings.v_active-1))),
+
+        ]
+
+        return m
+
 class FramebufferPHY(Elaboratable):
 
     """
@@ -43,7 +111,10 @@ class FramebufferPHY(Elaboratable):
     They are then piped with DVI timings to the display in the 'dvi' clock domain.
     """
 
-    def __init__(self, fb_base=None, bus_master=None, fifo_depth=128, sim=False, fb_hsize=720, fb_vsize=720, fb_bytes_per_pixel=1):
+    def __init__(self, dvi_timings: DVITimings, fb_base=None, bus_master=None,
+                 fifo_depth=128, sim=False, fb_hsize=720, fb_vsize=720,
+                 fb_bytes_per_pixel=1):
+
         super().__init__()
 
         self.sim = sim
@@ -64,13 +135,10 @@ class FramebufferPHY(Elaboratable):
         self.enable = Signal(1, reset=0)
 
         # Tracking in DVI domain
+        self.dvi_tgen = DomainRenamer("dvi")(DVITimingGenerator(dvi_timings))
         self.bytecounter = Signal(log2_int(4//self.fb_bytes_per_pixel))
         self.last_word   = Signal(32)
         self.consume_started = Signal(1, reset=0)
-
-        # Pixel position in DVI domain (only used for simulation)
-        self.vtg_hcount = Signal(12)
-        self.vtg_vcount = Signal(12)
 
         # Current pixel color in DVI domain
         self.phy_r = Signal(8)
@@ -81,85 +149,68 @@ class FramebufferPHY(Elaboratable):
         m = Module()
 
         m.submodules.fifo = self.fifo
+        m.submodules.dvi_tgen = dvi_tgen = self.dvi_tgen
 
         # 'dvi' domain
-        vtg_hcount = self.vtg_hcount
-        vtg_vcount = self.vtg_vcount
         phy_r = self.phy_r
         phy_g = self.phy_g
         phy_b = self.phy_b
-        phy_de_dvi = Signal()
-        phy_vsync_dvi = Signal()
 
         # Create a VSync signal in the 'sync' domain.
+        # TODO: audit this and below logic on inverted VSync timings.
         phy_vsync_sync = Signal()
         m.submodules.vsync_ff = FFSynchronizer(
-                i=phy_vsync_dvi, o=phy_vsync_sync, o_domain="sync")
-
+                i=dvi_tgen.vsync, o=phy_vsync_sync, o_domain="sync")
 
         if not self.sim:
 
-            # DVI timings generator and PHY.
-            # TODO: port these to Amaranth as well!
+            # DVI PHY (not needed for simulation).
 
             def add_sv(f):
                 path = os.path.join("src/vendor/dvi", f)
                 platform.add_file(f"build/{f}", open(path))
 
-            add_sv("vtg.sv")
-            add_sv("simple_720p.sv")
             add_sv("tmds_encoder_dvi.sv")
             add_sv("dvi_generator.sv")
 
             dvi_pins = platform.request("dvi")
 
-            m.submodules.vlxvid = Instance("vtg",
-                i_clk_sys = ClockSignal("sync"),
-                i_clk_dvi = ClockSignal("dvi"),
-                i_clk_dvi5x = ClockSignal("dvi5x"),
+            # Register all DVI timing signals to cut timing path.
+            s_dvi_de = Signal()
+            s_dvi_hsync = Signal()
+            s_dvi_vsync = Signal()
+            s_dvi_b = Signal(unsigned(8))
+            s_dvi_g = Signal(unsigned(8))
+            s_dvi_r = Signal(unsigned(8))
+            m.d.sync += [
+                s_dvi_de.eq(dvi_tgen.de),
+                s_dvi_hsync.eq(dvi_tgen.hsync),
+                s_dvi_vsync.eq(dvi_tgen.vsync),
+                s_dvi_r.eq(phy_r),
+                s_dvi_g.eq(phy_g),
+                s_dvi_b.eq(phy_b),
+            ]
 
-                i_rst_sys = ResetSignal("sync"),
-                i_rst_dvi = ResetSignal("dvi"),
-                i_rst_dvi5x = ResetSignal("dvi5x"),
+            # Instantiate the DVI PHY itself
+            # TODO: port this to Amaranth as well!
+            m.submodules.dvi_gen = Instance("dvi_generator",
+                i_rst_pix = ResetSignal("dvi"),
+                i_clk_pix = ClockSignal("dvi"),
+                i_clk_pix_5x = ClockSignal("dvi5x"),
 
-                o_gpdi_clk_p   = dvi_pins.ck.o,
-                o_gpdi_data0_p = dvi_pins.d0.o,
-                o_gpdi_data1_p = dvi_pins.d1.o,
-                o_gpdi_data2_p = dvi_pins.d2.o,
+                i_de = s_dvi_de,
+                i_data_in_ch0 = s_dvi_b,
+                i_data_in_ch1 = s_dvi_g,
+                i_data_in_ch2 = s_dvi_r,
+                i_ctrl_in_ch0 = Cat(s_dvi_vsync, s_dvi_hsync),
+                i_ctrl_in_ch1 = 0,
+                i_ctrl_in_ch2 = 0,
 
-                o_vtg_hcount = vtg_hcount,
-                o_vtg_vcount = vtg_vcount,
-                o_phy_vsync  = phy_vsync_dvi,
-                o_phy_de  = phy_de_dvi,
-
-                i_phy_r = phy_r,
-                i_phy_g = phy_g,
-                i_phy_b = phy_b,
+                o_tmds_clk_serial = dvi_pins.ck.o,
+                o_tmds_ch0_serial = dvi_pins.d0.o,
+                o_tmds_ch1_serial = dvi_pins.d1.o,
+                o_tmds_ch2_serial = dvi_pins.d2.o,
             )
-        else:
-
-            # For simulation we use a simplified video PHY
-            # implementation that only tracks the screen position.
-
-            m.submodules.vlxvid = Instance("vtg",
-                i_clk_sys = ClockSignal("sync"),
-                i_clk_dvi = ClockSignal("dvi"),
-                i_clk_dvi5x = ClockSignal("dvi5x"),
-
-                i_rst_sys = ResetSignal("sync"),
-                i_rst_dvi = ResetSignal("dvi"),
-                i_rst_dvi5x = ResetSignal("dvi5x"),
-
-                o_vtg_hcount = vtg_hcount,
-                o_vtg_vcount = vtg_vcount,
-                o_phy_vsync  = phy_vsync_dvi,
-                o_phy_de  = phy_de_dvi,
-
-                i_phy_r = phy_r,
-                i_phy_g = phy_g,
-                i_phy_b = phy_b,
-            )
-
 
         # DMA master bus
         bus = self.bus
@@ -229,7 +280,7 @@ class FramebufferPHY(Elaboratable):
         with m.If(drain_fifo_dvi):
             m.d.dvi += bytecounter.eq(0)
             m.d.comb += self.fifo.r_en.eq(1),
-        with m.Elif(phy_de_dvi & self.fifo.r_rdy):
+        with m.Elif(dvi_tgen.de & self.fifo.r_rdy):
             m.d.comb += self.fifo.r_en.eq(bytecounter == 0),
             m.d.dvi += bytecounter.eq(bytecounter+1)
             with m.If(bytecounter == 0):
@@ -600,11 +651,13 @@ class VectorScopeTop(Elaboratable):
         self.sim = sim
 
         # One PSRAM with an internal arbiter to support multiple DMA masters.
-
         self.hyperram = PSRAMPeripheral(
                 size=16*1024*1024, sim=sim)
-        self.video = FramebufferPHY(fb_base=0x0, bus_master=self.hyperram.bus,
-                             sim=sim)
+
+        # All of our DMA masters
+        self.video = FramebufferPHY(
+                fb_base=0x0, dvi_timings=DVI_TIMINGS["720x720p60"],
+                bus_master=self.hyperram.bus, sim=sim)
         self.persist = Persistance(fb_base=0x0, bus_master=self.hyperram.bus)
         self.draw = Draw(fb_base=0x0, bus_master=self.hyperram.bus)
 
@@ -693,8 +746,8 @@ def sim():
             top.hyperram.psram.write_data,
             top.hyperram.psram.read_ready,
             top.hyperram.psram.write_ready,
-            top.video.vtg_hcount,
-            top.video.vtg_vcount,
+            top.video.dvi_tgen.x,
+            top.video.dvi_tgen.y,
             top.video.phy_r,
             top.video.phy_g,
             top.video.phy_b,
@@ -730,8 +783,6 @@ def sim():
                            "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
                            "../../src/example_vectorscope/sim/sim.cpp",
                            f"{dst}",
-                           "src/vendor/dvi/simple_720p.sv",
-                           "src/vendor/dvi/vtg_sim.sv",
                            ],
                           env=os.environ)
 
