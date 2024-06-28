@@ -633,7 +633,7 @@ class VectorScopeTop(Elaboratable):
                 self.pmod0.sample_inject[3]._target.eq(self.inject3)
             ]
         else:
-            m.submodules.car = TiliquaDomainGenerator()
+            m.submodules.car = TiliquaDomainGenerator(audio_192=True)
 
         if not self.sim:
             self.pmod0 = eurorack_pmod.EurorackPmod(
