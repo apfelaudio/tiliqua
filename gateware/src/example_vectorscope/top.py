@@ -639,7 +639,8 @@ class VectorScopeTop(Elaboratable):
             self.pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
-                touch_enabled=False)
+                touch_enabled=False,
+                audio_192=True)
 
         pmod0 = self.pmod0
         m.submodules.pmod0 = pmod0

@@ -5,13 +5,9 @@ module vtg (
     input  wire          clk_dvi,
     input  wire          clk_dvi5x,
     input  wire          clk_sys,
-    output wire          gpdi_clk_n,
     output wire          gpdi_clk_p,
-    output wire          gpdi_data0_n,
     output wire          gpdi_data0_p,
-    output wire          gpdi_data1_n,
     output wire          gpdi_data1_p,
-    output wire          gpdi_data2_n,
     output wire          gpdi_data2_p,
     input  wire    [7:0] phy_b,
     output wire          phy_de,
@@ -71,10 +67,6 @@ dvi_generator dvi_out (
     .tmds_ch1_serial(gpdi_data1_p),
     .tmds_ch2_serial(gpdi_data2_p),
     .tmds_clk_serial(gpdi_clk_p),
-    .tmds_ch0_serialn(gpdi_data0_n),
-    .tmds_ch1_serialn(gpdi_data1_n),
-    .tmds_ch2_serialn(gpdi_data2_n),
-    .tmds_clk_serialn(gpdi_clk_n)
 );
 
 endmodule

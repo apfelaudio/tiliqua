@@ -20,10 +20,6 @@ module dvi_generator (
     output logic tmds_ch1_serial,         // channel 1 - serial TMDS
     output logic tmds_ch2_serial,         // channel 2 - serial TMDS
     output logic tmds_clk_serial,          // clock - serial TMDS
-    output logic tmds_ch0_serialn,         // channel 0 - serial TMDS
-    output logic tmds_ch1_serialn,         // channel 1 - serial TMDS
-    output logic tmds_ch2_serialn,         // channel 2 - serial TMDS
-    output logic tmds_clk_serialn          // clock - serial TMDS
     );
 
     logic [9:0] tmds_ch0, tmds_ch1, tmds_ch2;
@@ -68,10 +64,5 @@ module dvi_generator (
     ODDRX1F serialize_ch1 (.D0(tmds_ch1_shift[0]), .D1(tmds_ch1_shift[1]), .Q(tmds_ch1_serial), .SCLK(clk_pix_5x), .RST(0));
     ODDRX1F serialize_ch2 (.D0(tmds_ch2_shift[0]), .D1(tmds_ch2_shift[1]), .Q(tmds_ch2_serial), .SCLK(clk_pix_5x), .RST(0));
 
-    ODDRX1F serialize_ch0n (.D0(~tmds_ch0_shift[0]), .D1(~tmds_ch0_shift[1]), .Q(tmds_ch0_serialn), .SCLK(clk_pix_5x), .RST(0));
-    ODDRX1F serialize_ch1n (.D0(~tmds_ch1_shift[0]), .D1(~tmds_ch1_shift[1]), .Q(tmds_ch1_serialn), .SCLK(clk_pix_5x), .RST(0));
-    ODDRX1F serialize_ch2n (.D0(~tmds_ch2_shift[0]), .D1(~tmds_ch2_shift[1]), .Q(tmds_ch2_serialn), .SCLK(clk_pix_5x), .RST(0));
-
     always_comb tmds_clk_serial = clk_pix;  // clock isn't following same path as other channels
-    always_comb tmds_clk_serialn = ~clk_pix;  // clock isn't following same path as other channels
 endmodule
