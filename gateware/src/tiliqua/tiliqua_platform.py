@@ -149,8 +149,8 @@ class TiliquaDomainGenerator(Elaboratable):
         m.domains.fast   = ClockDomain()
         m.domains.audio  = ClockDomain()
         m.domains.raw48  = ClockDomain()
-        m.domains.hdmi   = ClockDomain()
-        m.domains.hdmi5x = ClockDomain()
+        m.domains.dvi   = ClockDomain()
+        m.domains.dvi5x = ClockDomain()
 
 
         clk48 = platform.request(platform.default_clk, dir='i').i
@@ -174,8 +174,8 @@ class TiliquaDomainGenerator(Elaboratable):
                 # Generated clock outputs.
                 o_CLKOP=feedback60,
                 o_CLKOS=ClockSignal("fast"),
-                o_CLKOS2=ClockSignal("hdmi"),
-                o_CLKOS3=ClockSignal("hdmi5x"),
+                o_CLKOS2=ClockSignal("dvi"),
+                o_CLKOS3=ClockSignal("dvi5x"),
 
                 # Status.
                 o_LOCK=locked60,
@@ -306,8 +306,8 @@ class TiliquaDomainGenerator(Elaboratable):
             ResetSignal("sync")  .eq(~locked60),
             ResetSignal("fast")  .eq(~locked60),
             ResetSignal("usb")   .eq(~locked60),
-            ResetSignal("hdmi")  .eq(~locked60),
-            ResetSignal("hdmi5x").eq(~locked60),
+            ResetSignal("dvi")  .eq(~locked60),
+            ResetSignal("dvi5x").eq(~locked60),
 
             ResetSignal("audio")   .eq(~locked12),
         ]

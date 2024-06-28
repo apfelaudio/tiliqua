@@ -1,7 +1,14 @@
-# Copyright (c) 2024 Seb Holzapfel <me@sebholzapfel.com>
+# Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
-# SPDX-License-Identifier: BSD--3-Clause
+# SPDX-License-Identifier: CERN-OHL-S-2.0
 
+"""
+CRT / Vectorscope simulator.
+Rasterizes X/Y (audio channel 0, 1) and color (audio channel 3) to a simulated
+CRT display, with intensity gradient and afterglow effects.
+"""
+
+import colorsys
 import os
 import math
 import subprocess
@@ -28,35 +35,44 @@ from amaranth.back import verilog
 
 from tiliqua.sim import FakeEurorackPmod, FakeTiliquaDomainGenerator
 
-class LxVideo(Elaboratable):
+class FramebufferPHY(Elaboratable):
 
-    def __init__(self, fb_base=None, bus_master=None, fifo_depth=128, sim=False):
+    """
+    Read pixels from a framebuffer in PSRAM and send them to the display.
+    Pixels are DMA'd from PSRAM as a wishbone master in bursts of 'fifo_depth // 2' in the 'sync' clock domain.
+    They are then piped with DVI timings to the display in the 'dvi' clock domain.
+    """
+
+    def __init__(self, fb_base=None, bus_master=None, fifo_depth=128, sim=False, fb_hsize=720, fb_vsize=720, fb_bytes_per_pixel=1):
         super().__init__()
 
+        self.sim = sim
+        self.fifo_depth = fifo_depth
+        self.fb_base = fb_base
+        self.fb_hsize = fb_hsize
+        self.fb_vsize = fb_vsize
+        self.fb_bytes_per_pixel = fb_bytes_per_pixel
+
+        # We are a DMA master
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
                                       features={"cti", "bte"})
 
-        self.fifo = AsyncFIFO(width=32, depth=fifo_depth, r_domain='hdmi', w_domain='sync')
+        # FIFO to cache pixels from PSRAM.
+        self.fifo = AsyncFIFO(width=32, depth=fifo_depth, r_domain='dvi', w_domain='sync')
 
-        self.fifo_depth = fifo_depth
-        self.fb_base = fb_base
-        self.fb_hsize = 720
-        self.fb_vsize = 720
+        # Kick this to start the core
+        self.enable = Signal(1, reset=0)
 
-        self.dma_addr = Signal(32)
-
-        # hdmi domain
-        self.bytecounter = Signal(2)
+        # Tracking in DVI domain
+        self.bytecounter = Signal(log2_int(4//self.fb_bytes_per_pixel))
         self.last_word   = Signal(32)
         self.consume_started = Signal(1, reset=0)
 
-        self.enable = Signal(1, reset=0)
-
-        self.sim = sim
-
+        # Pixel position in DVI domain (only used for simulation)
         self.vtg_hcount = Signal(12)
         self.vtg_vcount = Signal(12)
 
+        # Current pixel color in DVI domain
         self.phy_r = Signal(8)
         self.phy_g = Signal(8)
         self.phy_b = Signal(8)
@@ -66,25 +82,29 @@ class LxVideo(Elaboratable):
 
         m.submodules.fifo = self.fifo
 
+        # 'dvi' domain
         vtg_hcount = self.vtg_hcount
         vtg_vcount = self.vtg_vcount
-
         phy_r = self.phy_r
         phy_g = self.phy_g
         phy_b = self.phy_b
+        phy_de_dvi = Signal()
+        phy_vsync_dvi = Signal()
 
-        phy_de_hdmi = Signal()
-        phy_vsync_hdmi = Signal()
+        # Create a VSync signal in the 'sync' domain.
         phy_vsync_sync = Signal()
-
         m.submodules.vsync_ff = FFSynchronizer(
-                i=phy_vsync_hdmi, o=phy_vsync_sync, o_domain="sync")
+                i=phy_vsync_dvi, o=phy_vsync_sync, o_domain="sync")
 
-        def add_sv(f):
-            path = os.path.join("src/vendor/dvi", f)
-            platform.add_file(f"build/{f}", open(path))
 
         if not self.sim:
+
+            # DVI timings generator and PHY.
+            # TODO: port these to Amaranth as well!
+
+            def add_sv(f):
+                path = os.path.join("src/vendor/dvi", f)
+                platform.add_file(f"build/{f}", open(path))
 
             add_sv("vtg.sv")
             add_sv("simple_720p.sv")
@@ -95,12 +115,12 @@ class LxVideo(Elaboratable):
 
             m.submodules.vlxvid = Instance("vtg",
                 i_clk_sys = ClockSignal("sync"),
-                i_clk_hdmi = ClockSignal("hdmi"),
-                i_clk_hdmi5x = ClockSignal("hdmi5x"),
+                i_clk_dvi = ClockSignal("dvi"),
+                i_clk_dvi5x = ClockSignal("dvi5x"),
 
                 i_rst_sys = ResetSignal("sync"),
-                i_rst_hdmi = ResetSignal("hdmi"),
-                i_rst_hdmi5x = ResetSignal("hdmi5x"),
+                i_rst_dvi = ResetSignal("dvi"),
+                i_rst_dvi5x = ResetSignal("dvi5x"),
 
                 o_gpdi_clk_p   = dvi_pins.ck.o,
                 o_gpdi_data0_p = dvi_pins.d0.o,
@@ -109,8 +129,8 @@ class LxVideo(Elaboratable):
 
                 o_vtg_hcount = vtg_hcount,
                 o_vtg_vcount = vtg_vcount,
-                o_phy_vsync  = phy_vsync_hdmi,
-                o_phy_de  = phy_de_hdmi,
+                o_phy_vsync  = phy_vsync_dvi,
+                o_phy_de  = phy_de_dvi,
 
                 i_phy_r = phy_r,
                 i_phy_g = phy_g,
@@ -118,56 +138,49 @@ class LxVideo(Elaboratable):
             )
         else:
 
+            # For simulation we use a simplified video PHY
+            # implementation that only tracks the screen position.
+
             m.submodules.vlxvid = Instance("vtg",
                 i_clk_sys = ClockSignal("sync"),
-                i_clk_hdmi = ClockSignal("hdmi"),
-                i_clk_hdmi5x = ClockSignal("hdmi5x"),
+                i_clk_dvi = ClockSignal("dvi"),
+                i_clk_dvi5x = ClockSignal("dvi5x"),
 
                 i_rst_sys = ResetSignal("sync"),
-                i_rst_hdmi = ResetSignal("hdmi"),
-                i_rst_hdmi5x = ResetSignal("hdmi5x"),
+                i_rst_dvi = ResetSignal("dvi"),
+                i_rst_dvi5x = ResetSignal("dvi5x"),
 
                 o_vtg_hcount = vtg_hcount,
                 o_vtg_vcount = vtg_vcount,
-                o_phy_vsync  = phy_vsync_hdmi,
-                o_phy_de  = phy_de_hdmi,
+                o_phy_vsync  = phy_vsync_dvi,
+                o_phy_de  = phy_de_dvi,
 
                 i_phy_r = phy_r,
                 i_phy_g = phy_g,
                 i_phy_b = phy_b,
             )
 
-        # how?
 
-        # 2 separate state machines, one in each sys / hdmi clk domain?
-
-        # START
-        # - load fifos
-        # - wait for vtg 0, 0 (or 1 clock before)
-        # THEN
-        # - drain fifo on every clock
-        # - burst read hyperram on every level = depth/2
-        # - make sure correct burst size wraps correctly
-
+        # DMA master bus
         bus = self.bus
 
-        dma_addr = self.dma_addr
+        # Current offset into the framebuffer
+        dma_addr = Signal(32)
 
-        fb_len_words = (self.fb_hsize*self.fb_vsize) // 4
+        # Length of framebuffer in 32-bit words
+        fb_len_words = (self.fb_bytes_per_pixel * (self.fb_hsize*self.fb_vsize)) // 4
 
+        # DMA bus master -> FIFO state machine
+        # Burst until FIFO is full, then wait until half empty.
 
+        # Signal from 'dvi' to 'sync' domain to drain FIFO if we are in vsync.
         drain_fifo = Signal(1, reset=0)
-        drain_fifo_hdmi = Signal(1, reset=0)
-
+        drain_fifo_dvi = Signal(1, reset=0)
         m.submodules.drain_fifo_ff = FFSynchronizer(
-                i=drain_fifo, o=drain_fifo_hdmi, o_domain="hdmi")
-
-        # bus -> FIFO
-        # burst until FIFO is full, then wait until half empty.
-
+                i=drain_fifo, o=drain_fifo_dvi, o_domain="dvi")
         drained = Signal()
 
-        # sync domain
+        # Read to FIFO in sync domain
         with m.FSM() as fsm:
             with m.State('OFF'):
                 with m.If(self.enable):
@@ -196,40 +209,40 @@ class LxVideo(Elaboratable):
                     with m.Else():
                         m.d.sync += dma_addr.eq(0)
             with m.State('WAIT'):
-
                 with m.If(~phy_vsync_sync):
                     m.d.sync += drained.eq(0)
-
                 with m.If(phy_vsync_sync & ~drained):
                     m.next = 'VSYNC'
                 with m.Elif(self.fifo.w_level < self.fifo_depth//2):
                     m.next = 'BURST'
-
             with m.State('VSYNC'):
-                # drain HDMI side. We only want to drain once.
+                # drain DVI side. We only want to drain once.
                 m.d.comb += drain_fifo.eq(1)
                 with m.If(self.fifo.w_level == 0):
                     m.d.sync += dma_addr.eq(0)
                     m.d.sync += drained.eq(1)
                     m.next = 'BURST'
 
-        # FIFO -> PHY (1 word -> 4 pixels)
-
+        # 'dvi' domain: read FIFO -> DVI PHY (1 fifo word is N pixels)
         bytecounter = self.bytecounter
         last_word   = self.last_word
-
-        with m.If(drain_fifo_hdmi):
-            m.d.hdmi += bytecounter.eq(0)
+        with m.If(drain_fifo_dvi):
+            m.d.dvi += bytecounter.eq(0)
             m.d.comb += self.fifo.r_en.eq(1),
-        with m.Elif(phy_de_hdmi & self.fifo.r_rdy):
+        with m.Elif(phy_de_dvi & self.fifo.r_rdy):
             m.d.comb += self.fifo.r_en.eq(bytecounter == 0),
-            m.d.hdmi += bytecounter.eq(bytecounter+1)
+            m.d.dvi += bytecounter.eq(bytecounter+1)
             with m.If(bytecounter == 0):
-                m.d.hdmi += last_word.eq(self.fifo.r_data)
+                m.d.dvi += last_word.eq(self.fifo.r_data)
             with m.Else():
-                m.d.hdmi += last_word.eq(last_word >> 8)
+                m.d.dvi += last_word.eq(last_word >> 8)
 
-        import colorsys
+        # Calculate 16*16 (256) color palette to map each 8-bit pixel storage
+        # into R8/G8/B8 pixel value for sending to the DVI PHY. Each pixel
+        # is stored as a 4-bit intensity and 4-bit color.
+        #
+        # TODO: make this runtime customizable?
+
         n_i = 16
         n_c = 16
         rs, gs, bs = [], [], []
@@ -248,10 +261,12 @@ class LxVideo(Elaboratable):
         rd_port_g = palette_g.read_port(domain="comb")
         rd_port_b = palette_b.read_port(domain="comb")
 
+        # Index by intensity (4-bit) and color (4-bit)
         m.d.comb += rd_port_r.addr.eq(Cat(last_word[0:4], last_word[4:8]))
         m.d.comb += rd_port_g.addr.eq(Cat(last_word[0:4], last_word[4:8]))
         m.d.comb += rd_port_b.addr.eq(Cat(last_word[0:4], last_word[4:8]))
 
+        # hook up to DVI PHY
         m.d.comb += [
             phy_r.eq(rd_port_r.data),
             phy_g.eq(rd_port_g.data),
@@ -262,43 +277,54 @@ class LxVideo(Elaboratable):
 
 class Persistance(Elaboratable):
 
-    def __init__(self, fb_base=None, bus_master=None, fifo_depth=128, holdoff=1024):
+    """
+    Read pixels from a framebuffer in PSRAM and apply gradual intensity reduction to simulate oscilloscope glow.
+    Pixels are DMA'd from PSRAM as a wishbone master in bursts of 'fifo_depth // 2' in the 'sync' clock domain.
+    The block of pixels has its intensity reduced and is then DMA'd back to the bus.
+
+    'holdoff' is used to keep this core from saturating the bus between bursts.
+    """
+
+    def __init__(self, fb_base=None, bus_master=None, fb_hsize=720, fb_vsize=720, fifo_depth=128, holdoff=1024, fb_bytes_per_pixel=1):
         super().__init__()
 
+        self.fb_base = fb_base
+        self.fb_hsize = fb_hsize
+        self.fb_vsize = fb_vsize
+        self.fifo_depth = fifo_depth
+        self.holdoff = holdoff
+        self.fb_bytes_per_pixel = fb_bytes_per_pixel
+
+        # We are a DMA master
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
                                       features={"cti", "bte"})
 
+        # FIFO to cache pixels from PSRAM.
         self.fifo = SyncFIFO(width=32, depth=fifo_depth)
 
-        self.holdoff = holdoff
-
-        self.fifo_depth = fifo_depth
-        self.fb_base = fb_base
-        self.fb_hsize = 720
-        self.fb_vsize = 720
-
+        # Current addresses in the framebuffer (read and write sides)
         self.dma_addr_in = Signal(32, reset=0)
         self.dma_addr_out = Signal(32)
 
+        # Kick to start this core.
         self.enable = Signal(1, reset=0)
 
     def elaborate(self, platform) -> Module:
         m = Module()
 
-        m.submodules.fifo = self.fifo
-
-        bus = self.bus
-
-        dma_addr_in = self.dma_addr_in
-        dma_addr_out = self.dma_addr_out
-
-        fb_len_words = (self.fb_hsize*self.fb_vsize) // 4
+        # Length of framebuffer in 32-bit words
+        fb_len_words = (self.fb_bytes_per_pixel * (self.fb_hsize*self.fb_vsize)) // 4
 
         holdoff_count = Signal(32)
-
         pnext = Signal(32)
         wr_source = Signal(32)
 
+        m.submodules.fifo = self.fifo
+        bus = self.bus
+        dma_addr_in = self.dma_addr_in
+        dma_addr_out = self.dma_addr_out
+
+        # Persistance state machine in 'sync' domain.
         with m.FSM() as fsm:
             with m.State('OFF'):
                 with m.If(self.enable):
@@ -338,13 +364,16 @@ class Persistance(Elaboratable):
             with m.State('BURST-OUT'):
                 m.d.sync += holdoff_count.eq(0)
 
+                # Incoming pixel array (read from FIFO)
                 pixa = Signal(data.ArrayLayout(unsigned(8), 4))
+                # Outgoing pixel array (write to bus)
                 pixb = Signal(data.ArrayLayout(unsigned(8), 4))
 
                 m.d.comb += [
                     pixa.eq(wr_source),
                 ]
 
+                # The actual persistance calculation. 4 pixels at a time.
                 for n in range(4):
                     # color
                     m.d.comb += pixb[n][0:4].eq(pixa[n][0:4])
@@ -388,27 +417,48 @@ class Persistance(Elaboratable):
 
 class Draw(Elaboratable):
 
-    def __init__(self, fb_base=None, bus_master=None, pmod0=None):
+    """
+    Read audio samples in the 'audio' domain, upsample them, and draw to the framebuffer.
+    Pixels are DMA'd to PSRAM as a wishbone master, NOT in bursts, as we have no idea
+    where each pixel is going to land beforehand. This is the most expensive use of
+    PSRAM time in this project as we spend ages waiting on memory latency.
+
+    TODO: can we somehow cache bursts of pixels here?
+
+    Each pixel must be read before we write it for 2 reasons:
+    - We have 4 pixels per word, so we can't just write 1 pixel as it would erase the
+      adjacent ones.
+    - We don't just set max intensity on drawing a pixel, rather we read the current
+      intensity and add to it. Otherwise, we get no intensity gradient and the display
+      looks nowhere near as nice :)
+
+    To obtain more points, the pixels themselves are upsampled using an FIR-based
+    fractional resampler. This is kind of analogous to sin(x)/x interpolation.
+    """
+
+    def __init__(self, fb_base=None, fb_hsize=720, fb_vsize=720, bus_master=None, pmod0=None, fb_bytes_per_pixel=1):
         super().__init__()
+
+        self.fb_base = fb_base
+        self.fb_hsize = fb_hsize
+        self.fb_vsize = fb_vsize
+        self.fb_bytes_per_pixel = fb_bytes_per_pixel
 
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
                                       features={"cti", "bte"})
-
-        self.fb_base = fb_base
-        self.fb_hsize = 720
-        self.fb_vsize = 720
 
         self.sample_x = Signal(signed(16))
         self.sample_y = Signal(signed(16))
         self.sample_p = Signal(signed(16))
         self.sample_c = Signal(signed(16))
 
-        self.enable = Signal(1, reset=0)
 
         self.px_read = Signal(32)
         self.px_sum = Signal(16)
-
         self.pmod0 = pmod0
+
+        # Kick this to start the core
+        self.enable = Signal(1, reset=0)
 
 
     def elaborate(self, platform) -> Module:
@@ -460,6 +510,7 @@ class Draw(Elaboratable):
             with m.State('LATCH0'):
 
                 m.d.comb += merge.o.ready.eq(1)
+                # Fired on every audio sample fs_strobe
                 with m.If(merge.o.valid):
                     m.d.sync += [
                         sample_x.eq(merge.o.payload[0].sas_value()>>6),
@@ -470,9 +521,10 @@ class Draw(Elaboratable):
                     m.next = 'LATCH1'
 
             with m.State('LATCH1'):
+                fb_hwords = ((self.fb_hsize*self.fb_bytes_per_pixel)//4)
                 m.d.sync += [
                     bus.sel.eq(0xf),
-                    bus.adr.eq(self.fb_base + (sample_y + 360)*(720//4) + (90 + (sample_x >> 2))),
+                    bus.adr.eq(self.fb_base + (sample_y + (self.fb_vsize//2))*fb_hwords + ((fb_hwords//2) + (sample_x >> 2))),
                 ]
                 m.next = 'READ'
 
@@ -508,10 +560,17 @@ class Draw(Elaboratable):
                     bus.we.eq(1),
                 ]
 
+                # The actual drawing logic
+                # Basically we just increment the intensity and clamp it to a maximum
+                # for the correct bits of the native bus word for this pixel.
+                #
+                # TODO: color is always overridden, perhaps we should mix it?
+
                 new_color = Signal(unsigned(4))
                 white = Signal(unsigned(4))
                 m.d.comb += white.eq(0xf)
                 m.d.comb += new_color.eq(sample_c>>10)
+
                 inc=4
                 with m.If(px_sum[4:8] + inc >= 0xF):
                     m.d.comb += bus.dat_w.eq(
@@ -531,13 +590,20 @@ class Draw(Elaboratable):
 
 class VectorScopeTop(Elaboratable):
 
+    """
+    Top-level Vectorscope design.
+    Can be instantiated with 'sim=True', which swaps out most things that touch hardware for fakes.
+    """
+
     def __init__(self, sim=False):
 
         self.sim = sim
 
+        # One PSRAM with an internal arbiter to support multiple DMA masters.
+
         self.hyperram = PSRAMPeripheral(
                 size=16*1024*1024, sim=sim)
-        self.video = LxVideo(fb_base=0x0, bus_master=self.hyperram.bus,
+        self.video = FramebufferPHY(fb_base=0x0, bus_master=self.hyperram.bus,
                              sim=sim)
         self.persist = Persistance(fb_base=0x0, bus_master=self.hyperram.bus)
         self.draw = Draw(fb_base=0x0, bus_master=self.hyperram.bus)
@@ -584,6 +650,7 @@ class VectorScopeTop(Elaboratable):
         m.submodules.persist = self.persist
         m.submodules.draw = self.draw
 
+        # Memory controller hangs if we start making requests to it straight away.
         on_delay = Signal(32)
         with m.If(on_delay < 0xFFFF):
             m.d.sync += on_delay.eq(on_delay+1)
@@ -615,8 +682,8 @@ def sim():
         f.write(verilog.convert(top, ports=[
             ClockSignal("sync"),
             ResetSignal("sync"),
-            ClockSignal("hdmi"),
-            ResetSignal("hdmi"),
+            ClockSignal("dvi"),
+            ResetSignal("dvi"),
             ClockSignal("audio"),
             ResetSignal("audio"),
             top.hyperram.psram.idle,
@@ -637,7 +704,7 @@ def sim():
             top.inject3,
             ]))
 
-    hdmi_clk_hz = 60000000
+    dvi_clk_hz = 60000000
     sync_clk_hz = 60000000
     audio_clk_hz = 48000
 
@@ -657,7 +724,7 @@ def sim():
                            "--Mdir", f"{verilator_dst}",
                            "--build",
                            "-j", "0",
-                           "-CFLAGS", f"-DHDMI_CLK_HZ={hdmi_clk_hz}",
+                           "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
                            "-CFLAGS", f"-DSYNC_CLK_HZ={sync_clk_hz}",
                            "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
                            "../../src/example_vectorscope/sim/sim.cpp",

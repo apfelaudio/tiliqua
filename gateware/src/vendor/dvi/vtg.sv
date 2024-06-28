@@ -2,8 +2,8 @@
 `timescale 1ns / 1ps
 
 module vtg (
-    input  wire          clk_hdmi,
-    input  wire          clk_hdmi5x,
+    input  wire          clk_dvi,
+    input  wire          clk_dvi5x,
     input  wire          clk_sys,
     output wire          gpdi_clk_n,
     output wire          gpdi_clk_p,
@@ -19,8 +19,8 @@ module vtg (
     output wire          phy_hsync,
     input  wire    [7:0] phy_r,
     output wire          phy_vsync,
-    input  wire          rst_hdmi,
-    input  wire          rst_hdmi5x,
+    input  wire          rst_dvi,
+    input  wire          rst_dvi5x,
     input  wire          rst_sys,
     output wire   [11:0] vtg_hcount,
     output wire   [11:0] vtg_vcount
@@ -29,8 +29,8 @@ module vtg (
 logic [11:0] sx, sy;
 logic hsync, vsync, de;
 simple_720p display_inst (
-    .clk_pix(clk_hdmi),
-    .rst_pix(rst_hdmi),  // wait for clock lock
+    .clk_pix(clk_dvi),
+    .rst_pix(rst_dvi),  // wait for clock lock
     .sx,
     .sy,
     .hsync,
@@ -47,7 +47,7 @@ assign vtg_vcount = sy;
 // DVI signals (8 bits per colour channel)
 logic [7:0] dvi_r, dvi_g, dvi_b;
 logic dvi_hsync, dvi_vsync, dvi_de;
-always_ff @(posedge clk_hdmi) begin
+always_ff @(posedge clk_dvi) begin
     dvi_hsync <= hsync;
     dvi_vsync <= vsync;
     dvi_de <= de;
@@ -57,9 +57,9 @@ always_ff @(posedge clk_hdmi) begin
 end
 
 dvi_generator dvi_out (
-    .clk_pix(clk_hdmi),
-    .clk_pix_5x(clk_hdmi5x),
-    .rst_pix(rst_hdmi),
+    .clk_pix(clk_dvi),
+    .clk_pix_5x(clk_dvi5x),
+    .rst_pix(rst_dvi),
     .de(dvi_de),
     .data_in_ch0(dvi_b),
     .data_in_ch1(dvi_g),
