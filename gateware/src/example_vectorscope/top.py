@@ -102,14 +102,10 @@ class LxVideo(Elaboratable):
                 i_rst_hdmi = ResetSignal("hdmi"),
                 i_rst_hdmi5x = ResetSignal("hdmi5x"),
 
-                o_gpdi_clk_p   = dvi_pins.pck.o,
-                o_gpdi_data0_p = dvi_pins.pd0.o,
-                o_gpdi_data1_p = dvi_pins.pd1.o,
-                o_gpdi_data2_p = dvi_pins.pd2.o,
-                o_gpdi_clk_n   = dvi_pins.nck.o,
-                o_gpdi_data0_n = dvi_pins.nd0.o,
-                o_gpdi_data1_n = dvi_pins.nd1.o,
-                o_gpdi_data2_n = dvi_pins.nd2.o,
+                o_gpdi_clk_p   = dvi_pins.ck.o,
+                o_gpdi_data0_p = dvi_pins.d0.o,
+                o_gpdi_data1_p = dvi_pins.d1.o,
+                o_gpdi_data2_p = dvi_pins.d2.o,
 
                 o_vtg_hcount = vtg_hcount,
                 o_vtg_vcount = vtg_vcount,

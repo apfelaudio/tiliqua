@@ -117,20 +117,14 @@ class _TiliquaPlatform(LatticeECP5Platform):
         ),
 
         # DVI
-        # Note: the pins themselves are assigned correctly for use in differential
-        # mode, however it seems nextpnr does not support simultaneously setting
-        # OPENDRAIN="ON" which is technically how a DVI transmitter is supposed to
-        # electrically behave. Maybe instead of LVCMOS33D, something else?
+        # Note: technically DVI outputs are supposed to be open-drain, but
+        # compatibility with cheap screens seems better with push/pull outputs.
         Resource("dvi", 0,
-            Subsignal("pd0", Pins("A2", dir="o")),
-            Subsignal("nd0", Pins("B3", dir="o")),
-            Subsignal("pd1", Pins("C5", dir="o")),
-            Subsignal("nd1", Pins("B5", dir="o")),
-            Subsignal("pd2", Pins("E4", dir="o")),
-            Subsignal("nd2", Pins("D4", dir="o")),
-            Subsignal("pck", Pins("C6", dir="o")),
-            Subsignal("nck", Pins("B6", dir="o")),
-            Attrs(IO_TYPE="LVCMOS33", OPENDRAIN="ON", SLEWRATE="FAST")
+            Subsignal("d0", Pins("A2", dir="o")),
+            Subsignal("d1", Pins("C5", dir="o")),
+            Subsignal("d2", Pins("E4", dir="o")),
+            Subsignal("ck", Pins("C6", dir="o")),
+            Attrs(IO_TYPE="LVCMOS33D", SLEWRATE="FAST")
          ),
     ]
 
