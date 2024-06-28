@@ -28,8 +28,8 @@ module simple_720p (
     parameter SCREEN = 759;           // last line on screen (after back porch)
 
     always_comb begin
-        hsync = (sx >= HS_STA && sx < HS_END);  // negative polarity
-        vsync = (sy >= VS_STA && sy < VS_END);  // negative polarity
+        hsync = (sx >= HS_STA && sx < HS_END);
+        vsync = (sy >= VS_STA && sy < VS_END);
         de = (sx <= HA_END && sy <= VA_END);
     end
 
