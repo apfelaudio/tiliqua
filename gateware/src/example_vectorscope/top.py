@@ -67,6 +67,11 @@ DVI_TIMINGS = {
 
 class DVITimingGenerator(wiring.Component):
 
+    """
+    State machine to generate pixel position and hsync/vsync/de signals.
+    Designed to run in the DVI pixel clock domain.
+    """
+
     x: Out(unsigned(12))
     y: Out(unsigned(12))
     hsync: Out(unsigned(1))
