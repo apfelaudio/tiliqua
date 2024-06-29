@@ -43,23 +43,43 @@ class DVITimings:
     h_sync_start:  int
     h_sync_end:    int
     h_total:       int
+    h_sync_invert: bool
     v_active:      int
     v_sync_start:  int
     v_sync_end:    int
     v_total:       int
+    v_sync_invert: bool
     refresh_rate:  float
     pixel_clk_mhz: float
 
 DVI_TIMINGS = {
+    # A round AliExpress display
     "720x720p60": DVITimings(
         h_active      = 720,
         h_sync_start  = 760,
         h_sync_end    = 780,
         h_total       = 820,
+        h_sync_invert = False,
         v_active      = 720,
         v_sync_start  = 744,
         v_sync_end    = 748,
         v_total       = 760,
+        v_sync_invert = False,
+        refresh_rate  = 60.0,
+        pixel_clk_mhz = 37.39
+    ),
+    # Standard CVT 800x600p60
+    "800x600p60": DVITimings(
+        h_active      = 800,
+        h_sync_start  = 832,
+        h_sync_end    = 912,
+        h_total       = 1024,
+        h_sync_invert = True,
+        v_active      = 600,
+        v_sync_start  = 603,
+        v_sync_end    = 607,
+        v_total       = 624,
+        v_sync_invert = False,
         refresh_rate  = 60.0,
         pixel_clk_mhz = 37.39
     ),
@@ -96,6 +116,7 @@ class DVITimingGenerator(wiring.Component):
         with m.Else():
             m.d.sync += self.x.eq(self.x+1)
 
+        # Note: sync inversion is not here and must be handled before the PHY.
         m.d.comb += [
             self.hsync.eq((self.x >= (timings.h_sync_start-1)) &
                           (self.x < (timings.h_sync_end-1))),
@@ -114,19 +135,19 @@ class FramebufferPHY(Elaboratable):
     Read pixels from a framebuffer in PSRAM and send them to the display.
     Pixels are DMA'd from PSRAM as a wishbone master in bursts of 'fifo_depth // 2' in the 'sync' clock domain.
     They are then piped with DVI timings to the display in the 'dvi' clock domain.
+
+    Pixel storage itself is 8-bits: 4-bit intensity, 4-bit color.
     """
 
-    def __init__(self, dvi_timings: DVITimings, fb_base=None, bus_master=None,
-                 fifo_depth=128, sim=False, fb_hsize=720, fb_vsize=720,
-                 fb_bytes_per_pixel=1):
+    def __init__(self, *, dvi_timings: DVITimings, fb_base, bus_master,
+                 fb_size, fifo_depth=128, sim=False, fb_bytes_per_pixel=1):
 
         super().__init__()
 
         self.sim = sim
         self.fifo_depth = fifo_depth
         self.fb_base = fb_base
-        self.fb_hsize = fb_hsize
-        self.fb_vsize = fb_vsize
+        self.fb_hsize, self.fb_vsize = fb_size
         self.fb_bytes_per_pixel = fb_bytes_per_pixel
 
         # We are a DMA master
@@ -189,12 +210,24 @@ class FramebufferPHY(Elaboratable):
             s_dvi_r = Signal(unsigned(8))
             m.d.sync += [
                 s_dvi_de.eq(dvi_tgen.de),
-                s_dvi_hsync.eq(dvi_tgen.hsync),
-                s_dvi_vsync.eq(dvi_tgen.vsync),
                 s_dvi_r.eq(phy_r),
                 s_dvi_g.eq(phy_g),
                 s_dvi_b.eq(phy_b),
             ]
+
+            # Sync inversion before sending to PHY if required.
+            # Better here than in DVITimingsGenerator itself in case
+            # the sync signal is used by other logic.
+
+            if dvi_tgen.timings.h_sync_invert:
+                s_dvi_hsync.eq(~dvi_tgen.hsync),
+            else:
+                s_dvi_hsync.eq(dvi_tgen.hsync),
+
+            if dvi_tgen.timings.v_sync_invert:
+                s_dvi_vsync.eq(~dvi_tgen.vsync),
+            else:
+                s_dvi_vsync.eq(dvi_tgen.vsync),
 
             # Instantiate the DVI PHY itself
             # TODO: port this to Amaranth as well!
@@ -341,12 +374,12 @@ class Persistance(Elaboratable):
     'holdoff' is used to keep this core from saturating the bus between bursts.
     """
 
-    def __init__(self, fb_base=None, bus_master=None, fb_hsize=720, fb_vsize=720, fifo_depth=128, holdoff=1024, fb_bytes_per_pixel=1):
+    def __init__(self, *, fb_base, bus_master, fb_size,
+                 fifo_depth=128, holdoff=1024, fb_bytes_per_pixel=1):
         super().__init__()
 
         self.fb_base = fb_base
-        self.fb_hsize = fb_hsize
-        self.fb_vsize = fb_vsize
+        self.fb_hsize, self.fb_vsize = fb_size
         self.fifo_depth = fifo_depth
         self.holdoff = holdoff
         self.fb_bytes_per_pixel = fb_bytes_per_pixel
@@ -492,12 +525,12 @@ class Draw(Elaboratable):
     fractional resampler. This is kind of analogous to sin(x)/x interpolation.
     """
 
-    def __init__(self, fb_base=None, fb_hsize=720, fb_vsize=720, bus_master=None, pmod0=None, fb_bytes_per_pixel=1):
+    def __init__(self, *, fb_base, bus_master, fb_size,
+                 pmod0=None, fb_bytes_per_pixel=1):
         super().__init__()
 
         self.fb_base = fb_base
-        self.fb_hsize = fb_hsize
-        self.fb_vsize = fb_vsize
+        self.fb_hsize, self.fb_vsize = fb_size
         self.fb_bytes_per_pixel = fb_bytes_per_pixel
 
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
@@ -659,12 +692,19 @@ class VectorScopeTop(Elaboratable):
         self.hyperram = PSRAMPeripheral(
                 size=16*1024*1024, sim=sim)
 
+        #timings = DVI_TIMINGS["720x720p60"]
+        timings = DVI_TIMINGS["800x600p60"]
+        fb_base = 0x0
+        fb_size = (timings.h_active, timings.v_active)
+
         # All of our DMA masters
         self.video = FramebufferPHY(
-                fb_base=0x0, dvi_timings=DVI_TIMINGS["720x720p60"],
+                fb_base=fb_base, dvi_timings=timings, fb_size=fb_size,
                 bus_master=self.hyperram.bus, sim=sim)
-        self.persist = Persistance(fb_base=0x0, bus_master=self.hyperram.bus)
-        self.draw = Draw(fb_base=0x0, bus_master=self.hyperram.bus)
+        self.persist = Persistance(
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size)
+        self.draw = Draw(
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size)
 
         self.hyperram.add_master(self.video.bus)
         self.hyperram.add_master(self.persist.bus)
