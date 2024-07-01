@@ -30,12 +30,22 @@ We are planning to launch Tiliqua on Crowd Supply in Q3 '24.
 
 ## Building example projects
 
-On an Ubuntu system, first make sure you have [pdm](https://github.com/pdm-project/pdm) installed as well as a recent version of [oss-cad-suite](https://github.com/YosysHQ/oss-cad-suite-build), and (for SoC examples only) [rust](https://rustup.rs/). Then:
+On an Ubuntu system, first make sure you have the following installed:
+- [pdm](https://github.com/pdm-project/pdm)
+- A recent version of [oss-cad-suite](https://github.com/YosysHQ/oss-cad-suite-build)
+- (required for SoC examples only) [rust](https://rustup.rs/) with `riscv32-imac` targets
 
+To set up the environment:
 ```bash
 cd gateware
-# install all python requirements
+# fetch eurorack-pmod verilog sources
+git submodule update --init --recursive
+# install all python requirements to a local .venv
 pdm install
+```
+
+To build some examples:
+```bash
 # for the LUNA-based 4in + 4out USB soundcard example
 pdm build_usb_audio
 # for a 4-channel waveshaping oscillator
