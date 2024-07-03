@@ -1,3 +1,6 @@
+// A (quite dirty) simulation harness that simulates the vectorscope core
+// and uses it to generate some bitmap images and full FST traces for examination.
+
 #include <verilated_fst_c.h>
 
 #include "Vvectorscope.h"
@@ -7,6 +10,19 @@
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+
+int gcd(int a, int b)
+{
+    int temp;
+    while (b != 0)
+    {
+        temp = a % b;
+
+        a = b;
+        b = temp;
+    }
+    return a;
+}
 
 int main(int argc, char** argv) {
     VerilatedContext* contextp = new VerilatedContext;
@@ -18,8 +34,20 @@ int main(int argc, char** argv) {
     top->trace(tfp, 99);  // Trace 99 levels of hierarchy (or see below)
     tfp->open("simx.fst");
 
-    //uint64_t sim_time = 1000000000000;
-    uint64_t sim_time =  400000000000;
+    uint64_t sim_time =  75e9; // 75msec is ~ 4 frames
+
+    uint64_t ns_in_s = 1e9;
+    uint64_t ns_in_sync_cycle   = ns_in_s /  SYNC_CLK_HZ;
+    uint64_t  ns_in_dvi_cycle   = ns_in_s /   DVI_CLK_HZ;
+    uint64_t  ns_in_audio_cycle = ns_in_s / AUDIO_CLK_HZ;
+
+    printf("sync domain is: %i KHz (%i ns/cycle)\n",  SYNC_CLK_HZ/1000,  ns_in_sync_cycle);
+    printf("pixel clock is: %i KHz (%i ns/cycle)\n",   DVI_CLK_HZ/1000,   ns_in_dvi_cycle);
+    printf("audio clock is: %i KHz (%i ns/cycle)\n", AUDIO_CLK_HZ/1000, ns_in_audio_cycle);
+
+    uint64_t clk_gcd = gcd(SYNC_CLK_HZ, DVI_CLK_HZ);
+    uint64_t ns_in_gcd = ns_in_s / clk_gcd;
+    printf("GCD is: %i KHz (%i ns/cycle)\n", clk_gcd/1000, ns_in_gcd);
 
     contextp->timeInc(1);
     top->rst = 1;
@@ -47,40 +75,42 @@ int main(int argc, char** argv) {
     uint8_t *psram_data = (uint8_t*)malloc(psram_size_bytes);
     memset(psram_data, 0, psram_size_bytes);
 
-    uint32_t imx = 720;
-    uint32_t imy = 720;
     uint32_t im_stride = 3;
-    uint8_t *image_data = (uint8_t*)malloc(imx*imy*im_stride);
-    memset(image_data, 0, imx*imy*im_stride);
+    uint8_t *image_data = (uint8_t*)malloc(DVI_H_ACTIVE*DVI_V_ACTIVE*im_stride);
+    memset(image_data, 0, DVI_H_ACTIVE*DVI_V_ACTIVE*im_stride);
 
     uint32_t pmod_clocks = 0;
 
     uint32_t frames = 0;
 
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
-        if (mod % 2 == 0) {
 
+        uint64_t timestamp_ns = contextp->time() / 1000;
+
+        // DVI clock domain (PHY output simulation to bitmap image)
+        if (timestamp_ns % (ns_in_dvi_cycle/2) == 0) {
             top->dvi_clk = !top->dvi_clk;
             if (top->dvi_clk) {
                 uint32_t x = top->x;
                 uint32_t y = top->y;
-                if (x < imx && y < imy) {
-                    image_data[y*imx*3 + x*3 + 0] = top->phy_r;
-                    image_data[y*imx*3 + x*3 + 1] = top->phy_g;
-                    image_data[y*imx*3 + x*3 + 2] = top->phy_b;
+                if (x < DVI_H_ACTIVE && y < DVI_V_ACTIVE) {
+                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 0] = top->phy_r;
+                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 1] = top->phy_g;
+                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 2] = top->phy_b;
                 }
-                if (x == imx-1 && y == imy-1) {
+                if (x == DVI_H_ACTIVE-1 && y == DVI_V_ACTIVE-1) {
                     char name[64];
                     sprintf(name, "frame%02d.bmp", frames);
                     printf("out %s\n", name);
-                    stbi_write_bmp(name, imx, imy, 3, image_data);
+                    stbi_write_bmp(name, DVI_H_ACTIVE, DVI_V_ACTIVE, 3, image_data);
                     ++frames;
                 }
             }
+        }
 
+        // Sync clock domain (PSRAM read/write simulation)
+        if (timestamp_ns % (ns_in_sync_cycle/2) == 0) {
             top->clk = !top->clk;
-            top->audio_clk = !top->audio_clk;
-
             if (top->clk) {
 
                 // Probably incorrect ram r/w timing is causing the visual shift
@@ -110,9 +140,18 @@ int main(int argc, char** argv) {
                     top->eval();
                 }
 
-                if (mod_pmod % 312 == 0) {
+            }
+        }
+
+        // Audio clock domain (Audio stimulation)
+        if (timestamp_ns % (ns_in_audio_cycle/2) == 0) {
+            top->audio_clk = !top->audio_clk;
+            if (top->audio_clk) {
+                // 256x I2S clock divider
+                if (mod_pmod % 256 == 0) {
                     ++pmod_clocks;
                     top->fs_strobe = 1;
+                    // audio signals
                     top->inject0 = (int16_t)20000.0*sin((float)pmod_clocks / 6000.0);
                     top->inject1 = (int16_t)20000.0*cos((float)pmod_clocks /  300.0);
                     // color
@@ -125,18 +164,21 @@ int main(int argc, char** argv) {
                 mod_pmod += 1;
             }
         }
+
+        // Track PSRAM usage to see how close we are to saturation
         if (top->idle == 1) {
             idle_hi += 1;
         } else {
             idle_lo += 1;
         }
-        contextp->timeInc(8333);
+
+        contextp->timeInc(1000);
         top->eval();
         tfp->dump(contextp->time());
         mod += 1;
     }
-    printf("hi: %i, lo: %i, perc: %f\n", idle_hi, idle_lo,
-            (float)idle_lo / (float)(idle_hi + idle_lo));
+    printf("RAM bandwidth: idle: %i, !idle: %i, percent_used: %f\n", idle_hi, idle_lo,
+            100.0f * (float)idle_lo / (float)(idle_hi + idle_lo));
 
     tfp->close();
     return 0;

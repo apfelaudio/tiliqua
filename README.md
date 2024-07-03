@@ -46,6 +46,8 @@ pdm build_dsp_core diffuser
 pdm build_dsp_core midipoly
 # for an SoC example (RISCV softcore)
 pdm build_soc
+# for the vectorscope / DVI example
+pdm build_vectorscope
 ```
 
 All examples are also built in CI - check `.github/workflows` if you need more gruesome details on how systems are built.

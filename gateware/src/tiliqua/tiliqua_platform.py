@@ -118,13 +118,13 @@ class _TiliquaPlatform(LatticeECP5Platform):
 
         # DVI
         # Note: technically DVI outputs are supposed to be open-drain, but
-        # compatibility with cheap screens seems better with push/pull outputs.
+        # compatibility with cheap AliExpress screens seems better with push/pull outputs.
         Resource("dvi", 0,
             Subsignal("d0", Pins("A2", dir="o")),
             Subsignal("d1", Pins("C5", dir="o")),
             Subsignal("d2", Pins("E4", dir="o")),
             Subsignal("ck", Pins("C6", dir="o")),
-            Attrs(IO_TYPE="LVCMOS33D", SLEWRATE="FAST")
+            Attrs(IO_TYPE="LVCMOS33D", DRIVE="4")
          ),
     ]
 

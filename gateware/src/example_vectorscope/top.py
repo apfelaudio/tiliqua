@@ -6,6 +6,9 @@
 CRT / Vectorscope simulator.
 Rasterizes X/Y (audio channel 0, 1) and color (audio channel 3) to a simulated
 CRT display, with intensity gradient and afterglow effects.
+
+Default 800x600p60 seems to work with all the monitors I have, but other screens might
+need timing + PLL adjustments.
 """
 
 import colorsys
@@ -53,6 +56,39 @@ class DVITimings:
     pixel_clk_mhz: float
 
 DVI_TIMINGS = {
+    # CVT 640x480p60
+    # Every DVI-compatible monitor should support this.
+    # But it's hard to find a PLL setting that gets close to the correct clock.
+    "640x480p60": DVITimings(
+        h_active      = 640,
+        h_sync_start  = 656,
+        h_sync_end    = 752,
+        h_total       = 800,
+        h_sync_invert = True,
+        v_active      = 480,
+        v_sync_start  = 490,
+        v_sync_end    = 492,
+        v_total       = 525,
+        v_sync_invert = True,
+        refresh_rate  = 59.94,
+        pixel_clk_mhz = 25.175
+    ),
+    # DMT 800x600p60
+    # Less monitors support this, but finding a good PLL setting is easy.
+    "800x600p60": DVITimings(
+        h_active      = 800,
+        h_sync_start  = 840,
+        h_sync_end    = 968,
+        h_total       = 1056,
+        h_sync_invert = False,
+        v_active      = 600,
+        v_sync_start  = 601,
+        v_sync_end    = 605,
+        v_total       = 628,
+        v_sync_invert = False,
+        refresh_rate  = 60.32,
+        pixel_clk_mhz = 40.0
+    ),
     # A round AliExpress display
     "720x720p60": DVITimings(
         h_active      = 720,
@@ -64,21 +100,6 @@ DVI_TIMINGS = {
         v_sync_start  = 744,
         v_sync_end    = 748,
         v_total       = 760,
-        v_sync_invert = False,
-        refresh_rate  = 60.0,
-        pixel_clk_mhz = 37.39
-    ),
-    # Standard CVT 800x600p60
-    "800x600p60": DVITimings(
-        h_active      = 800,
-        h_sync_start  = 832,
-        h_sync_end    = 912,
-        h_total       = 1024,
-        h_sync_invert = True,
-        v_active      = 600,
-        v_sync_start  = 603,
-        v_sync_end    = 607,
-        v_total       = 624,
         v_sync_invert = False,
         refresh_rate  = 60.0,
         pixel_clk_mhz = 37.39
@@ -602,6 +623,8 @@ class Draw(Elaboratable):
                 # Fired on every audio sample fs_strobe
                 with m.If(merge.o.valid):
                     m.d.sync += [
+                        # TODO this >>6 scales input -> screen mapping.
+                        # should be better exposed for tweaking.
                         sample_x.eq(merge.o.payload[0].sas_value()>>6),
                         sample_y.eq(merge.o.payload[1].sas_value()>>6),
                         sample_p.eq(merge.o.payload[2].sas_value()),
@@ -681,7 +704,7 @@ class VectorScopeTop(Elaboratable):
 
     """
     Top-level Vectorscope design.
-    Can be instantiated with 'sim=True', which swaps out most things that touch hardware for fakes.
+    Can be instantiated with 'sim=True', which swaps out most things that touch hardware for mocks.
     """
 
     def __init__(self, sim=False):
@@ -692,7 +715,8 @@ class VectorScopeTop(Elaboratable):
         self.hyperram = PSRAMPeripheral(
                 size=16*1024*1024, sim=sim)
 
-        #timings = DVI_TIMINGS["720x720p60"]
+        # WARN: You have to modify the platform PLL if you change the pixel clock!
+        # TODO: integrate ecp5_pll from lambdasoc or custom solution --
         timings = DVI_TIMINGS["800x600p60"]
         fb_base = 0x0
         fb_size = (timings.h_active, timings.v_active)
@@ -803,9 +827,12 @@ def sim():
             top.inject3,
             ]))
 
-    dvi_clk_hz = 60000000
+    # TODO: warn if this is far from the PLL output?
+    dvi_clk_hz = int(top.video.dvi_tgen.timings.pixel_clk_mhz * 1e6)
+    dvi_h_active = top.video.dvi_tgen.timings.h_active
+    dvi_v_active = top.video.dvi_tgen.timings.v_active
     sync_clk_hz = 60000000
-    audio_clk_hz = 48000
+    audio_clk_hz = 48000000
 
     verilator_dst = "build/obj_dir"
     print(f"verilate '{dst}' into C++ binary...")
@@ -823,6 +850,8 @@ def sim():
                            "--Mdir", f"{verilator_dst}",
                            "--build",
                            "-j", "0",
+                           "-CFLAGS", f"-DDVI_H_ACTIVE={dvi_h_active}",
+                           "-CFLAGS", f"-DDVI_V_ACTIVE={dvi_v_active}",
                            "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
                            "-CFLAGS", f"-DSYNC_CLK_HZ={sync_clk_hz}",
                            "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
