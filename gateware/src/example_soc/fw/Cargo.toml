@@ -11,3 +11,4 @@ riscv-rt = { version = "=0.11.0" }
 panic-halt = "0.2.0"
 tiliqua-pac = { path="../pac", default-features = false, features = ["critical-section", "vexriscv"] }
 tiliqua-hal = { path="../hal", default-features = false, features = ["vexriscv"]}
+micromath = "2.1.0"
