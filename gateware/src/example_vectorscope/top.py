@@ -9,6 +9,13 @@ CRT display, with intensity gradient and afterglow effects.
 
 Default 800x600p60 seems to work with all the monitors I have, but other screens might
 need timing + PLL adjustments.
+
+There are top-level scripts for building/simulating e.g.
+
+$ pdm build_vectorscope
+$ pdm sim_vectorscope
+# for visualizing the palette
+$ pdm colors_vectorscope
 """
 
 import colorsys
@@ -192,6 +199,28 @@ class FramebufferPHY(Elaboratable):
         self.phy_g = Signal(8)
         self.phy_b = Signal(8)
 
+    @staticmethod
+    def compute_color_palette():
+
+        # Calculate 16*16 (256) color palette to map each 8-bit pixel storage
+        # into R8/G8/B8 pixel value for sending to the DVI PHY. Each pixel
+        # is stored as a 4-bit intensity and 4-bit color.
+        #
+        # TODO: make this runtime customizable?
+
+        n_i = 16
+        n_c = 16
+        rs, gs, bs = [], [], []
+        for i in range(n_i):
+            for c in range(n_c):
+                r, g, b = colorsys.hls_to_rgb(
+                        float(c)/n_c, float(1.35**(i+1))/(1.35**n_i), 0.75)
+                rs.append(int(r*255))
+                gs.append(int(g*255))
+                bs.append(int(b*255))
+
+        return rs, gs, bs
+
     def elaborate(self, platform) -> Module:
         m = Module()
 
@@ -347,22 +376,7 @@ class FramebufferPHY(Elaboratable):
             with m.Else():
                 m.d.dvi += last_word.eq(last_word >> 8)
 
-        # Calculate 16*16 (256) color palette to map each 8-bit pixel storage
-        # into R8/G8/B8 pixel value for sending to the DVI PHY. Each pixel
-        # is stored as a 4-bit intensity and 4-bit color.
-        #
-        # TODO: make this runtime customizable?
-
-        n_i = 16
-        n_c = 16
-        rs, gs, bs = [], [], []
-        for i in range(n_i):
-            for c in range(n_c):
-                r, g, b = colorsys.hls_to_rgb(float(c)/n_c, float(1.35**(i+1))/(1.35**n_i), 0.75)
-                rs.append(int(r*255))
-                gs.append(int(g*255))
-                bs.append(int(b*255))
-
+        rs, gs, bs = self.compute_color_palette()
         m.submodules.palette_r = palette_r = Memory(width=8, depth=256, init=rs)
         m.submodules.palette_g = palette_g = Memory(width=8, depth=256, init=gs)
         m.submodules.palette_b = palette_b = Memory(width=8, depth=256, init=bs)
@@ -793,7 +807,39 @@ def build():
     }
     TiliquaPlatform().build(VectorScopeTop(), **overrides)
 
+def colors():
+    """
+    Render image of intensity/color palette used internally by FramebufferPHY.
+    This is useful for quickly tweaking it.
+    """
+    import matplotlib
+    import matplotlib.pyplot as plt
+    from matplotlib import colors
+    import numpy as np
+    rs, gs, bs = FramebufferPHY.compute_color_palette()
+
+    i_levels = 16
+    c_levels = 16
+    data = np.empty((i_levels, c_levels, 3), dtype=np.uint8)
+    for i in range(i_levels):
+        for c in range(c_levels):
+            data[i,c,:] = (rs[i*i_levels + c],
+                           gs[i*i_levels + c],
+                           bs[i*i_levels + c])
+
+    fig, ax = plt.subplots()
+    ax.imshow(data)
+    ax.grid(which='major', axis='both', linestyle='-', color='k', linewidth=2)
+    ax.set_xticks(np.arange(-.5, 16, 1));
+    ax.set_yticks(np.arange(-.5, 16, 1));
+    save_to = 'vectorscope_palette.png'
+    print(f'save palette render to {save_to}')
+    plt.savefig(save_to)
+
 def sim():
+    """
+    End-to-end simulation of all the gateware in this project.
+    """
 
     build_dst = "build"
     dst = f"{build_dst}/vectorscope.v"

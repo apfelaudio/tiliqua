@@ -10,6 +10,7 @@ dependencies = [
     "luna-usb @ git+https://github.com/schnommus/luna@seb/isochronous-rebase-12-06-24",
     "luna-soc @ git+https://github.com/greatscottgadgets/luna-soc@main",
     "scipy>=1.9.3",
+    "matplotlib>=3.9.0",
 ]
 
 [tool.pdm.dev-dependencies]
@@ -26,3 +27,4 @@ build_dsp_core = { call = "example_dsp.top:build()" }
 sim_dsp_core = { call = "example_dsp.top:simulate()" }
 build_vectorscope = { call = "example_vectorscope.top:build()" }
 sim_vectorscope = { call = "example_vectorscope.top:sim()" }
+colors_vectorscope = { call = "example_vectorscope.top:colors()" }

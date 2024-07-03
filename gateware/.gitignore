@@ -5,6 +5,7 @@
 
 # vectorscope sim dumps
 *.bmp
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
