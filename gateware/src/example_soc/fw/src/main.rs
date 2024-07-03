@@ -65,7 +65,6 @@ fn main() -> ! {
 
     let sysclk = pac::clock::sysclk();
     let mut timer = Timer0::new(peripherals.TIMER, sysclk);
-    let mut counter = 0;
     let mut direction = true;
     let mut led_state = 0xc000u16;
 
@@ -237,7 +236,5 @@ fn main() -> ! {
                 direction = true;
             }
         }
-
-        counter += 1;
     }
 }

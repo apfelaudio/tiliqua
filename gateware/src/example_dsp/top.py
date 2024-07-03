@@ -731,6 +731,7 @@ def build():
     core_name = '' if len(sys.argv) < 2 else sys.argv[1]
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
+    os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
     touch, cls_core = get_core(core_name)
     top = CoreTop(cls_core, touch=touch)
     TiliquaPlatform().build(top)

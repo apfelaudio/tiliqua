@@ -788,7 +788,8 @@ def build():
     overrides = {
         "debug_verilog": True,
         "verbose": True,
-        "nextpnr_opts": "--timing-allow-fail"
+        "nextpnr_opts": "--timing-allow-fail",
+        "ecppack_opts": "--freq 38.8 --compress",
     }
     TiliquaPlatform().build(VectorScopeTop(), **overrides)
 

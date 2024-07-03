@@ -703,6 +703,7 @@ class UAC2RequestHandlers(USBRequestHandler):
 def build(ila=False):
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
+    os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
     top = USB2AudioInterface(use_ila=ila)
     TiliquaPlatform().build(top)
     if ila:
