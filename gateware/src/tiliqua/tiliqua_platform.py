@@ -117,20 +117,14 @@ class _TiliquaPlatform(LatticeECP5Platform):
         ),
 
         # DVI
-        # Note: the pins themselves are assigned correctly for use in differential
-        # mode, however it seems nextpnr does not support simultaneously setting
-        # OPENDRAIN="ON" which is technically how a DVI transmitter is supposed to
-        # electrically behave. Maybe instead of LVCMOS33D, something else?
+        # Note: technically DVI outputs are supposed to be open-drain, but
+        # compatibility with cheap AliExpress screens seems better with push/pull outputs.
         Resource("dvi", 0,
-            Subsignal("pd0", Pins("A2", dir="o")),
-            Subsignal("nd0", Pins("B3", dir="o")),
-            Subsignal("pd1", Pins("C5", dir="o")),
-            Subsignal("nd1", Pins("B5", dir="o")),
-            Subsignal("pd2", Pins("E4", dir="o")),
-            Subsignal("nd2", Pins("D4", dir="o")),
-            Subsignal("pck", Pins("C6", dir="o")),
-            Subsignal("nck", Pins("B6", dir="o")),
-            Attrs(IO_TYPE="LVCMOS33", OPENDRAIN="ON", SLEWRATE="FAST")
+            Subsignal("d0", Pins("A2", dir="o")),
+            Subsignal("d1", Pins("C5", dir="o")),
+            Subsignal("d2", Pins("E4", dir="o")),
+            Subsignal("ck", Pins("C6", dir="o")),
+            Attrs(IO_TYPE="LVCMOS33D", DRIVE="4")
          ),
     ]
 
@@ -143,8 +137,9 @@ class _TiliquaPlatform(LatticeECP5Platform):
 class TiliquaDomainGenerator(Elaboratable):
     """ Clock generator for Tiliqua platform. """
 
-    def __init__(self, *, clock_frequencies=None, clock_signal_name=None):
-        pass
+    def __init__(self, *, audio_192=False, clock_frequencies=None, clock_signal_name=None):
+        super().__init__()
+        self.audio_192 = audio_192
 
     def elaborate(self, platform):
         m = Module()
@@ -155,8 +150,8 @@ class TiliquaDomainGenerator(Elaboratable):
         m.domains.fast   = ClockDomain()
         m.domains.audio  = ClockDomain()
         m.domains.raw48  = ClockDomain()
-        m.domains.hdmi   = ClockDomain()
-        m.domains.hdmi5x = ClockDomain()
+        m.domains.dvi   = ClockDomain()
+        m.domains.dvi5x = ClockDomain()
 
 
         clk48 = platform.request(platform.default_clk, dir='i').i
@@ -180,8 +175,8 @@ class TiliquaDomainGenerator(Elaboratable):
                 # Generated clock outputs.
                 o_CLKOP=feedback60,
                 o_CLKOS=ClockSignal("fast"),
-                o_CLKOS2=ClockSignal("hdmi"),
-                o_CLKOS3=ClockSignal("hdmi5x"),
+                o_CLKOS2=ClockSignal("dvi"),
+                o_CLKOS3=ClockSignal("dvi5x"),
 
                 # Status.
                 o_LOCK=locked60,
@@ -239,70 +234,132 @@ class TiliquaDomainGenerator(Elaboratable):
                 a_LPF_RESISTOR="8"
         )
 
-        # ecppll -i 48 --clkout0 12.288 --highres --reset -f pll2.v
-        # 12.288MHz for 256*Fs Audio domain (48KHz Fs)
 
-        feedback12  = Signal()
-        locked12    = Signal()
-        m.submodules.audio_pll = Instance("EHXPLLL",
+        feedback_audio  = Signal()
+        locked_audio    = Signal()
 
-                # Status.
-                o_LOCK=locked12,
+        if self.audio_192:
+            # 49.152MHz for 256*Fs Audio domain (192KHz Fs)
+            # ecppll -i 48 --clkout0 49.152 --highres --reset -f pll2.v
+            m.submodules.audio_pll = Instance("EHXPLLL",
+                    # Status.
+                    o_LOCK=locked_audio,
 
-                # PLL parameters...
-                p_PLLRST_ENA="ENABLED",
-                p_INTFB_WAKE="DISABLED",
-                p_STDBY_ENABLE="DISABLED",
-                p_DPHASE_SOURCE="DISABLED",
-                p_OUTDIVIDER_MUXA="DIVA",
-                p_OUTDIVIDER_MUXB="DIVB",
-                p_OUTDIVIDER_MUXC="DIVC",
-                p_OUTDIVIDER_MUXD="DIVD",
+                    # PLL parameters...
+                    p_PLLRST_ENA="ENABLED",
+                    p_INTFB_WAKE="DISABLED",
+                    p_STDBY_ENABLE="DISABLED",
+                    p_DPHASE_SOURCE="DISABLED",
+                    p_OUTDIVIDER_MUXA="DIVA",
+                    p_OUTDIVIDER_MUXB="DIVB",
+                    p_OUTDIVIDER_MUXC="DIVC",
+                    p_OUTDIVIDER_MUXD="DIVD",
 
-                p_CLKI_DIV = 5,
-                p_CLKOP_ENABLE = "ENABLED",
-                p_CLKOP_DIV = 32,
-                p_CLKOP_CPHASE = 9,
-                p_CLKOP_FPHASE = 0,
-                p_CLKOS_ENABLE = "ENABLED",
-                p_CLKOS_DIV = 50,
-                p_CLKOS_CPHASE = 0,
-                p_CLKOS_FPHASE = 0,
-                p_FEEDBK_PATH = "CLKOP",
-                p_CLKFB_DIV = 2,
+                    p_CLKI_DIV = 13,
+                    p_CLKOP_ENABLE = "ENABLED",
+                    p_CLKOP_DIV = 71,
+                    p_CLKOP_CPHASE = 9,
+                    p_CLKOP_FPHASE = 0,
+                    p_CLKOS_ENABLE = "ENABLED",
+                    p_CLKOS_DIV = 16,
+                    p_CLKOS_CPHASE = 0,
+                    p_CLKOS_FPHASE = 0,
+                    p_FEEDBK_PATH = "CLKOP",
+                    p_CLKFB_DIV = 3,
 
-                # Clock in.
-                i_CLKI=clk48,
+                    # Clock in.
+                    i_CLKI=clk48,
 
-                # Internal feedback.
-                i_CLKFB=feedback12,
+                    # Internal feedback.
+                    i_CLKFB=feedback_audio,
 
-                # Control signals.
-                i_RST=reset,
-                i_PHASESEL0=0,
-                i_PHASESEL1=0,
-                i_PHASEDIR=1,
-                i_PHASESTEP=1,
-                i_PHASELOADREG=1,
-                i_STDBY=0,
-                i_PLLWAKESYNC=0,
+                    # Control signals.
+                    i_RST=reset,
+                    i_PHASESEL0=0,
+                    i_PHASESEL1=0,
+                    i_PHASEDIR=1,
+                    i_PHASESTEP=1,
+                    i_PHASELOADREG=1,
+                    i_STDBY=0,
+                    i_PLLWAKESYNC=0,
 
-                # Output Enables.
-                i_ENCLKOP=0,
-                i_ENCLKOS2=0,
+                    # Output Enables.
+                    i_ENCLKOP=0,
+                    i_ENCLKOS2=0,
 
-                # Generated clock outputs.
-                o_CLKOP=feedback12,
-                o_CLKOS=ClockSignal("audio"),
+                    # Generated clock outputs.
+                    o_CLKOP=feedback_audio,
+                    o_CLKOS=ClockSignal("audio"),
 
-                # Synthesis attributes.
-                a_FREQUENCY_PIN_CLKI="48",
-                a_FREQUENCY_PIN_CLKOS="12.288",
-                a_ICP_CURRENT="12",
-                a_LPF_RESISTOR="8",
-                a_MFG_ENABLE_FILTEROPAMP="1",
-                a_MFG_GMCREF_SEL="2"
-        )
+                    # Synthesis attributes.
+                    a_FREQUENCY_PIN_CLKI="48",
+                    a_FREQUENCY_PIN_CLKOS="12.288",
+                    a_ICP_CURRENT="12",
+                    a_LPF_RESISTOR="8",
+                    a_MFG_ENABLE_FILTEROPAMP="1",
+                    a_MFG_GMCREF_SEL="2"
+            )
+        else:
+            # 12.288MHz for 256*Fs Audio domain (48KHz Fs)
+            # ecppll -i 48 --clkout0 12.288 --highres --reset -f pll2.v
+            m.submodules.audio_pll = Instance("EHXPLLL",
+                    # Status.
+                    o_LOCK=locked_audio,
+
+                    # PLL parameters...
+                    p_PLLRST_ENA="ENABLED",
+                    p_INTFB_WAKE="DISABLED",
+                    p_STDBY_ENABLE="DISABLED",
+                    p_DPHASE_SOURCE="DISABLED",
+                    p_OUTDIVIDER_MUXA="DIVA",
+                    p_OUTDIVIDER_MUXB="DIVB",
+                    p_OUTDIVIDER_MUXC="DIVC",
+                    p_OUTDIVIDER_MUXD="DIVD",
+
+                    p_CLKI_DIV = 5,
+                    p_CLKOP_ENABLE = "ENABLED",
+                    p_CLKOP_DIV = 32,
+                    p_CLKOP_CPHASE = 9,
+                    p_CLKOP_FPHASE = 0,
+                    p_CLKOS_ENABLE = "ENABLED",
+                    p_CLKOS_DIV = 50,
+                    p_CLKOS_CPHASE = 0,
+                    p_CLKOS_FPHASE = 0,
+                    p_FEEDBK_PATH = "CLKOP",
+                    p_CLKFB_DIV = 2,
+
+                    # Clock in.
+                    i_CLKI=clk48,
+
+                    # Internal feedback.
+                    i_CLKFB=feedback_audio,
+
+                    # Control signals.
+                    i_RST=reset,
+                    i_PHASESEL0=0,
+                    i_PHASESEL1=0,
+                    i_PHASEDIR=1,
+                    i_PHASESTEP=1,
+                    i_PHASELOADREG=1,
+                    i_STDBY=0,
+                    i_PLLWAKESYNC=0,
+
+                    # Output Enables.
+                    i_ENCLKOP=0,
+                    i_ENCLKOS2=0,
+
+                    # Generated clock outputs.
+                    o_CLKOP=feedback_audio,
+                    o_CLKOS=ClockSignal("audio"),
+
+                    # Synthesis attributes.
+                    a_FREQUENCY_PIN_CLKI="48",
+                    a_FREQUENCY_PIN_CLKOS="12.288",
+                    a_ICP_CURRENT="12",
+                    a_LPF_RESISTOR="8",
+                    a_MFG_ENABLE_FILTEROPAMP="1",
+                    a_MFG_GMCREF_SEL="2"
+            )
 
         # Derived clocks and resets
         m.d.comb += [
@@ -312,10 +369,10 @@ class TiliquaDomainGenerator(Elaboratable):
             ResetSignal("sync")  .eq(~locked60),
             ResetSignal("fast")  .eq(~locked60),
             ResetSignal("usb")   .eq(~locked60),
-            ResetSignal("hdmi")  .eq(~locked60),
-            ResetSignal("hdmi5x").eq(~locked60),
+            ResetSignal("dvi")  .eq(~locked60),
+            ResetSignal("dvi5x").eq(~locked60),
 
-            ResetSignal("audio")   .eq(~locked12),
+            ResetSignal("audio")   .eq(~locked_audio),
         ]
 
         return m

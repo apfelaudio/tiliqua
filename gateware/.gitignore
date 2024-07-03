@@ -1,6 +1,10 @@
 # waveform traces
 *.fst
+*.fst.hier
 *.vcd
+
+# vectorscope sim dumps
+*.bmp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

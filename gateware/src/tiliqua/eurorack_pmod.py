@@ -212,11 +212,12 @@ class EurorackPmod(wiring.Component):
     sample_adc: Out(signed(WIDTH)).array(4)
     force_dac_output: In(signed(WIDTH))
 
-    def __init__(self, pmod_pins, hardware_r33=True, touch_enabled=True):
+    def __init__(self, pmod_pins, hardware_r33=True, touch_enabled=True, audio_192=False):
 
         self.pmod_pins = pmod_pins
         self.hardware_r33 = hardware_r33
         self.touch_enabled = touch_enabled
+        self.audio_192 = audio_192
 
         super().__init__()
 
@@ -235,7 +236,9 @@ class EurorackPmod(wiring.Component):
         # Defines and default cal for PMOD hardware version.
         if self.hardware_r33:
             touch_define = "`define TOUCH_SENSE_ENABLED" if self.touch_enabled else ""
-            platform.add_file("eurorack_pmod_defines.sv", f"`define HW_R33\n{touch_define}")
+            define_192 = "`define AK4619_192KHZ" if self.audio_192 else ""
+            platform.add_file("eurorack_pmod_defines.sv",
+                              f"`define HW_R33\n{touch_define}\n{define_192}")
             platform.add_file("cal/cal_mem_default_r33.hex",
                               open(os.path.join(vroot, "cal/cal_mem_default_r33.hex")))
         else:
@@ -251,8 +254,14 @@ class EurorackPmod(wiring.Component):
         platform.add_file("i2c_master.sv", open(os.path.join(vroot, "external/no2misc/rtl/i2c_master.v")))
 
         # .hex files for I2C initialization
-        platform.add_file("drivers/ak4619-cfg.hex",
-                          open(os.path.join(vroot, "drivers/ak4619-cfg.hex")))
+        if self.audio_192:
+            # 192KHz sampling requires a different CODEC configuration.
+            platform.add_file("drivers/ak4619-cfg.hex",
+                              open(os.path.join(vroot, "drivers/ak4619-cfg-192.hex")))
+        else:
+            # CODEC configuration for 8-48KHz sampling.
+            platform.add_file("drivers/ak4619-cfg.hex",
+                              open(os.path.join(vroot, "drivers/ak4619-cfg.hex")))
         platform.add_file("drivers/pca9635-cfg.hex",
                           open(os.path.join(vroot, "drivers/pca9635-cfg.hex")))
         platform.add_file("drivers/cy8cmbr3108-cfg.hex",
