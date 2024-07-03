@@ -73,21 +73,31 @@ class HelloSoc(Elaboratable):
         self.soc.psram = PSRAMPeripheral(size=16*1024*1024)
         self.soc.add_peripheral(self.soc.psram, addr=psram_base)
 
-        # ... add our LED peripheral, for simple output ...
-        self.leds = LedPeripheral()
-        self.soc.add_peripheral(self.leds, addr=0xf0001000)
-
         # ... add an I2C transciever
         self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
         self.soc.add_peripheral(self.i2c0, addr=0xf0002000)
 
+        # ... add our encoder peripheral
         self.encoder0 = EncoderPeripheral(pins=self.encoder_pins)
         self.soc.add_peripheral(self.encoder0, addr=0xf0003000)
+
+        # ... add our eurorack-pmod test peripheral
+        self.pmod0_periph = eurorack_pmod.EurorackPmodPeripheral(pmod=None)
+        self.soc.add_peripheral(self.pmod0_periph, addr=0xf0004000)
 
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
+
+        # add a eurorack pmod instance without an audio stream for basic self-testing
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True,
+                touch_enabled=True)
+        # connect it to our test peripheral before instantiating SoC.
+        self.pmod0_periph.pmod = pmod0
+
         m.submodules.soc = self.soc
 
         # generate our domain clocks/resets
@@ -124,11 +134,7 @@ class HelloSoc(Elaboratable):
         # Enable LED driver on motherboard
         m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
 
-        # add a eurorack pmod that does nothing
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True,
-                touch_enabled=True)
+
 
         return m
 
