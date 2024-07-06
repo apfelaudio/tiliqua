@@ -269,8 +269,6 @@ class FramebufferPHY(Elaboratable):
 
             # Register all DVI timing signals to cut timing path.
             s_dvi_de = Signal()
-            s_dvi_hsync = Signal()
-            s_dvi_vsync = Signal()
             s_dvi_b = Signal(unsigned(8))
             s_dvi_g = Signal(unsigned(8))
             s_dvi_r = Signal(unsigned(8))
@@ -285,15 +283,17 @@ class FramebufferPHY(Elaboratable):
             # Better here than in DVITimingsGenerator itself in case
             # the sync signal is used by other logic.
 
+            s_dvi_hsync = Signal()
             if dvi_tgen.timings.h_sync_invert:
-                m.d.comb += s_dvi_hsync.eq(~dvi_tgen.hsync),
+                m.d.dvi += s_dvi_hsync.eq(~dvi_tgen.hsync),
             else:
-                m.d.comb += s_dvi_hsync.eq(dvi_tgen.hsync),
+                m.d.dvi += s_dvi_hsync.eq(dvi_tgen.hsync),
 
+            s_dvi_vsync = Signal()
             if dvi_tgen.timings.v_sync_invert:
-                m.d.comb += s_dvi_vsync.eq(~dvi_tgen.vsync),
+                m.d.dvi += s_dvi_vsync.eq(~dvi_tgen.vsync),
             else:
-                m.d.comb += s_dvi_vsync.eq(dvi_tgen.vsync),
+                m.d.dvi += s_dvi_vsync.eq(dvi_tgen.vsync),
 
             # Instantiate the DVI PHY itself
             # TODO: port this to Amaranth as well!
