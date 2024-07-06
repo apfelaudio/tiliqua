@@ -27,7 +27,6 @@ class ChannelsToUSBStream(Elaboratable):
         self.frame_finished_in   = Signal()
 
         # debug signals
-        self.feeder_state            = Signal()
         self.current_channel         = Signal(self._channel_bits)
         self.level                   = Signal(range(self._fifo_depth + 1))
         self.fifo_read               = Signal()
@@ -42,7 +41,7 @@ class ChannelsToUSBStream(Elaboratable):
 
     def elaborate(self, platform: Platform) -> Module:
         m = Module()
-        m.submodules.out_fifo = out_fifo = SyncFIFO(width=8 + self._channel_bits, depth=self._fifo_depth, fwft=True)
+        m.submodules.out_fifo = out_fifo = SyncFIFO(width=8 + self._channel_bits, depth=self._fifo_depth)
 
         channel_stream  = self.channel_stream_in
         channel_valid   = Signal()
@@ -105,7 +104,6 @@ class ChannelsToUSBStream(Elaboratable):
 
         # this FSM handles writing into the FIFO
         with m.FSM(name="fifo_feeder") as fsm:
-            m.d.comb += self.feeder_state.eq(fsm.state)
 
             with m.State("WAIT"):
                 m.d.comb += channel_ready.eq(out_fifo_can_write_sample)
