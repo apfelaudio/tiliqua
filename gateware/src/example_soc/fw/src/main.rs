@@ -63,12 +63,12 @@ fn default_isr_handler() -> ! {
 }
 
 struct DMADisplay {
-    fb_ptr: *mut u8,
+    fb_ptr: *mut u32,
 }
 
 impl OriginDimensions for DMADisplay {
     fn size(&self) -> Size {
-        Size::new(800, 600)
+        Size::new(200, 150)
     }
 }
 
@@ -80,11 +80,14 @@ impl DrawTarget for DMADisplay {
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         for Pixel(coord, color) in pixels.into_iter() {
-            if let Ok((x @ 0..=800, y @ 0..=600)) = coord.try_into() {
+            if let Ok((x @ 0..=200, y @ 0..=150)) = coord.try_into() {
                 // Calculate the index in the framebuffer.
                 let index: u32 = x + y * 800;
                 unsafe {
-                    self.fb_ptr.offset(index as isize).write_volatile(color.luma());
+                    self.fb_ptr.offset((index + 0) as isize).write_volatile(0xFFFFFFFF);
+                    self.fb_ptr.offset((index + 200) as isize).write_volatile(0xFFFFFFFF);
+                    self.fb_ptr.offset((index + 400) as isize).write_volatile(0xFFFFFFFF);
+                    self.fb_ptr.offset((index + 600) as isize).write_volatile(0xFFFFFFFF);
                 }
             }
         }
@@ -192,7 +195,7 @@ fn main() -> ! {
 
     // Draw something to the display
     let mut display = DMADisplay {
-        fb_ptr: 0x20000000 as *mut u8,
+        fb_ptr: 0x20000000 as *mut u32,
     };
     let circle = Circle::new(Point::new(22, 22), 20)
         .into_styled(PrimitiveStyle::with_stroke(Gray8::WHITE, 1));
