@@ -20,6 +20,14 @@ use riscv_rt::entry;
 
 use embedded_hal::i2c::{I2c, Operation};
 
+use core::convert::TryInto;
+
+use embedded_graphics::{
+    pixelcolor::{Gray8, GrayColor},
+    prelude::*,
+    primitives::{Circle, PrimitiveStyle},
+};
+
 #[riscv_rt::pre_init]
 unsafe fn pre_main() {
     pac::cpu::vexriscv::flush_icache();
@@ -50,6 +58,36 @@ fn exception_handler(trap_frame: &riscv_rt::TrapFrame) -> ! {
 fn default_isr_handler() -> ! {
     error!("default_isr_handler()");
     loop {}
+}
+
+struct DMADisplay {
+    fb_ptr: *mut u8,
+}
+
+impl OriginDimensions for DMADisplay {
+    fn size(&self) -> Size {
+        Size::new(800, 600)
+    }
+}
+
+impl DrawTarget for DMADisplay {
+    type Color = Gray8;
+    type Error = core::convert::Infallible;
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = Pixel<Self::Color>>,
+    {
+        for Pixel(coord, color) in pixels.into_iter() {
+            if let Ok((x @ 0..=800, y @ 0..=600)) = coord.try_into() {
+                // Calculate the index in the framebuffer.
+                let index: u32 = x + y * 800;
+                unsafe {
+                    self.fb_ptr.offset(index as isize).write_volatile(color.luma());
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 const TUSB322I_ADDR: u8 = 0x47;
@@ -125,6 +163,13 @@ fn main() -> ! {
 
     info!("PASS: TUSB322I Device ID.");
 
+    // Draw something to the display
+    let mut display = DMADisplay {
+        fb_ptr: 0x20000000 as *mut u8,
+    };
+    let circle = Circle::new(Point::new(22, 22), 20)
+        .into_styled(PrimitiveStyle::with_stroke(Gray8::WHITE, 1));
+    circle.draw(&mut display).ok();
 
     let encoder = peripherals.ENCODER0;
     let mut encoder_rotation: i16 = 0;

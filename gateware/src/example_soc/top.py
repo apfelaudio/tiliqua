@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 
-from amaranth                                    import Elaboratable, Module, Cat
+from amaranth                                    import *
 from amaranth.hdl.rec                            import Record
 
 from luna_soc.gateware.cpu.vexriscv              import VexRiscv
@@ -23,6 +23,8 @@ from tiliqua.psram_peripheral                    import PSRAMPeripheral
 from tiliqua.i2c                                 import I2CPeripheral
 from tiliqua.encoder                             import EncoderPeripheral
 from tiliqua                                     import eurorack_pmod
+
+from example_vectorscope.top                     import DVI_TIMINGS, FramebufferPHY
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
@@ -73,6 +75,15 @@ class HelloSoc(Elaboratable):
         self.soc.psram = PSRAMPeripheral(size=16*1024*1024)
         self.soc.add_peripheral(self.soc.psram, addr=psram_base)
 
+        # ... add our video PHY (DMAs from PSRAM starting at fb_base)
+        fb_base = psram_base
+        timings = DVI_TIMINGS["800x600p60"]
+        fb_size = (timings.h_active, timings.v_active)
+        self.video = FramebufferPHY(
+                fb_base=fb_base, dvi_timings=timings, fb_size=fb_size,
+                bus_master=self.soc.psram.bus, sim=False)
+        self.soc.psram.add_master(self.video.bus)
+
         # ... add an I2C transciever
         self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
         self.soc.add_peripheral(self.i2c0, addr=0xf0002000)
@@ -98,7 +109,15 @@ class HelloSoc(Elaboratable):
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
 
+        m.submodules.video = self.video
         m.submodules.soc = self.soc
+
+        # Memory controller hangs if we start making requests to it straight away.
+        on_delay = Signal(32)
+        with m.If(on_delay < 0xFFFF):
+            m.d.sync += on_delay.eq(on_delay+1)
+        with m.Else():
+            m.d.sync += self.video.enable.eq(1)
 
         # generate our domain clocks/resets
         m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ)
