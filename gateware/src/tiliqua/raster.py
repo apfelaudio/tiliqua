@@ -22,7 +22,7 @@ from amaranth_future       import stream, fixed
 from tiliqua               import dsp
 from tiliqua.eurorack_pmod import ASQ
 
-from luna_soc.gateware.vendor.amaranth_soc import wishbone
+from amaranth_soc          import wishbone
 
 class Persistance(Elaboratable):
 

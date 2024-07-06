@@ -18,7 +18,7 @@ from amaranth.hdl.mem      import Memory
 
 from amaranth_future       import stream
 
-from luna_soc.gateware.vendor.amaranth_soc import wishbone
+from amaranth_soc          import wishbone
 
 from dataclasses import dataclass
 

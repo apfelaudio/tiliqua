@@ -894,8 +894,8 @@ class FIR(wiring.Component):
                     m.next = "WAIT-READY"
                 with m.Else():
                     m.d.sync += [
-                        a.eq(x[ix]),
-                        b.eq(taps[ix]),
+                        a.as_value().eq(x[ix].as_value()),
+                        b.as_value().eq(taps[ix].as_value()),
                         ix.eq(ix + 1)
                     ]
             with m.State('WAIT-READY'):
