@@ -96,6 +96,22 @@ DVI_TIMINGS = {
         refresh_rate  = 60.32,
         pixel_clk_mhz = 40.0
     ),
+    # DMT 1280x720p60
+    # This seems to also work with a 60MHz PLL for p50 on some monitors.
+    "1280x720p60": DVITimings(
+        h_active      = 1280,
+        h_sync_start  = 1390,
+        h_sync_end    = 1430,
+        h_total       = 1650,
+        h_sync_invert = False,
+        v_active      = 720,
+        v_sync_start  = 725,
+        v_sync_end    = 730,
+        v_total       = 750,
+        v_sync_invert = False,
+        refresh_rate  = 60.00,
+        pixel_clk_mhz = 74.25,
+    ),
     # A round AliExpress display
     "720x720p60": DVITimings(
         h_active      = 720,
@@ -253,12 +269,10 @@ class FramebufferPHY(Elaboratable):
 
             # Register all DVI timing signals to cut timing path.
             s_dvi_de = Signal()
-            s_dvi_hsync = Signal()
-            s_dvi_vsync = Signal()
             s_dvi_b = Signal(unsigned(8))
             s_dvi_g = Signal(unsigned(8))
             s_dvi_r = Signal(unsigned(8))
-            m.d.sync += [
+            m.d.dvi += [
                 s_dvi_de.eq(dvi_tgen.de),
                 s_dvi_r.eq(phy_r),
                 s_dvi_g.eq(phy_g),
@@ -269,15 +283,17 @@ class FramebufferPHY(Elaboratable):
             # Better here than in DVITimingsGenerator itself in case
             # the sync signal is used by other logic.
 
+            s_dvi_hsync = Signal()
             if dvi_tgen.timings.h_sync_invert:
-                s_dvi_hsync.eq(~dvi_tgen.hsync),
+                m.d.dvi += s_dvi_hsync.eq(~dvi_tgen.hsync),
             else:
-                s_dvi_hsync.eq(dvi_tgen.hsync),
+                m.d.dvi += s_dvi_hsync.eq(dvi_tgen.hsync),
 
+            s_dvi_vsync = Signal()
             if dvi_tgen.timings.v_sync_invert:
-                s_dvi_vsync.eq(~dvi_tgen.vsync),
+                m.d.dvi += s_dvi_vsync.eq(~dvi_tgen.vsync),
             else:
-                s_dvi_vsync.eq(dvi_tgen.vsync),
+                m.d.dvi += s_dvi_vsync.eq(dvi_tgen.vsync),
 
             # Instantiate the DVI PHY itself
             # TODO: port this to Amaranth as well!
