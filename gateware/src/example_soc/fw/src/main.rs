@@ -23,9 +23,11 @@ use embedded_hal::i2c::{I2c, Operation};
 use core::convert::TryInto;
 
 use embedded_graphics::{
+    mono_font::{ascii::FONT_6X10, MonoTextStyle},
     pixelcolor::{Gray8, GrayColor},
     prelude::*,
     primitives::{Circle, PrimitiveStyle},
+    text::{Alignment, Text},
 };
 
 #[riscv_rt::pre_init]
@@ -141,6 +143,31 @@ fn main() -> ! {
 
         info!("read speed {} KByte/sec", ((sysclk as u64) * (16*1024 as u64)) / (read_ticks as u64));
 
+        psram_ptr.offset(0).write_volatile(0);
+        psram_ptr.offset(1).write_volatile(0xFFFFFFFF);
+        let psram_ptr_u8 = HRAM_BASE as *mut u8;
+        info!("read0 {:#x}", psram_ptr.offset(0).read_volatile());
+        info!("read1 {:#x}", psram_ptr.offset(1).read_volatile());
+        psram_ptr_u8.offset(7).write_volatile(0xFEu8);
+        psram_ptr_u8.offset(6).write_volatile(0xEDu8);
+        psram_ptr_u8.offset(5).write_volatile(0xBAu8);
+        psram_ptr_u8.offset(4).write_volatile(0xBEu8);
+        psram_ptr_u8.offset(0).write_volatile(0xEFu8);
+        psram_ptr_u8.offset(1).write_volatile(0xBEu8);
+        psram_ptr_u8.offset(2).write_volatile(0xADu8);
+        psram_ptr_u8.offset(3).write_volatile(0xDEu8);
+        info!("read0 {:#x}", psram_ptr.offset(0).read_volatile());
+        info!("read1 {:#x}", psram_ptr.offset(1).read_volatile());
+
+        let aligned_u32 = psram_ptr.offset(0).read_volatile();
+        if aligned_u32 != 0xdeadbeef {
+            panic!("FAIL: PSRAM unaligned access test");
+        }
+
+        for i in 0..psram_sz_words {
+            psram_ptr.offset(i).write_volatile(0u32);
+        }
+
         info!("PASS: PSRAM memtest");
     }
 
@@ -170,6 +197,16 @@ fn main() -> ! {
     let circle = Circle::new(Point::new(22, 22), 20)
         .into_styled(PrimitiveStyle::with_stroke(Gray8::WHITE, 1));
     circle.draw(&mut display).ok();
+
+    let character_style = MonoTextStyle::new(&FONT_6X10, Gray8::WHITE);
+    let text = "TILIQUA SELF-TEST";
+    Text::with_alignment(
+        text,
+        display.bounding_box().center() + Point::new(0, 15),
+        character_style,
+        Alignment::Center,
+    )
+    .draw(&mut display).ok();
 
     let encoder = peripherals.ENCODER0;
     let mut encoder_rotation: i16 = 0;
