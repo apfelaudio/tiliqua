@@ -127,6 +127,21 @@ DVI_TIMINGS = {
         refresh_rate  = 60.0,
         pixel_clk_mhz = 37.39
     ),
+    # A round Waveshare display
+    "720x720p78": DVITimings(
+        h_active      = 720,
+        h_sync_start  = 760,
+        h_sync_end    = 800,
+        h_total       = 1000,
+        h_sync_invert = True,
+        v_active      = 720,
+        v_sync_start  = 744,
+        v_sync_end    = 748,
+        v_total       = 760,
+        v_sync_invert = True,
+        refresh_rate  = 78.16,
+        pixel_clk_mhz = 59.4,
+    ),
 }
 
 class DVITimingGenerator(wiring.Component):
@@ -747,7 +762,7 @@ class VectorScopeTop(Elaboratable):
 
         # WARN: You have to modify the platform PLL if you change the pixel clock!
         # TODO: integrate ecp5_pll from lambdasoc or custom solution --
-        timings = DVI_TIMINGS["800x600p60"]
+        timings = DVI_TIMINGS["720x720p78"]
         fb_base = 0x0
         fb_size = (timings.h_active, timings.v_active)
 
