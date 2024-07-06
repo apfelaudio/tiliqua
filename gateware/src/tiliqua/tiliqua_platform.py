@@ -124,7 +124,7 @@ class _TiliquaPlatform(LatticeECP5Platform):
             Subsignal("d1", Pins("C5", dir="o")),
             Subsignal("d2", Pins("E4", dir="o")),
             Subsignal("ck", Pins("C6", dir="o")),
-            Attrs(IO_TYPE="LVCMOS33D", DRIVE="4")
+            Attrs(IO_TYPE="LVCMOS33D")
          ),
     ]
 
