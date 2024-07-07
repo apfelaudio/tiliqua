@@ -68,7 +68,7 @@ struct DMADisplay {
 
 impl OriginDimensions for DMADisplay {
     fn size(&self) -> Size {
-        Size::new(200, 150)
+        Size::new(800, 600)
     }
 }
 
@@ -80,14 +80,12 @@ impl DrawTarget for DMADisplay {
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         for Pixel(coord, color) in pixels.into_iter() {
-            if let Ok((x @ 0..=200, y @ 0..=150)) = coord.try_into() {
+            if let Ok((x @ 0..=800, y @ 0..=600)) = coord.try_into() {
                 // Calculate the index in the framebuffer.
-                let index: u32 = x + y * 800;
+                let index: u32 = (x + y * 800) / 4;
                 unsafe {
-                    self.fb_ptr.offset((index + 0) as isize).write_volatile(0xFFFFFFFF);
-                    self.fb_ptr.offset((index + 200) as isize).write_volatile(0xFFFFFFFF);
-                    self.fb_ptr.offset((index + 400) as isize).write_volatile(0xFFFFFFFF);
-                    self.fb_ptr.offset((index + 600) as isize).write_volatile(0xFFFFFFFF);
+                    let px = self.fb_ptr.offset(index as isize).read_volatile();
+                    self.fb_ptr.offset(index as isize).write_volatile(px | (0x000000FFu32 << (8*(x%4))));
                 }
             }
         }
