@@ -85,7 +85,7 @@ impl DrawTarget for DMADisplay {
                 let index: u32 = (x + y * 800) / 4;
                 unsafe {
                     let px = self.fb_ptr.offset(index as isize).read_volatile();
-                    self.fb_ptr.offset(index as isize).write_volatile(px | (0x000000FFu32 << (8*(x%4))));
+                    self.fb_ptr.offset(index as isize).write_volatile(px | ((color.luma() as u32) << (8*(x%4))));
                 }
             }
         }
@@ -113,6 +113,7 @@ fn main() -> ! {
 
     info!("PSRAM memtest...");
 
+    /*
     unsafe {
         const HRAM_BASE: usize = 0x20000000;
         let psram_ptr = HRAM_BASE as *mut u32;
@@ -171,6 +172,7 @@ fn main() -> ! {
 
         info!("PASS: PSRAM memtest");
     }
+    */
 
     let mut i2cdev = I2c0::new(peripherals.I2C0);
 
@@ -201,13 +203,6 @@ fn main() -> ! {
 
     let character_style = MonoTextStyle::new(&FONT_6X10, Gray8::WHITE);
     let text = "TILIQUA SELF-TEST";
-    Text::with_alignment(
-        text,
-        display.bounding_box().center() + Point::new(0, 15),
-        character_style,
-        Alignment::Center,
-    )
-    .draw(&mut display).ok();
 
     let encoder = peripherals.ENCODER0;
     let mut encoder_rotation: i16 = 0;
@@ -216,13 +211,31 @@ fn main() -> ! {
 
     let mut uptime_ms = 0u32;
 
+    use fastrand;
+
+    let mut rng = fastrand::Rng::with_seed(0);
+
+    use heapless::String;
+    use core::fmt::Write;
+
     loop {
+
+        let mut s = String::<64>::new();
 
         // Report encoder state
         encoder_rotation += (encoder.step().read().bits() as i8) as i16;
-        info!("encoder button={} rotation={}",
+        write!(s, "ENCODER BTN={} ROT={}",
               encoder.button().read().bits(),
               encoder_rotation);
+
+        Text::with_alignment(
+            &s,
+            display.bounding_box().center() + Point::new(0, 0),
+            character_style,
+            Alignment::Left,
+        )
+        .draw(&mut display).ok();
+
 
         // Make rotation control loop speed
         if encoder_rotation >= -50 {
@@ -233,13 +246,32 @@ fn main() -> ! {
         }
 
         // Report some eurorack-pmod information
-        info!("codec_raw_adc - ch0={} ch1={} ch2={} ch3={}",
+        s.clear();
+        write!(s, "codec_raw_adc - ch0={} ch1={} ch2={} ch3={}",
               pmod.sample_adc0().read().bits() as i16,
               pmod.sample_adc1().read().bits() as i16,
               pmod.sample_adc2().read().bits() as i16,
               pmod.sample_adc3().read().bits() as i16);
-        info!("jack_insertion - 0x{:x}", pmod.jack().read().bits() as u8);
-        info!("touch - ch0={} ch1={} ch2={} ch3={} ch4={} ch5={} ch6={} ch7={}",
+        Text::with_alignment(
+            &s,
+            display.bounding_box().center() + Point::new(0, 12),
+            character_style,
+            Alignment::Left,
+        )
+        .draw(&mut display).ok();
+
+        s.clear();
+        write!(s, "jack_insertion - 0x{:x}", pmod.jack().read().bits() as u8);
+        Text::with_alignment(
+            &s,
+            display.bounding_box().center() + Point::new(0, 24),
+            character_style,
+            Alignment::Left,
+        )
+        .draw(&mut display).ok();
+
+        s.clear();
+        write!(s, "touch - ch0={} ch1={} ch2={} ch3={} ch4={} ch5={} ch6={} ch7={}",
               pmod.touch0().read().bits() as u8,
               pmod.touch1().read().bits() as u8,
               pmod.touch2().read().bits() as u8,
@@ -248,6 +280,13 @@ fn main() -> ! {
               pmod.touch5().read().bits() as u8,
               pmod.touch6().read().bits() as u8,
               pmod.touch7().read().bits() as u8);
+        Text::with_alignment(
+            &s,
+            display.bounding_box().center() + Point::new(0, 36),
+            character_style,
+            Alignment::Left,
+        )
+        .draw(&mut display).ok();
 
         // Write something to the CODEC outputs / LEDs
         pmod.sample_o0().write(|w| unsafe { w.sample_o0().bits(
@@ -297,7 +336,9 @@ fn main() -> ! {
         let mut tusb322_conn_status: [u8; 1] = [0; 1];
         let _ = i2cdev.transaction(TUSB322I_ADDR, &mut [Operation::Write(&[0x09u8]),
                                                         Operation::Read(&mut tusb322_conn_status)]);
-        info!("tusb322i_conn_status: 0x{:x} (DUA={} DDC={} VF={} IS={} CD={} AS={})",
+
+        s.clear();
+        write!(s, "tusb322i_conn_status: 0x{:x} (DUA={} DDC={} VF={} IS={} CD={} AS={})",
               tusb322_conn_status[0],
               tusb322_conn_status[0]        & 0x1,
               (tusb322_conn_status[0] >> 1) & 0x3,
@@ -306,6 +347,13 @@ fn main() -> ! {
               (tusb322_conn_status[0] >> 5) & 0x1,
               (tusb322_conn_status[0] >> 6) & 0x3,
               );
+        Text::with_alignment(
+            &s,
+            display.bounding_box().center() + Point::new(0, 48),
+            character_style,
+            Alignment::Left,
+        )
+        .draw(&mut display).ok();
 
         // TODO: nicer breathing pattern
         if direction {
@@ -319,5 +367,7 @@ fn main() -> ! {
                 direction = true;
             }
         }
+
+        pac::cpu::vexriscv::flush_dcache();
     }
 }

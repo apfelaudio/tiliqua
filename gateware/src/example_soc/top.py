@@ -24,7 +24,7 @@ from tiliqua.i2c                                 import I2CPeripheral
 from tiliqua.encoder                             import EncoderPeripheral
 from tiliqua                                     import eurorack_pmod
 
-from example_vectorscope.top                     import DVI_TIMINGS, FramebufferPHY
+from example_vectorscope.top                     import DVI_TIMINGS, FramebufferPHY, Persistance
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
@@ -82,7 +82,10 @@ class HelloSoc(Elaboratable):
         self.video = FramebufferPHY(
                 fb_base=fb_base, dvi_timings=timings, fb_size=fb_size,
                 bus_master=self.soc.psram.bus, sim=False)
+        self.persist = Persistance(
+                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
         self.soc.psram.add_master(self.video.bus)
+        self.soc.psram.add_master(self.persist.bus)
 
         # ... add an I2C transciever
         self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
@@ -110,6 +113,7 @@ class HelloSoc(Elaboratable):
         self.pmod0_periph.pmod = pmod0
 
         m.submodules.video = self.video
+        m.submodules.persist = self.persist
         m.submodules.soc = self.soc
 
         # Memory controller hangs if we start making requests to it straight away.
@@ -118,6 +122,7 @@ class HelloSoc(Elaboratable):
             m.d.sync += on_delay.eq(on_delay+1)
         with m.Else():
             m.d.sync += self.video.enable.eq(1)
+            m.d.sync += self.persist.enable.eq(1)
 
         # generate our domain clocks/resets
         m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ)

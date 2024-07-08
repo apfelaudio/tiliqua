@@ -13,3 +13,5 @@ tiliqua-pac = { path="../pac", default-features = false, features = ["critical-s
 tiliqua-hal = { path="../hal", default-features = false, features = ["vexriscv"]}
 micromath = "2.1.0"
 embedded-graphics = "0.8.1"
+fastrand = { version = "2.1.0", default-features = false }
+heapless = "0.8.0"
