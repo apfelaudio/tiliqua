@@ -41,6 +41,7 @@ class FakeHyperRAMDQSInterface(Elaboratable):
         self.write_ready      = Signal()
         self.read_data        = Signal(32)
         self.write_data       = Signal(32)
+        self.write_mask       = Signal(4) # TODO
         # signals used for simulation interface
         self.fsm              = Signal(8)
         self.address_ptr      = Signal(32)

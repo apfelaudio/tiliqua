@@ -22,9 +22,10 @@ from tiliqua.psram_peripheral                    import PSRAMPeripheral
 
 from tiliqua.i2c                                 import I2CPeripheral
 from tiliqua.encoder                             import EncoderPeripheral
+from tiliqua.video                               import DVI_TIMINGS, FramebufferPHY
 from tiliqua                                     import eurorack_pmod
 
-from example_vectorscope.top                     import DVI_TIMINGS, FramebufferPHY, Persistance
+from example_vectorscope.top                     import Persistance, Draw
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
@@ -33,7 +34,7 @@ CLOCK_FREQUENCIES_MHZ = {
 # - HelloSoc ------------------------------------------------------------------
 
 class HelloSoc(Elaboratable):
-    def __init__(self, clock_frequency):
+    def __init__(self, clock_frequency, dvi_timings):
 
         # create a stand-in for our UART
         self.uart_pins = Record([
@@ -77,15 +78,24 @@ class HelloSoc(Elaboratable):
 
         # ... add our video PHY (DMAs from PSRAM starting at fb_base)
         fb_base = psram_base
-        timings = DVI_TIMINGS["800x600p60"]
-        fb_size = (timings.h_active, timings.v_active)
+        fb_size = (dvi_timings.h_active, dvi_timings.v_active)
         self.video = FramebufferPHY(
-                fb_base=fb_base, dvi_timings=timings, fb_size=fb_size,
+                fb_base=fb_base, dvi_timings=dvi_timings, fb_size=fb_size,
                 bus_master=self.soc.psram.bus, sim=False)
+        self.soc.psram.add_master(self.video.bus)
+
+        # ... add our video persistance effect (all writes gradually fade) -
+        # this is an interesting alternative to double-buffering that looks
+        # kind of like an old CRT with slow-scanning.
         self.persist = Persistance(
                 fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
-        self.soc.psram.add_master(self.video.bus)
         self.soc.psram.add_master(self.persist.bus)
+
+
+        # DRAW
+        self.draw = Draw(
+                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
+        self.soc.psram.add_master(self.draw.bus)
 
         # ... add an I2C transciever
         self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
@@ -111,9 +121,11 @@ class HelloSoc(Elaboratable):
                 touch_enabled=True)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
+        self.draw.pmod0 = pmod0
 
         m.submodules.video = self.video
         m.submodules.persist = self.persist
+        m.submodules.draw = self.draw
         m.submodules.soc = self.soc
 
         # Memory controller hangs if we start making requests to it straight away.
@@ -123,6 +135,7 @@ class HelloSoc(Elaboratable):
         with m.Else():
             m.d.sync += self.video.enable.eq(1)
             m.d.sync += self.persist.enable.eq(1)
+            m.d.sync += self.draw.enable.eq(1)
 
         # generate our domain clocks/resets
         m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ)
@@ -169,5 +182,5 @@ if __name__ == "__main__":
     os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
     os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
     os.environ["LUNA_PLATFORM"] = "tiliqua.tiliqua_platform:TiliquaPlatform"
-    design = HelloSoc(clock_frequency=int(60e6))
+    design = HelloSoc(clock_frequency=int(60e6), dvi_timings=DVI_TIMINGS["800x600p60"])
     top_level_cli(design)

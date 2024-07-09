@@ -218,16 +218,24 @@ fn main() -> ! {
     use heapless::String;
     use core::fmt::Write;
 
+    let mut s = String::<64>::new();
+
+    let mut period_ms = 50u32;
+
     loop {
 
-        let mut s = String::<64>::new();
+        // Make rotation control loop speed
+        if encoder_rotation > -50 {
+            period_ms = (50 + encoder_rotation) as u32;
+        }
 
         // Report encoder state
         encoder_rotation += (encoder.step().read().bits() as i8) as i16;
-        write!(s, "ENCODER BTN={} ROT={}",
+        s.clear();
+        write!(s, "encoder        - btn={} rot={}",
               encoder.button().read().bits(),
-              encoder_rotation);
-
+              encoder_rotation).ok();
+        info!("{}", s);
         Text::with_alignment(
             &s,
             display.bounding_box().center() + Point::new(0, 0),
@@ -236,22 +244,18 @@ fn main() -> ! {
         )
         .draw(&mut display).ok();
 
-
-        // Make rotation control loop speed
-        if encoder_rotation >= -50 {
-            timer.delay_ms((50 + encoder_rotation) as u32);
-            uptime_ms += 50;
-        } else {
-            uptime_ms += 1;
-        }
+        timer.delay_ms(period_ms);
+        uptime_ms += period_ms;
+        pac::cpu::vexriscv::flush_dcache();
 
         // Report some eurorack-pmod information
         s.clear();
-        write!(s, "codec_raw_adc - ch0={} ch1={} ch2={} ch3={}",
+        write!(s, "codec_raw_adc  - ch0={:06} ch1={:06} ch2={:06} ch3={:06}",
               pmod.sample_adc0().read().bits() as i16,
               pmod.sample_adc1().read().bits() as i16,
               pmod.sample_adc2().read().bits() as i16,
-              pmod.sample_adc3().read().bits() as i16);
+              pmod.sample_adc3().read().bits() as i16).ok();
+        info!("{}", s);
         Text::with_alignment(
             &s,
             display.bounding_box().center() + Point::new(0, 12),
@@ -260,8 +264,14 @@ fn main() -> ! {
         )
         .draw(&mut display).ok();
 
+        timer.delay_ms(period_ms);
+        uptime_ms += period_ms;
+        pac::cpu::vexriscv::flush_dcache();
+
+        // Report jack insertion state
         s.clear();
-        write!(s, "jack_insertion - 0x{:x}", pmod.jack().read().bits() as u8);
+        write!(s, "jack_insertion - 0x{:x}", pmod.jack().read().bits() as u8).ok();
+        info!("{}", s);
         Text::with_alignment(
             &s,
             display.bounding_box().center() + Point::new(0, 24),
@@ -270,8 +280,13 @@ fn main() -> ! {
         )
         .draw(&mut display).ok();
 
+        timer.delay_ms(period_ms);
+        uptime_ms += period_ms;
+        pac::cpu::vexriscv::flush_dcache();
+
+        // Report some touch sensing information
         s.clear();
-        write!(s, "touch - ch0={} ch1={} ch2={} ch3={} ch4={} ch5={} ch6={} ch7={}",
+        write!(s, "touch          - ch0={:03} ch1={:03} ch2={:03} ch3={:03} ch4={:03} ch5={:03} ch6={:03} ch7={:03}",
               pmod.touch0().read().bits() as u8,
               pmod.touch1().read().bits() as u8,
               pmod.touch2().read().bits() as u8,
@@ -279,7 +294,8 @@ fn main() -> ! {
               pmod.touch4().read().bits() as u8,
               pmod.touch5().read().bits() as u8,
               pmod.touch6().read().bits() as u8,
-              pmod.touch7().read().bits() as u8);
+              pmod.touch7().read().bits() as u8).ok();
+        info!("{}", s);
         Text::with_alignment(
             &s,
             display.bounding_box().center() + Point::new(0, 36),
@@ -287,6 +303,10 @@ fn main() -> ! {
             Alignment::Left,
         )
         .draw(&mut display).ok();
+
+        timer.delay_ms(period_ms);
+        uptime_ms += period_ms;
+        pac::cpu::vexriscv::flush_dcache();
 
         // Write something to the CODEC outputs / LEDs
         pmod.sample_o0().write(|w| unsafe { w.sample_o0().bits(
@@ -338,7 +358,7 @@ fn main() -> ! {
                                                         Operation::Read(&mut tusb322_conn_status)]);
 
         s.clear();
-        write!(s, "tusb322i_conn_status: 0x{:x} (DUA={} DDC={} VF={} IS={} CD={} AS={})",
+        write!(s, "tusb322i_conn  - 0x{:x} (DUA={} DDC={} VF={} IS={} CD={} AS={})",
               tusb322_conn_status[0],
               tusb322_conn_status[0]        & 0x1,
               (tusb322_conn_status[0] >> 1) & 0x3,
@@ -346,7 +366,8 @@ fn main() -> ! {
               (tusb322_conn_status[0] >> 4) & 0x1,
               (tusb322_conn_status[0] >> 5) & 0x1,
               (tusb322_conn_status[0] >> 6) & 0x3,
-              );
+              ).ok();
+        info!("{}", s);
         Text::with_alignment(
             &s,
             display.bounding_box().center() + Point::new(0, 48),
@@ -354,6 +375,10 @@ fn main() -> ! {
             Alignment::Left,
         )
         .draw(&mut display).ok();
+
+        timer.delay_ms(period_ms);
+        uptime_ms += period_ms;
+        pac::cpu::vexriscv::flush_dcache();
 
         // TODO: nicer breathing pattern
         if direction {
@@ -368,6 +393,5 @@ fn main() -> ! {
             }
         }
 
-        pac::cpu::vexriscv::flush_dcache();
     }
 }
