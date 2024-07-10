@@ -34,7 +34,7 @@ use embedded_graphics::{
 use heapless::String;
 use core::fmt::Write;
 
-use tiliqua_lib::opt;
+use tiliqua_fw::opts;
 use tiliqua_lib::draw;
 
 const TUSB322I_ADDR:  u8 = 0x47;
@@ -336,9 +336,11 @@ fn main() -> ! {
     let mut encoder_last_btn = false;
     let mut rng = fastrand::Rng::with_seed(0);
 
-    let mut opts = opt::Options::new();
+    let mut opts = opts::Options::new();
 
     let vs = peripherals.VS_PERIPH;
+
+    use tiliqua_lib::opt::OptionPageEncoderInterface;
 
     loop {
 

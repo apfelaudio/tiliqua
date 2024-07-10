@@ -24,13 +24,29 @@ pub trait OptionView {
     fn options_mut(&mut self) -> OptionVecMut;
 }
 
+pub trait OptionPage {
+    fn modify(&self) -> bool;
+    fn screen(&self) -> &dyn OptionTrait;
+    fn view(&self) -> &dyn OptionView;
+
+    fn modify_mut(&mut self, modify: bool);
+    fn view_mut(&mut self) -> &mut dyn OptionView;
+    fn screen_mut(&mut self) -> &mut dyn OptionTrait;
+}
+
+pub trait OptionPageEncoderInterface {
+    fn toggle_modify(&mut self);
+    fn tick_up(&mut self);
+    fn tick_down(&mut self);
+}
+
 #[derive(Clone)]
 pub struct NumOption<T> {
     pub name: OptionString,
     pub value: T,
-    step: T,
-    min: T,
-    max: T,
+    pub step: T,
+    pub min: T,
+    pub max: T,
 }
 
 #[derive(Clone)]
@@ -39,51 +55,7 @@ pub struct EnumOption<T> {
     pub value: T,
 }
 
-#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
-#[strum(serialize_all = "kebab-case")]
-pub enum TouchLedMirror {
-    MirrorOff,
-    MirrorOn,
-}
-
-#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
-#[strum(serialize_all = "kebab-case")]
-pub enum NoteControl {
-    Touch,
-    Midi,
-}
-
-#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
-#[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
-pub enum Screen {
-    Xbeam,
-    Scope,
-    Touch,
-}
-
-#[derive(Clone)]
-pub struct XbeamOptions {
-    pub selected: Option<usize>,
-    pub persist: NumOption<u16>,
-    pub hue: NumOption<u8>,
-    pub intensity: NumOption<u8>,
-}
-
-#[derive(Clone)]
-pub struct ScopeOptions {
-    pub selected: Option<usize>,
-    pub grain_sz: NumOption<u32>,
-    pub trig_lvl: NumOption<i32>,
-    pub trig_sns: NumOption<i32>,
-}
-
-#[derive(Clone)]
-pub struct TouchOptions {
-    pub selected: Option<usize>,
-    pub note_control: EnumOption<NoteControl>,
-    pub led_mirror: EnumOption<TouchLedMirror>,
-}
-
+#[macro_export]
 macro_rules! impl_option_view {
     ($struct_name:ident, $($field:ident),*) => {
         impl OptionView for $struct_name {
@@ -108,143 +80,39 @@ macro_rules! impl_option_view {
     };
 }
 
-impl_option_view!(XbeamOptions,
-                  persist, hue, intensity);
-
-impl_option_view!(ScopeOptions,
-                  grain_sz, trig_lvl, trig_sns);
-
-impl_option_view!(TouchOptions,
-                  note_control, led_mirror);
-
-
-#[derive(Clone)]
-pub struct Options {
-    pub modify: bool,
-    pub screen: EnumOption<Screen>,
-
-    pub xbeam: XbeamOptions,
-    pub scope: ScopeOptions,
-    pub touch: TouchOptions,
-}
-
-impl Options {
-    pub fn new() -> Options {
-        Options {
-            modify: true,
-            screen: EnumOption {
-                name: String::from_str("screen").unwrap(),
-                value: Screen::Xbeam,
-            },
-            xbeam: XbeamOptions {
-                selected: None,
-                persist: NumOption{
-                    name: String::from_str("persist").unwrap(),
-                    value: 1024,
-                    step: 256,
-                    min: 512,
-                    max: 32768,
-                },
-                hue: NumOption{
-                    name: String::from_str("hue").unwrap(),
-                    value: 0,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
-                intensity: NumOption{
-                    name: String::from_str("intensity").unwrap(),
-                    value: 6,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
-            },
-            scope: ScopeOptions {
-                selected: None,
-                grain_sz: NumOption{
-                    name: String::from_str("grainsz").unwrap(),
-                    value: 1000,
-                    step: 1,
-                    min: 512,
-                    max: 1000,
-                },
-                trig_lvl: NumOption{
-                    name: String::from_str("trig lvl").unwrap(),
-                    value: 0,
-                    step: 100,
-                    min: -10000,
-                    max: 10000,
-                },
-                trig_sns: NumOption{
-                    name: String::from_str("trig sns").unwrap(),
-                    value: 1000,
-                    step: 100,
-                    min: 100,
-                    max: 5000,
-                },
-            },
-            touch: TouchOptions {
-                selected: None,
-                note_control: EnumOption{
-                    name: String::from_str("control").unwrap(),
-                    value: NoteControl::Touch,
-                },
-                led_mirror: EnumOption{
-                    name: String::from_str("led").unwrap(),
-                    value: TouchLedMirror::MirrorOn,
-                },
-            }
-        }
+impl<T> OptionPageEncoderInterface for T
+where
+    T: OptionPage,
+{
+    fn toggle_modify(&mut self) {
+        self.modify_mut(!self.modify());
     }
 
-    pub fn toggle_modify(&mut self) {
-        self.modify = !self.modify;
-    }
-
-    pub fn tick_up(&mut self) {
+    fn tick_up(&mut self) {
         if let Some(n_selected) = self.view().selected() {
-            if self.modify {
+            if self.modify() {
                 self.view_mut().options_mut()[n_selected].tick_up();
             } else if n_selected < self.view().options().len()-1 {
                 self.view_mut().set_selected(Some(n_selected + 1));
             }
-        } else if self.modify {
-            self.screen.tick_up();
+        } else if self.modify() {
+            self.screen_mut().tick_up();
         } else if !self.view().options().is_empty() {
             self.view_mut().set_selected(Some(0));
         }
     }
 
-    pub fn tick_down(&mut self) {
+    fn tick_down(&mut self) {
         if let Some(n_selected) = self.view().selected() {
-            if self.modify {
+            if self.modify() {
                 self.view_mut().options_mut()[n_selected].tick_down();
             } else if n_selected != 0 {
                 self.view_mut().set_selected(Some(n_selected - 1));
             } else {
                 self.view_mut().set_selected(None);
             }
-        } else if self.modify {
-            self.screen.tick_down();
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn view(&self) -> &dyn OptionView {
-        match self.screen.value {
-            Screen::Xbeam => &self.xbeam,
-            Screen::Scope => &self.scope,
-            Screen::Touch => &self.touch,
-        }
-    }
-
-    #[allow(dead_code)]
-    fn view_mut(&mut self) -> &mut dyn OptionView {
-        match self.screen.value {
-            Screen::Xbeam => &mut self.xbeam,
-            Screen::Scope => &mut self.scope,
-            Screen::Touch => &mut self.touch,
+        } else if self.modify() {
+            self.screen_mut().tick_down();
         }
     }
 }

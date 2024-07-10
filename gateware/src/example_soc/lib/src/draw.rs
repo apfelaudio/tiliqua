@@ -10,10 +10,11 @@ use embedded_graphics::{
 
 use crate::opt;
 
-pub fn draw_options<D>(d: &mut D, opts: &opt::Options,
+pub fn draw_options<D, O>(d: &mut D, opts: &O,
                        pos_x: u32, pos_y: u32) -> Result<(), D::Error>
 where
     D: DrawTarget<Color = Gray8>,
+    O: opt::OptionPage
 {
     let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::WHITE);
     let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xAF));
@@ -25,13 +26,13 @@ where
     let vspace: usize = 18;
     let hspace: i32 = 150;
 
-    let screen_hl = match (opts.view().selected(), opts.modify) {
+    let screen_hl = match (opts.view().selected(), opts.modify()) {
         (None, _) => true,
         _ => false,
     };
 
     Text::with_alignment(
-        opts.screen.value.into(),
+        opts.screen().name(),
         Point::new(vx-12, (vy) as i32),
         if screen_hl { font_small_white } else { font_small_grey },
         Alignment::Right
@@ -44,7 +45,7 @@ where
         if let Some(n_selected) = opts.view().selected() {
             if n_selected == n {
                 font = font_small_white;
-                if opts.modify {
+                if opts.modify() {
                     Text::with_alignment(
                         "<",
                         Point::new(vx+hspace+2, (vy+vspace*n) as i32),
