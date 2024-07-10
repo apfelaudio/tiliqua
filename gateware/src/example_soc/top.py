@@ -93,8 +93,7 @@ class HelloSoc(Elaboratable):
         # this is an interesting alternative to double-buffering that looks
         # kind of like an old CRT with slow-scanning.
         self.persist = Persistance(
-                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size,
-                holdoff=1024*3)
+                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
         self.soc.psram.add_master(self.persist.bus)
 
         # ... add an I2C transciever

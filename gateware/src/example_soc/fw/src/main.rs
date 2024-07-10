@@ -330,7 +330,7 @@ fn main() -> ! {
     };
 
     let mut uptime_ms = 0u32;
-    let mut period_ms = 25u32;
+    let mut period_ms = 10u32;
     let mut encoder_rotation: i16 = 0;
     let mut encoder_last = 0i16;
     let mut encoder_last_btn = false;
@@ -344,13 +344,11 @@ fn main() -> ! {
         // Report encoder state
         encoder_rotation += (encoder.step().read().bits() as i8) as i16;
 
+        /*
         // Make rotation control loop speed
         if encoder_rotation > -25 {
             period_ms = (25 + encoder_rotation) as u32;
         }
-
-
-        /*
         print_tiliqua(&mut display, &mut rng);
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
@@ -362,22 +360,24 @@ fn main() -> ! {
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
-        let encoder_ticks = encoder_rotation - encoder_last;
+        let mut encoder_ticks = encoder_rotation - encoder_last;
         let encoder_btn = (encoder.button().read().bits() != 0);
 
-        if encoder_ticks > 0 {
+        if encoder_ticks > 1 {
             opts.tick_up();
+            encoder_ticks -= 2;
         }
 
-        if encoder_ticks < 0 {
+        if encoder_ticks < -1 {
             opts.tick_down();
+            encoder_ticks += 2;
         }
 
         if encoder_last_btn != encoder_btn && !encoder_btn {
             opts.toggle_modify();
         }
 
-        encoder_last = encoder_rotation;
+        encoder_last = encoder_rotation - encoder_ticks;
         encoder_last_btn = encoder_btn;
 
         /*
