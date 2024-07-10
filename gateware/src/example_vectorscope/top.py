@@ -57,13 +57,13 @@ class Persistance(Elaboratable):
     """
 
     def __init__(self, *, fb_base, bus_master, fb_size,
-                 fifo_depth=128, holdoff=1024, fb_bytes_per_pixel=1):
+                 fifo_depth=128, holdoff_default=1024, fb_bytes_per_pixel=1):
         super().__init__()
 
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
         self.fifo_depth = fifo_depth
-        self.holdoff = holdoff
+        self.holdoff = Signal(16, reset=holdoff_default)
         self.fb_bytes_per_pixel = fb_bytes_per_pixel
 
         # We are a DMA master
@@ -127,7 +127,7 @@ class Persistance(Elaboratable):
 
             with m.State('WAIT1'):
                 m.d.sync += holdoff_count.eq(holdoff_count + 1)
-                with m.If(holdoff_count == self.holdoff):
+                with m.If(holdoff_count > self.holdoff):
                     m.d.sync += pnext.eq(self.fifo.r_data)
                     m.d.comb += self.fifo.r_en.eq(1)
                     m.next = 'BURST-OUT'
@@ -181,7 +181,7 @@ class Persistance(Elaboratable):
 
             with m.State('WAIT2'):
                 m.d.sync += holdoff_count.eq(holdoff_count + 1)
-                with m.If(holdoff_count == self.holdoff):
+                with m.If(holdoff_count > self.holdoff):
                     m.next = 'BURST-IN'
 
         return m
@@ -222,6 +222,8 @@ class Draw(Elaboratable):
         self.sample_y = Signal(signed(16))
         self.sample_p = Signal(signed(16))
         self.sample_c = Signal(signed(16))
+
+        self.hue = Signal(4, reset=0);
 
 
         self.px_read = Signal(32)
@@ -342,7 +344,7 @@ class Draw(Elaboratable):
                 new_color = Signal(unsigned(4))
                 white = Signal(unsigned(4))
                 m.d.comb += white.eq(0xf)
-                m.d.comb += new_color.eq(sample_c>>10)
+                m.d.comb += new_color.eq((sample_c>>10) + self.hue)
 
                 inc=4
                 with m.If(px_sum[4:8] + inc >= 0xF):

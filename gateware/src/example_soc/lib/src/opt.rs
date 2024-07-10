@@ -56,18 +56,16 @@ pub enum NoteControl {
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
 pub enum Screen {
-    Adsr,
+    Xbeam,
     Scope,
     Touch,
 }
 
 #[derive(Clone)]
-pub struct AdsrOptions {
+pub struct XbeamOptions {
     pub selected: Option<usize>,
-    pub attack_ms: NumOption<u32>,
-    pub decay_ms: NumOption<u32>,
-    pub release_ms: NumOption<u32>,
-    pub resonance: NumOption<i16>,
+    pub persist: NumOption<u16>,
+    pub hue: NumOption<u8>,
 }
 
 #[derive(Clone)]
@@ -109,8 +107,8 @@ macro_rules! impl_option_view {
     };
 }
 
-impl_option_view!(AdsrOptions,
-                  attack_ms, decay_ms, release_ms, resonance);
+impl_option_view!(XbeamOptions,
+                  persist, hue);
 
 impl_option_view!(ScopeOptions,
                   grain_sz, trig_lvl, trig_sns);
@@ -124,7 +122,7 @@ pub struct Options {
     pub modify: bool,
     pub screen: EnumOption<Screen>,
 
-    pub adsr: AdsrOptions,
+    pub xbeam: XbeamOptions,
     pub scope: ScopeOptions,
     pub touch: TouchOptions,
 }
@@ -135,37 +133,23 @@ impl Options {
             modify: true,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
-                value: Screen::Adsr,
+                value: Screen::Xbeam,
             },
-            adsr: AdsrOptions {
+            xbeam: XbeamOptions {
                 selected: None,
-                attack_ms: NumOption{
-                    name: String::from_str("attack").unwrap(),
-                    value: 100,
-                    step: 50,
-                    min: 0,
-                    max: 5000,
+                persist: NumOption{
+                    name: String::from_str("persist").unwrap(),
+                    value: 1024,
+                    step: 256,
+                    min: 768,
+                    max: 32768,
                 },
-                decay_ms: NumOption{
-                    name: String::from_str("decay").unwrap(),
-                    value: 100,
-                    step: 50,
+                hue: NumOption{
+                    name: String::from_str("hue").unwrap(),
+                    value: 0,
+                    step: 1,
                     min: 0,
-                    max: 5000,
-                },
-                release_ms: NumOption{
-                    name: String::from_str("release").unwrap(),
-                    value: 300,
-                    step: 50,
-                    min: 0,
-                    max: 5000,
-                },
-                resonance: NumOption{
-                    name: String::from_str("resonance").unwrap(),
-                    value: 10000,
-                    step: 1000,
-                    min: 0,
-                    max: 20000,
+                    max: 15,
                 },
             },
             scope: ScopeOptions {
@@ -241,7 +225,7 @@ impl Options {
     #[allow(dead_code)]
     pub fn view(&self) -> &dyn OptionView {
         match self.screen.value {
-            Screen::Adsr => &self.adsr,
+            Screen::Xbeam => &self.xbeam,
             Screen::Scope => &self.scope,
             Screen::Touch => &self.touch,
         }
@@ -250,7 +234,7 @@ impl Options {
     #[allow(dead_code)]
     fn view_mut(&mut self) -> &mut dyn OptionView {
         match self.screen.value {
-            Screen::Adsr => &mut self.adsr,
+            Screen::Xbeam => &mut self.xbeam,
             Screen::Scope => &mut self.scope,
             Screen::Touch => &mut self.touch,
         }

@@ -338,6 +338,7 @@ fn main() -> ! {
 
     let mut opts = opt::Options::new();
 
+    let vs = peripherals.VS_PERIPH;
 
     loop {
 
@@ -379,6 +380,12 @@ fn main() -> ! {
 
         encoder_last = encoder_rotation - encoder_ticks;
         encoder_last_btn = encoder_btn;
+
+
+        vs.persist().write(|w| unsafe { w.persist().bits(opts.xbeam.persist.value) } );
+
+        vs.hue().write(|w| unsafe { w.hue().bits(opts.xbeam.hue.value) } );
+
 
         /*
 

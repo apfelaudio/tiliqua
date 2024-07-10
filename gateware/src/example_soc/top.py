@@ -27,11 +27,44 @@ from tiliqua                                     import eurorack_pmod
 
 from example_vectorscope.top                     import Persistance, Draw
 
+from luna_soc.gateware.csr.base  import Peripheral
+
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
 }
 
 # - HelloSoc ------------------------------------------------------------------
+
+class VSPeripheral(Peripheral, Elaboratable):
+
+    def __init__(self):
+
+        super().__init__()
+
+        self.persist           = Signal(16, reset=1024)
+        self.hue               = Signal(8,  reset=0)
+
+        # CSRs
+        bank                   = self.csr_bank()
+        self._persist          = bank.csr(16, "w")
+        self._hue              = bank.csr(8, "w")
+
+        # Peripheral bus
+        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
+        self.bus        = self._bridge.bus
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.bridge  = self._bridge
+
+        with m.If(self._persist.w_stb):
+            m.d.sync += self.persist.eq(self._persist.w_data)
+
+        with m.If(self._hue.w_stb):
+            m.d.sync += self.hue.eq(self._hue.w_data)
+
+        return m
 
 class HelloSoc(Elaboratable):
     def __init__(self, clock_frequency, dvi_timings):
@@ -108,6 +141,10 @@ class HelloSoc(Elaboratable):
         self.pmod0_periph = eurorack_pmod.EurorackPmodPeripheral(pmod=None)
         self.soc.add_peripheral(self.pmod0_periph, addr=0xf0004000)
 
+        # VS
+        self.vs_periph = VSPeripheral()
+        self.soc.add_peripheral(self.vs_periph, addr=0xf0005000)
+
         super().__init__()
 
     def elaborate(self, platform):
@@ -170,6 +207,10 @@ class HelloSoc(Elaboratable):
         # Enable LED driver on motherboard
         m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
 
+        m.d.comb += [
+            self.persist.holdoff.eq(self.vs_periph.persist),
+            self.draw.hue.eq(self.vs_periph.hue),
+        ]
 
 
         return m
