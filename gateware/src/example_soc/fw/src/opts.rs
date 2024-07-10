@@ -1,5 +1,6 @@
 use tiliqua_lib::opt::*;
 use tiliqua_lib::impl_option_view;
+use tiliqua_lib::impl_option_page;
 
 use heapless::String;
 use heapless::Vec;
@@ -74,41 +75,10 @@ pub struct Options {
     pub touch: TouchOptions,
 }
 
-impl OptionPage for Options {
-    fn modify(&self) -> bool {
-        self.modify
-    }
-
-    fn modify_mut(&mut self, modify: bool) {
-        self.modify = modify
-    }
-
-    fn screen(&self) -> &dyn OptionTrait {
-        &self.screen
-    }
-
-    fn screen_mut(&mut self) -> &mut dyn OptionTrait {
-        &mut self.screen
-    }
-
-    #[allow(dead_code)]
-    fn view(&self) -> &dyn OptionView {
-        match self.screen.value {
-            Screen::Xbeam => &self.xbeam,
-            Screen::Scope => &self.scope,
-            Screen::Touch => &self.touch,
-        }
-    }
-
-    #[allow(dead_code)]
-    fn view_mut(&mut self) -> &mut dyn OptionView {
-        match self.screen.value {
-            Screen::Xbeam => &mut self.xbeam,
-            Screen::Scope => &mut self.scope,
-            Screen::Touch => &mut self.touch,
-        }
-    }
-}
+impl_option_page!(Options,
+                  (Screen::Xbeam, xbeam),
+                  (Screen::Scope, scope),
+                  (Screen::Touch, touch));
 
 impl Options {
     pub fn new() -> Options {

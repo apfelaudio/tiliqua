@@ -80,6 +80,43 @@ macro_rules! impl_option_view {
     };
 }
 
+#[macro_export]
+macro_rules! impl_option_page {
+    ($struct_name:ident, $(($screen:path, $field:ident)),*) => {
+        impl OptionPage for $struct_name {
+            fn modify(&self) -> bool {
+                self.modify
+            }
+
+            fn modify_mut(&mut self, modify: bool) {
+                self.modify = modify
+            }
+
+            fn screen(&self) -> &dyn OptionTrait {
+                &self.screen
+            }
+
+            fn screen_mut(&mut self) -> &mut dyn OptionTrait {
+                &mut self.screen
+            }
+
+            #[allow(dead_code)]
+            fn view(&self) -> &dyn OptionView {
+                match self.screen.value {
+                    $($screen => &self.$field,)*
+                }
+            }
+
+            #[allow(dead_code)]
+            fn view_mut(&mut self) -> &mut dyn OptionView {
+                match self.screen.value {
+                    $($screen => &mut self.$field,)*
+                }
+            }
+        }
+    };
+}
+
 impl<T> OptionPageEncoderInterface for T
 where
     T: OptionPage,
