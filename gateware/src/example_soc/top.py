@@ -88,14 +88,9 @@ class HelloSoc(Elaboratable):
         # this is an interesting alternative to double-buffering that looks
         # kind of like an old CRT with slow-scanning.
         self.persist = Persistance(
-                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
+                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size,
+                holdoff=1024*3)
         self.soc.psram.add_master(self.persist.bus)
-
-
-        # DRAW
-        self.draw = Draw(
-                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
-        self.soc.psram.add_master(self.draw.bus)
 
         # ... add an I2C transciever
         self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
@@ -121,11 +116,9 @@ class HelloSoc(Elaboratable):
                 touch_enabled=True)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
-        self.draw.pmod0 = pmod0
 
         m.submodules.video = self.video
         m.submodules.persist = self.persist
-        m.submodules.draw = self.draw
         m.submodules.soc = self.soc
 
         # Memory controller hangs if we start making requests to it straight away.
@@ -135,7 +128,6 @@ class HelloSoc(Elaboratable):
         with m.Else():
             m.d.sync += self.video.enable.eq(1)
             m.d.sync += self.persist.enable.eq(1)
-            m.d.sync += self.draw.enable.eq(1)
 
         # generate our domain clocks/resets
         m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ)
