@@ -34,6 +34,9 @@ use embedded_graphics::{
 use heapless::String;
 use core::fmt::Write;
 
+use tiliqua_fw::opt;
+use tiliqua_fw::draw;
+
 const TUSB322I_ADDR:  u8 = 0x47;
 const PCA9635_ADDR:   u8 = 0x05;
 
@@ -305,7 +308,7 @@ fn main() -> ! {
 
     info!("Hello from Tiliqua selftest!");
 
-    psram_memtest(&mut timer);
+    //psram_memtest(&mut timer);
 
     let mut i2cdev = I2c0::new(peripherals.I2C0);
 
@@ -329,23 +332,55 @@ fn main() -> ! {
     let mut uptime_ms = 0u32;
     let mut period_ms = 25u32;
     let mut encoder_rotation: i16 = 0;
+    let mut encoder_last = 0i16;
+    let mut encoder_last_btn = false;
     let mut rng = fastrand::Rng::with_seed(0);
+
+    let mut opts = opt::Options::new();
+
 
     loop {
 
-        print_tiliqua(&mut display, &mut rng);
-        pause_flush(&mut timer, &mut uptime_ms, period_ms);
+        // Report encoder state
+        encoder_rotation += (encoder.step().read().bits() as i8) as i16;
 
         // Make rotation control loop speed
         if encoder_rotation > -25 {
             period_ms = (25 + encoder_rotation) as u32;
         }
 
-        // Report encoder state
-        encoder_rotation += (encoder.step().read().bits() as i8) as i16;
+
+        /*
+        print_tiliqua(&mut display, &mut rng);
+        pause_flush(&mut timer, &mut uptime_ms, period_ms);
+
         print_encoder_state(&mut display, encoder_rotation, encoder.button().read().bits() != 0);
+        pause_flush(&mut timer, &mut uptime_ms, period_ms);
+        */
+
+        draw::draw_options(&mut display, &opts).ok();
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
+
+        let encoder_ticks = encoder_rotation - encoder_last;
+        let encoder_btn = (encoder.button().read().bits() != 0);
+
+        if encoder_ticks > 0 {
+            opts.tick_up();
+        }
+
+        if encoder_ticks < 0 {
+            opts.tick_down();
+        }
+
+        if encoder_last_btn != encoder_btn && !encoder_btn {
+            opts.toggle_modify();
+        }
+
+        encoder_last = encoder_rotation;
+        encoder_last_btn = encoder_btn;
+
+        /*
 
         // Report some eurorack-pmod information
         print_codec_state(&mut display, &pmod);
@@ -371,6 +406,8 @@ fn main() -> ! {
             ((f32::sin((uptime_ms as f32)/200.0f32 + 2.0) * 16000.0f32) as i16) as u16) } );
         pmod.sample_o3().write(|w| unsafe { w.sample_o3().bits(
             ((f32::sin((uptime_ms as f32)/200.0f32 + 3.0) * 16000.0f32) as i16) as u16) } );
+
+        */
 
         // Write something interesting to the LED expander
         let pca9635_bytes = [

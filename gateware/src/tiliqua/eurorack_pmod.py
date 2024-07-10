@@ -161,9 +161,11 @@ class EurorackPmodPeripheral(Peripheral, Elaboratable):
                     self.pmod.sample_adc[n], getattr(self, f"_sample_adc{n}").r_data, reset=0)
             m.submodules += FFSynchronizer(
                     self.pmod.sample_i[n], getattr(self, f"_sample_i{n}").r_data, reset=0)
+            """
             with m.If(getattr(self, f"_sample_o{n}").w_stb):
                 # TODO proper sync
                 m.d.sync += self.pmod.sample_o[n].eq(getattr(self, f"_sample_o{n}").w_data)
+            """
 
         for n in range(8):
             m.submodules += FFSynchronizer(

@@ -84,6 +84,11 @@ class HelloSoc(Elaboratable):
                 bus_master=self.soc.psram.bus, sim=False)
         self.soc.psram.add_master(self.video.bus)
 
+        # DRAW
+        self.draw = Draw(
+                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
+        self.soc.psram.add_master(self.draw.bus)
+
         # ... add our video persistance effect (all writes gradually fade) -
         # this is an interesting alternative to double-buffering that looks
         # kind of like an old CRT with slow-scanning.
@@ -116,9 +121,11 @@ class HelloSoc(Elaboratable):
                 touch_enabled=True)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
+        self.draw.pmod0 = pmod0
 
         m.submodules.video = self.video
         m.submodules.persist = self.persist
+        m.submodules.draw = self.draw
         m.submodules.soc = self.soc
 
         # Memory controller hangs if we start making requests to it straight away.
@@ -128,6 +135,7 @@ class HelloSoc(Elaboratable):
         with m.Else():
             m.d.sync += self.video.enable.eq(1)
             m.d.sync += self.persist.enable.eq(1)
+            m.d.sync += self.draw.enable.eq(1)
 
         # generate our domain clocks/resets
         m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ)
