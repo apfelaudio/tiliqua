@@ -1,0 +1,22 @@
+[package]
+name = "tiliqua-lib"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "tiliqua_lib"
+path = "src/lib.rs"
+
+[dependencies]
+embedded-graphics = "0.8.1"
+heapless = "0.8.0"
+strum_macros = "0.26.4"
+strum = {version = "0.25.0", features = ["derive"], default-features=false}
+
+[dev-dependencies]
+critical-section = { version = "1.1.2", features = ["std"] }
+image = "0.24.7"
+
+[profile.release]
+lto = true
+opt-level = 3
