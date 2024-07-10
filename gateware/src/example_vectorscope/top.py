@@ -223,7 +223,8 @@ class Draw(Elaboratable):
         self.sample_p = Signal(signed(16))
         self.sample_c = Signal(signed(16))
 
-        self.hue = Signal(4, reset=0);
+        self.hue       = Signal(4, reset=0);
+        self.intensity = Signal(4, reset=0);
 
 
         self.px_read = Signal(32)
@@ -274,6 +275,8 @@ class Draw(Elaboratable):
         px_read = self.px_read
         px_sum = self.px_sum
 
+        sample_intensity = Signal(4)
+
         with m.FSM() as fsm:
 
             with m.State('OFF'):
@@ -292,6 +295,7 @@ class Draw(Elaboratable):
                         sample_y.eq(merge.o.payload[1].sas_value()>>6),
                         sample_p.eq(merge.o.payload[2].sas_value()),
                         sample_c.eq(merge.o.payload[3].sas_value()),
+                        sample_intensity.eq(self.intensity),
                     ]
                     m.next = 'LATCH1'
 
@@ -346,8 +350,7 @@ class Draw(Elaboratable):
                 m.d.comb += white.eq(0xf)
                 m.d.comb += new_color.eq((sample_c>>10) + self.hue)
 
-                inc=4
-                with m.If(px_sum[4:8] + inc >= 0xF):
+                with m.If(px_sum[4:8] + sample_intensity >= 0xF):
                     m.d.comb += bus.dat_w.eq(
                         (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
                         (Cat(new_color, white) << (sample_x[0:2]*8))
@@ -355,7 +358,7 @@ class Draw(Elaboratable):
                 with m.Else():
                     m.d.comb += bus.dat_w.eq(
                         (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
-                        (Cat(new_color, (px_sum[4:8] + inc)) << (sample_x[0:2]*8))
+                        (Cat(new_color, (px_sum[4:8] + sample_intensity)) << (sample_x[0:2]*8))
                          )
 
                 with m.If(bus.stb & bus.ack):

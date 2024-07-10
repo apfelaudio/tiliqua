@@ -43,11 +43,13 @@ class VSPeripheral(Peripheral, Elaboratable):
 
         self.persist           = Signal(16, reset=1024)
         self.hue               = Signal(8,  reset=0)
+        self.intensity         = Signal(8,  reset=4)
 
         # CSRs
         bank                   = self.csr_bank()
         self._persist          = bank.csr(16, "w")
         self._hue              = bank.csr(8, "w")
+        self._intensity        = bank.csr(8, "w")
 
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
@@ -63,6 +65,9 @@ class VSPeripheral(Peripheral, Elaboratable):
 
         with m.If(self._hue.w_stb):
             m.d.sync += self.hue.eq(self._hue.w_data)
+
+        with m.If(self._intensity.w_stb):
+            m.d.sync += self.intensity.eq(self._intensity.w_data)
 
         return m
 
@@ -210,6 +215,7 @@ class HelloSoc(Elaboratable):
         m.d.comb += [
             self.persist.holdoff.eq(self.vs_periph.persist),
             self.draw.hue.eq(self.vs_periph.hue),
+            self.draw.intensity.eq(self.vs_periph.intensity),
         ]
 
 

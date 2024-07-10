@@ -386,6 +386,8 @@ fn main() -> ! {
 
         vs.hue().write(|w| unsafe { w.hue().bits(opts.xbeam.hue.value) } );
 
+        vs.intensity().write(|w| unsafe { w.intensity().bits(opts.xbeam.intensity.value) } );
+
 
         /*
 

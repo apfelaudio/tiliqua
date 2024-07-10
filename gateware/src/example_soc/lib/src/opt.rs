@@ -66,6 +66,7 @@ pub struct XbeamOptions {
     pub selected: Option<usize>,
     pub persist: NumOption<u16>,
     pub hue: NumOption<u8>,
+    pub intensity: NumOption<u8>,
 }
 
 #[derive(Clone)]
@@ -108,7 +109,7 @@ macro_rules! impl_option_view {
 }
 
 impl_option_view!(XbeamOptions,
-                  persist, hue);
+                  persist, hue, intensity);
 
 impl_option_view!(ScopeOptions,
                   grain_sz, trig_lvl, trig_sns);
@@ -141,12 +142,19 @@ impl Options {
                     name: String::from_str("persist").unwrap(),
                     value: 1024,
                     step: 256,
-                    min: 768,
+                    min: 512,
                     max: 32768,
                 },
                 hue: NumOption{
                     name: String::from_str("hue").unwrap(),
                     value: 0,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+                intensity: NumOption{
+                    name: String::from_str("intensity").unwrap(),
+                    value: 6,
                     step: 1,
                     min: 0,
                     max: 15,
