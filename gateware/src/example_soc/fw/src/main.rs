@@ -34,8 +34,8 @@ use embedded_graphics::{
 use heapless::String;
 use core::fmt::Write;
 
-use tiliqua_fw::opt;
-use tiliqua_fw::draw;
+use tiliqua_lib::opt;
+use tiliqua_lib::draw;
 
 const TUSB322I_ADDR:  u8 = 0x47;
 const PCA9635_ADDR:   u8 = 0x05;
@@ -358,7 +358,7 @@ fn main() -> ! {
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
         */
 
-        draw::draw_options(&mut display, &opts).ok();
+        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-100).ok();
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 

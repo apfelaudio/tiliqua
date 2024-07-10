@@ -372,6 +372,7 @@ dependencies = [
  "strum",
  "strum_macros 0.26.4",
  "tiliqua-hal",
+ "tiliqua-lib",
  "tiliqua-pac",
 ]
 
@@ -384,6 +385,16 @@ dependencies = [
  "nb 1.1.0",
  "riscv",
  "tiliqua-pac",
+]
+
+[[package]]
+name = "tiliqua-lib"
+version = "0.1.0"
+dependencies = [
+ "embedded-graphics",
+ "heapless",
+ "strum",
+ "strum_macros 0.26.4",
 ]
 
 [[package]]

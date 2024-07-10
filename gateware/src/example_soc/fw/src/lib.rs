@@ -17,5 +17,3 @@ tiliqua_hal::impl_i2c! {
 }
 
 pub mod log;
-pub mod opt;
-pub mod draw;
