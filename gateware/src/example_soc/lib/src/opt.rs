@@ -6,9 +6,12 @@ use core::str::FromStr;
 
 use strum_macros::{EnumIter, IntoStaticStr};
 
-pub type OptionString = String<32>;
-pub type OptionVec<'a> = Vec<&'a dyn OptionTrait, 10>;
-pub type OptionVecMut<'a> = Vec<&'a mut dyn OptionTrait, 10>;
+pub const MAX_OPTS_PER_TAB: usize = 10;
+pub const MAX_OPT_NAME:     usize = 32;
+
+pub type OptionString = String<MAX_OPT_NAME>;
+pub type OptionVec<'a> = Vec<&'a dyn OptionTrait, MAX_OPTS_PER_TAB>;
+pub type OptionVecMut<'a> = Vec<&'a mut dyn OptionTrait, MAX_OPTS_PER_TAB>;
 
 pub trait OptionTrait {
     fn name(&self) -> &OptionString;
