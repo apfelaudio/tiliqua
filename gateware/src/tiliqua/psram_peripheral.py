@@ -41,6 +41,7 @@ class FakeHyperRAMDQSInterface(Elaboratable):
         self.write_ready      = Signal()
         self.read_data        = Signal(32)
         self.write_data       = Signal(32)
+        self.write_mask       = Signal(4) # TODO
         # signals used for simulation interface
         self.fsm              = Signal(8)
         self.address_ptr      = Signal(32)
@@ -190,6 +191,7 @@ class PSRAMPeripheral(Peripheral, Elaboratable):
                     m.d.sync += [
                         psram.start_transfer.eq(1),
                         psram.write_data.eq(self.shared_bus.dat_w),
+                        psram.write_mask.eq(~self.shared_bus.sel),
                         psram.address.eq(self.shared_bus.adr << 1),
                     ]
                     m.next = 'GO'
@@ -201,6 +203,7 @@ class PSRAMPeripheral(Peripheral, Elaboratable):
                     m.d.comb += self.shared_bus.dat_r.eq(psram.read_data),
                     m.d.comb += self.shared_bus.ack.eq(1)
                     m.d.sync += psram.write_data.eq(self.shared_bus.dat_w),
+                    m.d.sync += psram.write_mask.eq(~self.shared_bus.sel),
                     with m.If(self.shared_bus.cti != wishbone.CycleType.INCR_BURST):
                         m.d.comb += psram.final_word.eq(1)
                         m.next = 'IDLE'

@@ -54,6 +54,10 @@ class HyperRAMDQSInterface(Elaboratable):
 
         O: read_data[32]    -- word that holds the 32 bits most recently read from the PSRAM
         I: write_data[32]   -- word that accepts the data to output during this transaction
+
+        I: write_mask[4]    -- Mask to select which bits of 'write_data' are written to memory.
+                               Unset (or 0) is written to memory. 1 is masked and not written.
+
         O: idle             -- High whenever the transmitter is idle (and thus we can start a new piece of data.)
         O: read_ready       -- Strobe that indicates when new data is ready for reading
         O: write_ready      -- Strobe that indicates `write_data` has been latched and is ready for new data
@@ -90,6 +94,7 @@ class HyperRAMDQSInterface(Elaboratable):
         # Data signals.
         self.read_data        = Signal(32)
         self.write_data       = Signal(32)
+        self.write_mask       = Signal(4)
 
         self.clk = Signal()
 
@@ -225,11 +230,11 @@ class HyperRAMDQSInterface(Elaboratable):
             # HANDLE_LATENCY -- applies clock cycles until our latency period is over.
             with m.State('HANDLE_LATENCY'):
                 m.d.sync += latency_clocks_remaining.eq(latency_clocks_remaining - 1)
-
                 with m.If(latency_clocks_remaining == 0):
                     with m.If(is_read):
                         m.next = 'READ_DATA'
                     with m.Else():
+                        m.d.sync += self.phy.rwds.o.eq(self.write_mask),
                         m.next = 'WRITE_DATA'
 
 
@@ -257,7 +262,7 @@ class HyperRAMDQSInterface(Elaboratable):
                     self.phy.dq.o    .eq(self.write_data),
                     self.phy.dq.e    .eq(1),
                     self.phy.rwds.e  .eq(~is_register),
-                    self.phy.rwds.o  .eq(0),
+                    self.phy.rwds.o  .eq(self.write_mask),
                 ]
                 m.d.comb += self.write_ready.eq(1),
 
