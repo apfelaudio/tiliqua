@@ -42,8 +42,8 @@ const PCA9635_ADDR:   u8 = 0x05;
 
 // TODO: fetch these from SVF
 const PSRAM_BASE:     usize = 0x20000000;
-const H_ACTIVE:       u32   = 800;
-const V_ACTIVE:       u32   = 600;
+const H_ACTIVE:       u32   = 720;
+const V_ACTIVE:       u32   = 720;
 
 // 16MiB, 4 bytes per word.
 const PSRAM_SZ_WORDS: usize = 1024 * 1024 * (16 / 4); 

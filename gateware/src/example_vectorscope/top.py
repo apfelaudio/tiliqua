@@ -280,6 +280,15 @@ class Draw(Elaboratable):
         wiring.connect(m, resample2.o, merge.i[2])
         wiring.connect(m, resample3.o, merge.i[3])
 
+        # Mirror inputs to outputs for convenience.
+        m.d.comb += [
+            astream.ostream.payload[0].eq(astream.istream.payload[0]),
+            astream.ostream.payload[1].eq(astream.istream.payload[1]),
+            astream.ostream.payload[2].eq(astream.istream.payload[2]),
+            astream.ostream.payload[3].eq(astream.istream.payload[3]),
+            astream.ostream.valid.eq(astream.istream.valid),
+        ]
+
 
         px_read = self.px_read
         px_sum = self.px_sum

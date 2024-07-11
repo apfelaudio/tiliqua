@@ -164,7 +164,8 @@ class HelloSoc(Elaboratable):
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
-                touch_enabled=True)
+                touch_enabled=True,
+                audio_192=True)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
         self.draw.pmod0 = pmod0
@@ -184,7 +185,7 @@ class HelloSoc(Elaboratable):
             m.d.sync += self.draw.enable.eq(1)
 
         # generate our domain clocks/resets
-        m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ)
+        m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ, audio_192=True)
 
         # Connect up our UART
         uart_io = platform.request("uart", 0)
@@ -234,5 +235,5 @@ if __name__ == "__main__":
     os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
     os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
     os.environ["LUNA_PLATFORM"] = "tiliqua.tiliqua_platform:TiliquaPlatform"
-    design = HelloSoc(clock_frequency=int(60e6), dvi_timings=DVI_TIMINGS["800x600p60"])
+    design = HelloSoc(clock_frequency=int(60e6), dvi_timings=DVI_TIMINGS["720x720p60"])
     top_level_cli(design)
