@@ -86,12 +86,12 @@ DVI_TIMINGS = {
     # A round AliExpress display
     "720x720p60": DVITimings(
         h_active      = 720,
-        h_sync_start  = 760,
-        h_sync_end    = 780,
-        h_total       = 820,
+        h_sync_start  = 820,
+        h_sync_end    = 840,
+        h_total       = 920,
         h_sync_invert = False,
         v_active      = 720,
-        v_sync_start  = 744,
+        v_sync_start  = 740,
         v_sync_end    = 748,
         v_total       = 760,
         v_sync_invert = False,
