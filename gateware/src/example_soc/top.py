@@ -164,7 +164,8 @@ class HelloSoc(Elaboratable):
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
-                touch_enabled=True)
+                touch_enabled=False,
+                audio_192=True)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
         self.draw.pmod0 = pmod0
@@ -184,7 +185,7 @@ class HelloSoc(Elaboratable):
             m.d.sync += self.draw.enable.eq(1)
 
         # generate our domain clocks/resets
-        m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ)
+        m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ, audio_192=True)
 
         # Connect up our UART
         uart_io = platform.request("uart", 0)
