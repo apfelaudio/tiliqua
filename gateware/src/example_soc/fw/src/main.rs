@@ -108,7 +108,8 @@ impl DrawTarget for DMADisplay {
                 let index: u32 = (x + y * H_ACTIVE) / 4;
                 unsafe {
                     // TODO: support anything other than WHITE
-                    let px = self.fb_ptr.offset(index as isize).read_volatile();
+                    let mut px = self.fb_ptr.offset(index as isize).read_volatile();
+                    px &= !(0xFFu32 << (8*(x%4)));
                     self.fb_ptr.offset(index as isize).write_volatile(px | ((color.luma() as u32) << (8*(x%4))));
                 }
             }
@@ -359,7 +360,7 @@ fn main() -> ! {
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
         */
 
-        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-100).ok();
+        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-100, opts.xbeam.hue.value).ok();
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
@@ -389,6 +390,8 @@ fn main() -> ! {
         vs.hue().write(|w| unsafe { w.hue().bits(opts.xbeam.hue.value) } );
 
         vs.intensity().write(|w| unsafe { w.intensity().bits(opts.xbeam.intensity.value) } );
+
+        vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
 
 
         /*

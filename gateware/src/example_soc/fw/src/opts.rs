@@ -38,6 +38,7 @@ pub struct XbeamOptions {
     pub persist: NumOption<u16>,
     pub hue: NumOption<u8>,
     pub intensity: NumOption<u8>,
+    pub decay: NumOption<u8>,
 }
 
 #[derive(Clone)]
@@ -56,7 +57,7 @@ pub struct TouchOptions {
 }
 
 impl_option_view!(XbeamOptions,
-                  persist, hue, intensity);
+                  persist, hue, intensity, decay);
 
 impl_option_view!(ScopeOptions,
                   grain_sz, trig_lvl, trig_sns);
@@ -107,6 +108,13 @@ impl Options {
                 intensity: NumOption{
                     name: String::from_str("intensity").unwrap(),
                     value: 6,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+                decay: NumOption{
+                    name: String::from_str("decay").unwrap(),
+                    value: 1,
                     step: 1,
                     min: 0,
                     max: 15,
