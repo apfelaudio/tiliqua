@@ -16,17 +16,7 @@ targets = [
 test = false
 bench = false
 
-[features]
-default = [
-    "vexriscv",
-]
-
-vexriscv = [
-    "tiliqua-pac/vexriscv",
-]
-
 [dependencies]
-tiliqua-pac = {path="../pac"}
 embedded-hal = "=1.0.0"
 embedded-hal-nb = "=1.0.0"
 log = { version = "=0.4.17", optional = true }

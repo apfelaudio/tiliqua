@@ -384,7 +384,6 @@ dependencies = [
  "embedded-hal-nb",
  "nb 1.1.0",
  "riscv",
- "tiliqua-pac",
 ]
 
 [[package]]
