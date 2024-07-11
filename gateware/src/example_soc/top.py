@@ -164,11 +164,30 @@ class HelloSoc(Elaboratable):
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
-                touch_enabled=True,
+                touch_enabled=False,
                 audio_192=True)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
         self.draw.pmod0 = pmod0
+
+        # add another pmod instance
+        m.submodules.pmod1 = pmod1 = eurorack_pmod.EurorackPmod(
+                pmod_pins=eurorack_pmod.pins_from_pmod_connector_with_ribbon(platform, 0),
+                hardware_r33=True,
+                touch_enabled=False,
+                audio_192=True)
+
+        # add another pmod instance
+        m.submodules.pmod2 = pmod2 = eurorack_pmod.EurorackPmod(
+                pmod_pins=eurorack_pmod.pins_from_pmod_connector_with_ribbon(platform, 1),
+                hardware_r33=True,
+                touch_enabled=False,
+                audio_192=True)
+
+        m.d.comb += [
+            pmod1.sample_o.eq(pmod2.sample_i),
+            pmod2.sample_o.eq(pmod1.sample_i),
+        ]
 
         m.submodules.video = self.video
         m.submodules.persist = self.persist

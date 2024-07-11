@@ -362,7 +362,7 @@ class EurorackPmod(wiring.Component):
 def pins_from_pmod_connector_with_ribbon(platform, pmod_index):
     """Create a eurorack-pmod resource on a given PMOD connector. Assumes ribbon cable flip."""
     eurorack_pmod = [
-        Resource(f"eurorack_pmod{pmod_index}", pmod_index,
+        Resource(f"eurorack_pmod{pmod_index}", 0,
             Subsignal("sdin1",   Pins("1",  conn=("pmod", pmod_index), dir='o')),
             Subsignal("sdout1",  Pins("2",  conn=("pmod", pmod_index), dir='i')),
             Subsignal("lrck",    Pins("3",  conn=("pmod", pmod_index), dir='o')),
