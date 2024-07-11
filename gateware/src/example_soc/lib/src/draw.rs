@@ -11,13 +11,13 @@ use embedded_graphics::{
 use crate::opt;
 
 pub fn draw_options<D, O>(d: &mut D, opts: &O,
-                       pos_x: u32, pos_y: u32) -> Result<(), D::Error>
+                       pos_x: u32, pos_y: u32, hue: u8) -> Result<(), D::Error>
 where
     D: DrawTarget<Color = Gray8>,
     O: opt::OptionPage
 {
     let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::WHITE);
-    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xAF));
+    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xB0 + hue));
 
     let opts_view = opts.view().options();
 
@@ -32,11 +32,20 @@ where
     };
 
     Text::with_alignment(
-        opts.screen().name(),
-        Point::new(vx-12, (vy) as i32),
+        &opts.screen().value(),
+        Point::new(vx-12, vy as i32),
         if screen_hl { font_small_white } else { font_small_grey },
         Alignment::Right
     ).draw(d)?;
+
+    if screen_hl && opts.modify() {
+        Text::with_alignment(
+            "^",
+            Point::new(vx-12, (vy + vspace) as i32),
+            font_small_white,
+            Alignment::Right,
+        ).draw(d)?;
+    }
 
     let vx = vx-2;
 
@@ -70,7 +79,7 @@ where
     }
 
     let mut stroke = PrimitiveStyleBuilder::new()
-        .stroke_color(Gray8::new(0xAF))
+        .stroke_color(Gray8::new(0xB0 + hue))
         .stroke_width(1)
         .build();
     Line::new(Point::new(vx-3, vy as i32 - 10),

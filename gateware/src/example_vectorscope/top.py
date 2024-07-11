@@ -63,8 +63,11 @@ class Persistance(Elaboratable):
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
         self.fifo_depth = fifo_depth
-        self.holdoff = Signal(16, reset=holdoff_default)
         self.fb_bytes_per_pixel = fb_bytes_per_pixel
+
+        # Tweakables
+        self.holdoff = Signal(16, reset=holdoff_default)
+        self.decay   = Signal(4, reset=1)
 
         # We are a DMA master
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
@@ -95,6 +98,8 @@ class Persistance(Elaboratable):
         dma_addr_in = self.dma_addr_in
         dma_addr_out = self.dma_addr_out
 
+        decay_latch = Signal(4)
+
         # Persistance state machine in 'sync' domain.
         with m.FSM() as fsm:
             with m.State('OFF'):
@@ -103,6 +108,7 @@ class Persistance(Elaboratable):
 
             with m.State('BURST-IN'):
                 m.d.sync += holdoff_count.eq(0)
+                m.d.sync += decay_latch.eq(self.decay)
                 m.d.comb += [
                     bus.stb.eq(1),
                     bus.cyc.eq(1),
@@ -149,8 +155,11 @@ class Persistance(Elaboratable):
                     # color
                     m.d.comb += pixb[n][0:4].eq(pixa[n][0:4])
                     # intensity
-                    with m.If(pixa[n][4:8] > 0):
-                        m.d.comb += pixb[n][4:8].eq(pixa[n][4:8] - 1)
+                    with m.If(pixa[n][4:8] >= decay_latch):
+                        m.d.comb += pixb[n][4:8].eq(pixa[n][4:8] - decay_latch)
+                    with m.Else():
+                        m.d.comb += pixb[n][4:8].eq(0)
+
 
                 m.d.comb += [
                     bus.stb.eq(1),
