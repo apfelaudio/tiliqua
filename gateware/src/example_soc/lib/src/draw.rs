@@ -1,11 +1,9 @@
-use heapless::String;
-
 use embedded_graphics::{
     pixelcolor::{Gray8, GrayColor},
-    primitives::{PrimitiveStyle, PrimitiveStyleBuilder, Rectangle, Line, Polyline},
+    primitives::{PrimitiveStyleBuilder, Line},
     mono_font::{ascii::FONT_9X15, ascii::FONT_9X15_BOLD, MonoTextStyle},
+    text::{Alignment, Text},
     prelude::*,
-    text::{Alignment, Text, renderer::TextRenderer},
 };
 
 use crate::opt;
@@ -78,7 +76,7 @@ where
         ).draw(d)?;
     }
 
-    let mut stroke = PrimitiveStyleBuilder::new()
+    let stroke = PrimitiveStyleBuilder::new()
         .stroke_color(Gray8::new(0xB0 + hue))
         .stroke_width(1)
         .build();
@@ -91,13 +89,92 @@ where
 }
 
 #[cfg(test)]
+mod test_data {
+
+    // Fake set of options for quick render testing
+
+    use heapless::String;
+    use core::str::FromStr;
+    use strum_macros::{EnumIter, IntoStaticStr};
+
+    use crate::opt::*;
+    use crate::impl_option_view;
+    use crate::impl_option_page;
+
+    #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
+    #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
+    pub enum Screen {
+        Xbeam,
+    }
+
+    #[derive(Clone)]
+    pub struct XbeamOptions {
+        pub selected: Option<usize>,
+        pub persist: NumOption<u16>,
+        pub hue: NumOption<u8>,
+        pub intensity: NumOption<u8>,
+    }
+
+    impl_option_view!(XbeamOptions,
+                      persist, hue, intensity);
+
+    #[derive(Clone)]
+    pub struct Options {
+        pub modify: bool,
+        pub screen: EnumOption<Screen>,
+
+        pub xbeam: XbeamOptions,
+    }
+
+
+    impl_option_page!(Options,
+                      (Screen::Xbeam, xbeam));
+
+    impl Options {
+        pub fn new() -> Options {
+            Options {
+                modify: true,
+                screen: EnumOption {
+                    name: String::from_str("screen").unwrap(),
+                    value: Screen::Xbeam,
+                },
+                xbeam: XbeamOptions {
+                    selected: None,
+                    persist: NumOption{
+                        name: String::from_str("persist").unwrap(),
+                        value: 1024,
+                        step: 256,
+                        min: 512,
+                        max: 32768,
+                    },
+                    hue: NumOption{
+                        name: String::from_str("hue").unwrap(),
+                        value: 0,
+                        step: 1,
+                        min: 0,
+                        max: 15,
+                    },
+                    intensity: NumOption{
+                        name: String::from_str("intensity").unwrap(),
+                        value: 6,
+                        step: 1,
+                        min: 0,
+                        max: 15,
+                    },
+                },
+            }
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
     use image::{ImageBuffer, RgbImage, Rgb};
-    use image::imageops::{rotate90, resize, FilterType};
 
-    use crate::opt::Screen;
+    const H_ACTIVE: u32 = 800;
+    const V_ACTIVE: u32 = 600;
 
     struct FakeDisplay {
         img: RgbImage,
@@ -112,7 +189,7 @@ mod tests {
             I: IntoIterator<Item = Pixel<Self::Color>>,
         {
             for Pixel(coord, color) in pixels.into_iter() {
-                if let Ok((x @ 0..=800, y @ 0..=600)) = coord.try_into() {
+                if let Ok((x @ 0..=H_ACTIVE, y @ 0..=V_ACTIVE)) = coord.try_into() {
                     *self.img.get_pixel_mut(x, y) = Rgb([
                         color.luma(),
                         color.luma(),
@@ -127,33 +204,27 @@ mod tests {
 
     impl OriginDimensions for FakeDisplay {
         fn size(&self) -> Size {
-            Size::new(800, 600)
+            Size::new(H_ACTIVE, V_ACTIVE)
         }
     }
 
     #[test]
     fn draw_screen() {
+        use crate::opt::OptionPageEncoderInterface;
+
         let mut disp = FakeDisplay {
-            img: ImageBuffer::new(800, 600)
+            img: ImageBuffer::new(H_ACTIVE, V_ACTIVE)
         };
 
-        let mut opts = opt::Options::new();
+        let mut opts = test_data::Options::new();
         opts.tick_up();
         opts.toggle_modify();
         opts.tick_up();
         opts.toggle_modify();
 
-        let screens = [
-            (Screen::Adsr, "adsr.png"),
-            //(Screen::Scope, "scope.png"),
-            //(Screen::Touch, "touch.png"),
-        ];
-
-        for (screen, filename) in screens {
-            disp.img = ImageBuffer::new(800, 600);
-            draw_options(&mut disp, &opts, 800-200, 600-100);
-            disp.img.save(filename).unwrap();
-        }
+        disp.img = ImageBuffer::new(H_ACTIVE, V_ACTIVE);
+        draw_options(&mut disp, &opts, H_ACTIVE-200, V_ACTIVE-100, 0).ok();
+        disp.img.save("draw_opt_test.png").unwrap();
     }
 
 }

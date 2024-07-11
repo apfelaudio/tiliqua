@@ -4,8 +4,6 @@ use heapless::Vec;
 use core::fmt::Write;
 use core::str::FromStr;
 
-use strum_macros::{EnumIter, IntoStaticStr};
-
 pub const MAX_OPTS_PER_TAB: usize = 10;
 pub const MAX_OPT_NAME:     usize = 32;
 
