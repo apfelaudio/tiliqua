@@ -287,6 +287,17 @@ class Draw(Elaboratable):
 
         sample_intensity = Signal(4)
 
+        # pixel position
+        fb_hwords = ((self.fb_hsize*self.fb_bytes_per_pixel)//4)
+        x_offs = Signal(unsigned(16))
+        y_offs = Signal(unsigned(16))
+        pixel_offs = Signal(unsigned(32))
+        m.d.comb += [
+            x_offs.eq((fb_hwords//2) + (sample_x>>2)),
+            y_offs.eq(sample_y + (self.fb_vsize//2)),
+            pixel_offs.eq(y_offs*fb_hwords + x_offs),
+        ]
+
         with m.FSM() as fsm:
 
             with m.State('OFF'):
@@ -310,12 +321,16 @@ class Draw(Elaboratable):
                     m.next = 'LATCH1'
 
             with m.State('LATCH1'):
-                fb_hwords = ((self.fb_hsize*self.fb_bytes_per_pixel)//4)
-                m.d.sync += [
-                    bus.sel.eq(0xf),
-                    bus.adr.eq(self.fb_base + (sample_y + (self.fb_vsize//2))*fb_hwords + ((fb_hwords//2) + (sample_x >> 2))),
-                ]
-                m.next = 'READ'
+
+                with m.If((x_offs < fb_hwords) & (y_offs < self.fb_vsize)):
+                    m.d.sync += [
+                        bus.sel.eq(0xf),
+                        bus.adr.eq(self.fb_base + pixel_offs),
+                    ]
+                    m.next = 'READ'
+                with m.Else():
+                    # don't draw outside the screen boundaries
+                    m.next = 'LATCH0'
 
             with m.State('READ'):
 
