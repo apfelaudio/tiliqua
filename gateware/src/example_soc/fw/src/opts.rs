@@ -3,9 +3,7 @@ use tiliqua_lib::impl_option_view;
 use tiliqua_lib::impl_option_page;
 
 use heapless::String;
-use heapless::Vec;
 
-use core::fmt::Write;
 use core::str::FromStr;
 
 use strum_macros::{EnumIter, IntoStaticStr};

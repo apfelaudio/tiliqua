@@ -8,6 +8,7 @@ name = "tiliqua_lib"
 path = "src/lib.rs"
 
 [dependencies]
+log = "0.4.17"
 embedded-graphics = "0.8.1"
 heapless = "0.8.0"
 strum_macros = "0.26.4"

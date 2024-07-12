@@ -2,3 +2,4 @@
 
 pub mod opt;
 pub mod draw;
+pub mod log;

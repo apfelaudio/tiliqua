@@ -1,8 +1,6 @@
 #![no_std]
 #![no_main]
 
-use core::panic::PanicInfo;
-
 use tiliqua_pac as pac;
 use tiliqua_hal as hal;
 
@@ -52,71 +50,7 @@ const _PSRAM_FB_BYTES: usize = (H_ACTIVE as usize * V_ACTIVE as usize) / 4;
 const _PSRAM_FB_WORDS: usize = _PSRAM_FB_BYTES / 4;
 const PSRAM_FB_BASE:  usize = PSRAM_BASE;
 
-
-#[riscv_rt::pre_init]
-unsafe fn pre_main() {
-    pac::cpu::vexriscv::flush_icache();
-    pac::cpu::vexriscv::flush_dcache();
-}
-
-#[cfg(not(test))]
-#[panic_handler]
-fn panic(panic_info: &PanicInfo) -> ! {
-    if let Some(location) = panic_info.location() {
-        error!("panic(): file '{}' at line {}",
-            location.file(),
-            location.line(),
-        );
-    } else {
-        error!("panic(): no location information");
-    }
-    loop {}
-}
-
-#[export_name = "ExceptionHandler"]
-fn exception_handler(trap_frame: &riscv_rt::TrapFrame) -> ! {
-    error!("exception_handler(): TrapFrame.ra={:x}", trap_frame.ra);
-    loop {}
-}
-
-#[export_name = "DefaultHandler"]
-fn default_isr_handler() -> ! {
-    error!("default_isr_handler()");
-    loop {}
-}
-
-struct DMADisplay {
-    fb_ptr: *mut u32,
-}
-
-impl OriginDimensions for DMADisplay {
-    fn size(&self) -> Size {
-        Size::new(H_ACTIVE, V_ACTIVE)
-    }
-}
-
-impl DrawTarget for DMADisplay {
-    type Color = Gray8;
-    type Error = core::convert::Infallible;
-    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
-    where
-        I: IntoIterator<Item = Pixel<Self::Color>>,
-    {
-        for Pixel(coord, color) in pixels.into_iter() {
-            if let Ok((x @ 0..=H_ACTIVE, y @ 0..=V_ACTIVE)) = coord.try_into() {
-                // Calculate the index in the framebuffer.
-                let index: u32 = (x + y * H_ACTIVE) / 4;
-                unsafe {
-                    // TODO: support anything other than WHITE
-                    let mut px = self.fb_ptr.offset(index as isize).read_volatile();
-                    px &= !(0xFFu32 << (8*(x%4)));
-                    self.fb_ptr.offset(index as isize).write_volatile(px | ((color.luma() as u32) << (8*(x%4))));
-                }
-            }
-        }
-        Ok(())
-    }
-}
+tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE);
 
 fn psram_memtest(timer: &mut Timer0) {
 
@@ -300,7 +234,7 @@ fn main() -> ! {
 
     // initialize logging
     let serial = Serial0::new(peripherals.UART);
-    tiliqua_fw::log::init(serial);
+    tiliqua_fw::handlers::logger_init(serial);
 
     let sysclk = pac::clock::sysclk();
     let mut timer = Timer0::new(peripherals.TIMER, sysclk);
@@ -319,7 +253,7 @@ fn main() -> ! {
     let pmod = peripherals.PMOD0_PERIPH;
 
     let mut display = DMADisplay {
-        fb_ptr: PSRAM_FB_BASE as *mut u32,
+        framebuffer_base: PSRAM_FB_BASE as *mut u32,
     };
 
     // Must flush the dcache for framebuffer writes to go through
@@ -365,7 +299,7 @@ fn main() -> ! {
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         let mut encoder_ticks = encoder_rotation - encoder_last;
-        let encoder_btn = (encoder.button().read().bits() != 0);
+        let encoder_btn = encoder.button().read().bits() != 0;
 
         if encoder_ticks > 1 {
             opts.tick_up();

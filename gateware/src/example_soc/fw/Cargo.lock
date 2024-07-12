@@ -380,6 +380,7 @@ dependencies = [
 name = "tiliqua-hal"
 version = "0.0.0"
 dependencies = [
+ "embedded-graphics",
  "embedded-hal 1.0.0",
  "embedded-hal-nb",
  "nb 1.1.0",
@@ -392,6 +393,7 @@ version = "0.1.0"
 dependencies = [
  "embedded-graphics",
  "heapless",
+ "log",
  "strum",
  "strum_macros 0.26.4",
 ]
