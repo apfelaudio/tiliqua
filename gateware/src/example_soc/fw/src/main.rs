@@ -9,6 +9,7 @@ use hal::hal::delay::DelayNs;
 use tiliqua_fw::Serial0;
 use tiliqua_fw::Timer0;
 use tiliqua_fw::I2c0;
+use tiliqua_fw::Encoder0;
 
 use log::info;
 
@@ -56,7 +57,7 @@ fn main() -> ! {
 
     let mut i2cdev = I2c0::new(peripherals.I2C0);
 
-    let encoder = peripherals.ENCODER0;
+    let mut encoder = Encoder0::new(peripherals.ENCODER0);
 
     let mut display = DMADisplay {
         framebuffer_base: PSRAM_FB_BASE as *mut u32,
@@ -72,9 +73,6 @@ fn main() -> ! {
 
     let mut uptime_ms = 0u32;
     let period_ms = 10u32;
-    let mut encoder_rotation: i16 = 0;
-    let mut encoder_last = 0i16;
-    let mut encoder_last_btn = false;
 
     let mut opts = opts::Options::new();
 
@@ -84,33 +82,19 @@ fn main() -> ! {
 
     loop {
 
-        // Report encoder state
-        encoder_rotation += (encoder.step().read().bits() as i8) as i16;
-
         draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-100, opts.xbeam.hue.value).ok();
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
-        let mut encoder_ticks = encoder_rotation - encoder_last;
-        let encoder_btn = encoder.button().read().bits() != 0;
-
-        if encoder_ticks > 1 {
-            opts.tick_up();
-            encoder_ticks -= 2;
+        match encoder.poke_ticks() {
+            1 => opts.tick_up(),
+            -1 => opts.tick_down(),
+            _ => {},
         }
 
-        if encoder_ticks < -1 {
-            opts.tick_down();
-            encoder_ticks += 2;
-        }
-
-        if encoder_last_btn != encoder_btn && !encoder_btn {
+        if encoder.poke_btn() {
             opts.toggle_modify();
         }
-
-        encoder_last = encoder_rotation - encoder_ticks;
-        encoder_last_btn = encoder_btn;
-
 
         vs.persist().write(|w| unsafe { w.persist().bits(opts.xbeam.persist.value) } );
 
