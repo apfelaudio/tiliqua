@@ -14,7 +14,7 @@ impl<I2C: I2c> Pca9635Driver<I2C> {
         Self { i2c, leds: [0u8; 16] }
     }
 
-    pub fn push(self) -> Result<(), I2C::Error> {
+    pub fn push(&mut self) -> Result<(), I2C::Error> {
         let pca9635_bytes = [
            0x80u8, // Auto-increment starting from MODE1
            0x81u8, // MODE1

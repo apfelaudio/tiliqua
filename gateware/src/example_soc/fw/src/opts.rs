@@ -40,13 +40,13 @@ impl_option_page!(Options,
 impl Options {
     pub fn new() -> Options {
         Options {
-            modify: true,
+            modify: false,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
                 value: Screen::Xbeam,
             },
             xbeam: XbeamOptions {
-                selected: None,
+                selected: Some(0),
                 persist: NumOption{
                     name: String::from_str("persist").unwrap(),
                     value: 1024,
@@ -56,14 +56,14 @@ impl Options {
                 },
                 hue: NumOption{
                     name: String::from_str("hue").unwrap(),
-                    value: 0,
+                    value: 10,
                     step: 1,
                     min: 0,
                     max: 15,
                 },
                 intensity: NumOption{
                     name: String::from_str("intensity").unwrap(),
-                    value: 6,
+                    value: 8,
                     step: 1,
                     min: 0,
                     max: 15,

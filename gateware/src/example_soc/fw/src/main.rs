@@ -85,6 +85,8 @@ fn main() -> ! {
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
+        encoder.update();
+
         match encoder.poke_ticks() {
             1 => opts.tick_up(),
             -1 => opts.tick_down(),
