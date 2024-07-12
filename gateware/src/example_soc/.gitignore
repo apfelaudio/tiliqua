@@ -1,4 +1,2 @@
 *.bin
-pac/device.x
 fw/memory.x
-pac/src/generated*
