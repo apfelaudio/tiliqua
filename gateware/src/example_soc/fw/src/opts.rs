@@ -21,10 +21,11 @@ pub struct XbeamOptions {
     pub hue: NumOption<u8>,
     pub intensity: NumOption<u8>,
     pub decay: NumOption<u8>,
+    pub scale: NumOption<u8>,
 }
 
 impl_option_view!(XbeamOptions,
-                  persist, hue, intensity, decay);
+                  persist, hue, intensity, decay, scale);
 
 #[derive(Clone)]
 pub struct Options {
@@ -71,6 +72,13 @@ impl Options {
                 decay: NumOption{
                     name: String::from_str("decay").unwrap(),
                     value: 1,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+                scale: NumOption{
+                    name: String::from_str("scale").unwrap(),
+                    value: 6,
                     step: 1,
                     min: 0,
                     max: 15,

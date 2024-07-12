@@ -234,6 +234,7 @@ class Draw(Elaboratable):
 
         self.hue       = Signal(4, reset=0);
         self.intensity = Signal(4, reset=0);
+        self.scale     = Signal(4, reset=6);
 
 
         self.px_read = Signal(32)
@@ -300,8 +301,8 @@ class Draw(Elaboratable):
                     m.d.sync += [
                         # TODO this >>6 scales input -> screen mapping.
                         # should be better exposed for tweaking.
-                        sample_x.eq(merge.o.payload[0].sas_value()>>6),
-                        sample_y.eq(merge.o.payload[1].sas_value()>>6),
+                        sample_x.eq(merge.o.payload[0].sas_value()>>self.scale),
+                        sample_y.eq(merge.o.payload[1].sas_value()>>self.scale),
                         sample_p.eq(merge.o.payload[2].sas_value()),
                         sample_c.eq(merge.o.payload[3].sas_value()),
                         sample_intensity.eq(self.intensity),

@@ -45,6 +45,7 @@ class VSPeripheral(Peripheral, Elaboratable):
         self.hue               = Signal(8,  reset=0)
         self.intensity         = Signal(8,  reset=4)
         self.decay             = Signal(8,  reset=1)
+        self.scale             = Signal(8,  reset=6)
 
         # CSRs
         bank                   = self.csr_bank()
@@ -52,6 +53,7 @@ class VSPeripheral(Peripheral, Elaboratable):
         self._hue              = bank.csr(8, "w")
         self._intensity        = bank.csr(8, "w")
         self._decay            = bank.csr(8, "w")
+        self._scale            = bank.csr(8, "w")
 
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
@@ -73,6 +75,9 @@ class VSPeripheral(Peripheral, Elaboratable):
 
         with m.If(self._decay.w_stb):
             m.d.sync += self.decay.eq(self._decay.w_data)
+
+        with m.If(self._scale.w_stb):
+            m.d.sync += self.scale.eq(self._scale.w_data)
 
         return m
 
@@ -223,6 +228,7 @@ class HelloSoc(Elaboratable):
             self.persist.decay.eq(self.vs_periph.decay),
             self.draw.hue.eq(self.vs_periph.hue),
             self.draw.intensity.eq(self.vs_periph.intensity),
+            self.draw.scale.eq(self.vs_periph.scale),
         ]
 
 

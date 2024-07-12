@@ -98,12 +98,10 @@ fn main() -> ! {
         }
 
         vs.persist().write(|w| unsafe { w.persist().bits(opts.xbeam.persist.value) } );
-
         vs.hue().write(|w| unsafe { w.hue().bits(opts.xbeam.hue.value) } );
-
         vs.intensity().write(|w| unsafe { w.intensity().bits(opts.xbeam.intensity.value) } );
-
         vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
+        vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
 
         pca9635.leds[0] = opts.xbeam.hue.value << 4;
         pca9635.leds[1] = opts.xbeam.intensity.value << 4;
