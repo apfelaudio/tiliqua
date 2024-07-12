@@ -15,7 +15,7 @@ use log::info;
 
 use riscv_rt::entry;
 
-use embedded_hal::i2c::{I2c, Operation};
+use tiliqua_hal::pca9635::*;
 
 use core::convert::TryInto;
 
@@ -27,7 +27,6 @@ use embedded_graphics::{
 use tiliqua_fw::opts;
 use tiliqua_lib::draw;
 
-const PCA9635_ADDR:   u8 = 0x05;
 
 // TODO: fetch these from SVF
 const PSRAM_BASE:     usize = 0x20000000;
@@ -50,12 +49,12 @@ fn main() -> ! {
 
     let sysclk = pac::clock::sysclk();
     let mut timer = Timer0::new(peripherals.TIMER, sysclk);
-    let mut direction = true;
-    let mut led_state = 0xc000u16;
 
     info!("Hello from Tiliqua selftest!");
 
-    let mut i2cdev = I2c0::new(peripherals.I2C0);
+    let i2cdev = I2c0::new(peripherals.I2C0);
+
+    let mut pca9635 = Pca9635Driver::new(i2cdev);
 
     let mut encoder = Encoder0::new(peripherals.ENCODER0);
 
@@ -104,48 +103,9 @@ fn main() -> ! {
 
         vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
 
-        // Write something interesting to the LED expander
-        let pca9635_bytes = [
-           0x80u8, // Auto-increment starting from MODE1
-           0x81u8, // MODE1
-           0x01u8, // MODE2
-           (led_state >>  0) as u8, // PWM0
-           (led_state >>  1) as u8, // PWM1
-           (led_state >>  2) as u8, // PWM2
-           (led_state >>  3) as u8, // PWM3
-           (led_state >>  4) as u8, // PWM4
-           (led_state >>  5) as u8, // PWM5
-           (led_state >>  6) as u8, // PWM6
-           (led_state >>  7) as u8, // PWM7
-           (led_state >>  8) as u8, // PWM8
-           (led_state >>  9) as u8, // PWM9
-           (led_state >> 10) as u8, // PWM10
-           (led_state >> 11) as u8, // PWM11
-           (led_state >> 12) as u8, // PWM12
-           (led_state >> 13) as u8, // PWM13
-           (led_state >> 14) as u8, // PWM14
-           (led_state >> 15) as u8, // PWM15
-           0xFFu8, // GRPPWM
-           0x00u8, // GRPFREQ
-           0xAAu8, // LEDOUT0
-           0xAAu8, // LEDOUT1
-           0xAAu8, // LEDOUT2
-           0xAAu8, // LEDOUT3
-        ];
-        let _ = i2cdev.transaction(PCA9635_ADDR, &mut [Operation::Write(&pca9635_bytes)]);
-
-        // TODO: nicer breathing pattern
-        if direction {
-            led_state >>= 1;
-            if led_state == 0x0003 {
-                direction = false;
-            }
-        } else {
-            led_state <<= 1;
-            if led_state == 0xc000 {
-                direction = true;
-            }
-        }
+        pca9635.leds[0] = opts.xbeam.hue.value << 4;
+        pca9635.leds[1] = opts.xbeam.intensity.value << 4;
+        pca9635.push().ok();
 
     }
 }
