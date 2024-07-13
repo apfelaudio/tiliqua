@@ -16,6 +16,7 @@ pub trait OptionTrait {
     fn value(&self) -> OptionString;
     fn tick_up(&mut self);
     fn tick_down(&mut self);
+    fn percent(&self) -> f32;
 }
 
 pub trait OptionView {
@@ -160,7 +161,7 @@ impl<T: Copy +
         core::ops::Sub<Output = T> +
         core::cmp::PartialOrd +
         core::fmt::Display>
-    OptionTrait for NumOption<T> {
+    OptionTrait for NumOption<T> where f32: From<T> {
 
     fn name(&self) -> &OptionString {
         &self.name
@@ -194,6 +195,12 @@ impl<T: Copy +
         } else {
             self.value = self.value - self.step;
         }
+    }
+
+    fn percent(&self) -> f32 {
+        let n: f32 = (self.value - self.min).into();
+        let d: f32 = (self.max - self.min).into();
+        n / d
     }
 }
 
@@ -232,5 +239,17 @@ impl<T: Copy + strum::IntoEnumIterator + PartialEq + Into<&'static str>>
             }
             last_value = Some(v);
         }
+    }
+
+    fn percent(&self) -> f32 {
+        let it = T::iter();
+        let mut n = 0u32;
+        for v in it {
+            if v == self.value {
+                break;
+            }
+            n += 1;
+        }
+        (n as f32) / (T::iter().count() as f32)
     }
 }

@@ -27,6 +27,8 @@ use embedded_graphics::{
 use tiliqua_fw::opts;
 use tiliqua_lib::draw;
 
+use tiliqua_lib::opt::*;
+
 
 // TODO: fetch these from SVF
 const PSRAM_BASE:     usize = 0x20000000;
@@ -77,8 +79,6 @@ fn main() -> ! {
 
     let vs = peripherals.VS_PERIPH;
 
-    use tiliqua_lib::opt::OptionPageEncoderInterface;
-
     loop {
 
         draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-100, opts.xbeam.hue.value).ok();
@@ -103,9 +103,17 @@ fn main() -> ! {
         vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
         vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
 
-        pca9635.leds[0] = opts.xbeam.hue.value << 4;
-        pca9635.leds[1] = opts.xbeam.intensity.value << 4;
-        pca9635.push().ok();
+        if let Some(n) = opts.view().selected() {
+            let o = opts.view().options()[n];
+            for n in 0..16 {
+                pca9635.leds[n] = (255f32 * o.percent()) as u8;
+            }
+        } else {
+            for n in 0..16 {
+                pca9635.leds[n] = 0u8;
+            }
+        }
 
+        pca9635.push().ok();
     }
 }
