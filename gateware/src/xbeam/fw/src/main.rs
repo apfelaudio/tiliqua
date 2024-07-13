@@ -50,7 +50,7 @@ fn main() -> ! {
     let sysclk = pac::clock::sysclk();
     let mut timer = Timer0::new(peripherals.TIMER, sysclk);
 
-    info!("Hello from Tiliqua selftest!");
+    info!("Hello from Tiliqua XBEAM!");
 
     let i2cdev = I2c0::new(peripherals.I2C0);
 

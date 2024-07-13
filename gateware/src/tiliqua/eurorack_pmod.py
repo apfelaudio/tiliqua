@@ -98,11 +98,12 @@ class EurorackPmodPeripheral(Peripheral, Elaboratable):
     TODO: extend this to allow glitch-free audio streaming with a FIFO interface.
     """
 
-    def __init__(self, *, pmod, **kwargs):
+    def __init__(self, *, pmod, enable_out=False, **kwargs):
 
         super().__init__()
 
         self.pmod = pmod
+        self.enable_out = enable_out
 
         # CSRs
         bank                   = self.csr_bank()
@@ -124,10 +125,11 @@ class EurorackPmodPeripheral(Peripheral, Elaboratable):
         self._sample_i3   = bank.csr(16, "r")
 
         # calibrated outgoing samples
-        self._sample_o0   = bank.csr(16, "w")
-        self._sample_o1   = bank.csr(16, "w")
-        self._sample_o2   = bank.csr(16, "w")
-        self._sample_o3   = bank.csr(16, "w")
+        if self.enable_out:
+            self._sample_o0   = bank.csr(16, "w")
+            self._sample_o1   = bank.csr(16, "w")
+            self._sample_o2   = bank.csr(16, "w")
+            self._sample_o3   = bank.csr(16, "w")
 
         # continuous touch sensing
         self._touch0      = bank.csr(8, "r")
@@ -161,11 +163,10 @@ class EurorackPmodPeripheral(Peripheral, Elaboratable):
                     self.pmod.sample_adc[n], getattr(self, f"_sample_adc{n}").r_data, reset=0)
             m.submodules += FFSynchronizer(
                     self.pmod.sample_i[n], getattr(self, f"_sample_i{n}").r_data, reset=0)
-            """
-            with m.If(getattr(self, f"_sample_o{n}").w_stb):
-                # TODO proper sync
-                m.d.sync += self.pmod.sample_o[n].eq(getattr(self, f"_sample_o{n}").w_data)
-            """
+            if self.enable_out:
+                with m.If(getattr(self, f"_sample_o{n}").w_stb):
+                    # TODO proper sync
+                    m.d.sync += self.pmod.sample_o[n].eq(getattr(self, f"_sample_o{n}").w_data)
 
         for n in range(8):
             m.submodules += FFSynchronizer(

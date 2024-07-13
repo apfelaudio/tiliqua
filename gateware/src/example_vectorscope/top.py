@@ -4,6 +4,7 @@
 
 """
 CRT / Vectorscope simulator.
+Simple gateware-only version, see 'xbeam' for SoC version with a menu system.
 Rasterizes X/Y (audio channel 0, 1) and color (audio channel 3) to a simulated
 CRT display, with intensity gradient and afterglow effects.
 
