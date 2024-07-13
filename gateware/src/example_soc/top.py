@@ -10,6 +10,7 @@ import sys
 
 from amaranth                                    import *
 from amaranth.hdl.rec                            import Record
+from amaranth.lib                                import wiring, data
 
 from luna_soc.gateware.cpu.vexriscv              import VexRiscv
 from luna_soc.gateware.lunasoc                   import LunaSoC
@@ -25,15 +26,13 @@ from tiliqua.encoder                             import EncoderPeripheral
 from tiliqua.video                               import DVI_TIMINGS, FramebufferPHY
 from tiliqua                                     import eurorack_pmod
 
-from example_vectorscope.top                     import Persistance, Draw
+from example_vectorscope.top                     import Persistance, Stroke
 
 from luna_soc.gateware.csr.base  import Peripheral
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
 }
-
-# - HelloSoc ------------------------------------------------------------------
 
 class VSPeripheral(Peripheral, Elaboratable):
 
@@ -133,9 +132,9 @@ class HelloSoc(Elaboratable):
         self.soc.psram.add_master(self.video.bus)
 
         # DRAW
-        self.draw = Draw(
+        self.stroke = Stroke(
                 fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
-        self.soc.psram.add_master(self.draw.bus)
+        self.soc.psram.add_master(self.stroke.bus)
 
         # ... add our video persistance effect (all writes gradually fade) -
         # this is an interesting alternative to double-buffering that looks
@@ -173,11 +172,13 @@ class HelloSoc(Elaboratable):
                 audio_192=True)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
-        self.draw.pmod0 = pmod0
+
+        m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0)
+        wiring.connect(m, astream.istream, self.stroke.i)
 
         m.submodules.video = self.video
         m.submodules.persist = self.persist
-        m.submodules.draw = self.draw
+        m.submodules.stroke = self.stroke
         m.submodules.soc = self.soc
 
         # Memory controller hangs if we start making requests to it straight away.
@@ -187,7 +188,7 @@ class HelloSoc(Elaboratable):
         with m.Else():
             m.d.sync += self.video.enable.eq(1)
             m.d.sync += self.persist.enable.eq(1)
-            m.d.sync += self.draw.enable.eq(1)
+            m.d.sync += self.stroke.enable.eq(1)
 
         # generate our domain clocks/resets
         m.submodules.car = platform.clock_domain_generator(clock_frequencies=CLOCK_FREQUENCIES_MHZ, audio_192=True)
@@ -226,9 +227,9 @@ class HelloSoc(Elaboratable):
         m.d.comb += [
             self.persist.holdoff.eq(self.vs_periph.persist),
             self.persist.decay.eq(self.vs_periph.decay),
-            self.draw.hue.eq(self.vs_periph.hue),
-            self.draw.intensity.eq(self.vs_periph.intensity),
-            self.draw.scale.eq(self.vs_periph.scale),
+            self.stroke.hue.eq(self.vs_periph.hue),
+            self.stroke.intensity.eq(self.vs_periph.intensity),
+            self.stroke.scale.eq(self.vs_periph.scale),
         ]
 
 
