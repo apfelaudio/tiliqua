@@ -141,6 +141,17 @@ class EurorackPmodPeripheral(Peripheral, Elaboratable):
         self._touch6      = bank.csr(8, "r")
         self._touch7      = bank.csr(8, "r")
 
+        # manual LED outputs
+        self._led_mode  = bank.csr(8, "w")
+        self._led0      = bank.csr(8, "w")
+        self._led1      = bank.csr(8, "w")
+        self._led2      = bank.csr(8, "w")
+        self._led3      = bank.csr(8, "w")
+        self._led4      = bank.csr(8, "w")
+        self._led5      = bank.csr(8, "w")
+        self._led6      = bank.csr(8, "w")
+        self._led7      = bank.csr(8, "w")
+
         # Data from I2C peripherals on eurorack-pmod hardware.
         self._jack             = bank.csr(8, "r")
         self._eeprom_mfg       = bank.csr(8, "r")
@@ -171,6 +182,13 @@ class EurorackPmodPeripheral(Peripheral, Elaboratable):
         for n in range(8):
             m.submodules += FFSynchronizer(
                     self.pmod.touch[n], getattr(self, f"_touch{n}").r_data, reset=0)
+
+        # LED control
+        with m.If(self._led_mode.w_stb):
+            m.d.sync += self.pmod.led_mode.eq(self._led_mode.w_data)
+        for n in range(8):
+            with m.If(getattr(self, f"_led{n}").w_stb):
+                m.d.sync += self.pmod.led[n].eq(getattr(self, f"_led{n}").w_data)
 
         m.submodules += FFSynchronizer(
                 self.pmod.jack, self._jack.r_data, reset=0)
@@ -210,6 +228,11 @@ class EurorackPmod(wiring.Component):
     eeprom_mfg: Out(8)
     eeprom_dev: Out(8)
     eeprom_serial: Out(32)
+
+    # Bitwise manual LED overrides. 1 == audio passthrough, 0 == manual set.
+    led_mode: In(8, reset=0xff)
+    # If an LED is in manual, this is signed i8 from -green to +red
+    led: In(8).array(8)
 
     # Signals only used for calibration
     sample_adc: Out(signed(WIDTH)).array(4)
@@ -349,6 +372,17 @@ class EurorackPmod(wiring.Component):
             o_touch5 = self.touch[5],
             o_touch6 = self.touch[6],
             o_touch7 = self.touch[7],
+
+            # Manual LED overrides.
+            i_led_mode = self.led_mode,
+            i_led0 = self.led[0],
+            i_led1 = self.led[1],
+            i_led2 = self.led[2],
+            i_led3 = self.led[3],
+            i_led4 = self.led[4],
+            i_led5 = self.led[5],
+            i_led6 = self.led[6],
+            i_led7 = self.led[7],
 
             # Debug ports
             o_sample_adc0 = self.sample_adc[0],
