@@ -35,7 +35,7 @@ class Persistance(Elaboratable):
     """
 
     def __init__(self, *, fb_base, bus_master, fb_size,
-                 fifo_depth=128, holdoff_default=1024, fb_bytes_per_pixel=1):
+                 fifo_depth=128, holdoff_default=512, fb_bytes_per_pixel=1):
         super().__init__()
 
         self.fb_base = fb_base
@@ -215,7 +215,7 @@ class Stroke(wiring.Component):
         self.sample_c = Signal(signed(16)) # color modulation DONE
 
         self.hue       = Signal(4, reset=default_hue); # default blue :)
-        self.intensity = Signal(4, reset=8);
+        self.intensity = Signal(4, reset=10);
         self.scale_x   = Signal(4, reset=6);
         self.scale_y   = Signal(4, reset=8);
         self.x_offset  = Signal(signed(16), reset=0)

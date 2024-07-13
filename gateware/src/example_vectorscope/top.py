@@ -135,7 +135,15 @@ class VectorScopeTop(Elaboratable):
         m.submodules.splitr = splitr = dsp.Split(n_channels=4, replicate=True)
 
         wiring.connect(m, astream.istream, split.i)
-        wiring.connect(m, split.o[3], splitr.i)
+
+        m.submodules.saw = saw = dsp.SawNCO(shift=0)
+        sample_rate_hz=192000
+        freq_inc = 120.0 * (1.0 / sample_rate_hz)
+        m.d.comb += [
+            saw.i.payload.freq_inc.eq(fixed.Const(freq_inc, shape=ASQ)),
+            saw.i.valid.eq(astream.istream.valid),
+        ]
+        wiring.connect(m, saw.o, splitr.i)
 
         m.submodules.merge0 = merge0 = dsp.Merge(n_channels=4)
         m.submodules.merge1 = merge1 = dsp.Merge(n_channels=4)
@@ -157,6 +165,8 @@ class VectorScopeTop(Elaboratable):
         wiring.connect(m, split.o[2],    merge2.i[1])
         wiring.connect(m, dsp.ASQ_VALID, merge2.i[2])
         wiring.connect(m, dsp.ASQ_VALID, merge2.i[3])
+
+        wiring.connect(m, split.o[3],    dsp.ASQ_READY)
 
         wiring.connect(m, merge0.o, self.stroke0.i)
         wiring.connect(m, merge1.o, self.stroke1.i)
