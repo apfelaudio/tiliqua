@@ -4,14 +4,18 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+tiliqua-hal = { path="../../rs/hal", default-features = false }
+tiliqua-lib = { path = "../../rs/lib" }
+tiliqua-pac = { path="../../rs/pac", default-features = false, features = ["critical-section", "vexriscv"] }
+
 log = "0.4.17"
 embedded-hal = "=1.0.0"
 riscv = { version = "=0.10.1", features = ["critical-section-single-hart"] }
 riscv-rt = { version = "=0.11.0" }
 panic-halt = "0.2.0"
-tiliqua-pac = { path="../pac", default-features = false, features = ["critical-section", "vexriscv"] }
-tiliqua-hal = { path="../hal", default-features = false, features = ["vexriscv"]}
 micromath = "2.1.0"
 embedded-graphics = "0.8.1"
 fastrand = { version = "2.1.0", default-features = false }
 heapless = "0.8.0"
+strum_macros = "0.26.4"
+strum = {version = "0.25.0", features = ["derive"], default-features=false}

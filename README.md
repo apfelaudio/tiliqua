@@ -30,10 +30,14 @@ We are planning to launch Tiliqua on Crowd Supply in Q3 '24.
 
 ## Building example projects
 
-On an Ubuntu system, first make sure you have the following installed:
-- [pdm](https://github.com/pdm-project/pdm)
-- A recent version of [oss-cad-suite](https://github.com/YosysHQ/oss-cad-suite-build)
-- (required for SoC examples only) [rust](https://rustup.rs/) with `riscv32-imac` targets
+On an Ubuntu system, the following are the main dependencies:
+- The build system: install [pdm](https://github.com/pdm-project/pdm)
+- For synthesis: install [oss-cad-suite](https://github.com/YosysHQ/oss-cad-suite-build)
+- For examples that include a softcore: [rust](https://rustup.rs/).
+    - To build stripped images for RISC-V, you also need:
+        - `rustup target add riscv32imac-unknown-none-elf`
+        - `rustup component add rustfmt clippy llvm-tools`
+        - `cargo install cargo-binutils svd2rust form`
 
 To set up the environment:
 ```bash
@@ -54,13 +58,15 @@ pdm build_dsp_core nco
 pdm build_dsp_core diffuser
 # for a polyphonic MIDI synth
 pdm build_dsp_core midipoly
-# for an SoC example (RISCV softcore)
-pdm build_soc
 # for the vectorscope / DVI example
 pdm build_vectorscope
+# for an SoC example (selftest with RISCV softcore)
+pdm build_selftest
+# (WIP) vectorscope + SoC + menu system
+pdm build_xbeam
 ```
 
-All examples are also built in CI - check `.github/workflows` if you need more gruesome details on how systems are built.
+Generally, bitstreams are also built in CI - check `.github/workflows` if you need more gruesome details on how systems are built.
 
 ## Flashing example projects
 

@@ -16,4 +16,9 @@ tiliqua_hal::impl_i2c! {
     I2c0: pac::I2C0,
 }
 
-pub mod log;
+tiliqua_hal::impl_encoder! {
+    Encoder0: pac::ENCODER0,
+}
+
+pub mod handlers;
+pub mod opts;

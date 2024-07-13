@@ -11,7 +11,7 @@
 
 set -e -o pipefail
 
-SOC=src/example_soc
+SOC=src/$1
 
 # generate artifacts from design
 mkdir -p build
@@ -19,7 +19,7 @@ pdm run $SOC/top.py --generate-svd > build/soc.svd
 pdm run $SOC/top.py --generate-memory-x > build/memory.x
 
 # create the PAC
-make -C $SOC/pac
+make -C src/rs/pac
 
 # move linker script into fw project (TODO: cleaner to leave in build/?)
 cp build/memory.x $SOC/fw/memory.x

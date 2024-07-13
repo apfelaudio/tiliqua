@@ -1,36 +1,8 @@
-//! A simple logger for the `log` crate which can log to any object
-//! implementing `Write`
-
-#![allow(unused_imports, unused_mut, unused_variables)]
-
-use crate::{hal, pac};
-
-use log::{Level, LevelFilter, Metadata, Record};
+use log::{Level, Metadata, Record};
 
 use core::cell::RefCell;
 use core::fmt::Write;
-use crate::Serial0;
 
-// - initialization -----------------------------------------------------------
-
-static LOGGER: WriteLogger<Serial0> = WriteLogger {
-    writer: RefCell::new(None),
-    level: Level::Trace,
-};
-
-pub fn init(writer: Serial0) {
-    LOGGER.writer.replace(Some(writer));
-    match log::set_logger(&LOGGER).map(|()| log::set_max_level(LevelFilter::Trace)) {
-        Ok(()) => (),
-        Err(_e) => {
-            panic!("Failed to set logger");
-        }
-    }
-}
-
-// - implementation -----------------------------------------------------------
-
-/// WriteLogger
 pub struct WriteLogger<W>
 where
     W: Write + Send,

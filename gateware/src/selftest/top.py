@@ -1,8 +1,9 @@
+# Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
-# This file is part of LUNA.
+# Based on some work from LUNA project licensed under BSD. Anything new
+# in this file is issued under the following license:
 #
-# Copyright (c) 2020 Great Scott Gadgets <info@greatscottgadgets.com>
-# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-License-Identifier: CERN-OHL-S-2.0
 
 import logging
 import os
@@ -10,6 +11,7 @@ import sys
 
 from amaranth                                    import *
 from amaranth.hdl.rec                            import Record
+from amaranth.lib                                import wiring, data
 
 from luna_soc.gateware.cpu.vexriscv              import VexRiscv
 from luna_soc.gateware.lunasoc                   import LunaSoC
@@ -25,24 +27,22 @@ from tiliqua.encoder                             import EncoderPeripheral
 from tiliqua.video                               import DVI_TIMINGS, FramebufferPHY
 from tiliqua                                     import eurorack_pmod
 
-from example_vectorscope.top                     import Persistance, Draw
+from example_vectorscope.top                     import Persistance
+
+from luna_soc.gateware.csr.base  import Peripheral
 
 CLOCK_FREQUENCIES_MHZ = {
     'sync': 60
 }
 
-# - HelloSoc ------------------------------------------------------------------
-
-class HelloSoc(Elaboratable):
+class SelfTestSoc(Elaboratable):
     def __init__(self, clock_frequency, dvi_timings):
 
-        # create a stand-in for our UART
         self.uart_pins = Record([
             ('rx', [('i', 1)]),
             ('tx', [('o', 1)])
         ])
 
-        # create a stand-in for our I2C pins
         self.i2c_pins = Record([
             ('sda', [('i', 1), ('o', 1), ('oe', 1)]),
             ('scl', [('i', 1), ('o', 1), ('oe', 1)]),
@@ -54,17 +54,14 @@ class HelloSoc(Elaboratable):
             ('s', [('i', 1)])
         ])
 
-        # create our SoC
         self.soc = LunaSoC(
             cpu=VexRiscv(reset_addr=0x40000000, variant="cynthion"),
             clock_frequency=clock_frequency,
         )
 
-        # ... read our firmware binary ...
-        firmware = get_mem_data("src/example_soc/fw/firmware.bin",
+        firmware = get_mem_data("src/selftest/fw/firmware.bin",
                                 data_width=32, endianness="little")
 
-        # ... add core peripherals: memory, timer, uart ...
         self.soc.add_core_peripherals(
             uart_pins=self.uart_pins,
             internal_sram_size=32768,
@@ -88,20 +85,16 @@ class HelloSoc(Elaboratable):
         # this is an interesting alternative to double-buffering that looks
         # kind of like an old CRT with slow-scanning.
         self.persist = Persistance(
-                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size,
-                holdoff=1024*3)
+                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
         self.soc.psram.add_master(self.persist.bus)
 
-        # ... add an I2C transciever
         self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
         self.soc.add_peripheral(self.i2c0, addr=0xf0002000)
 
-        # ... add our encoder peripheral
         self.encoder0 = EncoderPeripheral(pins=self.encoder_pins)
         self.soc.add_peripheral(self.encoder0, addr=0xf0003000)
 
-        # ... add our eurorack-pmod test peripheral
-        self.pmod0_periph = eurorack_pmod.EurorackPmodPeripheral(pmod=None)
+        self.pmod0_periph = eurorack_pmod.EurorackPmodPeripheral(pmod=None, enable_out=True)
         self.soc.add_peripheral(self.pmod0_periph, addr=0xf0004000)
 
         super().__init__()
@@ -113,7 +106,7 @@ class HelloSoc(Elaboratable):
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
-                touch_enabled=True)
+                touch_enabled=False)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
 
@@ -163,8 +156,6 @@ class HelloSoc(Elaboratable):
         # Enable LED driver on motherboard
         m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
 
-
-
         return m
 
 if __name__ == "__main__":
@@ -174,5 +165,5 @@ if __name__ == "__main__":
     os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
     os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
     os.environ["LUNA_PLATFORM"] = "tiliqua.tiliqua_platform:TiliquaPlatform"
-    design = HelloSoc(clock_frequency=int(60e6), dvi_timings=DVI_TIMINGS["800x600p60"])
+    design = SelfTestSoc(clock_frequency=int(60e6), dvi_timings=DVI_TIMINGS["800x600p60"])
     top_level_cli(design)
