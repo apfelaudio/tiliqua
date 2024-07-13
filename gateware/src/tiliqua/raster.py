@@ -197,7 +197,7 @@ class Stroke(wiring.Component):
     # x, y, intensity, color
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, upsample_factor=6, fs=192000):
+    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, upsample_factor=6, fs=192000, default_hue=10, default_y=0):
 
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
@@ -214,9 +214,12 @@ class Stroke(wiring.Component):
         self.sample_p = Signal(signed(16)) # intensity modulation TODO
         self.sample_c = Signal(signed(16)) # color modulation DONE
 
-        self.hue       = Signal(4, reset=10); # default blue :)
+        self.hue       = Signal(4, reset=default_hue); # default blue :)
         self.intensity = Signal(4, reset=8);
-        self.scale     = Signal(4, reset=6);
+        self.scale_x   = Signal(4, reset=6);
+        self.scale_y   = Signal(4, reset=8);
+        self.x_offset  = Signal(signed(16), reset=0)
+        self.y_offset  = Signal(signed(16), reset=default_y)
 
         self.px_read = Signal(32)
         self.px_sum = Signal(16)
@@ -291,10 +294,8 @@ class Stroke(wiring.Component):
                 # Fired on every audio sample fs_strobe
                 with m.If(point_stream.valid):
                     m.d.sync += [
-                        # TODO this >>6 scales input -> screen mapping.
-                        # should be better exposed for tweaking.
-                        sample_x.eq(point_stream.payload[0].sas_value()>>self.scale),
-                        sample_y.eq(point_stream.payload[1].sas_value()>>self.scale),
+                        sample_x.eq((point_stream.payload[0].sas_value()>>self.scale_x) + self.x_offset),
+                        sample_y.eq((point_stream.payload[1].sas_value()>>self.scale_y) + self.y_offset),
                         sample_p.eq(point_stream.payload[2].sas_value()),
                         sample_c.eq(point_stream.payload[3].sas_value()),
                         sample_intensity.eq(self.intensity),
