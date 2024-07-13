@@ -137,7 +137,7 @@ class XbeamSoc(Elaboratable):
         self.soc.psram.add_master(self.video.bus)
 
         self.stroke = Stroke(
-                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
+                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size, upsample_factor=6)
         self.soc.psram.add_master(self.stroke.bus)
 
         # ... add our video persistance effect (all writes gradually fade) -

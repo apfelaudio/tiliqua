@@ -197,11 +197,14 @@ class Stroke(wiring.Component):
     # x, y, intensity, color
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1):
+    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, upsample_factor=6, fs=192000):
 
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
         self.fb_bytes_per_pixel = fb_bytes_per_pixel
+
+        self.fs = fs
+        self.upsample_factor = upsample_factor
 
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
                                       features={"cti", "bte"})
@@ -236,27 +239,29 @@ class Stroke(wiring.Component):
         sample_p = self.sample_p
         sample_c = self.sample_c
 
-        m.submodules.split = split = dsp.Split(n_channels=4)
-        m.submodules.merge = merge = dsp.Merge(n_channels=4)
+        point_stream = None
 
-        N_UP=6
-        m.submodules.resample0 = resample0 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
-        m.submodules.resample1 = resample1 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
-        m.submodules.resample2 = resample2 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
-        m.submodules.resample3 = resample3 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
-
-        wiring.connect(m, wiring.flipped(self.i), split.i)
-
-        wiring.connect(m, split.o[0], resample0.i)
-        wiring.connect(m, split.o[1], resample1.i)
-        wiring.connect(m, split.o[2], resample2.i)
-        wiring.connect(m, split.o[3], resample3.i)
-
-        wiring.connect(m, resample0.o, merge.i[0])
-        wiring.connect(m, resample1.o, merge.i[1])
-        wiring.connect(m, resample2.o, merge.i[2])
-        wiring.connect(m, resample3.o, merge.i[3])
-
+        if self.upsample_factor is not None:
+            # If interpolation is enabled, insert an FIR upsampling stage.
+            m.submodules.split = split = dsp.Split(n_channels=4)
+            m.submodules.merge = merge = dsp.Merge(n_channels=4)
+            wiring.connect(m, wiring.flipped(self.i), split.i)
+            m.submodules.resample0 = resample0 = dsp.Resample(fs_in=self.fs, n_up=self.upsample_factor, m_down=1)
+            m.submodules.resample1 = resample1 = dsp.Resample(fs_in=self.fs, n_up=self.upsample_factor, m_down=1)
+            m.submodules.resample2 = resample2 = dsp.Resample(fs_in=self.fs, n_up=self.upsample_factor, m_down=1)
+            m.submodules.resample3 = resample3 = dsp.Resample(fs_in=self.fs, n_up=self.upsample_factor, m_down=1)
+            wiring.connect(m, split.o[0], resample0.i)
+            wiring.connect(m, split.o[1], resample1.i)
+            wiring.connect(m, split.o[2], resample2.i)
+            wiring.connect(m, split.o[3], resample3.i)
+            wiring.connect(m, resample0.o, merge.i[0])
+            wiring.connect(m, resample1.o, merge.i[1])
+            wiring.connect(m, resample2.o, merge.i[2])
+            wiring.connect(m, resample3.o, merge.i[3])
+            point_stream = merge.o
+        else:
+            # Otherwise we're just plotting 1 point for each point in the input stream.
+            point_stream = self.i
 
         px_read = self.px_read
         px_sum = self.px_sum
@@ -282,16 +287,16 @@ class Stroke(wiring.Component):
 
             with m.State('LATCH0'):
 
-                m.d.comb += merge.o.ready.eq(1)
+                m.d.comb += point_stream.ready.eq(1)
                 # Fired on every audio sample fs_strobe
-                with m.If(merge.o.valid):
+                with m.If(point_stream.valid):
                     m.d.sync += [
                         # TODO this >>6 scales input -> screen mapping.
                         # should be better exposed for tweaking.
-                        sample_x.eq(merge.o.payload[0].sas_value()>>self.scale),
-                        sample_y.eq(merge.o.payload[1].sas_value()>>self.scale),
-                        sample_p.eq(merge.o.payload[2].sas_value()),
-                        sample_c.eq(merge.o.payload[3].sas_value()),
+                        sample_x.eq(point_stream.payload[0].sas_value()>>self.scale),
+                        sample_y.eq(point_stream.payload[1].sas_value()>>self.scale),
+                        sample_p.eq(point_stream.payload[2].sas_value()),
+                        sample_c.eq(point_stream.payload[3].sas_value()),
                         sample_intensity.eq(self.intensity),
                     ]
                     m.next = 'LATCH1'
