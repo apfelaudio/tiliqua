@@ -17,6 +17,7 @@ pub trait OptionTrait {
     fn tick_up(&mut self);
     fn tick_down(&mut self);
     fn percent(&self) -> f32;
+    fn n_unique_values(&self) -> usize;
 }
 
 pub trait OptionView {
@@ -148,7 +149,9 @@ where
             } else if n_selected != 0 {
                 self.view_mut().set_selected(Some(n_selected - 1));
             } else {
-                self.view_mut().set_selected(None);
+                if self.screen().n_unique_values() > 1 {
+                    self.view_mut().set_selected(None);
+                }
             }
         } else if self.modify() {
             self.screen_mut().tick_down();
@@ -161,7 +164,7 @@ impl<T: Copy +
         core::ops::Sub<Output = T> +
         core::cmp::PartialOrd +
         core::fmt::Display>
-    OptionTrait for NumOption<T> where f32: From<T> {
+    OptionTrait for NumOption<T> where f32: From<T>, usize: From<T> {
 
     fn name(&self) -> &OptionString {
         &self.name
@@ -201,6 +204,10 @@ impl<T: Copy +
         let n: f32 = (self.value - self.min).into();
         let d: f32 = (self.max - self.min).into();
         n / d
+    }
+
+    fn n_unique_values(&self) -> usize {
+        (self.max - self.min).into()
     }
 }
 
@@ -251,5 +258,9 @@ impl<T: Copy + strum::IntoEnumIterator + PartialEq + Into<&'static str>>
             n += 1;
         }
         (n as f32) / (T::iter().count() as f32)
+    }
+
+    fn n_unique_values(&self) -> usize {
+        T::iter().count()
     }
 }
