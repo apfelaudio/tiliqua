@@ -78,21 +78,21 @@ class VectorScopeTop(Elaboratable):
                 fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size)
 
         self.stroke0 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=0, default_y=-225)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=0, default_x=-260, default_y=-225)
         self.stroke1 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=2,  default_y=-75)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=2, default_x=-260, default_y=-75)
         self.stroke2 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=4,  default_y=75)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=4, default_x=-260, default_y=75)
         self.stroke3 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=8,  default_y=225)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=8, default_x=-260, default_y=225)
         self.stroke4 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=10, default_y=-225)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=10,default_x=260, default_y=-225)
         self.stroke5 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=12,  default_y=-75)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=12,default_x=260,  default_y=-75)
         self.stroke6 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=14,  default_y=75)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=14,default_x=260,  default_y=75)
         self.stroke7 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=15,  default_y=225)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=15,default_x=260,  default_y=225)
 
         self.hyperram.add_master(self.video.bus)
         self.hyperram.add_master(self.persist.bus)
