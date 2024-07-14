@@ -10,6 +10,7 @@ use tiliqua_fw::Serial0;
 use tiliqua_fw::Timer0;
 use tiliqua_fw::I2c0;
 use tiliqua_fw::Encoder0;
+use tiliqua_fw::EurorackPmod0;
 
 use log::info;
 
@@ -79,7 +80,7 @@ fn main() -> ! {
 
     let vs = peripherals.VS_PERIPH;
 
-    let pmod = peripherals.PMOD0_PERIPH;
+    let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
 
     loop {
 
@@ -119,30 +120,13 @@ fn main() -> ! {
         }
 
         if opts.modify() {
-            pmod.led_mode().write(|w| unsafe { w.led_mode().bits(0xff) } );
+            pmod.led_all_auto();
         } else {
-            pmod.led0().write(|w| unsafe { w.led0().bits(0u8) } );
-            pmod.led1().write(|w| unsafe { w.led1().bits(0u8) } );
-            pmod.led2().write(|w| unsafe { w.led2().bits(0u8) } );
-            pmod.led3().write(|w| unsafe { w.led3().bits(0u8) } );
-            pmod.led4().write(|w| unsafe { w.led4().bits(0u8) } );
-            pmod.led5().write(|w| unsafe { w.led5().bits(0u8) } );
-            pmod.led6().write(|w| unsafe { w.led6().bits(0u8) } );
-            pmod.led7().write(|w| unsafe { w.led7().bits(0u8) } );
-
+            for n in 0..8 {
+                pmod.led_set_manual(n, 0i8);
+            }
             if let Some(n) = opts.view().selected() {
-                pmod.led_mode().write(|w| unsafe { w.led_mode().bits(0x00) } );
-                match n {
-                    0 => { pmod.led0().write(|w| unsafe { w.led0().bits(i8::MAX as u8) } ); }
-                    1 => { pmod.led1().write(|w| unsafe { w.led1().bits(i8::MAX as u8) } ); }
-                    2 => { pmod.led2().write(|w| unsafe { w.led2().bits(i8::MAX as u8) } ); }
-                    3 => { pmod.led3().write(|w| unsafe { w.led3().bits(i8::MAX as u8) } ); }
-                    4 => { pmod.led4().write(|w| unsafe { w.led4().bits(i8::MAX as u8) } ); }
-                    5 => { pmod.led5().write(|w| unsafe { w.led5().bits(i8::MAX as u8) } ); }
-                    6 => { pmod.led6().write(|w| unsafe { w.led6().bits(i8::MAX as u8) } ); }
-                    7 => { pmod.led7().write(|w| unsafe { w.led7().bits(i8::MAX as u8) } ); }
-                    _ => {}
-                }
+                pmod.led_set_manual(n, i8::MAX);
             }
         }
 
