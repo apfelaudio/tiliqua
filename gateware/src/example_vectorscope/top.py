@@ -85,6 +85,14 @@ class VectorScopeTop(Elaboratable):
                 fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=4,  default_y=75)
         self.stroke3 = Stroke(
                 fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=8,  default_y=225)
+        self.stroke4 = Stroke(
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=10, default_y=-225)
+        self.stroke5 = Stroke(
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=12,  default_y=-75)
+        self.stroke6 = Stroke(
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=14,  default_y=75)
+        self.stroke7 = Stroke(
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=15,  default_y=225)
 
         self.hyperram.add_master(self.video.bus)
         self.hyperram.add_master(self.persist.bus)
@@ -92,6 +100,10 @@ class VectorScopeTop(Elaboratable):
         self.hyperram.add_master(self.stroke1.bus)
         self.hyperram.add_master(self.stroke2.bus)
         self.hyperram.add_master(self.stroke3.bus)
+        self.hyperram.add_master(self.stroke4.bus)
+        self.hyperram.add_master(self.stroke5.bus)
+        self.hyperram.add_master(self.stroke6.bus)
+        self.hyperram.add_master(self.stroke7.bus)
 
         if self.sim:
             self.pmod0 = FakeEurorackPmod()
@@ -135,9 +147,24 @@ class VectorScopeTop(Elaboratable):
         m.submodules.stroke1 = self.stroke1
         m.submodules.stroke2 = self.stroke2
         m.submodules.stroke3 = self.stroke3
+        m.submodules.stroke4 = self.stroke4
+        m.submodules.stroke5 = self.stroke5
+        m.submodules.stroke6 = self.stroke6
+        m.submodules.stroke7 = self.stroke7
 
         m.submodules.split = split = dsp.Split(n_channels=4)
-        m.submodules.splitr = splitr = dsp.Split(n_channels=4, replicate=True)
+        m.submodules.split2 = split2 = dsp.Split(n_channels=4)
+        m.submodules.splitr = splitr = dsp.Split(n_channels=8, replicate=True)
+
+        from example_dsp.top import Diffuser
+        m.submodules.diffuser = diffuser = Diffuser()
+        wiring.connect(m, diffuser.o, astream.ostream)
+        m.d.comb += [
+            diffuser.i.valid.eq(astream.istream.valid),
+            diffuser.i.payload.eq(astream.istream.payload),
+            split2.i.valid.eq(diffuser.o.valid),
+            split2.i.payload.eq(diffuser.o.payload),
+        ]
 
         wiring.connect(m, astream.istream, split.i)
 
@@ -154,11 +181,19 @@ class VectorScopeTop(Elaboratable):
         m.submodules.merge1 = merge1 = dsp.Merge(n_channels=4)
         m.submodules.merge2 = merge2 = dsp.Merge(n_channels=4)
         m.submodules.merge3 = merge3 = dsp.Merge(n_channels=4)
+        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
+        m.submodules.merge5 = merge5 = dsp.Merge(n_channels=4)
+        m.submodules.merge6 = merge6 = dsp.Merge(n_channels=4)
+        m.submodules.merge7 = merge7 = dsp.Merge(n_channels=4)
 
         wiring.connect(m, splitr.o[0], merge0.i[0])
         wiring.connect(m, splitr.o[1], merge1.i[0])
         wiring.connect(m, splitr.o[2], merge2.i[0])
         wiring.connect(m, splitr.o[3], merge3.i[0])
+        wiring.connect(m, splitr.o[4], merge4.i[0])
+        wiring.connect(m, splitr.o[5], merge5.i[0])
+        wiring.connect(m, splitr.o[6], merge6.i[0])
+        wiring.connect(m, splitr.o[7], merge7.i[0])
 
         wiring.connect(m, split.o[0],    merge0.i[1])
         wiring.connect(m, dsp.ASQ_VALID, merge0.i[2])
@@ -176,10 +211,30 @@ class VectorScopeTop(Elaboratable):
         wiring.connect(m, dsp.ASQ_VALID, merge3.i[2])
         wiring.connect(m, dsp.ASQ_VALID, merge3.i[3])
 
+        wiring.connect(m, split2.o[0],    merge4.i[1])
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
+
+        wiring.connect(m, split2.o[1],    merge5.i[1])
+        wiring.connect(m, dsp.ASQ_VALID, merge5.i[2])
+        wiring.connect(m, dsp.ASQ_VALID, merge5.i[3])
+
+        wiring.connect(m, split2.o[2],    merge6.i[1])
+        wiring.connect(m, dsp.ASQ_VALID, merge6.i[2])
+        wiring.connect(m, dsp.ASQ_VALID, merge6.i[3])
+
+        wiring.connect(m, split2.o[3],    merge7.i[1])
+        wiring.connect(m, dsp.ASQ_VALID, merge7.i[2])
+        wiring.connect(m, dsp.ASQ_VALID, merge7.i[3])
+
         wiring.connect(m, merge0.o, self.stroke0.i)
         wiring.connect(m, merge1.o, self.stroke1.i)
         wiring.connect(m, merge2.o, self.stroke2.i)
         wiring.connect(m, merge3.o, self.stroke3.i)
+        wiring.connect(m, merge4.o, self.stroke4.i)
+        wiring.connect(m, merge5.o, self.stroke5.i)
+        wiring.connect(m, merge6.o, self.stroke6.i)
+        wiring.connect(m, merge7.o, self.stroke7.i)
 
         # Memory controller hangs if we start making requests to it straight away.
         on_delay = Signal(32)
@@ -192,6 +247,10 @@ class VectorScopeTop(Elaboratable):
             m.d.sync += self.stroke1.enable.eq(1)
             m.d.sync += self.stroke2.enable.eq(1)
             m.d.sync += self.stroke3.enable.eq(1)
+            m.d.sync += self.stroke4.enable.eq(1)
+            m.d.sync += self.stroke5.enable.eq(1)
+            m.d.sync += self.stroke6.enable.eq(1)
+            m.d.sync += self.stroke7.enable.eq(1)
 
         return m
 

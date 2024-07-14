@@ -216,7 +216,7 @@ class Stroke(wiring.Component):
 
         self.hue       = Signal(4, reset=default_hue); # default blue :)
         self.intensity = Signal(4, reset=10);
-        self.scale_x   = Signal(4, reset=6);
+        self.scale_x   = Signal(4, reset=7);
         self.scale_y   = Signal(4, reset=8);
         self.x_offset  = Signal(signed(16), reset=default_x)
         self.y_offset  = Signal(signed(16), reset=default_y)
