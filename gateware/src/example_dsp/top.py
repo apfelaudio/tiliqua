@@ -342,7 +342,7 @@ class QuadNCO(wiring.Component):
         def v_oct_lut(x, clamp_lo=-8.0, clamp_hi=6.0):
             def volts_to_freq(volts, a3_freq_hz=440.0):
                 return (a3_freq_hz / 8.0) * 2 ** (volts + 2.0 - 3.0/4.0)
-            def volts_to_delta(volts, sample_rate_hz=48000):
+            def volts_to_delta(volts, sample_rate_hz=192000):
                 return (1.0 / sample_rate_hz) * volts_to_freq(volts)
             # convert audio sample [-1, 1] to volts
             x = x*(2**15/4000)
@@ -388,18 +388,18 @@ class QuadNCO(wiring.Component):
         M_DOWN = 4
 
         m.submodules.resample_up0 = resample_up0 = dsp.Resample(
-                fs_in=48000, n_up=N_UP, m_down=1)
+                fs_in=192000, n_up=N_UP, m_down=1)
         m.submodules.resample_up1 = resample_up1 = dsp.Resample(
-                fs_in=48000, n_up=N_UP, m_down=1)
+                fs_in=192000, n_up=N_UP, m_down=1)
 
         m.submodules.down0 = resample_down0 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
+                fs_in=192000*N_UP, n_up=1, m_down=M_DOWN)
         m.submodules.down1 = resample_down1 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
+                fs_in=192000*N_UP, n_up=1, m_down=M_DOWN)
         m.submodules.down2 = resample_down2 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
+                fs_in=192000*N_UP, n_up=1, m_down=M_DOWN)
         m.submodules.down3 = resample_down3 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
+                fs_in=192000*N_UP, n_up=1, m_down=M_DOWN)
 
         wiring.connect(m, wiring.flipped(self.i), split4.i)
 

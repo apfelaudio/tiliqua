@@ -156,8 +156,8 @@ class VectorScopeTop(Elaboratable):
         m.submodules.split2 = split2 = dsp.Split(n_channels=4)
         m.submodules.splitr = splitr = dsp.Split(n_channels=8, replicate=True)
 
-        from example_dsp.top import Diffuser
-        m.submodules.diffuser = diffuser = Diffuser()
+        from example_dsp.top import QuadNCO
+        m.submodules.diffuser = diffuser = QuadNCO()
         wiring.connect(m, diffuser.o, astream.ostream)
         m.d.comb += [
             diffuser.i.valid.eq(astream.istream.valid),
