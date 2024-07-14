@@ -76,18 +76,22 @@ class VectorScopeTop(Elaboratable):
                 bus_master=self.hyperram.bus, sim=sim)
         self.persist = Persistance(
                 fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size)
+
         self.stroke0 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=2, default_hue=10, default_y=0)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=0, default_y=-225)
         self.stroke1 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=2, default_hue=0,  default_y=-200)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=2,  default_y=-75)
         self.stroke2 = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=2, default_hue=5,  default_y=200)
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=4,  default_y=75)
+        self.stroke3 = Stroke(
+                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size, upsample_factor=None, default_hue=8,  default_y=225)
 
         self.hyperram.add_master(self.video.bus)
         self.hyperram.add_master(self.persist.bus)
         self.hyperram.add_master(self.stroke0.bus)
         self.hyperram.add_master(self.stroke1.bus)
         self.hyperram.add_master(self.stroke2.bus)
+        self.hyperram.add_master(self.stroke3.bus)
 
         if self.sim:
             self.pmod0 = FakeEurorackPmod()
@@ -130,6 +134,7 @@ class VectorScopeTop(Elaboratable):
         m.submodules.stroke0 = self.stroke0
         m.submodules.stroke1 = self.stroke1
         m.submodules.stroke2 = self.stroke2
+        m.submodules.stroke3 = self.stroke3
 
         m.submodules.split = split = dsp.Split(n_channels=4)
         m.submodules.splitr = splitr = dsp.Split(n_channels=4, replicate=True)
@@ -138,7 +143,7 @@ class VectorScopeTop(Elaboratable):
 
         m.submodules.saw = saw = dsp.SawNCO(shift=0)
         sample_rate_hz=192000
-        freq_inc = 120.0 * (1.0 / sample_rate_hz)
+        freq_inc = 100.0 * (1.0 / sample_rate_hz)
         m.d.comb += [
             saw.i.payload.freq_inc.eq(fixed.Const(freq_inc, shape=ASQ)),
             saw.i.valid.eq(astream.istream.valid),
@@ -148,11 +153,12 @@ class VectorScopeTop(Elaboratable):
         m.submodules.merge0 = merge0 = dsp.Merge(n_channels=4)
         m.submodules.merge1 = merge1 = dsp.Merge(n_channels=4)
         m.submodules.merge2 = merge2 = dsp.Merge(n_channels=4)
+        m.submodules.merge3 = merge3 = dsp.Merge(n_channels=4)
 
         wiring.connect(m, splitr.o[0], merge0.i[0])
         wiring.connect(m, splitr.o[1], merge1.i[0])
         wiring.connect(m, splitr.o[2], merge2.i[0])
-        wiring.connect(m, splitr.o[3], dsp.ASQ_READY)
+        wiring.connect(m, splitr.o[3], merge3.i[0])
 
         wiring.connect(m, split.o[0],    merge0.i[1])
         wiring.connect(m, dsp.ASQ_VALID, merge0.i[2])
@@ -166,11 +172,14 @@ class VectorScopeTop(Elaboratable):
         wiring.connect(m, dsp.ASQ_VALID, merge2.i[2])
         wiring.connect(m, dsp.ASQ_VALID, merge2.i[3])
 
-        wiring.connect(m, split.o[3],    dsp.ASQ_READY)
+        wiring.connect(m, split.o[3],    merge3.i[1])
+        wiring.connect(m, dsp.ASQ_VALID, merge3.i[2])
+        wiring.connect(m, dsp.ASQ_VALID, merge3.i[3])
 
         wiring.connect(m, merge0.o, self.stroke0.i)
         wiring.connect(m, merge1.o, self.stroke1.i)
         wiring.connect(m, merge2.o, self.stroke2.i)
+        wiring.connect(m, merge3.o, self.stroke3.i)
 
         # Memory controller hangs if we start making requests to it straight away.
         on_delay = Signal(32)
@@ -182,6 +191,7 @@ class VectorScopeTop(Elaboratable):
             m.d.sync += self.stroke0.enable.eq(1)
             m.d.sync += self.stroke1.enable.eq(1)
             m.d.sync += self.stroke2.enable.eq(1)
+            m.d.sync += self.stroke3.enable.eq(1)
 
         return m
 

@@ -197,7 +197,7 @@ class Stroke(wiring.Component):
     # x, y, intensity, color
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, upsample_factor=6, fs=192000, default_hue=10, default_y=0):
+    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, upsample_factor=6, fs=192000, default_hue=10, default_x=0, default_y=0):
 
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
@@ -218,7 +218,7 @@ class Stroke(wiring.Component):
         self.intensity = Signal(4, reset=10);
         self.scale_x   = Signal(4, reset=6);
         self.scale_y   = Signal(4, reset=8);
-        self.x_offset  = Signal(signed(16), reset=0)
+        self.x_offset  = Signal(signed(16), reset=default_x)
         self.y_offset  = Signal(signed(16), reset=default_y)
 
         self.px_read = Signal(32)
