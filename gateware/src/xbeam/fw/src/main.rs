@@ -44,7 +44,7 @@ tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE);
 
 const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
 const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
-const PCA9635_MIDI:      [usize; 2] = [8, 9];
+const _PCA9635_MIDI:     [usize; 2] = [8, 9];
 
 #[entry]
 fn main() -> ! {
