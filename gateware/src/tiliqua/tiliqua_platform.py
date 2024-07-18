@@ -123,7 +123,7 @@ class _TiliquaPlatform(LatticeECP5Platform):
             Subsignal("d1", Pins("C5", dir="o")),
             Subsignal("d2", Pins("E4", dir="o")),
             Subsignal("ck", Pins("C6", dir="o")),
-            Attrs(IO_TYPE="LVCMOS33D", DRIVE="4")
+            Attrs(IO_TYPE="LVCMOS33D", DRIVE="8", SLEWRATE="FAST")
          ),
     ]
 
@@ -174,8 +174,6 @@ class TiliquaDomainGenerator(Elaboratable):
                 # Generated clock outputs.
                 o_CLKOP=feedback60,
                 o_CLKOS=ClockSignal("fast"),
-                o_CLKOS2=ClockSignal("dvi"),
-                o_CLKOS3=ClockSignal("dvi5x"),
 
                 # Status.
                 o_LOCK=locked60,
@@ -198,19 +196,79 @@ class TiliquaDomainGenerator(Elaboratable):
                 p_CLKOS_DIV=5,
                 p_CLKOS_CPHASE=4,
                 p_CLKOS_FPHASE=0,
-                p_CLKOS2_ENABLE="ENABLED",
-                p_CLKOS2_DIV=15,
-                p_CLKOS2_CPHASE=4,
-                p_CLKOS2_FPHASE=0,
-                p_CLKOS3_ENABLE="ENABLED",
-                p_CLKOS3_DIV=3,
-                p_CLKOS3_CPHASE=4,
-                p_CLKOS3_FPHASE=0,
                 p_FEEDBK_PATH="CLKOP",
                 p_CLKFB_DIV=5,
 
                 # Internal feedback.
                 i_CLKFB=feedback60,
+
+                # Control signals.
+                i_RST=reset,
+                i_PHASESEL0=0,
+                i_PHASESEL1=0,
+                i_PHASEDIR=1,
+                i_PHASESTEP=1,
+                i_PHASELOADREG=1,
+                i_STDBY=0,
+                i_PLLWAKESYNC=0,
+
+                # Output Enables.
+                i_ENCLKOP=0,
+                i_ENCLKOS=0,
+                i_ENCLKOS2=0,
+                i_ENCLKOS3=0,
+
+                # Synthesis attributes.
+                a_ICP_CURRENT="12",
+                a_LPF_RESISTOR="8"
+        )
+
+        # Extra PLL to generate 720p60 5x pixel clock (371.25MHz)
+        # CLKOP and CLKOS come from:
+        # ecppll -i 48 --clkout0 371.25 --highres --reset -f pll60.v
+        # CLKOS2 is manually added.
+        feedback_dvi = Signal()
+        locked_dvi   = Signal()
+        m.submodules.pll_dvi = Instance("EHXPLLL",
+
+                # Clock in.
+                i_CLKI=clk48,
+
+                # Generated clock outputs.
+                o_CLKOP=feedback_dvi,
+                o_CLKOS=ClockSignal("dvi5x"),
+                o_CLKOS2=ClockSignal("dvi"),
+
+                # Status.
+                o_LOCK=locked_dvi,
+
+                # PLL parameters...
+                p_PLLRST_ENA="ENABLED",
+                p_INTFB_WAKE="DISABLED",
+                p_STDBY_ENABLE="DISABLED",
+                p_DPHASE_SOURCE="DISABLED",
+                p_OUTDIVIDER_MUXA="DIVA",
+                p_OUTDIVIDER_MUXB="DIVB",
+                p_OUTDIVIDER_MUXC="DIVC",
+                p_OUTDIVIDER_MUXD="DIVD",
+                p_CLKI_DIV=15,
+                p_CLKOP_ENABLE="ENABLED",
+                p_CLKOP_DIV=58,
+                p_CLKOP_CPHASE=9,
+                p_CLKOP_FPHASE=0,
+                p_CLKOS_ENABLE="ENABLED",
+                p_CLKOS_DIV=2,
+                p_CLKOS_CPHASE=0,
+                p_CLKOS_FPHASE=0,
+                p_CLKOS2_ENABLE="ENABLED",
+                p_CLKOS2_DIV=10,
+                p_CLKOS2_CPHASE=0,
+                p_CLKOS2_FPHASE=0,
+                p_FEEDBK_PATH="CLKOP",
+                p_CLKFB_DIV=4,
+
+                # Internal feedback.
+                i_CLKFB=feedback_dvi,
 
                 # Control signals.
                 i_RST=reset,
@@ -368,8 +426,8 @@ class TiliquaDomainGenerator(Elaboratable):
             ResetSignal("sync")  .eq(~locked60),
             ResetSignal("fast")  .eq(~locked60),
             ResetSignal("usb")   .eq(~locked60),
-            ResetSignal("dvi")  .eq(~locked60),
-            ResetSignal("dvi5x").eq(~locked60),
+            ResetSignal("dvi")  .eq(~locked_dvi),
+            ResetSignal("dvi5x").eq(~locked_dvi),
 
             ResetSignal("audio")   .eq(~locked_audio),
         ]
