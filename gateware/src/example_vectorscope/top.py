@@ -69,7 +69,7 @@ class VectorScopeTop(Elaboratable):
 
         # WARN: You have to modify the platform PLL if you change the pixel clock!
         # TODO: integrate ecp5_pll from lambdasoc or custom solution --
-        timings = DVI_TIMINGS["1280x720p60"]
+        timings = DVI_TIMINGS["720x720p78"]
         fb_base = 0x0
         fb_size = (timings.h_active, timings.v_active)
 

@@ -251,9 +251,9 @@ class TiliquaDomainGenerator(Elaboratable):
                 p_OUTDIVIDER_MUXB="DIVB",
                 p_OUTDIVIDER_MUXC="DIVC",
                 p_OUTDIVIDER_MUXD="DIVD",
-                p_CLKI_DIV=15,
+                p_CLKI_DIV=8,
                 p_CLKOP_ENABLE="ENABLED",
-                p_CLKOP_DIV=58,
+                p_CLKOP_DIV=33,
                 p_CLKOP_CPHASE=9,
                 p_CLKOP_FPHASE=0,
                 p_CLKOS_ENABLE="ENABLED",
@@ -265,7 +265,7 @@ class TiliquaDomainGenerator(Elaboratable):
                 p_CLKOS2_CPHASE=0,
                 p_CLKOS2_FPHASE=0,
                 p_FEEDBK_PATH="CLKOP",
-                p_CLKFB_DIV=4,
+                p_CLKFB_DIV=3,
 
                 # Internal feedback.
                 i_CLKFB=feedback_dvi,

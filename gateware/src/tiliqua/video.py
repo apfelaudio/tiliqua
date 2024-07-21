@@ -100,6 +100,21 @@ DVI_TIMINGS = {
         refresh_rate  = 60.0,
         pixel_clk_mhz = 37.39
     ),
+    # A round Waveshare display
+    "720x720p78": DVITimings(
+        h_active      = 720,
+        h_sync_start  = 760,
+        h_sync_end    = 800,
+        h_total       = 1000,
+        h_sync_invert = False,
+        v_active      = 720,
+        v_sync_start  = 744,
+        v_sync_end    = 748,
+        v_total       = 760,
+        v_sync_invert = False,
+        refresh_rate  = 78.16,
+        pixel_clk_mhz = 59.4,
+    ),
 }
 
 class DVITimingGenerator(wiring.Component):
