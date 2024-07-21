@@ -195,8 +195,6 @@ class HyperRAMDQSInterface(Elaboratable):
                     m.d.sync += reset_timer.eq(32768)
                     m.d.sync += self.phy.dq.o.eq(0),
                     m.next = 'SET_READ_LATENCY0'
-                with m.Else():
-                    m.d.sync += self.phy.cs.eq(0)
             with m.State('SET_READ_LATENCY0'):
                 m.d.sync += self.phy.clk_en.eq(0b11)
                 m.next = 'SET_READ_LATENCY1'
@@ -216,12 +214,12 @@ class HyperRAMDQSInterface(Elaboratable):
                 m.next = 'SET_READ_LATENCY_WAIT'
             with m.State('SET_READ_LATENCY_WAIT'):
                 m.d.sync += reset_timer.eq(reset_timer - 1)
+                m.d.sync += self.phy.cs.eq(0)
+                m.d.sync += self.phy.clk_en.eq(0)
                 with m.If(reset_timer == 0):
-                    m.next = 'SET_WRITE_LATENCY0'
-                with m.Else():
-                    m.d.sync += self.phy.cs.eq(0)
+                    m.d.sync += reset_timer.eq(32768)
                     m.d.sync += self.phy.dq.o.eq(0),
-                    m.d.sync += self.phy.clk_en.eq(0)
+                    m.next = 'SET_WRITE_LATENCY0'
             with m.State('SET_WRITE_LATENCY0'):
                 m.d.sync += self.phy.clk_en.eq(0b11)
                 m.next = 'SET_WRITE_LATENCY1'
@@ -235,15 +233,16 @@ class HyperRAMDQSInterface(Elaboratable):
                 m.d.sync += [
                     # write latency fixed 6
                     #                    MRDA
-                    self.phy.dq.o.eq(0x0004c000),
+                    self.phy.dq.o.eq(0x00048000),
                     self.phy.dq.e.eq(1),
                 ]
                 m.next = 'SET_WRITE_LATENCY_WAIT'
             with m.State('SET_WRITE_LATENCY_WAIT'):
+                m.d.sync += reset_timer.eq(reset_timer - 1)
                 m.d.sync += self.phy.cs.eq(0)
-                m.d.sync += self.phy.dq.o.eq(0),
                 m.d.sync += self.phy.clk_en.eq(0)
-                m.next = 'IDLE'
+                with m.If(reset_timer == 0):
+                    m.next = 'IDLE'
             # IDLE state: waits for a transaction request
             with m.State('IDLE'):
                 m.d.comb += self.idle        .eq(1)

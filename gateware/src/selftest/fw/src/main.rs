@@ -84,7 +84,7 @@ fn psram_memtest(timer: &mut Timer0) {
 
     unsafe {
         for i in 0..psram_sz_test {
-            psram_ptr.offset(i as isize).write_volatile(i as u32);
+            psram_ptr.offset(i as isize).write_volatile(0xDEADBE00u32 | i as u32);
             pac::cpu::vexriscv::flush_dcache();
         }
     }
