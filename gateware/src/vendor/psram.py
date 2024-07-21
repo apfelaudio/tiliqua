@@ -167,6 +167,8 @@ class HyperRAMDQSInterface(Elaboratable):
 
         reset_timer = Signal(16, reset=32768)
 
+        cross_page = Signal(8, reset=0)
+
         with m.FSM() as fsm:
 
             with m.State('INIT'):
@@ -321,9 +323,11 @@ class HyperRAMDQSInterface(Elaboratable):
 
 
             with m.State('CROSS_PAGE'):
+                m.d.sync += cross_page.eq(cross_page - 1)
                 m.d.sync += self.phy.cs.eq(0),
                 m.d.sync += self.phy.dq.o.eq(0),
-                m.next = 'LATCH_RWDS'
+                with m.If(cross_page == 0):
+                    m.next = 'LATCH_RWDS'
 
             # READ_DATA -- reads words from the PSRAM
             with m.State('READ_DATA'):
@@ -347,6 +351,7 @@ class HyperRAMDQSInterface(Elaboratable):
                     # we are about to cross a page boundary
                     with m.Elif((current_address & 0x7FF) >= 0x7FC):
                         m.d.sync += self.phy.cs.eq(0),
+                        m.d.sync += cross_page.eq(8)
                         m.next = 'CROSS_PAGE'
 
 
@@ -371,6 +376,7 @@ class HyperRAMDQSInterface(Elaboratable):
                 # we are about to cross a page boundary
                 with m.Elif((current_address & 0x7FF) >= 0x7FC):
                     m.d.sync += self.phy.cs.eq(0),
+                    m.d.sync += cross_page.eq(8)
                     m.next = 'CROSS_PAGE'
 
 
