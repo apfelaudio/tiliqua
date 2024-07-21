@@ -67,7 +67,6 @@ fn psram_memtest(timer: &mut Timer0) {
     }
     */
 
-
     timer.enable();
     timer.set_timeout_ticks(0xFFFFFFFF);
 

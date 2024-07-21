@@ -153,11 +153,15 @@ class HyperRAMDQSInterface(Elaboratable):
         ca = Signal(48)
         m.d.comb += ca.eq(Cat(
             current_address[0:32],
-            Const(0x00, 7),
+            Const(0x00, 6),
+            Const(0, 1),
             ~is_read,
-            Const(0x00, 7),
+            Const(0x00, 6),
+            Const(0, 1),
             ~is_read,
         ))
+
+        reset_timer = Signal(16, reset=32768)
 
         with m.FSM() as fsm:
 
@@ -177,11 +181,68 @@ class HyperRAMDQSInterface(Elaboratable):
                 ]
                 m.next = 'INIT_COMMAND1'
             with m.State('INIT_COMMAND1'):
-                # Output the first 32 bits of our command.
+                # Output the next 32 bits of our command.
                 m.d.sync += [
                     self.phy.dq.o.eq(0xFFFFFFFF),
                     self.phy.dq.e.eq(1),
+                    self.phy.clk_en.eq(0)
                 ]
+                m.next = 'WAIT_RESET'
+            with m.State('WAIT_RESET'):
+                m.d.sync += reset_timer.eq(reset_timer - 1)
+                m.d.sync += self.phy.cs.eq(0)
+                with m.If(reset_timer == 0):
+                    m.d.sync += reset_timer.eq(32768)
+                    m.d.sync += self.phy.dq.o.eq(0),
+                    m.next = 'SET_READ_LATENCY0'
+                with m.Else():
+                    m.d.sync += self.phy.cs.eq(0)
+            with m.State('SET_READ_LATENCY0'):
+                m.d.sync += self.phy.clk_en.eq(0b11)
+                m.next = 'SET_READ_LATENCY1'
+            with m.State('SET_READ_LATENCY1'):
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xc0c00000),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_READ_LATENCY2'
+            with m.State('SET_READ_LATENCY2'):
+                m.d.sync += [
+                    # read latency variable 6
+                    #                    MRDA
+                    self.phy.dq.o.eq(0x00000c00),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_READ_LATENCY_WAIT'
+            with m.State('SET_READ_LATENCY_WAIT'):
+                m.d.sync += reset_timer.eq(reset_timer - 1)
+                with m.If(reset_timer == 0):
+                    m.next = 'SET_WRITE_LATENCY0'
+                with m.Else():
+                    m.d.sync += self.phy.cs.eq(0)
+                    m.d.sync += self.phy.dq.o.eq(0),
+                    m.d.sync += self.phy.clk_en.eq(0)
+            with m.State('SET_WRITE_LATENCY0'):
+                m.d.sync += self.phy.clk_en.eq(0b11)
+                m.next = 'SET_WRITE_LATENCY1'
+            with m.State('SET_WRITE_LATENCY1'):
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xc0c00000),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_WRITE_LATENCY2'
+            with m.State('SET_WRITE_LATENCY2'):
+                m.d.sync += [
+                    # write latency fixed 6
+                    #                    MRDA
+                    self.phy.dq.o.eq(0x0004c000),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_WRITE_LATENCY_WAIT'
+            with m.State('SET_WRITE_LATENCY_WAIT'):
+                m.d.sync += self.phy.cs.eq(0)
+                m.d.sync += self.phy.dq.o.eq(0),
+                m.d.sync += self.phy.clk_en.eq(0)
                 m.next = 'IDLE'
             # IDLE state: waits for a transaction request
             with m.State('IDLE'):
@@ -197,7 +258,7 @@ class HyperRAMDQSInterface(Elaboratable):
                         is_read             .eq(~self.perform_write),
                         is_register         .eq(self.register_space),
                         is_multipage        .eq(~self.single_page),
-                        current_address     .eq(self.address),
+                        current_address     .eq(self.address<<1),
                         self.phy.dq.o       .eq(0),
                     ]
 
@@ -239,13 +300,7 @@ class HyperRAMDQSInterface(Elaboratable):
                 # RWDS.
                 with m.Else():
                     m.next = "HANDLE_LATENCY"
-
-                    # FIXME: our HyperRAM part has a fixed latency, but we could need to detect 
-                    # different variants from the configuration register in the future.
-                    with m.If(extra_latency | 1):
-                        m.d.sync += latency_clocks_remaining.eq(self.HIGH_LATENCY_CLOCKS)
-                    with m.Else():
-                        m.d.sync += latency_clocks_remaining.eq(self.LOW_LATENCY_CLOCKS)
+                    m.d.sync += latency_clocks_remaining.eq(self.HIGH_LATENCY_CLOCKS)
 
 
             # HANDLE_LATENCY -- applies clock cycles until our latency period is over.
