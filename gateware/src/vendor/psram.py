@@ -323,11 +323,9 @@ class HyperRAMDQSInterface(Elaboratable):
 
 
             with m.State('CROSS_PAGE'):
-                m.d.sync += cross_page.eq(cross_page - 1)
                 m.d.sync += self.phy.cs.eq(0),
                 m.d.sync += self.phy.dq.o.eq(0),
-                with m.If(cross_page == 0):
-                    m.next = 'LATCH_RWDS'
+                m.next = 'LATCH_RWDS'
 
             # READ_DATA -- reads words from the PSRAM
             with m.State('READ_DATA'):

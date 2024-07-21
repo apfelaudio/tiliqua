@@ -158,7 +158,7 @@ class FramebufferPHY(Elaboratable):
     """
 
     def __init__(self, *, dvi_timings: DVITimings, fb_base, bus_master,
-                 fb_size, fifo_depth=128, sim=False, fb_bytes_per_pixel=1):
+                 fb_size, fifo_depth=256, sim=False, fb_bytes_per_pixel=1):
 
         super().__init__()
 
