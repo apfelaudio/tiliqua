@@ -153,10 +153,14 @@ class HyperRAMDQSInterface(Elaboratable):
         ca = Signal(48)
         m.d.comb += ca.eq(Cat(
             current_address[0:32],
-            Const(0x00, 6),
+            Const(0x00, 4),
+            Const(0, 1),
+            Const(1, 1),
             Const(0, 1),
             ~is_read,
-            Const(0x00, 6),
+            Const(0x00, 4),
+            Const(0, 1),
+            Const(1, 1),
             Const(0, 1),
             ~is_read,
         ))
