@@ -320,6 +320,11 @@ class HyperRAMDQSInterface(Elaboratable):
                         m.next = 'WRITE_DATA'
 
 
+            with m.State('CROSS_PAGE'):
+                m.d.sync += self.phy.cs.eq(0),
+                m.d.sync += self.phy.dq.o.eq(0),
+                m.next = 'LATCH_RWDS'
+
             # READ_DATA -- reads words from the PSRAM
             with m.State('READ_DATA'):
                 m.d.sync += self.phy.read.eq(0b11)
@@ -333,10 +338,17 @@ class HyperRAMDQSInterface(Elaboratable):
                         self.read_ready    .eq(1),
                     ]
 
+                    m.d.sync += current_address.eq(current_address + 4)
+
                     # If our controller is done with the transaction, end it.
                     with m.If(self.final_word):
                         m.d.sync += self.phy.clk_en.eq(0),
                         m.next = 'RECOVERY'
+                    # we are about to cross a page boundary
+                    with m.Elif((current_address & 0x7FF) >= 0x7FC):
+                        m.d.sync += self.phy.cs.eq(0),
+                        m.next = 'CROSS_PAGE'
+
 
             # WRITE_DATA -- write a word to the PSRAM
             with m.State("WRITE_DATA"):
@@ -348,13 +360,18 @@ class HyperRAMDQSInterface(Elaboratable):
                 ]
                 m.d.comb += self.write_ready.eq(1),
 
+                m.d.sync += current_address.eq(current_address + 4)
+
                 # If we just finished a register write, we're done -- there's no need for recovery.
                 with m.If(is_register):
                     m.next = 'IDLE'
-
                 with m.Elif(self.final_word):
                     m.d.sync += self.phy.clk_en .eq(0)
                     m.next = 'RECOVERY'
+                # we are about to cross a page boundary
+                with m.Elif((current_address & 0x7FF) >= 0x7FC):
+                    m.d.sync += self.phy.cs.eq(0),
+                    m.next = 'CROSS_PAGE'
 
 
             # RECOVERY state: wait for the required period of time before a new transaction
