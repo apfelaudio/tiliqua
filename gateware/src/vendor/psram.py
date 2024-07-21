@@ -64,7 +64,7 @@ class HyperRAMDQSInterface(Elaboratable):
     """
 
     LOW_LATENCY_CLOCKS  = 1
-    HIGH_LATENCY_CLOCKS = 0
+    HIGH_LATENCY_CLOCKS = 3
 
     def __init__(self, *, phy):
         """
@@ -206,9 +206,9 @@ class HyperRAMDQSInterface(Elaboratable):
                 m.next = 'SET_READ_LATENCY2'
             with m.State('SET_READ_LATENCY2'):
                 m.d.sync += [
-                    # read latency variable 6
+                    # read latency fixed 6 (12)
                     #                    MRDA
-                    self.phy.dq.o.eq(0x00000c00),
+                    self.phy.dq.o.eq(0x00002c00),
                     self.phy.dq.e.eq(1),
                 ]
                 m.next = 'SET_READ_LATENCY_WAIT'
@@ -299,7 +299,10 @@ class HyperRAMDQSInterface(Elaboratable):
                 # RWDS.
                 with m.Else():
                     m.next = "HANDLE_LATENCY"
-                    m.d.sync += latency_clocks_remaining.eq(self.HIGH_LATENCY_CLOCKS)
+                    with m.If(is_read):
+                        m.d.sync += latency_clocks_remaining.eq(self.HIGH_LATENCY_CLOCKS)
+                    with m.Else():
+                        m.d.sync += latency_clocks_remaining.eq(0)
 
 
             # HANDLE_LATENCY -- applies clock cycles until our latency period is over.
