@@ -347,7 +347,7 @@ class HyperRAMDQSInterface(Elaboratable):
                         m.d.sync += cross_page.eq(2)
                         m.next = 'RECOVERY'
                     # we are about to cross a page boundary
-                    with m.Elif((current_address & 0x7FF) >= 0x7FC):
+                    with m.Elif((current_address & 0x7FF) == 0x7FC):
                         m.d.sync += self.phy.cs.eq(0),
                         m.d.sync += cross_page.eq(2)
                         m.next = 'CROSS_PAGE'
@@ -373,7 +373,7 @@ class HyperRAMDQSInterface(Elaboratable):
                     m.d.sync += cross_page.eq(2)
                     m.next = 'RECOVERY'
                 # we are about to cross a page boundary
-                with m.Elif((current_address & 0x7FF) >= 0x7FC):
+                with m.Elif((current_address & 0x7FF) == 0x7FC):
                     m.d.sync += self.phy.cs.eq(0),
                     m.d.sync += cross_page.eq(2)
                     m.next = 'CROSS_PAGE'
