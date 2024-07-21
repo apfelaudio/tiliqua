@@ -116,10 +116,6 @@ class HyperRAMDQSInterface(Elaboratable):
         # FSM datapath signals.
         #
 
-        # Tracks whether we need to add an extra latency period between our
-        # command and the data body.
-        extra_latency   = Signal()
-
         # Tracks how many cycles of latency we have remaining between a command
         # and the relevant data stages.
         latency_clocks_remaining  = Signal(range(0, self.HIGH_LATENCY_CLOCKS + 1))
@@ -257,7 +253,7 @@ class HyperRAMDQSInterface(Elaboratable):
                 # Once we have a transaction request, latch in our control
                 # signals, and assert our chip-select.
                 with m.If(self.start_transfer):
-                    m.next = 'LATCH_RWDS'
+                    m.next = 'START_CLK'
 
                     m.d.sync += [
                         is_read             .eq(~self.perform_write),
@@ -271,10 +267,9 @@ class HyperRAMDQSInterface(Elaboratable):
                     m.d.sync += self.phy.cs.eq(0)
 
 
-            # LATCH_RWDS -- latch in the value of the RWDS signal,
+            # START_CLK -- latch in the value of the RWDS signal,
             # which determines our read/write latency.
-            with m.State("LATCH_RWDS"):
-                m.d.sync += extra_latency.eq(self.phy.rwds.i),
+            with m.State("START_CLK"):
                 m.d.sync += self.phy.clk_en.eq(0b11)
                 m.next="SHIFT_COMMAND0"
 
@@ -323,9 +318,13 @@ class HyperRAMDQSInterface(Elaboratable):
 
 
             with m.State('CROSS_PAGE'):
-                m.d.sync += self.phy.cs.eq(0),
-                m.d.sync += self.phy.dq.o.eq(0),
-                m.next = 'LATCH_RWDS'
+                m.d.sync += [
+                    cross_page.eq(cross_page-1),
+                    self.phy.cs.eq(0),
+                    self.phy.dq.o.eq(0),
+                ]
+                with m.If(cross_page == 0):
+                    m.next = 'START_CLK'
 
             # READ_DATA -- reads words from the PSRAM
             with m.State('READ_DATA'):
@@ -345,11 +344,12 @@ class HyperRAMDQSInterface(Elaboratable):
                     # If our controller is done with the transaction, end it.
                     with m.If(self.final_word):
                         m.d.sync += self.phy.clk_en.eq(0),
+                        m.d.sync += cross_page.eq(2)
                         m.next = 'RECOVERY'
                     # we are about to cross a page boundary
                     with m.Elif((current_address & 0x7FF) >= 0x7FC):
                         m.d.sync += self.phy.cs.eq(0),
-                        m.d.sync += cross_page.eq(8)
+                        m.d.sync += cross_page.eq(2)
                         m.next = 'CROSS_PAGE'
 
 
@@ -370,20 +370,22 @@ class HyperRAMDQSInterface(Elaboratable):
                     m.next = 'IDLE'
                 with m.Elif(self.final_word):
                     m.d.sync += self.phy.clk_en .eq(0)
+                    m.d.sync += cross_page.eq(2)
                     m.next = 'RECOVERY'
                 # we are about to cross a page boundary
                 with m.Elif((current_address & 0x7FF) >= 0x7FC):
                     m.d.sync += self.phy.cs.eq(0),
-                    m.d.sync += cross_page.eq(8)
+                    m.d.sync += cross_page.eq(2)
                     m.next = 'CROSS_PAGE'
 
 
             # RECOVERY state: wait for the required period of time before a new transaction
             with m.State('RECOVERY'):
+                m.d.sync += cross_page.eq(cross_page-1),
                 m.d.sync += self.phy.clk_en .eq(0)
-
-                # TODO: implement recovery
-                m.next = 'IDLE'
+                m.d.sync += self.phy.cs.eq(0),
+                with m.If(cross_page == 0):
+                    m.next = 'IDLE'
 
         m.d.comb += self.fsm.eq(fsm.state)
 
