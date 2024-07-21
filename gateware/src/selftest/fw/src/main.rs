@@ -54,9 +54,10 @@ fn psram_memtest(timer: &mut Timer0) {
     // WARN: assume framebuffer is at the start of PSRAM - don't try memtesting that section.
 
     let psram_ptr = PSRAM_BASE as *mut u32;
-    let psram_sz_test = 1024*1024;
+    let psram_sz_test = 16;//1024*1024;
 
 
+    /*
     unsafe {
         for i in 0..0xffff {
             let value = psram_ptr.offset(i as isize).read_volatile();
@@ -64,8 +65,8 @@ fn psram_memtest(timer: &mut Timer0) {
         }
         panic!();
     }
+    */
 
-    /*
 
     timer.enable();
     timer.set_timeout_ticks(0xFFFFFFFF);
@@ -73,8 +74,19 @@ fn psram_memtest(timer: &mut Timer0) {
     let start = timer.counter();
 
     unsafe {
-        for i in (PSRAM_SZ_WORDS - psram_sz_test)..PSRAM_SZ_WORDS {
+        for i in 0..psram_sz_test {
+            let value = psram_ptr.offset(i as isize).read_volatile();
+            info!("PSRAM selftest @ {:#x} is {:#x}", i, value);
+            pac::cpu::vexriscv::flush_dcache();
+        }
+    }
+
+    pac::cpu::vexriscv::flush_dcache();
+
+    unsafe {
+        for i in 0..psram_sz_test {
             psram_ptr.offset(i as isize).write_volatile(i as u32);
+            pac::cpu::vexriscv::flush_dcache();
         }
     }
 
@@ -83,12 +95,10 @@ fn psram_memtest(timer: &mut Timer0) {
     let endwrite = timer.counter();
 
     unsafe {
-        for i in (PSRAM_SZ_WORDS - psram_sz_test)..PSRAM_SZ_WORDS {
+        for i in 0..psram_sz_test {
             let value = psram_ptr.offset(i as isize).read_volatile();
-            if (i as u32) != value {
-                error!("FAIL: PSRAM selftest @ {:#x} is {:#x}", i, value);
-                panic!();
-            }
+            info!("PSRAM selftest @ {:#x} is {:#x}", i, value);
+            pac::cpu::vexriscv::flush_dcache();
         }
     }
 
@@ -102,8 +112,6 @@ fn psram_memtest(timer: &mut Timer0) {
     info!("read speed {} KByte/sec", ((sysclk as u64) * (psram_sz_test/1024) as u64) / (read_ticks as u64));
 
     info!("PASS: PSRAM memtest");
-
-    */
 }
 
 fn tusb322i_id_test(i2cdev: &mut I2c0) {

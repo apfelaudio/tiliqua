@@ -181,7 +181,7 @@ class PSRAMPeripheral(Peripheral, Elaboratable):
 
         m.d.comb += [
             psram.single_page      .eq(0),
-            psram.register_space   .eq(1),
+            psram.register_space   .eq(0),
             psram.perform_write.eq(self.shared_bus.we),
         ]
 

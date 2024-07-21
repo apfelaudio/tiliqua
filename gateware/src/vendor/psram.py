@@ -64,7 +64,7 @@ class HyperRAMDQSInterface(Elaboratable):
     """
 
     LOW_LATENCY_CLOCKS  = 1
-    HIGH_LATENCY_CLOCKS = 5
+    HIGH_LATENCY_CLOCKS = 0
 
     def __init__(self, *, phy):
         """
@@ -109,7 +109,7 @@ class HyperRAMDQSInterface(Elaboratable):
         #
         is_read         = Signal()
         is_register     = Signal()
-        current_address = Signal(32)
+        current_address = Signal(32, reset=0)
         is_multipage    = Signal()
 
         #
@@ -153,8 +153,10 @@ class HyperRAMDQSInterface(Elaboratable):
         ca = Signal(48)
         m.d.comb += ca.eq(Cat(
             current_address[0:32],
-            Const(0x0, 8),
-            Const(0x0, 8),
+            Const(0x00, 7),
+            ~is_read,
+            Const(0x00, 7),
+            ~is_read,
         ))
 
         with m.FSM() as fsm:
