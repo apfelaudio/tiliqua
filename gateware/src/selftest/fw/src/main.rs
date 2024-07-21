@@ -56,6 +56,17 @@ fn psram_memtest(timer: &mut Timer0) {
     let psram_ptr = PSRAM_BASE as *mut u32;
     let psram_sz_test = 1024*1024;
 
+
+    unsafe {
+        for i in 0..0xffff {
+            let value = psram_ptr.offset(i as isize).read_volatile();
+            info!("PSRAM register @ {:#x} is {:#x}", i, value);
+        }
+        panic!();
+    }
+
+    /*
+
     timer.enable();
     timer.set_timeout_ticks(0xFFFFFFFF);
 
@@ -91,6 +102,8 @@ fn psram_memtest(timer: &mut Timer0) {
     info!("read speed {} KByte/sec", ((sysclk as u64) * (psram_sz_test/1024) as u64) / (read_ticks as u64));
 
     info!("PASS: PSRAM memtest");
+
+    */
 }
 
 fn tusb322i_id_test(i2cdev: &mut I2c0) {

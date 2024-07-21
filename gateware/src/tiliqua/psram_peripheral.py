@@ -7,6 +7,7 @@
 
 from amaranth       import *
 from amaranth.utils import log2_int
+from amaranth.build import *
 
 from luna_soc.gateware.vendor.lambdasoc.periph    import Peripheral
 from luna_soc.gateware.vendor.amaranth_soc        import wishbone
@@ -175,15 +176,26 @@ class PSRAMPeripheral(Peripheral, Elaboratable):
         else:
             self.psram_phy.bus = platform.request('ram', dir={'rwds':'-', 'dq':'-', 'cs':'-'})
             m.submodules += [self.psram_phy, self.psram]
-            m.d.comb += self.psram_phy.bus.reset.o.eq(0),
 
         psram = self.psram
 
         m.d.comb += [
             psram.single_page      .eq(0),
-            psram.register_space   .eq(0),
+            psram.register_space   .eq(1),
             psram.perform_write.eq(self.shared_bus.we),
         ]
+
+        # PSRAM reset
+        counter = Signal(16)
+        with m.If(counter < 32768):
+            m.d.comb += self.psram_phy.bus.reset.o.eq(0)
+            m.d.sync += counter.eq(counter + 1)
+        with m.Elif(counter != 65535):
+            m.d.comb += self.psram_phy.bus.reset.o.eq(1)
+            m.d.sync += counter.eq(counter + 1)
+        with m.Else():
+            m.d.comb += self.psram_phy.bus.reset.o.eq(0)
+
 
         with m.FSM() as fsm:
             with m.State('IDLE'):

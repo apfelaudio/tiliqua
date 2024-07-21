@@ -63,7 +63,7 @@ class HyperRAMDQSInterface(Elaboratable):
         O: write_ready      -- Strobe that indicates `write_data` has been latched and is ready for new data
     """
 
-    LOW_LATENCY_CLOCKS  = 3
+    LOW_LATENCY_CLOCKS  = 1
     HIGH_LATENCY_CLOCKS = 5
 
     def __init__(self, *, phy):
@@ -152,16 +152,35 @@ class HyperRAMDQSInterface(Elaboratable):
         #   - 00000AAA  => address bits [ 0: 3]
         ca = Signal(48)
         m.d.comb += ca.eq(Cat(
-            current_address[0:3],
-            Const(0, 13),
-            current_address[3:32],
-            is_multipage,
-            is_register,
-            is_read
+            current_address[0:32],
+            Const(0x0, 8),
+            Const(0x0, 8),
         ))
 
         with m.FSM() as fsm:
 
+            with m.State('INIT'):
+                m.d.sync += self.phy.clk_en.eq(0b11)
+                m.d.sync += self.phy.cs.eq(0)
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xFFFFFFFF),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next="INIT_COMMAND0"
+            with m.State('INIT_COMMAND0'):
+                # Output the first 32 bits of our command.
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xFFFFFFFF),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'INIT_COMMAND1'
+            with m.State('INIT_COMMAND1'):
+                # Output the first 32 bits of our command.
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xFFFFFFFF),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'IDLE'
             # IDLE state: waits for a transaction request
             with m.State('IDLE'):
                 m.d.comb += self.idle        .eq(1)
