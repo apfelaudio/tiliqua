@@ -182,7 +182,6 @@ class PSRAMPeripheral(Peripheral, Elaboratable):
         m.d.comb += [
             psram.single_page      .eq(0),
             psram.register_space.eq(0),
-            self.psram_phy.bus.reset.o.eq(0)
         ]
 
         with m.FSM() as fsm:

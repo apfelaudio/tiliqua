@@ -31,7 +31,6 @@ class HyperBusPHY(Record):
                 ('e', 1,  DIR_FANOUT),
             ]),
             ('cs',        1, DIR_FANOUT),
-            ('reset',     1, DIR_FANOUT),
             ('read',      2, DIR_FANIN),
             ('datavalid', 1, DIR_FANOUT),
             ('burstdet',  1, DIR_FANOUT)
@@ -42,7 +41,6 @@ class HyperRAMDQSInterface(Elaboratable):
 
     I/O port:
         B: phy              -- The primary physical connection to the DRAM chip.
-        I: reset            -- An active-high signal used to provide a prolonged reset upon configuration.
 
         I: address[32]      -- The address to be targeted by the given operation.
         I: register_space   -- When set to 1, read and write requests target registers instead of normal RAM.
@@ -78,7 +76,6 @@ class HyperRAMDQSInterface(Elaboratable):
         # I/O port.
         #
         self.phy              = phy
-        self.reset            = Signal()
 
         # Control signals.
         self.address          = Signal(32)
@@ -100,6 +97,8 @@ class HyperRAMDQSInterface(Elaboratable):
 
         self.clk = Signal()
 
+        self.current_address  = Signal(32)
+
         self.fsm = Signal(8)
 
 
@@ -113,6 +112,8 @@ class HyperRAMDQSInterface(Elaboratable):
         is_register     = Signal()
         current_address = Signal(32, reset=0)
         is_multipage    = Signal()
+
+        m.d.comb += self.current_address.eq(current_address)
 
         #
         # FSM datapath signals.
@@ -247,6 +248,30 @@ class HyperRAMDQSInterface(Elaboratable):
                 m.d.sync += self.phy.cs.eq(0)
                 m.d.sync += self.phy.clk_en.eq(0)
                 with m.If(reset_timer == 0):
+                    m.d.sync += reset_timer.eq(32768)
+                    m.d.sync += self.phy.dq.o.eq(0),
+                    m.next = 'SET_BURST0'
+            with m.State('SET_BURST0'):
+                m.d.sync += self.phy.clk_en.eq(0b11)
+                m.next = 'SET_BURST1'
+            with m.State('SET_BURST1'):
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xc0c00000),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_BURST2'
+            with m.State('SET_BURST2'):
+                m.d.sync += [
+                    #                    MRDA
+                    self.phy.dq.o.eq(0x00080f00),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_BURST_WAIT'
+            with m.State('SET_BURST_WAIT'):
+                m.d.sync += reset_timer.eq(reset_timer - 1)
+                m.d.sync += self.phy.cs.eq(0)
+                m.d.sync += self.phy.clk_en.eq(0)
+                with m.If(reset_timer == 0):
                     m.next = 'IDLE'
             # IDLE state: waits for a transaction request
             with m.State('IDLE'):
@@ -316,17 +341,16 @@ class HyperRAMDQSInterface(Elaboratable):
                     with m.If(is_read):
                         m.next = 'READ_DATA'
                     with m.Else():
-                        m.d.sync += self.phy.rwds.o.eq(self.write_mask),
                         m.next = 'WRITE_DATA'
 
 
             with m.State('CROSS_PAGE'):
                 m.d.sync += [
-                    self.phy.clk_en.eq(0),
                     cross_page.eq(cross_page-1),
                 ]
                 with m.If(cross_page == 0):
                     m.d.sync += self.phy.dq.o.eq(0),
+                    m.d.sync += self.phy.clk_en.eq(0),
                     m.next = 'START_CLK'
                 with m.Else():
                     m.d.sync += self.phy.cs.eq(0)
@@ -353,13 +377,6 @@ class HyperRAMDQSInterface(Elaboratable):
                             self.phy.clk_en.eq(0),
                         ]
                         m.next = 'RECOVERY'
-                    # we are about to cross a page boundary
-                    with m.Elif((current_address & 0x7FF) == 0x7FC):
-                        m.d.sync += [
-                            cross_page.eq(self.CROSS_PAGE_CLOCKS),
-                            self.phy.clk_en.eq(0),
-                        ]
-                        m.next = 'CROSS_PAGE'
 
 
             # WRITE_DATA -- write a word to the PSRAM
@@ -396,7 +413,6 @@ class HyperRAMDQSInterface(Elaboratable):
             with m.State('RECOVERY'):
                 m.d.sync += [
                     cross_page.eq(cross_page-1),
-                    self.phy.clk_en.eq(0),
                     self.phy.cs.eq(0),
                 ]
                 with m.If(cross_page == 0):

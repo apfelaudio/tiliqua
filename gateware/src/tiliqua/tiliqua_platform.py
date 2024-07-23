@@ -34,12 +34,11 @@ resources_soldiercrab = [
 
     # oSPIRAM / HyperRAM
     Resource("ram", 0,
-        Subsignal("clk",   DiffPairs("C3", "D3", dir="o")),
+        Subsignal("clk",   Pins("C3", dir="o")),
         Subsignal("dq",    Pins("F2 B1 C2 E1 E3 E2 F3 G4", dir="io")),
         Subsignal("rwds",  Pins( "D1", dir="io")),
         Subsignal("cs",    PinsN("B2", dir="o")),
-        Subsignal("reset", PinsN("C1", dir="o")),
-        Attrs(IO_TYPE="LVCMOS18", SLEWRATE="FAST")
+        Attrs(IO_TYPE="LVCMOS18")
     ),
 
     # Configuration SPI flash
