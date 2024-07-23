@@ -48,7 +48,7 @@ class USB2AudioInterface(Elaboratable):
     MAX_PACKET_SIZE_MIDI = 64
 
     def __init__(self, use_ila):
-        self.use_ila = False
+        self.use_ila = use_ila
         super().__init__()
 
     def create_descriptors(self):

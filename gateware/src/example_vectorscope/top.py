@@ -49,6 +49,8 @@ from tiliqua.video import DVI_TIMINGS, FramebufferPHY
 
 from tiliqua.raster import Persistance, Stroke
 
+from vendor.ila import AsyncSerialILA, AsyncSerialILAFrontend
+
 class VectorScopeTop(Elaboratable):
 
     """
@@ -56,9 +58,10 @@ class VectorScopeTop(Elaboratable):
     Can be instantiated with 'sim=True', which swaps out most things that touch hardware for mocks.
     """
 
-    def __init__(self, sim=False):
+    def __init__(self, sim=False, ila=False):
 
         self.sim = sim
+        self.use_ila = ila
 
         # One PSRAM with an internal arbiter to support multiple DMA masters.
         self.hyperram = PSRAMPeripheral(
@@ -134,16 +137,57 @@ class VectorScopeTop(Elaboratable):
             m.d.sync += self.persist.enable.eq(1)
             m.d.sync += self.stroke.enable.eq(1)
 
+        if self.use_ila:
+
+            #######
+            # ILA #
+            #######
+
+            test_signal = Signal(16, reset=0xFEED)
+            ila_signals = [
+                test_signal,
+                self.hyperram.psram.address,
+                self.hyperram.psram.perform_write,
+                self.hyperram.psram.start_transfer,
+                self.hyperram.psram.final_word,
+                self.hyperram.psram.idle,
+                self.hyperram.psram.read_ready,
+                self.hyperram.psram.write_ready,
+                self.hyperram.psram.fsm,
+                self.hyperram.psram.phy.datavalid,
+                self.hyperram.psram.phy.burstdet,
+            ]
+            self.ila = AsyncSerialILA(signals=ila_signals,
+                                      sample_depth=4096, divisor=521,
+                                      domain='sync', sample_rate=60e6) # ~115200 baud on USB clock
+            m.submodules += self.ila
+            m.d.comb += [
+                self.ila.trigger.eq(self.stroke.enable),
+                platform.request("uart").tx.o.eq(self.ila.tx), # needs FFSync?
+            ]
+
         return m
 
-def build():
+        return m
+
+def build(ila=False):
     overrides = {
         "debug_verilog": True,
         "verbose": True,
         "nextpnr_opts": "--timing-allow-fail",
         "ecppack_opts": "--freq 38.8 --compress",
     }
-    TiliquaPlatform().build(VectorScopeTop(), **overrides)
+    top = VectorScopeTop(ila=ila)
+    TiliquaPlatform().build(top, **overrides)
+    if ila:
+        subprocess.check_call(["openFPGALoader",
+                               "-c", "dirtyJtag",
+                               "build/top.bit"],
+                              env=os.environ)
+        # TODO: program bitstream with openFPGAloader before starting frontend
+        # TODO: make serial port selectable
+        frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
+        frontend.emit_vcd("out.vcd")
 
 def colors():
     """

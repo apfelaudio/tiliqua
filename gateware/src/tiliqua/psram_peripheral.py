@@ -182,20 +182,8 @@ class PSRAMPeripheral(Peripheral, Elaboratable):
         m.d.comb += [
             psram.single_page      .eq(0),
             psram.register_space.eq(0),
-            psram.perform_write.eq(self.shared_bus.we),
+            self.psram_phy.bus.reset.o.eq(0)
         ]
-
-        # PSRAM reset
-        counter = Signal(16)
-        with m.If(counter < 32768):
-            m.d.comb += self.psram_phy.bus.reset.o.eq(0)
-            m.d.sync += counter.eq(counter + 1)
-        with m.Elif(counter != 65535):
-            m.d.comb += self.psram_phy.bus.reset.o.eq(1)
-            m.d.sync += counter.eq(counter + 1)
-        with m.Else():
-            m.d.comb += self.psram_phy.bus.reset.o.eq(0)
-
 
         with m.FSM() as fsm:
             with m.State('IDLE'):
@@ -204,7 +192,8 @@ class PSRAMPeripheral(Peripheral, Elaboratable):
                         psram.start_transfer.eq(1),
                         psram.write_data.eq(self.shared_bus.dat_w),
                         psram.write_mask.eq(~self.shared_bus.sel),
-                        psram.address.eq(self.shared_bus.adr << 1),
+                        psram.address.eq(self.shared_bus.adr << 2),
+                        psram.perform_write.eq(self.shared_bus.we),
                     ]
                     m.next = 'GO'
             with m.State('GO'):

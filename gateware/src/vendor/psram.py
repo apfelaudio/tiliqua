@@ -63,7 +63,7 @@ class HyperRAMDQSInterface(Elaboratable):
         O: write_ready      -- Strobe that indicates `write_data` has been latched and is ready for new data
     """
 
-    READ_LATENCY_CLOCKS  = 3
+    READ_LATENCY_CLOCKS  = 0
     WRITE_LATENCY_CLOCKS = 0
 
     CROSS_PAGE_CLOCKS    = 2
@@ -132,6 +132,7 @@ class HyperRAMDQSInterface(Elaboratable):
             self.phy.cs         .eq(1),
             self.phy.rwds.e     .eq(0),
             self.phy.dq.e       .eq(0),
+            self.phy.dq.o       .eq(0),
             self.phy.read       .eq(0),
         ]
         m.d.comb += self.write_ready.eq(0),
@@ -212,7 +213,7 @@ class HyperRAMDQSInterface(Elaboratable):
                 m.d.sync += [
                     # read latency fixed 6 (12)
                     #                    MRDA
-                    self.phy.dq.o.eq(0x00002c00),
+                    self.phy.dq.o.eq(0x00000c00),
                     self.phy.dq.e.eq(1),
                 ]
                 m.next = 'SET_READ_LATENCY_WAIT'
@@ -261,7 +262,7 @@ class HyperRAMDQSInterface(Elaboratable):
                         is_read             .eq(~self.perform_write),
                         is_register         .eq(self.register_space),
                         is_multipage        .eq(~self.single_page),
-                        current_address     .eq(self.address<<1),
+                        current_address     .eq(self.address),
                         self.phy.dq.o       .eq(0),
                     ]
 
