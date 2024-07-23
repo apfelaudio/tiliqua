@@ -146,11 +146,11 @@ class VectorScopeTop(Elaboratable):
             test_signal = Signal(16, reset=0xFEED)
             ila_signals = [
                 test_signal,
+                self.hyperram.psram.idle,
                 self.hyperram.psram.address,
                 self.hyperram.psram.perform_write,
                 self.hyperram.psram.start_transfer,
                 self.hyperram.psram.final_word,
-                self.hyperram.psram.idle,
                 self.hyperram.psram.read_ready,
                 self.hyperram.psram.write_ready,
                 self.hyperram.psram.fsm,
