@@ -322,12 +322,14 @@ class HyperRAMDQSInterface(Elaboratable):
 
             with m.State('CROSS_PAGE'):
                 m.d.sync += [
+                    self.phy.clk_en.eq(0),
                     cross_page.eq(cross_page-1),
-                    self.phy.cs.eq(0),
-                    self.phy.dq.o.eq(0),
                 ]
                 with m.If(cross_page == 0):
+                    m.d.sync += self.phy.dq.o.eq(0),
                     m.next = 'START_CLK'
+                with m.Else():
+                    m.d.sync += self.phy.cs.eq(0)
 
             # READ_DATA -- reads words from the PSRAM
             with m.State('READ_DATA'):
@@ -355,7 +357,6 @@ class HyperRAMDQSInterface(Elaboratable):
                     with m.Elif((current_address & 0x7FF) == 0x7FC):
                         m.d.sync += [
                             cross_page.eq(self.CROSS_PAGE_CLOCKS),
-                            self.phy.cs.eq(0),
                             self.phy.clk_en.eq(0),
                         ]
                         m.next = 'CROSS_PAGE'
