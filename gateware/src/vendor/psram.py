@@ -64,7 +64,7 @@ class HyperRAMDQSInterface(Elaboratable):
     READ_LATENCY_CLOCKS  = 0
     WRITE_LATENCY_CLOCKS = 0
 
-    CROSS_PAGE_CLOCKS    = 2
+    CROSS_PAGE_CLOCKS    = 1
 
     def __init__(self, *, phy):
         """
