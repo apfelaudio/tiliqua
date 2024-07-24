@@ -291,6 +291,7 @@ class TiliquaDomainGenerator(Elaboratable):
                 a_LPF_RESISTOR="8"
         )
 
+        """
 
         feedback_audio  = Signal()
         locked_audio    = Signal()
@@ -417,11 +418,13 @@ class TiliquaDomainGenerator(Elaboratable):
                     a_MFG_ENABLE_FILTEROPAMP="1",
                     a_MFG_GMCREF_SEL="2"
             )
+        """
 
         # Derived clocks and resets
         m.d.comb += [
             ClockSignal("sync")  .eq(feedback60),
             ClockSignal("usb")   .eq(feedback60),
+            ClockSignal("audio").eq(feedback60),
 
             ResetSignal("sync")  .eq(~locked60),
             ResetSignal("fast")  .eq(~locked60),
@@ -429,7 +432,7 @@ class TiliquaDomainGenerator(Elaboratable):
             ResetSignal("dvi")  .eq(~locked_dvi),
             ResetSignal("dvi5x").eq(~locked_dvi),
 
-            ResetSignal("audio")   .eq(~locked_audio),
+            ResetSignal("audio")   .eq(~locked60),
         ]
 
         return m
