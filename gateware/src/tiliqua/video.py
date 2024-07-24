@@ -231,6 +231,7 @@ class FramebufferPHY(Elaboratable):
         if not self.sim:
 
             # DVI PHY (not needed for simulation).
+            """
 
             def add_sv(f):
                 path = os.path.join("src/vendor/dvi", f)
@@ -240,6 +241,7 @@ class FramebufferPHY(Elaboratable):
             add_sv("dvi_generator.sv")
 
             dvi_pins = platform.request("dvi")
+            """
 
             # Register all DVI timing signals to cut timing path.
             s_dvi_de = Signal()
@@ -269,6 +271,57 @@ class FramebufferPHY(Elaboratable):
             else:
                 m.d.dvi += s_dvi_vsync.eq(dvi_tgen.vsync),
 
+            dvi_pmod = [
+                Resource(f"dvi_pmod_t", 0,
+                    Subsignal("b3", Pins("1",  conn=("pmod", 0), dir='o')),
+                    Subsignal("ck", Pins("2",  conn=("pmod", 0), dir='o')),
+                    Subsignal("b0", Pins("3",  conn=("pmod", 0), dir='o')),
+                    Subsignal("hs", Pins("4",  conn=("pmod", 0), dir='o')),
+                    Subsignal("vs", Pins("10", conn=("pmod", 0), dir='o')),
+                    Subsignal("de", Pins("9",  conn=("pmod", 0), dir='o')),
+                    Subsignal("b1", Pins("8",  conn=("pmod", 0), dir='o')),
+                    Subsignal("b2", Pins("7",  conn=("pmod", 0), dir='o')),
+                    Attrs(IO_TYPE="LVCMOS33"),
+                ),
+                Resource(f"dvi_pmod_b", 0,
+                    Subsignal("r3", Pins("1",  conn=("pmod", 1), dir='o')),
+                    Subsignal("r1", Pins("2",  conn=("pmod", 1), dir='o')),
+                    Subsignal("g3", Pins("3",  conn=("pmod", 1), dir='o')),
+                    Subsignal("g1", Pins("4",  conn=("pmod", 1), dir='o')),
+                    Subsignal("g0", Pins("10", conn=("pmod", 1), dir='o')),
+                    Subsignal("g2", Pins("9",  conn=("pmod", 1), dir='o')),
+                    Subsignal("r0", Pins("8",  conn=("pmod", 1), dir='o')),
+                    Subsignal("r2", Pins("7",  conn=("pmod", 1), dir='o')),
+                    Attrs(IO_TYPE="LVCMOS33"),
+                )
+            ]
+            platform.add_resources(dvi_pmod)
+            dvit = platform.request(f"dvi_pmod_t")
+            dvib = platform.request(f"dvi_pmod_b")
+
+            m.d.comb += [
+                dvit.ck.o.eq(~ClockSignal("dvi")),
+                dvit.de.o.eq(s_dvi_de),
+                dvit.hs.o.eq(s_dvi_hsync),
+                dvit.vs.o.eq(s_dvi_vsync),
+
+                dvit.b3.eq(s_dvi_b[7]),
+                dvit.b2.eq(s_dvi_b[6]),
+                dvit.b1.eq(s_dvi_b[5]),
+                dvit.b0.eq(s_dvi_b[4]),
+
+                dvib.g3.eq(s_dvi_g[7]),
+                dvib.g2.eq(s_dvi_g[6]),
+                dvib.g1.eq(s_dvi_g[5]),
+                dvib.g0.eq(s_dvi_g[4]),
+
+                dvib.r3.eq(s_dvi_r[7]),
+                dvib.r2.eq(s_dvi_r[6]),
+                dvib.r1.eq(s_dvi_r[5]),
+                dvib.r0.eq(s_dvi_r[4]),
+            ]
+
+            """
             # Instantiate the DVI PHY itself
             # TODO: port this to Amaranth as well!
             m.submodules.dvi_gen = Instance("dvi_generator",
@@ -289,6 +342,7 @@ class FramebufferPHY(Elaboratable):
                 o_tmds_ch1_serial = dvi_pins.d1.o,
                 o_tmds_ch2_serial = dvi_pins.d2.o,
             )
+            """
 
         # DMA master bus
         bus = self.bus
