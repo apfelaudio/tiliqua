@@ -261,7 +261,7 @@ class TiliquaDomainGenerator(Elaboratable):
                 p_CLKOS_CPHASE=0,
                 p_CLKOS_FPHASE=0,
                 p_CLKOS2_ENABLE="ENABLED",
-                p_CLKOS2_DIV=10,
+                p_CLKOS2_DIV=5,
                 p_CLKOS2_CPHASE=0,
                 p_CLKOS2_FPHASE=0,
                 p_FEEDBK_PATH="CLKOP",

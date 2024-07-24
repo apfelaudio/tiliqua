@@ -35,7 +35,7 @@ class Persistance(Elaboratable):
     """
 
     def __init__(self, *, fb_base, bus_master, fb_size,
-                 fifo_depth=128, holdoff_default=1024, fb_bytes_per_pixel=1):
+                 fifo_depth=512, holdoff_default=2048, fb_bytes_per_pixel=1):
         super().__init__()
 
         self.fb_base = fb_base

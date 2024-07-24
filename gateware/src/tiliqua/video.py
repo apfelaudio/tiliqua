@@ -100,6 +100,20 @@ DVI_TIMINGS = {
         refresh_rate  = 60.0,
         pixel_clk_mhz = 37.39
     ),
+    "1920x1080p60": DVITimings(
+        h_active      = 1920,
+        h_sync_start  = 2008,
+        h_sync_end    = 2052,
+        h_total       = 2200,
+        h_sync_invert = False,
+        v_active      = 1080,
+        v_sync_start  = 1084,
+        v_sync_end    = 1089,
+        v_total       = 1125,
+        v_sync_invert = False,
+        refresh_rate  = 60.00,
+        pixel_clk_mhz = 148.5,
+    ),
 }
 
 class DVITimingGenerator(wiring.Component):
@@ -158,7 +172,7 @@ class FramebufferPHY(Elaboratable):
     """
 
     def __init__(self, *, dvi_timings: DVITimings, fb_base, bus_master,
-                 fb_size, fifo_depth=256, sim=False, fb_bytes_per_pixel=1):
+                 fb_size, fifo_depth=1024, sim=False, fb_bytes_per_pixel=1):
 
         super().__init__()
 
