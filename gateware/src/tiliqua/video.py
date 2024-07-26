@@ -109,25 +109,36 @@ class DVITimingGenerator(wiring.Component):
     Designed to run in the DVI pixel clock domain.
     """
 
-    x: Out(unsigned(12))
-    y: Out(unsigned(12))
-    hsync: Out(unsigned(1))
-    vsync: Out(unsigned(1))
-    de: Out(unsigned(1))
-
-    def __init__(self, timings: DVITimings):
+    def __init__(self, timings: DVITimings, coord_width=16):
         self.timings = timings
-        super().__init__()
+
+        # coordinates at which each frame starts
+        self.h_reset = timings.h_active - timings.h_total
+        self.v_reset = timings.v_active - timings.v_total
+
+        # coordinates at which sync starts / ends
+        self.hs_start = timings.h_sync_start - timings.h_total
+        self.vs_start = timings.v_sync_start - timings.v_total
+        self.hs_end   = timings.h_sync_end   - timings.h_total
+        self.vs_end   = timings.v_sync_end   - timings.v_total
+
+        super().__init__({
+            "x": Out(signed(coord_width), reset=self.h_reset),
+            "y": Out(signed(coord_width), reset=self.v_reset),
+            "hsync": Out(unsigned(1)),
+            "vsync": Out(unsigned(1)),
+            "de": Out(unsigned(1)),
+        })
 
     def elaborate(self, platform) -> Module:
         m = Module()
 
         timings = self.timings
 
-        with m.If(self.x == (timings.h_total-1)):
-            m.d.sync += self.x.eq(0)
-            with m.If(self.y == (timings.v_total-1)):
-                m.d.sync += self.y.eq(0)
+        with m.If(self.x == (timings.h_active-1)):
+            m.d.sync += self.x.eq(self.h_reset)
+            with m.If(self.y == (timings.v_active-1)):
+                m.d.sync += self.y.eq(self.v_reset)
             with m.Else():
                 m.d.sync += self.y.eq(self.y+1)
         with m.Else():
@@ -135,12 +146,12 @@ class DVITimingGenerator(wiring.Component):
 
         # Note: sync inversion is not here and must be handled before the PHY.
         m.d.comb += [
-            self.hsync.eq((self.x >= (timings.h_sync_start-1)) &
-                          (self.x < (timings.h_sync_end-1))),
-            self.vsync.eq((self.y >= (timings.v_sync_start-1)) &
-                          (self.y < (timings.v_sync_end-1))),
-            self.de.eq((self.x <= (timings.h_active-1)) &
-                       (self.y <= (timings.v_active-1))),
+            self.hsync.eq((self.x >= self.hs_start) & (self.x < self.hs_end)),
+            self.vsync.eq((self.y > self.vs_start) &
+                          (self.y < self.vs_end) |
+                          ((self.y == self.vs_start) & (self.x >= self.hs_start)) |
+                          ((self.y == self.vs_end)   & (self.x < self.hs_start))),
+            self.de.eq((self.x >= 0) & (self.y >= 0)),
 
         ]
 
