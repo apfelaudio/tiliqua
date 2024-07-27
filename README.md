@@ -2,29 +2,38 @@
 
 <sup>WARN: 🚧 under construction! 🚧 - this module is in active development</sup>
 
-**[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful, hackable FPGA-based audio multitool for Eurorack.**
+**[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful, hackable FPGA-based audio multitool for Eurorack. It will launch soon [on Crowd Supply](https://www.crowdsupply.com/apfelaudio/tiliqua)**
 
 <img src="doc/img/tiliqua-front-left.jpg" width="500">
 
 ## Technical
-- 8 (4 in + 4 out) DC-coupled audio channels, 192KHz / 32bit sampling supported.
-- Display output for video synthesis (DVI-compatible, on the lowest-end ECP5 timing tops out at 1280x720p60).
-- Switched rotary encoder with bargraph display.
-- Touch and proximity sensing on all unused audio jacks (8 max).
-- USB C `dbg`: Included RP2040-based JTAG debugger supported by `openFPGAloader`.
-- USB C `usb2`: USB2 PHY connected directly to FPGA for high-speed USB Audio support.
-- Based on Lattice ECP5 FPGA, supported by open-source FPGA toolchains. FPGA SoM itself is replaceable and also open hardware (codename `soldiercrab`).
-- Large SPI flash and HyperRAM (for long audio buffers or video framebuffers)
-- TRS MIDI IN jack.
-- PWM-controlled, user-programmable red/green LEDs on each audio channel.
-- Jack insertion detection on input & output jacks.
-- 2x expansion ports (PMOD compatible) for up to 24 simultaneous audio channels (with extra eurorack-pmods).
 
+#### Audio Interface
+- 8 (4 in + 4 out) DC-coupled audio channels, 192 KHz / 24-bit sampling supported
+- Touch and proximity sensing on all 8 audio jacks (if unused)
+- PWM-controlled, user-programmable red/green LEDs on each audio channel
+- Jack insertion detection on all 8 jacks
+
+#### Motherboard
+- Switched rotary encoder with bar graph display.
+- Dual USB ports:
+    - `dbg`: Included RP2040-based JTAG debugger supported by `openFPGAloader`
+    - `usb2`: USB PHY connected directly to FPGA for high-speed USB Audio support
+- Display output for video synthesis (maximum resolution 720/60P)
+- 2x expansion ports for up to 24 simultaneous audio channels (PMOD-compatible)
+- MIDI-In jack (TRS-A standard)
+
+#### Embedded FPGA SoM (`soldiercrab`)
+
+- Lattice ECP5 (25 K) FPGA, supported by open-source FPGA toolchains
+- 128 Mbit (16 MByte) HyperRAM / oSPI RAM (for long audio buffers or video framebuffers)
+- 128 Mbit (16 MByte) SPI flash for user bitstreams
+- High-speed USB HS PHY (ULPI)
 <img src="doc/img/tiliqua-rear-left.jpg" width="700">
 
 ## Where do I get a Tiliqua?
 
-We are planning to launch Tiliqua on Crowd Supply in Q3 '24.
+Tiliqua is launching on [Crowd Supply](https://www.crowdsupply.com/apfelaudio/tiliqua). Subscribing there is the best place to get updates.
 
 # Getting Started
 
