@@ -85,8 +85,21 @@ DVI_TIMINGS = {
         refresh_rate  = 60.00,
         pixel_clk_mhz = 74.25,
     ),
-    # A round AliExpress display
-    "720x720p60": DVITimings(
+    "720x720p60_square": DVITimings(
+        h_active      = 720,
+        h_sync_start  = 820,
+        h_sync_end    = 900,
+        h_total       = 976,
+        h_sync_invert = True,
+        v_active      = 720,
+        v_sync_start  = 738,
+        v_sync_end    = 742,
+        v_total       = 754,
+        v_sync_invert = False,
+        refresh_rate  = 59.79,
+        pixel_clk_mhz = 44.00
+    ),
+    "720x720p60_round": DVITimings(
         h_active      = 720,
         h_sync_start  = 760,
         h_sync_end    = 780,

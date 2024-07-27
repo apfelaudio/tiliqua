@@ -33,7 +33,7 @@ use tiliqua_lib::opt::*;
 
 // TODO: fetch these from SVF
 const PSRAM_BASE:     usize = 0x20000000;
-const H_ACTIVE:       u32   = 1280;
+const H_ACTIVE:       u32   = 720;
 const V_ACTIVE:       u32   = 720;
 
 // 16MiB, 4 bytes per word.
