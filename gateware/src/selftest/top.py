@@ -165,5 +165,5 @@ if __name__ == "__main__":
     os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
     os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
     os.environ["LUNA_PLATFORM"] = "tiliqua.tiliqua_platform:TiliquaPlatform"
-    design = SelfTestSoc(clock_frequency=int(60e6), dvi_timings=DVI_TIMINGS["800x600p60"])
+    design = SelfTestSoc(clock_frequency=int(60e6), dvi_timings=DVI_TIMINGS["1280x720p60"])
     top_level_cli(design)
