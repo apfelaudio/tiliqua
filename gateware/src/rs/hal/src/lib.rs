@@ -11,6 +11,7 @@ pub mod i2c;
 pub mod dma_display;
 pub mod encoder;
 pub mod pca9635;
+pub mod pmod;
 
 pub use embedded_hal as hal;
 pub use embedded_hal_nb as hal_nb;

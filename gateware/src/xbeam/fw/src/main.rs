@@ -10,6 +10,7 @@ use tiliqua_fw::Serial0;
 use tiliqua_fw::Timer0;
 use tiliqua_fw::I2c0;
 use tiliqua_fw::Encoder0;
+use tiliqua_fw::EurorackPmod0;
 
 use log::info;
 
@@ -27,6 +28,8 @@ use embedded_graphics::{
 use tiliqua_fw::opts;
 use tiliqua_lib::draw;
 
+use tiliqua_lib::opt::*;
+
 
 // TODO: fetch these from SVF
 const PSRAM_BASE:     usize = 0x20000000;
@@ -38,6 +41,10 @@ const _PSRAM_SZ_WORDS: usize = 1024 * 1024 * (16 / 4);
 const PSRAM_FB_BASE:  usize = PSRAM_BASE;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE);
+
+const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
+const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
+const _PCA9635_MIDI:     [usize; 2] = [8, 9];
 
 #[entry]
 fn main() -> ! {
@@ -77,24 +84,41 @@ fn main() -> ! {
 
     let vs = peripherals.VS_PERIPH;
 
-    use tiliqua_lib::opt::OptionPageEncoderInterface;
+    let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
+
+    let mut toggle_encoder_leds = false;
+
+    let mut time_since_encoder_touched: u32 = 0;
 
     loop {
 
-        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-100, opts.xbeam.hue.value).ok();
+        if time_since_encoder_touched < 1000 || opts.modify() {
+
+            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-100, opts.xbeam.hue.value).ok();
+
+        }
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         encoder.update();
 
+        time_since_encoder_touched += period_ms;
+
         match encoder.poke_ticks() {
-            1 => opts.tick_up(),
-            -1 => opts.tick_down(),
+            1 => {
+                opts.tick_up();
+                time_since_encoder_touched = 0;
+            }
+            -1 => {
+                opts.tick_down();
+                time_since_encoder_touched = 0;
+            }
             _ => {},
         }
 
         if encoder.poke_btn() {
             opts.toggle_modify();
+            time_since_encoder_touched = 0;
         }
 
         vs.persist().write(|w| unsafe { w.persist().bits(opts.xbeam.persist.value) } );
@@ -103,9 +127,59 @@ fn main() -> ! {
         vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
         vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
 
-        pca9635.leds[0] = opts.xbeam.hue.value << 4;
-        pca9635.leds[1] = opts.xbeam.intensity.value << 4;
-        pca9635.push().ok();
+        for n in 0..16 {
+            pca9635.leds[n] = 0u8;
+        }
 
+        if uptime_ms % 50 == 0 {
+            toggle_encoder_leds = !toggle_encoder_leds;
+        }
+
+        if let Some(n) = opts.view().selected() {
+            let o = opts.view().options()[n];
+            let c = o.percent();
+            for n in 0..6 {
+                if ((n as f32)*0.5f32/6.0f32 + 0.5) < c {
+                    pca9635.leds[PCA9635_BAR_RED[n]] = 0xff as u8;
+                } else {
+                    pca9635.leds[PCA9635_BAR_RED[n]] = 0 as u8;
+                }
+                if ((n as f32)*-0.5f32/6.0f32 + 0.5) > c {
+                    pca9635.leds[PCA9635_BAR_GREEN[n]] = 0xff as u8;
+                } else {
+                    pca9635.leds[PCA9635_BAR_GREEN[n]] = 0 as u8;
+                }
+            }
+
+            if opts.modify() && !toggle_encoder_leds {
+                for n in 0..6 {
+                    pca9635.leds[PCA9635_BAR_GREEN[n]] = 0 as u8;
+                    pca9635.leds[PCA9635_BAR_RED[n]] = 0 as u8;
+                }
+            }
+        }
+
+        if opts.modify() {
+            if toggle_encoder_leds {
+                if let Some(n) = opts.view().selected() {
+                    pmod.led_set_manual(n, i8::MAX);
+                }
+            } else {
+                pmod.led_all_auto();
+            }
+        } else {
+            if time_since_encoder_touched < 1000 {
+                for n in 0..8 {
+                    pmod.led_set_manual(n, 0i8);
+                }
+                if let Some(n) = opts.view().selected() {
+                    pmod.led_set_manual(n, (((1000-time_since_encoder_touched) * 120) / 1000) as i8);
+                }
+            } else {
+                pmod.led_all_auto();
+            }
+        }
+
+        pca9635.push().ok();
     }
 }
