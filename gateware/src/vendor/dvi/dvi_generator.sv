@@ -51,13 +51,26 @@ module dvi_generator (
         .tmds(tmds_ch2)
     );
 
+    logic [9:0] s_tmds_ch0, s_tmds_ch1, s_tmds_ch2;
+    always_ff @(posedge clk_pix) begin
+        s_tmds_ch0 <= tmds_ch0;
+        s_tmds_ch1 <= tmds_ch1;
+        s_tmds_ch2 <= tmds_ch2;
+    end
+
     logic [9:0] tmds_ch0_shift, tmds_ch1_shift, tmds_ch2_shift;
     logic [4:0] shift5 = 1;  // 5-bit circular shift buffer
     always_ff @(posedge clk_pix_5x) begin
         shift5 <= {shift5[3:0], shift5[4]};
-        tmds_ch0_shift <= shift5[4] ? tmds_ch0 : tmds_ch0_shift >> 2;  // shift two bits for DDR
-        tmds_ch1_shift <= shift5[4] ? tmds_ch1 : tmds_ch1_shift >> 2;
-        tmds_ch2_shift <= shift5[4] ? tmds_ch2 : tmds_ch2_shift >> 2;
+        if (shift5[4]) begin
+            tmds_ch0_shift <= s_tmds_ch0;
+            tmds_ch1_shift <= s_tmds_ch1;
+            tmds_ch2_shift <= s_tmds_ch2;
+        end else begin
+            tmds_ch0_shift <= tmds_ch0_shift >> 2;  // shift two bits for DDR
+            tmds_ch1_shift <= tmds_ch1_shift >> 2;
+            tmds_ch2_shift <= tmds_ch2_shift >> 2;
+        end
     end
 
     ODDRX1F serialize_ch0 (.D0(tmds_ch0_shift[0]), .D1(tmds_ch0_shift[1]), .Q(tmds_ch0_serial), .SCLK(clk_pix_5x), .RST(0));
