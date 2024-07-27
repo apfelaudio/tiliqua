@@ -24,6 +24,7 @@ from tiliqua.psram_peripheral                    import PSRAMPeripheral
 
 from tiliqua.i2c                                 import I2CPeripheral
 from tiliqua.encoder                             import EncoderPeripheral
+from tiliqua.dtr                                 import DieTemperaturePeripheral
 from tiliqua.video                               import DVI_TIMINGS, FramebufferPHY
 from tiliqua                                     import eurorack_pmod
 
@@ -96,6 +97,9 @@ class SelfTestSoc(Elaboratable):
 
         self.pmod0_periph = eurorack_pmod.EurorackPmodPeripheral(pmod=None, enable_out=True)
         self.soc.add_peripheral(self.pmod0_periph, addr=0xf0004000)
+
+        self.temperature_periph = DieTemperaturePeripheral()
+        self.soc.add_peripheral(self.temperature_periph, addr=0xf0005000)
 
         super().__init__()
 
