@@ -243,7 +243,6 @@ class Stroke(wiring.Component):
         sample_c = self.sample_c
 
         point_stream = None
-
         if self.upsample_factor is not None:
             # If interpolation is enabled, insert an FIR upsampling stage.
             m.submodules.split = split = dsp.Split(n_channels=4)
