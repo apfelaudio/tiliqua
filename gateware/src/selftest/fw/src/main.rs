@@ -209,6 +209,39 @@ where
     .draw(d).ok();
 }
 
+fn print_die_temperature<D>(d: &mut D, dtr: &pac::TEMPERATURE_PERIPH)
+where
+    D: DrawTarget<Color = Gray8>,
+{
+    let mut s = String::<64>::new();
+    // From Table 4.3 in FPGA-TN-02210-1-4
+    // "Power Consumption and Management for ECP5 and ECP5-5G Devices"
+    let code_to_celsius: [i16; 64] = [
+        -58, -56, -54, -52, -45, -44, -43, -42,
+        -41, -40, -39, -38, -37, -36, -30, -20,
+        -10,  -4,   0,   4,  10,  21,  22,  23,
+         24,  25,  26,  27,  28,  29,  40,  50,
+         60,  70,  76,  80,  81,  82,  83,  84,
+         85,  86,  87,  88,  89,  95,  96,  97,
+         98,  99, 100, 101, 102, 103, 104, 105,
+        106, 107, 108, 116, 120, 124, 128, 132
+    ];
+    let code = dtr.temperature().read().bits();
+    write!(s, "die_temp       - code={} celsius={}",
+           code,
+           code_to_celsius[code as usize]).ok();
+    info!("{}", s);
+    let style = MonoTextStyle::new(&FONT_6X10, Gray8::WHITE);
+    Text::with_alignment(
+        &s,
+        d.bounding_box().center() + Point::new(-140, 24),
+        style,
+        Alignment::Left,
+    )
+    .draw(d).ok();
+}
+
+
 fn print_tiliqua<D>(d: &mut D, rng: &mut fastrand::Rng)
 where
     D: DrawTarget<Color = Gray8>,
@@ -249,6 +282,8 @@ fn main() -> ! {
     let mut encoder = Encoder0::new(peripherals.ENCODER0);
 
     let pmod = peripherals.PMOD0_PERIPH;
+
+    let dtr = peripherals.TEMPERATURE_PERIPH;
 
     let mut display = DMADisplay {
         framebuffer_base: PSRAM_FB_BASE as *mut u32,
@@ -292,6 +327,9 @@ fn main() -> ! {
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_usb_state(&mut display, &mut i2cdev);
+        pause_flush(&mut timer, &mut uptime_ms, period_ms);
+
+        print_die_temperature(&mut display, &dtr);
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         // Write something to the CODEC outputs / LEDs
