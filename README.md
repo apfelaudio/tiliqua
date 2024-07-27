@@ -2,7 +2,9 @@
 
 <sup>WARN: 🚧 under construction! 🚧 - this module is in active development</sup>
 
-**[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful, hackable FPGA-based audio multitool for Eurorack. It will launch soon [on Crowd Supply](https://www.crowdsupply.com/apfelaudio/tiliqua)**
+**[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful, open hardware FPGA-based audio multitool for Eurorack.**
+
+For updates, subscribe to the [Crowd Supply page](https://www.crowdsupply.com/apfelaudio/tiliqua) and my own [mailing list](https://apfelaudio.com/)
 
 <img src="doc/img/tiliqua-front-left.jpg" width="500">
 
@@ -29,11 +31,12 @@
 - 128 Mbit (16 MByte) HyperRAM / oSPI RAM (for long audio buffers or video framebuffers)
 - 128 Mbit (16 MByte) SPI flash for user bitstreams
 - High-speed USB HS PHY (ULPI)
-<img src="doc/img/tiliqua-rear-left.jpg" width="700">
 
 ## Where do I get a Tiliqua?
 
-Tiliqua is launching on [Crowd Supply](https://www.crowdsupply.com/apfelaudio/tiliqua). Subscribing there is the best place to get updates.
+Tiliqua will launch on [Crowd Supply](https://www.crowdsupply.com/apfelaudio/tiliqua). Subscribing there is the best place to get production updates.
+
+<img src="doc/img/tiliqua-rear-left.jpg" width="700">
 
 # Getting Started
 
