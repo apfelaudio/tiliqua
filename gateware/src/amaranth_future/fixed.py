@@ -233,6 +233,9 @@ class Value(ast.ValueCastable):
     def __lt__(self, other):
         return self.__sub__(other).sas_value() < 0
 
+    def __ge__(self, other):
+        return ~self.__lt__(other)
+
     def __repr__(self):
         return f"(fixedpoint {'SQ' if self.signed else 'UQ'}{self.i_width}.{self.f_width} {self._target!r})"
 

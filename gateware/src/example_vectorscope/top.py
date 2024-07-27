@@ -168,11 +168,13 @@ class VectorScopeTop(Elaboratable):
 
         wiring.connect(m, astream.istream, split.i)
 
-        m.submodules.saw = saw = dsp.SawNCO(shift=0)
+        m.submodules.saw = saw = dsp.SawNCO(shift=0, trigger=True)
         sample_rate_hz=192000
         freq_inc = 100.0 * (1.0 / sample_rate_hz)
         m.d.comb += [
             saw.i.payload.freq_inc.eq(fixed.Const(freq_inc, shape=ASQ)),
+            # last channel in is trigger
+            saw.i.payload.trigger.eq(astream.istream.payload[3]),
             saw.i.valid.eq(astream.istream.valid),
         ]
         wiring.connect(m, saw.o, splitr.i)

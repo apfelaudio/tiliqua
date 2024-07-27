@@ -154,21 +154,34 @@ class SawNCO(wiring.Component):
     Sawtooth Numerically Controlled Oscillator.
     """
 
-    i: In(stream.Signature(data.StructLayout({
-            "freq_inc": ASQ,
-            "phase": ASQ,
-        })))
-    o: Out(stream.Signature(ASQ))
-
-    def __init__(self, extra_bits=16, shift=6):
+    def __init__(self, extra_bits=16, shift=6, trigger=False):
         self.extra_bits = extra_bits
         self.shift = shift
-        super().__init__()
+        self.trigger     = trigger
+        self.trigger_lvl = fixed.Const(0.0, shape=ASQ)
+        if trigger:
+            super().__init__({
+                "i": In(stream.Signature(data.StructLayout({
+                        "freq_inc": ASQ,
+                        "phase": ASQ,
+                        "trigger": ASQ,
+                    }))),
+                "o": Out(stream.Signature(ASQ)),
+            })
+        else:
+            super().__init__({
+                "i": In(stream.Signature(data.StructLayout({
+                        "freq_inc": ASQ,
+                        "phase": ASQ,
+                    }))),
+                "o": Out(stream.Signature(ASQ)),
+            })
 
     def elaborate(self, platform):
         m = Module()
 
-        s = Signal(fixed.SQ(self.extra_bits, ASQ.f_width))
+        ctr_shape = fixed.SQ(self.extra_bits, ASQ.f_width)
+        s = Signal(ctr_shape)
 
         out_no_phase_mod = Signal(ASQ)
 
@@ -181,7 +194,25 @@ class SawNCO(wiring.Component):
         ]
 
         with m.If(self.i.valid & self.o.ready):
-            m.d.sync += s.eq(s + self.i.payload.freq_inc),
+
+            trigger = Signal()
+            if self.trigger:
+                self.l_trigger_payload = Signal(shape=ASQ)
+                m.d.sync += self.l_trigger_payload.eq(self.i.payload.trigger)
+                m.d.comb += trigger.eq(
+                    (self.l_trigger_payload < self.trigger_lvl) &
+                    (self.i.payload.trigger >= self.trigger_lvl))
+
+            if self.trigger:
+                with m.If((out_no_phase_mod > fixed.Const(0.9, shape=ASQ)) &
+                          (out_no_phase_mod.as_value()[15] == 0)):
+                    with m.If(trigger):
+                        m.d.sync += s.eq(ASQ.min() << self.shift)
+                with m.Else():
+                    m.d.sync += s.eq(s + self.i.payload.freq_inc)
+            else:
+                # Always increment + wrap
+                m.d.sync += s.eq(s + self.i.payload.freq_inc),
 
         return m
 
