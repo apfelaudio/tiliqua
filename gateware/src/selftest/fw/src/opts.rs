@@ -11,32 +11,42 @@ use strum_macros::{EnumIter, IntoStaticStr};
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
 pub enum Screen {
-    Xbeam,
+    Boot,
 }
 
 #[derive(Clone)]
-pub struct XbeamOptions {
+pub struct BootOptions {
     pub selected: Option<usize>,
-    pub persist: NumOption<u16>,
-    pub hue: NumOption<u8>,
-    pub intensity: NumOption<u8>,
-    pub decay: NumOption<u8>,
-    pub scale: NumOption<u8>,
+    pub bitstream0: NumOption<u8>,
+    pub bitstream1: NumOption<u8>,
+    pub bitstream2: NumOption<u8>,
+    pub bitstream3: NumOption<u8>,
+    pub bitstream4: NumOption<u8>,
+    pub bitstream5: NumOption<u8>,
+    pub bitstream6: NumOption<u8>,
+    pub bitstream7: NumOption<u8>,
 }
 
-impl_option_view!(XbeamOptions,
-                  persist, hue, intensity, decay, scale);
+impl_option_view!(BootOptions,
+                  bitstream0,
+                  bitstream1,
+                  bitstream2,
+                  bitstream3,
+                  bitstream4,
+                  bitstream5,
+                  bitstream6,
+                  bitstream7);
 
 #[derive(Clone)]
 pub struct Options {
     pub modify: bool,
     pub screen: EnumOption<Screen>,
 
-    pub xbeam: XbeamOptions,
+    pub boot: BootOptions,
 }
 
 impl_option_page!(Options,
-                  (Screen::Xbeam, xbeam));
+                  (Screen::Boot, boot));
 
 impl Options {
     pub fn new() -> Options {
@@ -44,44 +54,65 @@ impl Options {
             modify: false,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
-                value: Screen::Xbeam,
+                value: Screen::Boot,
             },
-            xbeam: XbeamOptions {
+            boot: BootOptions {
                 selected: Some(0),
-                persist: NumOption{
-                    name: String::from_str("persist").unwrap(),
-                    value: 1024,
-                    step: 256,
-                    min: 512,
-                    max: 32768,
-                },
-                hue: NumOption{
-                    name: String::from_str("hue").unwrap(),
-                    value: 10,
-                    step: 1,
+                bitstream0: NumOption{
+                    name: String::from_str("crossbeam").unwrap(),
+                    value: 0,
+                    step: 0,
                     min: 0,
-                    max: 15,
+                    max: 8,
                 },
-                intensity: NumOption{
-                    name: String::from_str("intensity").unwrap(),
-                    value: 8,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
-                decay: NumOption{
-                    name: String::from_str("decay").unwrap(),
+                bitstream1: NumOption{
+                    name: String::from_str("usb-card").unwrap(),
                     value: 1,
-                    step: 1,
+                    step: 0,
                     min: 0,
-                    max: 15,
+                    max: 8,
                 },
-                scale: NumOption{
-                    name: String::from_str("scale").unwrap(),
-                    value: 6,
-                    step: 1,
+                bitstream2: NumOption{
+                    name: String::from_str("quad-nco").unwrap(),
+                    value: 2,
+                    step: 0,
                     min: 0,
-                    max: 15,
+                    max: 8,
+                },
+                bitstream3: NumOption{
+                    name: String::from_str("polysynth").unwrap(),
+                    value: 3,
+                    step: 0,
+                    min: 0,
+                    max: 8,
+                },
+                bitstream4: NumOption{
+                    name: String::from_str("diff-delay").unwrap(),
+                    value: 4,
+                    step: 0,
+                    min: 0,
+                    max: 8,
+                },
+                bitstream5: NumOption{
+                    name: String::from_str("bitstream").unwrap(),
+                    value: 5,
+                    step: 0,
+                    min: 0,
+                    max: 8,
+                },
+                bitstream6: NumOption{
+                    name: String::from_str("bitstream").unwrap(),
+                    value: 6,
+                    step: 0,
+                    min: 0,
+                    max: 8,
+                },
+                bitstream7: NumOption{
+                    name: String::from_str("bitstream").unwrap(),
+                    value: 7,
+                    step: 0,
+                    min: 0,
+                    max: 8,
                 },
             },
         }
