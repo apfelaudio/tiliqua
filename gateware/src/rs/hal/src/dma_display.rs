@@ -24,8 +24,8 @@ macro_rules! impl_dma_display {
                     let xs: u32 = $H_ACTIVE;
                     let ys: u32 = $V_ACTIVE;
                     for Pixel(coord, color) in pixels.into_iter() {
-                        if let Ok((x @ 0..=$H_ACTIVE,
-                                   y @ 0..=$V_ACTIVE)) = coord.try_into() {
+                        if let Ok((y @ 0..=$H_ACTIVE,
+                                   x @ 0..=$V_ACTIVE)) = coord.try_into() {
                             // Calculate the index in the framebuffer.
                             let index: u32 = (x + y * $H_ACTIVE) / 4;
                             unsafe {
