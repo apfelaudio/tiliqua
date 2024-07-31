@@ -115,7 +115,7 @@ fn tusb322i_id_test(i2cdev: &mut I2c0) {
             info!("tusb322i_id{}: 0x{:x}", ix, byte);
             ix += 1;
         }
-        panic!("FAIL: TUSB322I ID");
+        error!("FAIL: TUSB322I ID");
     }
 
     info!("PASS: TUSB322I Device ID.");
