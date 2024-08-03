@@ -4,6 +4,8 @@
 
 """ soldiercrab / tiliqua platform definitions and PLL configuration. """
 
+import os
+
 from amaranth import *
 from amaranth.build import *
 from amaranth.vendor import LatticeECP5Platform
@@ -439,3 +441,10 @@ class TiliquaPlatform(_TiliquaPlatform, LUNAPlatform):
     name                   = "Tiliqua (45F)"
     clock_domain_generator = TiliquaDomainGenerator
     default_usb_connection = "ulpi"
+
+def set_tiliqua_default_amaranth_overrides():
+    os.environ["AMARANTH_verbose"] = "1"
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
+    os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
+    os.environ["LUNA_PLATFORM"] = "tiliqua.tiliqua_platform:TiliquaPlatform"
