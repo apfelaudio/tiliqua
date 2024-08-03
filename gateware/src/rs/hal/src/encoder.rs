@@ -13,16 +13,19 @@ macro_rules! impl_encoder {
                 lbtn: bool,
 
                 pending_ticks: i8,
-                pending_press: bool,
+                pending_release: bool,
+                pending_press:   bool,
             }
 
             impl $ENCODERX {
                 pub fn new(registers: $PACENCODERX) -> Self {
+                    let btn = registers.button().read().bits() != 0;
                     Self { registers,
                            rot: 0,
                            lrot: 0,
-                           lbtn: false,
+                           lbtn: btn,
                            pending_ticks: 0,
+                           pending_release: false,
                            pending_press: false
                     }
                 }
@@ -34,10 +37,13 @@ macro_rules! impl_encoder {
                     ticks
                 }
 
-                /// Check for pending presses and erase it.
+                /// Check for pending clicks and erase it.
                 pub fn poke_btn(&mut self) -> bool {
-                    let btn = self.pending_press;
-                    self.pending_press = false;
+                    let btn = self.pending_press && self.pending_release;
+                    if btn {
+                        self.pending_press = false;
+                        self.pending_release = false;
+                    }
                     btn
                 }
 
@@ -60,8 +66,12 @@ macro_rules! impl_encoder {
                     }
 
                     // button just released
-                    if self.lbtn != btn && !btn {
-                        self.pending_press = true;
+                    if self.lbtn != btn {
+                        if btn {
+                            self.pending_press = true;
+                        } else {
+                            self.pending_release = true;
+                        }
                     }
 
                     self.lrot = self.rot - delta_ticks;
