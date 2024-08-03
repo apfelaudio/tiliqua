@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 
 import logging
+import os
 
 from amaranth                                    import *
 from amaranth.hdl.rec                            import Record
@@ -60,6 +61,7 @@ class TiliquaSoc(Elaboratable):
             clock_frequency=self.clock_sync_hz,
         )
 
+        self.firmware_path = firmware_path
         firmware = get_mem_data(firmware_path,
                                 data_width=32, endianness="little")
 
@@ -105,6 +107,9 @@ class TiliquaSoc(Elaboratable):
         super().__init__()
 
     def elaborate(self, platform):
+
+        assert os.path.exists(self.firmware_path)
+
         m = Module()
 
         # add a eurorack pmod instance without an audio stream for basic self-testing

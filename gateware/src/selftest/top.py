@@ -13,7 +13,7 @@ from luna_soc                            import top_level_cli
 if __name__ == "__main__":
     dvi_timings = set_environment_variables()
     this_directory = os.path.dirname(os.path.realpath(__file__))
-    design = TiliquaSoc(firmware_path=os.path.join(this_directory, "firmware.bin"),
+    design = TiliquaSoc(firmware_path=os.path.join(this_directory, "fw/firmware.bin"),
                         dvi_timings=dvi_timings)
     design.genrust_constants()
     top_level_cli(design)
