@@ -349,9 +349,15 @@ class Stroke(wiring.Component):
                 new_color = Signal(unsigned(4))
                 white = Signal(unsigned(4))
                 m.d.comb += white.eq(0xf)
-                m.d.comb += new_color.eq((sample_c>>10) + self.hue)
+                m.d.comb += new_color.eq((sample_c>>11) + self.hue)
+                intensity = Signal(signed(8))
 
-                with m.If(px_sum[4:8] + sample_intensity >= 0xF):
+                with m.If(sample_p >= 0):
+                    m.d.comb += intensity.eq(sample_intensity + (sample_p>>12))
+                with m.Else():
+                    m.d.comb += intensity.eq(sample_intensity - (sample_p>>12))
+
+                with m.If(px_sum[4:8] + intensity >= 0xF):
                     m.d.comb += bus.dat_w.eq(
                         (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
                         (Cat(new_color, white) << (sample_x[0:2]*8))
@@ -359,7 +365,7 @@ class Stroke(wiring.Component):
                 with m.Else():
                     m.d.comb += bus.dat_w.eq(
                         (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
-                        (Cat(new_color, (px_sum[4:8] + sample_intensity)) << (sample_x[0:2]*8))
+                        (Cat(new_color, (px_sum[4:8] + intensity)) << (sample_x[0:2]*8))
                          )
 
                 with m.If(bus.stb & bus.ack):
