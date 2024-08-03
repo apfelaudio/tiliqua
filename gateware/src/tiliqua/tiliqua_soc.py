@@ -36,6 +36,7 @@ class TiliquaSoc(Elaboratable):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False):
 
         self.audio_192 = False
+        self.dvi_timings = dvi_timings
 
         self.uart_pins = Record([
             ('rx', [('i', 1)]),
@@ -127,7 +128,8 @@ class TiliquaSoc(Elaboratable):
             m.d.sync += self.persist.enable.eq(1)
 
         # generate our domain clocks/resets
-        m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192)
+        m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
+                                                           pixclk_pll=self.dvi_timings.pll)
 
         # Connect up our UART
         uart_io = platform.request("uart", 0)

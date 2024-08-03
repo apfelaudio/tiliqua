@@ -141,9 +141,10 @@ class _TiliquaPlatform(LatticeECP5Platform):
 class TiliquaDomainGenerator(Elaboratable):
     """ Clock generator for Tiliqua platform. """
 
-    def __init__(self, *, audio_192=False, clock_frequencies=None, clock_signal_name=None):
+    def __init__(self, *, pixclk_pll, audio_192=False, clock_frequencies=None, clock_signal_name=None):
         super().__init__()
-        self.audio_192 = audio_192
+        self.pixclk_pll = pixclk_pll
+        self.audio_192  = audio_192
 
     def elaborate(self, platform):
         m = Module()
@@ -228,10 +229,8 @@ class TiliquaDomainGenerator(Elaboratable):
                 a_LPF_RESISTOR="8"
         )
 
-        # Extra PLL to generate 720p60 5x pixel clock (371.25MHz)
-        # CLKOP and CLKOS come from:
-        # ecppll -i 48 --clkout0 371.25 --highres --reset -f pll60.v
-        # CLKOS2 is manually added.
+        # Extra PLL to generate DVI clocks, 1x pixel clock and 5x (half DVI TDMS clock, output is DDR)
+
         feedback_dvi = Signal()
         locked_dvi   = Signal()
         m.submodules.pll_dvi = Instance("EHXPLLL",
@@ -248,29 +247,29 @@ class TiliquaDomainGenerator(Elaboratable):
                 o_LOCK=locked_dvi,
 
                 # PLL parameters...
-                p_PLLRST_ENA="ENABLED",
-                p_INTFB_WAKE="DISABLED",
-                p_STDBY_ENABLE="DISABLED",
-                p_DPHASE_SOURCE="DISABLED",
-                p_OUTDIVIDER_MUXA="DIVA",
-                p_OUTDIVIDER_MUXB="DIVB",
-                p_OUTDIVIDER_MUXC="DIVC",
-                p_OUTDIVIDER_MUXD="DIVD",
-                p_CLKI_DIV=15,
-                p_CLKOP_ENABLE="ENABLED",
-                p_CLKOP_DIV=58,
-                p_CLKOP_CPHASE=9,
-                p_CLKOP_FPHASE=0,
-                p_CLKOS_ENABLE="ENABLED",
-                p_CLKOS_DIV=2,
-                p_CLKOS_CPHASE=0,
-                p_CLKOS_FPHASE=0,
-                p_CLKOS2_ENABLE="ENABLED",
-                p_CLKOS2_DIV=10,
-                p_CLKOS2_CPHASE=0,
-                p_CLKOS2_FPHASE=0,
-                p_FEEDBK_PATH="CLKOP",
-                p_CLKFB_DIV=4,
+                p_PLLRST_ENA      = "ENABLED",
+                p_INTFB_WAKE      = "DISABLED",
+                p_STDBY_ENABLE    = "DISABLED",
+                p_DPHASE_SOURCE   = "DISABLED",
+                p_OUTDIVIDER_MUXA = "DIVA",
+                p_OUTDIVIDER_MUXB = "DIVB",
+                p_OUTDIVIDER_MUXC = "DIVC",
+                p_OUTDIVIDER_MUXD = "DIVD",
+                p_CLKI_DIV        = self.pixclk_pll.clki_div,
+                p_CLKOP_ENABLE    = "ENABLED",
+                p_CLKOP_DIV       = self.pixclk_pll.clkop_div,
+                p_CLKOP_CPHASE    = self.pixclk_pll.clkop_cphase,
+                p_CLKOP_FPHASE    = 0,
+                p_CLKOS_ENABLE    = "ENABLED",
+                p_CLKOS_DIV       = self.pixclk_pll.clkos_div,
+                p_CLKOS_CPHASE    = self.pixclk_pll.clkos_cphase,
+                p_CLKOS_FPHASE    = 0,
+                p_CLKOS2_ENABLE   = "ENABLED",
+                p_CLKOS2_DIV      = self.pixclk_pll.clkos2_div,
+                p_CLKOS2_CPHASE   = self.pixclk_pll.clkos2_cphase,
+                p_CLKOS2_FPHASE   = 0,
+                p_FEEDBK_PATH     = "CLKOP",
+                p_CLKFB_DIV       = self.pixclk_pll.clkfb_div,
 
                 # Internal feedback.
                 i_CLKFB=feedback_dvi,
