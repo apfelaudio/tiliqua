@@ -83,7 +83,7 @@ class _TiliquaPlatform(LatticeECP5Platform):
         Resource("mobo_leds_oe", 0, PinsN("A3", dir="o")),
 
         # DVI: Hotplug Detect
-        Resource("dvi_hpd", 0, Pins("A5", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("dvi_hpd", 0, Pins("A5", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
 
         # TRS MIDI RX
         Resource("midi", 0,
@@ -154,7 +154,6 @@ class TiliquaDomainGenerator(Elaboratable):
         m.domains.dvi5x = ClockDomain()
 
 
-
         clk48 = platform.request(platform.default_clk, dir='i').i
         reset  = platform.request(platform.default_rst, dir='i').i
         #reset  = Signal(1, reset=0)
@@ -162,13 +161,8 @@ class TiliquaDomainGenerator(Elaboratable):
         # ecppll -i 48 --clkout0 60 --clkout1 120 --clkout2 40 --clkout3 200 --reset -f pll60.v
         # 60MHz for USB (currently also sync domain. fast is for DQS)
 
-        counter = Signal(32, reset=0)
-        with m.If(counter < 1000000):
-            m.d.sync += counter.eq(counter + 1)
-
         m.d.comb += [
             ClockSignal("raw48").eq(clk48),
-            platform.request("dvi_hpd").o.eq(~(counter < 1000000)),
         ]
 
         feedback60 = Signal()
