@@ -33,8 +33,7 @@ from luna_soc.gateware.csr.base                  import Peripheral
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
 class TiliquaSoc(Elaboratable):
-    def __init__(self, *, firmware_path, dvi_timings=DVI_TIMINGS["1280x720p60"],
-                 audio_192=False):
+    def __init__(self, *, firmware_path, dvi_timings, audio_192=False):
 
         self.audio_192 = False
 
