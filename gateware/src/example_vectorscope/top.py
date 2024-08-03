@@ -126,7 +126,7 @@ class VectorScopeTop(Elaboratable):
                 self.pmod0.sample_inject[3]._target.eq(self.inject3)
             ]
         else:
-            m.submodules.car = TiliquaDomainGenerator(audio_192=True)
+            m.submodules.car = TiliquaDomainGenerator(audio_192=False)
 
         if not self.sim:
             self.pmod0 = eurorack_pmod.EurorackPmod(
@@ -156,8 +156,20 @@ class VectorScopeTop(Elaboratable):
         m.submodules.split2 = split2 = dsp.Split(n_channels=4)
         m.submodules.splitr = splitr = dsp.Split(n_channels=8, replicate=True)
 
-        from example_dsp.top import QuadNCO
-        m.submodules.diffuser = diffuser = QuadNCO()
+        from tiliqua         import midi
+        from example_dsp.top import MidiPolyTop
+        m.submodules.diffuser = diffuser = MidiPolyTop()
+
+        # For now, if a core requests midi input, we connect it up
+        # to the type-A serial MIDI RX input. In theory this bytestream
+        # could also come from LUNA in host or device mode.
+        midi_pins = platform.request("midi")
+        m.submodules.serialrx = serialrx = midi.SerialRx(
+                system_clk_hz=60e6, pins=midi_pins)
+        m.submodules.midi_decode = midi_decode = midi.MidiDecode()
+        wiring.connect(m, serialrx.o, midi_decode.i)
+        wiring.connect(m, midi_decode.o, diffuser.i_midi)
+
         wiring.connect(m, diffuser.o, astream.ostream)
         m.d.comb += [
             diffuser.i.valid.eq(astream.istream.valid),
