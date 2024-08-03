@@ -70,12 +70,13 @@ class SelfTestSoc(Elaboratable):
         )
 
         # ... add memory-mapped psram/hyperram peripheral (128Mbit)
-        psram_base = 0x20000000
-        self.soc.psram = PSRAMPeripheral(size=16*1024*1024)
-        self.soc.add_peripheral(self.soc.psram, addr=psram_base)
+        self.psram_base = 0x20000000
+        self.psram_size_bytes = 16*1024*1024
+        self.soc.psram = PSRAMPeripheral(size=self.psram_size_bytes)
+        self.soc.add_peripheral(self.soc.psram, addr=self.psram_base)
 
         # ... add our video PHY (DMAs from PSRAM starting at fb_base)
-        fb_base = psram_base
+        fb_base = self.psram_base
         fb_size = (dvi_timings.h_active, dvi_timings.v_active)
         self.video = FramebufferPHY(
                 fb_base=fb_base, dvi_timings=dvi_timings, fb_size=fb_size,
@@ -162,6 +163,15 @@ class SelfTestSoc(Elaboratable):
 
         return m
 
+def genrust_constants(design):
+    with open("src/rs/lib/src/generated_constants.rs", "w") as f:
+        f.write(f"pub const PSRAM_BASE: usize     = 0x{design.psram_base:x};\n")
+        f.write(f"pub const PSRAM_SZ_BYTES: usize = 0x{design.psram_size_bytes:x};\n")
+        f.write(f"pub const PSRAM_SZ_WORDS: usize = PSRAM_SZ_BYTES / 4;\n")
+        f.write(f"pub const H_ACTIVE: u32         = {design.video.fb_hsize};\n")
+        f.write(f"pub const V_ACTIVE: u32         = {design.video.fb_vsize};\n")
+        f.write(f"pub const PSRAM_FB_BASE: usize  = 0x{design.video.fb_base:x};\n")
+
 if __name__ == "__main__":
     from luna_soc import top_level_cli
     os.environ["AMARANTH_verbose"] = "1"
@@ -170,4 +180,5 @@ if __name__ == "__main__":
     os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
     os.environ["LUNA_PLATFORM"] = "tiliqua.tiliqua_platform:TiliquaPlatform"
     design = SelfTestSoc(clock_frequency=int(60e6), dvi_timings=DVI_TIMINGS["1280x720p60"])
+    genrust_constants(design)
     top_level_cli(design)
