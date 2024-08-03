@@ -27,7 +27,7 @@ macro_rules! impl_dma_display {
                         if let Ok((y @ 0..=$H_ACTIVE,
                                    x @ 0..=$V_ACTIVE)) = coord.try_into() {
                             // Calculate the index in the framebuffer.
-                            let index: u32 = (x + y * $H_ACTIVE) / 4;
+                            let index: u32 = (x + ($H_ACTIVE - y) * $H_ACTIVE) / 4;
                             unsafe {
                                 // TODO: support anything other than Gray8
                                 let mut px = self.framebuffer_base.offset(
