@@ -51,6 +51,7 @@ class DVITimings:
 DVI_TIMINGS = {
     # CVT 640x480p59.94
     # Every DVI-compatible monitor should support this, according to the standard.
+    # These numbers correspond directly to `xrandr --verbose`, if you're reading an EDID.
     "640x480p59.94": DVITimings(
         h_active      = 640,
         h_sync_start  = 656,
@@ -78,6 +79,7 @@ DVI_TIMINGS = {
             clkfb_div     = 2
         )
     ),
+
     # DMT 800x600p60
     "800x600p60": DVITimings(
         h_active      = 800,
@@ -90,9 +92,20 @@ DVI_TIMINGS = {
         v_sync_end    = 605,
         v_total       = 628,
         v_sync_invert = False,
-        refresh_rate  = 60.32,
-        pll           = None
+        refresh_rate  = 60.317,
+        pll = DVIPLL(
+            pixel_clk_mhz = 40,
+            clki_div      = 2,
+            clkop_div     = 25,
+            clkop_cphase  = 9,
+            clkos_div     = 3,
+            clkos_cphase  = 0,
+            clkos2_div    = 15,
+            clkos2_cphase = 0,
+            clkfb_div     = 1
+        )
     ),
+
     # DMT 1280x720p60
     "1280x720p60": DVITimings(
         h_active      = 1280,
@@ -118,6 +131,34 @@ DVI_TIMINGS = {
             clkfb_div     = 4
         )
     ),
+
+    "1920x1080p30": DVITimings(
+        h_active      = 1920,
+        h_sync_start  = 2008,
+        h_sync_end    = 2052,
+        h_total       = 2200,
+        h_sync_invert = False,
+        v_active      = 1080,
+        v_sync_start  = 1084,
+        v_sync_end    = 1089,
+        v_total       = 1125,
+        v_sync_invert = False,
+        refresh_rate  = 30.00,
+        pll = DVIPLL(
+            pixel_clk_mhz = 74.25,
+            clki_div      = 15,
+            clkop_div     = 58,
+            clkop_cphase  = 9,
+            clkos_div     = 2,
+            clkos_cphase  = 0,
+            clkos2_div    = 10,
+            clkos2_cphase = 0,
+            clkfb_div     = 4
+        )
+    ),
+
+    # BEGIN ODDBALL TIMINGS
+
     # A round AliExpress display
     "720x720p60": DVITimings(
         h_active      = 720,
@@ -131,7 +172,17 @@ DVI_TIMINGS = {
         v_total       = 760,
         v_sync_invert = False,
         refresh_rate  = 60.0,
-        pll           = None
+        pll = DVIPLL(
+            pixel_clk_mhz = 74.25,
+            clki_div      = 12,
+            clkop_div     = 17,
+            clkop_cphase  = 9,
+            clkos_div     = 4,
+            clkos_cphase  = 0,
+            clkos2_div    = 20,
+            clkos2_cphase = 0,
+            clkfb_div     = 11
+        )
     ),
 }
 
@@ -140,6 +191,9 @@ class DVITimingGenerator(wiring.Component):
     """
     State machine to generate pixel position and hsync/vsync/de signals.
     Designed to run in the DVI pixel clock domain.
+
+    Warn: Sync inversion is NOT handled here in case the logic of this block drives
+    other signals (e.g. framebuffer vsync). Inversion is handled just before the PHY.
     """
 
     def __init__(self, timings: DVITimings, coord_width=16):
