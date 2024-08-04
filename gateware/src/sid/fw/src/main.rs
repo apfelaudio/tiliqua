@@ -97,6 +97,15 @@ fn main() -> ! {
 
     let mut opts = opts::Options::new();
 
+    let sid = peripherals.SID_PERIPH;
+
+    sid.transaction_data().write(
+        |w| unsafe { w.transaction_data().bits((1 << 5) | 0xEu16) } );
+    sid.transaction_data().write(
+        |w| unsafe { w.transaction_data().bits((1 << 5) | 0xFu16) } );
+    sid.transaction_data().write(
+        |w| unsafe { w.transaction_data().bits((8 << 5) | 0x12u16) } );
+
     loop {
 
         draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-150, 0).ok();
