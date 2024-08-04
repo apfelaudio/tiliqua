@@ -7,12 +7,15 @@ import os
 
 from amaranth                            import *
 from amaranth.lib                        import wiring, data
+from amaranth.lib.fifo                   import SyncFIFO
 from amaranth.lib.wiring                 import In, Out
 
 from tiliqua                             import eurorack_pmod
 from tiliqua.tiliqua_soc                 import TiliquaSoc
 from tiliqua.tiliqua_platform            import set_environment_variables
+
 from luna_soc                            import top_level_cli
+from luna_soc.gateware.csr.base          import Peripheral
 
 class SID(wiring.Component):
 
@@ -84,8 +87,18 @@ class SID(wiring.Component):
 
         self.add_verilog_sources(platform)
 
+        # rough usage
+        # - i_clk must be >20x phi2 clk (on bus_i)
+        # - falling edge of phi2 starts internal pipeline, takes ~20 cycles
+        # procedure:
+        # - bring phi2 low for ~12 cycles
+        # - bring phi2 high for ~12 cycles
+        # - before next phi2 low:
+        #   - save latest audio sample
+        #   - maybe write to sid register using bus_i (keep data there until next clock)
+
         m.submodules.vsid = Instance("sid_api",
-            i_clk     = ClockSignal("audio"),
+            i_clk     = ClockSignal("sync"),
             i_bus_i   = self.bus_i,
             i_cs      = self.cs,
             o_data_o  = self.data_o,
@@ -94,10 +107,80 @@ class SID(wiring.Component):
 
         return m
 
+class SIDPeripheral(Peripheral, Elaboratable):
+    def __init__(self, *, transaction_depth=16):
+        super().__init__()
+
+        self.transaction_width = 16
+        self._transactions = SyncFIFO(width=self.transaction_width,
+                                      depth=transaction_depth)
+
+        # CSRs
+        bank                   = self.csr_bank()
+        self._transaction_data = bank.csr(self.transaction_width, "w")
+
+        self.sid = None
+
+        # audio
+        self.last_audio_left  = Signal(signed(24))
+        self.last_audio_right = Signal(signed(24))
+
+        # Peripheral bus
+        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
+        self.bus        = self._bridge.bus
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.bridge  = self._bridge
+        m.submodules.transactions = self._transactions
+
+        # CSRs -> Transactions FIFO
+        m.d.comb += [
+            self._transactions.w_en      .eq(self._transaction_data.w_stb),
+            self._transactions.w_data    .eq(self._transaction_data.w_data),
+        ]
+
+        DIVIDE_BY = 60 # sync clk / 60 should be ~1MHz. TODO generate this constant
+        phi2_clk_counter = Signal(8)
+        with m.If(phi2_clk_counter != DIVIDE_BY):
+            m.d.sync += phi2_clk_counter.eq(phi2_clk_counter + 1)
+        with m.Else():
+            m.d.sync += phi2_clk_counter.eq(0)
+
+        phi2 = Signal()
+        phi2_edge = Signal()
+        m.d.comb += [
+            phi2.eq(phi2_clk_counter > int(DIVIDE_BY/2)),
+            phi2_edge.eq(phi2_clk_counter == (DIVIDE_BY-1))
+        ]
+
+        # route FIFO'd transactions -> SID
+        m.d.sync += self._transactions.r_en.eq(0)
+        with m.If(phi2_edge):
+            m.d.sync += [
+                # 'always' signals
+                self.sid.bus_i.phi2  .eq(phi2),
+                self.sid.cs          .eq(0b0100), # cs_n = 0, cs_io1_n = 1
+                # maybe consume 1 transaction, set as W instead of R if nothing is pending
+                self._transactions.r_en.eq(1),
+                self.sid.bus_i.r_w_n .eq(self._transactions.level == 0),
+                self.sid.bus_i.res   .eq(0),
+                self.sid.bus_i.addr  .eq(self._transactions.r_data),
+                self.sid.bus_i.data  .eq(self._transactions.r_data >> 5),
+                # audio signals
+                self.last_audio_left .eq(self.sid.audio_o.left),
+                self.last_audio_right.eq(self.sid.audio_o.right),
+            ]
+
+        return m
+
 class SIDSoc(TiliquaSoc):
     def __init__(self, *, firmware_path, dvi_timings):
-        super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=True,
+        super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
                          audio_out_peripheral=False)
+        self.sid_periph = SIDPeripheral()
+        self.soc.add_peripheral(self.sid_periph, addr=0xf0006000)
 
     def elaborate(self, platform):
 
@@ -110,6 +193,16 @@ class SIDSoc(TiliquaSoc):
         m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0)
 
         m.submodules.sid = sid = SID()
+
+        self.sid_periph.sid = sid
+
+        m.d.comb += [
+            astream.ostream.valid.eq(1),
+            astream.ostream.payload[0].sas_value().eq(self.sid_periph.last_audio_left>>8),
+            astream.ostream.payload[1].sas_value().eq(self.sid_periph.last_audio_right>>8),
+            astream.ostream.payload[2].eq(0),
+            astream.ostream.payload[3].eq(0),
+        ]
 
         return m
 
