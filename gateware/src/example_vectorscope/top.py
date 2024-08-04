@@ -34,7 +34,7 @@ from amaranth.hdl.mem      import Memory
 
 from amaranth_future       import stream, fixed
 
-from tiliqua.tiliqua_platform import TiliquaPlatform, TiliquaDomainGenerator
+from tiliqua.tiliqua_platform import TiliquaPlatform, TiliquaDomainGenerator, set_environment_variables
 from tiliqua                  import eurorack_pmod, dsp
 from tiliqua.eurorack_pmod    import ASQ
 
@@ -56,23 +56,21 @@ class VectorScopeTop(Elaboratable):
     Can be instantiated with 'sim=True', which swaps out most things that touch hardware for mocks.
     """
 
-    def __init__(self, sim=False):
+    def __init__(self, *, dvi_timings, sim=False):
 
+        self.dvi_timings = dvi_timings
         self.sim = sim
 
         # One PSRAM with an internal arbiter to support multiple DMA masters.
         self.hyperram = PSRAMPeripheral(
                 size=16*1024*1024, sim=sim)
 
-        # WARN: You have to modify the platform PLL if you change the pixel clock!
-        # TODO: integrate ecp5_pll from lambdasoc or custom solution --
-        timings = DVI_TIMINGS["1280x720p60"]
         fb_base = 0x0
-        fb_size = (timings.h_active, timings.v_active)
+        fb_size = (dvi_timings.h_active, dvi_timings.v_active)
 
         # All of our DMA masters
         self.video = FramebufferPHY(
-                fb_base=fb_base, dvi_timings=timings, fb_size=fb_size,
+                fb_base=fb_base, dvi_timings=dvi_timings, fb_size=fb_size,
                 bus_master=self.hyperram.bus, sim=sim)
         self.persist = Persistance(
                 fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size)
@@ -104,7 +102,7 @@ class VectorScopeTop(Elaboratable):
                 self.pmod0.sample_inject[3]._target.eq(self.inject3)
             ]
         else:
-            m.submodules.car = TiliquaDomainGenerator(audio_192=True)
+            m.submodules.car = TiliquaDomainGenerator(audio_192=True, pixclk_pll=self.dvi_timings.pll)
 
         if not self.sim:
             self.pmod0 = eurorack_pmod.EurorackPmod(
@@ -137,13 +135,8 @@ class VectorScopeTop(Elaboratable):
         return m
 
 def build():
-    overrides = {
-        "debug_verilog": True,
-        "verbose": True,
-        "nextpnr_opts": "--timing-allow-fail",
-        "ecppack_opts": "--freq 38.8 --compress",
-    }
-    TiliquaPlatform().build(VectorScopeTop(), **overrides)
+    dvi_timings = set_environment_variables()
+    TiliquaPlatform().build(VectorScopeTop(dvi_timings=dvi_timings))
 
 def colors():
     """
@@ -183,7 +176,7 @@ def sim():
     dst = f"{build_dst}/vectorscope.v"
     print(f"write verilog implementation of 'example_vectorscope' to '{dst}'...")
 
-    top = VectorScopeTop(sim=True)
+    top = VectorScopeTop(dvi_timings=DVI_TIMINGS["1280x720p60"], sim=True)
 
     os.makedirs(build_dst, exist_ok=True)
     with open(dst, "w") as f:
@@ -213,7 +206,7 @@ def sim():
             ]))
 
     # TODO: warn if this is far from the PLL output?
-    dvi_clk_hz = int(top.video.dvi_tgen.timings.pixel_clk_mhz * 1e6)
+    dvi_clk_hz = int(top.video.dvi_tgen.timings.pll.pixel_clk_mhz * 1e6)
     dvi_h_active = top.video.dvi_tgen.timings.h_active
     dvi_v_active = top.video.dvi_tgen.timings.v_active
     sync_clk_hz = 60000000

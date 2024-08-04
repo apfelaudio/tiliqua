@@ -36,7 +36,7 @@ TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 class TiliquaSoc(Elaboratable):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False, audio_out_peripheral=True):
 
-        self.audio_192 = False
+        self.audio_192 = audio_192
         self.dvi_timings = dvi_timings
 
         self.uart_pins = Record([
@@ -117,7 +117,8 @@ class TiliquaSoc(Elaboratable):
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
-                touch_enabled=False)
+                touch_enabled=False,
+                audio_192=self.audio_192)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
 

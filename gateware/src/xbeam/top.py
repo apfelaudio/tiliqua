@@ -77,7 +77,7 @@ class VSPeripheral(Peripheral, Elaboratable):
         return m
 
 class XbeamSoc(TiliquaSoc):
-    def __init__(self, *, firmware_path, dvi_timings, audio_192=False):
+    def __init__(self, *, firmware_path, dvi_timings):
         super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=True,
                          audio_out_peripheral=False)
         # scope stroke bridge from audio stream
