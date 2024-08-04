@@ -24,6 +24,7 @@ test = { cmd = "pytest" }
 build_selftest = { shell = "./scripts/build_soc.sh selftest" }
 build_boot     = { shell = "./scripts/build_soc.sh boot" }
 build_xbeam    = { shell = "./scripts/build_soc.sh xbeam" }
+build_sid      = { shell = "./scripts/build_soc.sh sid" }
 # bitstreams that don't include an SoC
 build_usb_audio = { call = "example_usb_audio.top:build(ila=False)" }
 build_usb_audio_ila = { call = "example_usb_audio.top:build(ila=True)" }
