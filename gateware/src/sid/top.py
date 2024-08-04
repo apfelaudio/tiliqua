@@ -16,21 +16,19 @@ from luna_soc                            import top_level_cli
 
 class SID(wiring.Component):
 
-    # TODO: check struct packing order
-
     clk:     In(1)
     bus_i:   In(data.StructLayout({
-        "addr":  unsigned(5),
-        "data":  unsigned(8),
-        "phi2":  unsigned(1),
-        "r_w_n": unsigned(1),
         "res":   unsigned(1),
+        "r_w_n": unsigned(1),
+        "phi2":  unsigned(1),
+        "data":  unsigned(8),
+        "addr":  unsigned(5),
         }))
     cs:      In(4)
     data_o:  Out(8)
     audio_o: Out(data.StructLayout({
-        "left":  signed(24),
         "right": signed(24),
+        "left":  signed(24),
         }))
 
     def add_verilog_sources(self, platform):
@@ -87,10 +85,10 @@ class SID(wiring.Component):
         self.add_verilog_sources(platform)
 
         m.submodules.vsid = Instance("sid_api",
-            i_clk = ClockSignal("audio"),
-            i_bus_i = self.bus_i,
-            i_cs = self.cs,
-            o_data_o = self.data_o,
+            i_clk     = ClockSignal("audio"),
+            i_bus_i   = self.bus_i,
+            i_cs      = self.cs,
+            o_data_o  = self.data_o,
             o_audio_o = self.audio_o,
         )
 
