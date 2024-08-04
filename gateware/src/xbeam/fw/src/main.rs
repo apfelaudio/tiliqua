@@ -30,15 +30,7 @@ use tiliqua_lib::draw;
 
 use tiliqua_lib::opt::*;
 
-
-// TODO: fetch these from SVF
-const PSRAM_BASE:     usize = 0x20000000;
-const H_ACTIVE:       u32   = 1280;
-const V_ACTIVE:       u32   = 720;
-
-// 16MiB, 4 bytes per word.
-const _PSRAM_SZ_WORDS: usize = 1024 * 1024 * (16 / 4); 
-const PSRAM_FB_BASE:  usize = PSRAM_BASE;
+use tiliqua_lib::generated_constants::*;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE);
 
