@@ -17,6 +17,10 @@ from tiliqua.tiliqua_platform            import set_environment_variables
 from luna_soc                            import top_level_cli
 from luna_soc.gateware.csr.base          import Peripheral
 
+# for simulation
+from tiliqua.video                       import DVI_TIMINGS
+from amaranth.back                       import verilog
+
 class SID(wiring.Component):
 
     clk:     In(1)
@@ -48,8 +52,6 @@ class SID(wiring.Component):
                      "sid_pot.sv",
                      "sid_envelope.sv",
                      "sid_waveform.sv",
-                     "sid_waveform_PST.svh",
-                     "sid_waveform__ST.svh",
                      "sid_waveform_PS__6581.hex",
                      "sid_waveform_PS__8580.hex",
                      "sid_waveform_P_T_6581.hex",
@@ -143,7 +145,7 @@ class SIDPeripheral(Peripheral, Elaboratable):
 
         DIVIDE_BY = 60 # sync clk / 60 should be ~1MHz. TODO generate this constant
         phi2_clk_counter = Signal(8)
-        with m.If(phi2_clk_counter != DIVIDE_BY):
+        with m.If(phi2_clk_counter != DIVIDE_BY-1):
             m.d.sync += phi2_clk_counter.eq(phi2_clk_counter + 1)
         with m.Else():
             m.d.sync += phi2_clk_counter.eq(0)
@@ -155,17 +157,29 @@ class SIDPeripheral(Peripheral, Elaboratable):
             phi2_edge.eq(phi2_clk_counter == (DIVIDE_BY-1))
         ]
 
+        # 'always' signals
+        m.d.sync += [
+            self.sid.bus_i.phi2  .eq(phi2),
+            self.sid.cs          .eq(0b0100), # cs_n = 0, cs_io1_n = 1
+        ]
+
+        startup = Signal(8)
+
         # route FIFO'd transactions -> SID
         m.d.sync += self._transactions.r_en.eq(0)
         with m.If(phi2_edge):
+
+            # TODO verify
+            with m.If(startup < 24):
+                m.d.sync += startup.eq(startup+1)
+                m.d.sync += self.sid.bus_i.res.eq(1)
+            with m.Else():
+                m.d.sync += self.sid.bus_i.res.eq(0)
+
             m.d.sync += [
-                # 'always' signals
-                self.sid.bus_i.phi2  .eq(phi2),
-                self.sid.cs          .eq(0b0100), # cs_n = 0, cs_io1_n = 1
                 # maybe consume 1 transaction, set as W instead of R if nothing is pending
                 self._transactions.r_en.eq(1),
                 self.sid.bus_i.r_w_n .eq(self._transactions.level == 0),
-                self.sid.bus_i.res   .eq(0),
                 self.sid.bus_i.addr  .eq(self._transactions.r_data),
                 self.sid.bus_i.data  .eq(self._transactions.r_data >> 5),
                 # audio signals
@@ -176,9 +190,9 @@ class SIDPeripheral(Peripheral, Elaboratable):
         return m
 
 class SIDSoc(TiliquaSoc):
-    def __init__(self, *, firmware_path, dvi_timings):
+    def __init__(self, *, firmware_path, dvi_timings, sim=False):
         super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
-                         audio_out_peripheral=False)
+                         audio_out_peripheral=False, sim=sim)
         self.sid_periph = SIDPeripheral()
         self.soc.add_peripheral(self.sid_periph, addr=0xf0006000)
 
@@ -213,3 +227,100 @@ if __name__ == "__main__":
                     dvi_timings=dvi_timings)
     design.genrust_constants()
     top_level_cli(design)
+
+class SimPlatform():
+    def __init__(self):
+        self.files = []
+        pass
+    def add_file(self, file_name, contents):
+        self.files.append(file_name)
+
+def sim():
+    """
+    End-to-end simulation of all the gateware in this project.
+    """
+
+    import subprocess
+
+    build_dst = "build"
+    dst = f"{build_dst}/sid_soc.v"
+    print(f"write verilog implementation of 'sid_soc' to '{dst}'...")
+
+    this_directory = os.path.dirname(os.path.realpath(__file__))
+    top = SIDSoc(firmware_path=os.path.join(this_directory, "fw/firmware.bin"),
+                 dvi_timings=DVI_TIMINGS["1280x720p60"],
+                 sim=True)
+
+    sim_platform = SimPlatform()
+
+    os.makedirs(build_dst, exist_ok=True)
+    with open(dst, "w") as f:
+        f.write(verilog.convert(top, platform=sim_platform, ports=[
+            ClockSignal("sync"),
+            ResetSignal("sync"),
+            ClockSignal("dvi"),
+            ResetSignal("dvi"),
+            ClockSignal("audio"),
+            ResetSignal("audio"),
+            top.soc.psram.psram.idle,
+            top.soc.psram.psram.address_ptr,
+            top.soc.psram.psram.read_data_view,
+            top.soc.psram.psram.write_data,
+            top.soc.psram.psram.read_ready,
+            top.soc.psram.psram.write_ready,
+            top.video.dvi_tgen.x,
+            top.video.dvi_tgen.y,
+            top.video.phy_r,
+            top.video.phy_g,
+            top.video.phy_b,
+            top.pmod0.fs_strobe,
+            top.inject0,
+            top.inject1,
+            top.inject2,
+            top.inject3,
+            ]))
+
+    # TODO: warn if this is far from the PLL output?
+    dvi_clk_hz = int(top.video.dvi_tgen.timings.pll.pixel_clk_mhz * 1e6)
+    dvi_h_active = top.video.dvi_tgen.timings.h_active
+    dvi_v_active = top.video.dvi_tgen.timings.v_active
+    sync_clk_hz = 60000000
+    audio_clk_hz = 48000000
+
+    print(sim_platform.files)
+
+    verilator_dst = "build/obj_dir"
+    print(f"verilate '{dst}' into C++ binary...")
+    subprocess.check_call(["verilator",
+                           "-Wno-COMBDLY",
+                           "-Wno-CASEINCOMPLETE",
+                           "-Wno-CASEOVERLAP",
+                           "-Wno-WIDTHEXPAND",
+                           "-Wno-WIDTHTRUNC",
+                           "-Wno-TIMESCALEMOD",
+                           "-Wno-PINMISSING",
+                           "-cc",
+                           "--trace-fst",
+                           "--exe",
+                           "--Mdir", f"{verilator_dst}",
+                           "--build",
+                           "-j", "0",
+                           "-Ibuild",
+                           "-CFLAGS", f"-DDVI_H_ACTIVE={dvi_h_active}",
+                           "-CFLAGS", f"-DDVI_V_ACTIVE={dvi_v_active}",
+                           "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
+                           "-CFLAGS", f"-DSYNC_CLK_HZ={sync_clk_hz}",
+                           "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
+                           "../../src/example_vectorscope/sim/sim.cpp",
+                           f"{dst}",
+                           ] + [
+                               f for f in sim_platform.files
+                               if f.endswith(".svh") or f.endswith(".sv") or f.endswith(".v")
+                           ],
+                          env=os.environ)
+
+    print(f"run verilated binary '{verilator_dst}/Vsid_soc'...")
+    subprocess.check_call([f"{verilator_dst}/Vsid_soc"],
+                          env=os.environ)
+
+    print(f"done.")

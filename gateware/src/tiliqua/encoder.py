@@ -67,6 +67,7 @@ class EncoderPeripheral(Peripheral, Elaboratable):
         m.d.comb += self._button.r_data.eq(button_sync)
 
 
+        """
         # HACK: encoder push override -- hold for 3sec will re-enter bootloader
         REBOOT_SEC = 3
         SYSCLK_HZ = 60000000
@@ -77,6 +78,7 @@ class EncoderPeripheral(Peripheral, Elaboratable):
             m.d.sync += button_counter.eq(0)
         with m.If(button_counter > REBOOT_SEC*SYSCLK_HZ):
             m.d.comb += platform.request("self_program").o.eq(1)
+        """
 
         with m.If(self._step.r_stb):
             m.d.sync += read_occurred.eq(1)

@@ -26,6 +26,7 @@ from tiliqua.encoder                             import EncoderPeripheral
 from tiliqua.dtr                                 import DieTemperaturePeripheral
 from tiliqua.video                               import DVI_TIMINGS, FramebufferPHY
 from tiliqua                                     import eurorack_pmod
+from tiliqua.sim                                 import FakeEurorackPmod, FakeTiliquaDomainGenerator
 
 from example_vectorscope.top                     import Persistance
 
@@ -34,10 +35,12 @@ from luna_soc.gateware.csr.base                  import Peripheral
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
 class TiliquaSoc(Elaboratable):
-    def __init__(self, *, firmware_path, dvi_timings, audio_192=False, audio_out_peripheral=True):
+    def __init__(self, *, firmware_path, dvi_timings, audio_192=False, audio_out_peripheral=True,
+                 sim=False):
 
         self.audio_192 = audio_192
         self.dvi_timings = dvi_timings
+        self.sim = sim
 
         self.uart_pins = Record([
             ('rx', [('i', 1)]),
@@ -74,7 +77,7 @@ class TiliquaSoc(Elaboratable):
         # ... add memory-mapped psram/hyperram peripheral (128Mbit)
         self.psram_base = 0x20000000
         self.psram_size_bytes = 16*1024*1024
-        self.soc.psram = PSRAMPeripheral(size=self.psram_size_bytes)
+        self.soc.psram = PSRAMPeripheral(size=self.psram_size_bytes, sim=self.sim)
         self.soc.add_peripheral(self.soc.psram, addr=self.psram_base)
 
         # ... add our video PHY (DMAs from PSRAM starting at fb_base)
@@ -82,7 +85,7 @@ class TiliquaSoc(Elaboratable):
         fb_size = (dvi_timings.h_active, dvi_timings.v_active)
         self.video = FramebufferPHY(
                 fb_base=fb_base, dvi_timings=dvi_timings, fb_size=fb_size,
-                bus_master=self.soc.psram.bus, sim=False)
+                bus_master=self.soc.psram.bus, sim=self.sim)
         self.soc.psram.add_master(self.video.bus)
 
         # ... add our video persistance effect (all writes gradually fade) -
@@ -102,8 +105,16 @@ class TiliquaSoc(Elaboratable):
                 pmod=None, enable_out=audio_out_peripheral)
         self.soc.add_peripheral(self.pmod0_periph, addr=0xf0004000)
 
-        self.temperature_periph = DieTemperaturePeripheral()
-        self.soc.add_peripheral(self.temperature_periph, addr=0xf0005000)
+        if not self.sim:
+            self.temperature_periph = DieTemperaturePeripheral()
+            self.soc.add_peripheral(self.temperature_periph, addr=0xf0005000)
+
+        if self.sim:
+            self.pmod0 = FakeEurorackPmod()
+            self.inject0 = Signal(signed(16))
+            self.inject1 = Signal(signed(16))
+            self.inject2 = Signal(signed(16))
+            self.inject3 = Signal(signed(16))
 
         super().__init__()
 
@@ -113,14 +124,29 @@ class TiliquaSoc(Elaboratable):
 
         m = Module()
 
-        # add a eurorack pmod instance without an audio stream for basic self-testing
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+        # generate our domain clocks/resets
+        if self.sim:
+            m.submodules.car = FakeTiliquaDomainGenerator()
+            m.d.comb += [
+                self.pmod0.sample_inject[0]._target.eq(self.inject0),
+                self.pmod0.sample_inject[1]._target.eq(self.inject1),
+                self.pmod0.sample_inject[2]._target.eq(self.inject2),
+                self.pmod0.sample_inject[3]._target.eq(self.inject3)
+            ]
+        else:
+            m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
+                                                               pixclk_pll=self.dvi_timings.pll)
+
+        if not self.sim:
+            # add a eurorack pmod instance without an audio stream for basic self-testing
+            self.pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
                 touch_enabled=False,
                 audio_192=self.audio_192)
+
         # connect it to our test peripheral before instantiating SoC.
-        self.pmod0_periph.pmod = pmod0
+        self.pmod0_periph.pmod = self.pmod0
 
         m.submodules.video = self.video
         m.submodules.persist = self.persist
@@ -134,10 +160,7 @@ class TiliquaSoc(Elaboratable):
             m.d.sync += self.video.enable.eq(1)
             m.d.sync += self.persist.enable.eq(1)
 
-        # generate our domain clocks/resets
-        m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
-                                                           pixclk_pll=self.dvi_timings.pll)
-
+        """
         # Connect up our UART
         uart_io = platform.request("uart", 0)
         m.d.comb += [
@@ -168,6 +191,7 @@ class TiliquaSoc(Elaboratable):
 
         # Enable LED driver on motherboard
         m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
+        """
 
         return m
 

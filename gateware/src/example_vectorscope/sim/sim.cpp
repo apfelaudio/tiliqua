@@ -3,7 +3,7 @@
 
 #include <verilated_fst_c.h>
 
-#include "Vvectorscope.h"
+#include "Vsid_soc.h"
 #include "verilated.h"
 
 #include <cmath>
@@ -27,7 +27,7 @@ int gcd(int a, int b)
 int main(int argc, char** argv) {
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
-    Vvectorscope* top = new Vvectorscope{contextp};
+    Vsid_soc* top = new Vsid_soc{contextp};
 
     Verilated::traceEverOn(true);
     VerilatedFstC* tfp = new VerilatedFstC;
@@ -53,6 +53,12 @@ int main(int argc, char** argv) {
     top->rst = 1;
     top->dvi_rst = 1;
     top->audio_rst = 1;
+    top->eval();
+
+    // Vex needs a clock while held in reset
+    top->clk = !top->clk;
+    top->eval();
+    top->clk = !top->clk;
     top->eval();
 
     tfp->dump(contextp->time());

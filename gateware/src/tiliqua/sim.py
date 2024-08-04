@@ -17,6 +17,14 @@ class FakeEurorackPmod(Elaboratable):
     def __init__(self):
         self.sample_i = Signal(data.ArrayLayout(ASQ, 4))
         self.sample_o = Signal(data.ArrayLayout(ASQ, 4))
+        self.sample_adc = Signal(data.ArrayLayout(ASQ, 4))
+        self.touch = Signal(data.ArrayLayout(unsigned(8), 8))
+        self.led = Signal(data.ArrayLayout(signed(8), 8))
+        self.led_mode = Signal(8)
+        self.jack = Signal(8)
+        self.eeprom_mfg = Signal(8)
+        self.eeprom_dev = Signal(8)
+        self.eeprom_serial = Signal(32)
         self.sample_inject  = [Signal(ASQ) for _ in range(4)]
         self.sample_extract = [Signal(ASQ) for _ in range(4)]
         self.fs_strobe = Signal()

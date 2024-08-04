@@ -104,7 +104,7 @@ fn main() -> ! {
     sid.transaction_data().write(
         |w| unsafe { w.transaction_data().bits((1 << 5) | 0xFu16) } );
     sid.transaction_data().write(
-        |w| unsafe { w.transaction_data().bits((8 << 5) | 0x12u16) } );
+        |w| unsafe { w.transaction_data().bits((128 << 5) | 0x12u16) } );
 
     loop {
 
