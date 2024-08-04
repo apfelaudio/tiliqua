@@ -34,7 +34,7 @@ from luna_soc.gateware.csr.base                  import Peripheral
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
 class TiliquaSoc(Elaboratable):
-    def __init__(self, *, firmware_path, dvi_timings, audio_192=False):
+    def __init__(self, *, firmware_path, dvi_timings, audio_192=False, audio_out_peripheral=True):
 
         self.audio_192 = False
         self.dvi_timings = dvi_timings
@@ -98,7 +98,8 @@ class TiliquaSoc(Elaboratable):
         self.encoder0 = EncoderPeripheral(pins=self.encoder_pins)
         self.soc.add_peripheral(self.encoder0, addr=0xf0003000)
 
-        self.pmod0_periph = eurorack_pmod.EurorackPmodPeripheral(pmod=None, enable_out=True)
+        self.pmod0_periph = eurorack_pmod.EurorackPmodPeripheral(
+                pmod=None, enable_out=audio_out_peripheral)
         self.soc.add_peripheral(self.pmod0_periph, addr=0xf0004000)
 
         self.temperature_periph = DieTemperaturePeripheral()
