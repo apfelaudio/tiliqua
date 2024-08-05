@@ -39,20 +39,6 @@ const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
 const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
 const _PCA9635_MIDI:     [usize; 2] = [8, 9];
 
-fn print_rebooting<D>(d: &mut D, rng: &mut fastrand::Rng)
-where
-    D: DrawTarget<Color = Gray8>,
-{
-    let style = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::WHITE);
-    Text::with_alignment(
-        "REBOOTING",
-        Point::new(rng.i32(0..H_ACTIVE as i32), rng.i32(0..V_ACTIVE as i32)),
-        style,
-        Alignment::Center,
-    )
-    .draw(d).ok();
-}
-
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
@@ -89,8 +75,6 @@ fn main() -> ! {
     let mut uptime_ms = 0u32;
     let period_ms = 10u32;
 
-    let mut rng = fastrand::Rng::with_seed(0);
-
     let mut toggle_encoder_leds = false;
 
     let mut time_since_encoder_touched: u32 = 0;
@@ -116,14 +100,10 @@ fn main() -> ! {
     sid_poke(&sid, 0, freq as u8);
     sid_poke(&sid, 1, (freq>>8) as u8);
     sid_poke(&sid, 4, 0x11);   /* Enable gate, triangel waveform. */
-    let freq2: u16 = 1500;
-    sid_poke(&sid, 0+7, freq2 as u8);
-    sid_poke(&sid, 1+7, (freq2>>8) as u8);
-    sid_poke(&sid, 4+7,0x11);   /* Enable gate, triangel waveform. */
 
     loop {
 
-        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-150, 0).ok();
+        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-200, 0).ok();
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
@@ -181,12 +161,10 @@ fn main() -> ! {
         }
 
         if opts.modify() {
-            print_rebooting(&mut display, &mut rng);
             if toggle_encoder_leds {
                 if let Some(n) = opts.view().selected() {
-                    pmod.led_set_manual(n, i8::MAX);
-                    if time_since_encoder_touched > 250 {
-                        info!("BITSTREAM{}\n\r", n);
+                    if n < 8 {
+                        pmod.led_set_manual(n, i8::MAX);
                     }
                 }
             } else {
@@ -198,7 +176,9 @@ fn main() -> ! {
                     pmod.led_set_manual(n, 0i8);
                 }
                 if let Some(n) = opts.view().selected() {
-                    pmod.led_set_manual(n, (((1000-time_since_encoder_touched) * 120) / 1000) as i8);
+                    if n < 8 {
+                        pmod.led_set_manual(n, (((1000-time_since_encoder_touched) * 120) / 1000) as i8);
+                    }
                 }
             } else {
                 pmod.led_all_auto();
@@ -207,5 +187,111 @@ fn main() -> ! {
 
         pca9635.push().ok();
 
+        {
+            sid_poke(&sid, 0, opts.voice1.freq.value as u8);
+            sid_poke(&sid, 1, (opts.voice1.freq.value>>8) as u8);
+            sid_poke(&sid, 2, opts.voice1.pw.value as u8);
+            sid_poke(&sid, 3, (opts.voice1.pw.value>>8) as u8);
+
+            let mut reg04 = 0u8;
+            use crate::opts::Wave;
+            match opts.voice1.wave.value {
+                Wave::Triangle => { reg04 |= 0x10; }
+                Wave::Saw      => { reg04 |= 0x20; }
+                Wave::Pulse    => { reg04 |= 0x40; }
+                Wave::Noise    => { reg04 |= 0x80; }
+            }
+
+            reg04 |= opts.voice1.gate.value;
+            reg04 |= opts.voice1.sync.value << 1;
+            reg04 |= opts.voice1.ring.value << 2;
+
+            sid_poke(&sid, 4, reg04);
+
+            sid_poke(&sid, 5,
+                opts.voice1.decay.value |
+                (opts.voice1.attack.value << 4));
+
+            sid_poke(&sid, 6,
+                opts.voice1.release.value |
+                (opts.voice1.sustain.value << 4));
+        }
+
+        {
+            sid_poke(&sid, 7+0, opts.voice2.freq.value as u8);
+            sid_poke(&sid, 7+1, (opts.voice2.freq.value>>8) as u8);
+            sid_poke(&sid, 7+2, opts.voice2.pw.value as u8);
+            sid_poke(&sid, 7+3, (opts.voice2.pw.value>>8) as u8);
+
+            let mut reg04 = 0u8;
+            use crate::opts::Wave;
+            match opts.voice2.wave.value {
+                Wave::Triangle => { reg04 |= 0x10; }
+                Wave::Saw      => { reg04 |= 0x20; }
+                Wave::Pulse    => { reg04 |= 0x40; }
+                Wave::Noise    => { reg04 |= 0x80; }
+            }
+
+            reg04 |= opts.voice2.gate.value;
+            reg04 |= opts.voice2.sync.value << 1;
+            reg04 |= opts.voice2.ring.value << 2;
+
+            sid_poke(&sid, 7+4, reg04);
+
+            sid_poke(&sid, 7+5,
+                opts.voice2.decay.value |
+                (opts.voice2.attack.value << 4));
+
+            sid_poke(&sid, 7+6,
+                opts.voice2.release.value |
+                (opts.voice2.sustain.value << 4));
+        }
+
+        {
+            sid_poke(&sid, 14+0, opts.voice3.freq.value as u8);
+            sid_poke(&sid, 14+1, (opts.voice3.freq.value>>8) as u8);
+            sid_poke(&sid, 14+2, opts.voice3.pw.value as u8);
+            sid_poke(&sid, 14+3, (opts.voice3.pw.value>>8) as u8);
+
+            let mut reg04 = 0u8;
+            use crate::opts::Wave;
+            match opts.voice3.wave.value {
+                Wave::Triangle => { reg04 |= 0x10; }
+                Wave::Saw      => { reg04 |= 0x20; }
+                Wave::Pulse    => { reg04 |= 0x40; }
+                Wave::Noise    => { reg04 |= 0x80; }
+            }
+
+            reg04 |= opts.voice3.gate.value;
+            reg04 |= opts.voice3.sync.value << 1;
+            reg04 |= opts.voice3.ring.value << 2;
+
+            sid_poke(&sid, 14+4, reg04);
+
+            sid_poke(&sid, 14+5,
+                opts.voice3.decay.value |
+                (opts.voice3.attack.value << 4));
+
+            sid_poke(&sid, 14+6,
+                opts.voice3.release.value |
+                (opts.voice3.sustain.value << 4));
+        }
+
+
+        sid_poke(&sid, 0x15, (opts.filter.cutoff.value & 0x7) as u8);
+        sid_poke(&sid, 0x16, (opts.filter.cutoff.value >> 3) as u8);
+        sid_poke(&sid, 0x17,
+            (opts.filter.filt1.value |
+            (opts.filter.filt2.value << 1) |
+            (opts.filter.filt3.value << 2) |
+            (opts.filter.reso.value  << 4)) as u8
+            );
+        sid_poke(&sid, 0x18,
+            ((opts.filter.lp.value     << 4) |
+             (opts.filter.bp.value     << 5) |
+             (opts.filter.hp.value     << 6) |
+             (opts.filter.v3off.value  << 7) |
+             (opts.filter.volume.value << 0)) as u8
+            );
     }
 }
