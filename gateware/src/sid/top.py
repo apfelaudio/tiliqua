@@ -143,7 +143,7 @@ class SIDPeripheral(Peripheral, Elaboratable):
 
         DIVIDE_BY = 60 # sync clk / 60 should be ~1MHz. TODO generate this constant
         phi2_clk_counter = Signal(8)
-        with m.If(phi2_clk_counter != DIVIDE_BY):
+        with m.If(phi2_clk_counter != DIVIDE_BY-1):
             m.d.sync += phi2_clk_counter.eq(phi2_clk_counter + 1)
         with m.Else():
             m.d.sync += phi2_clk_counter.eq(0)
@@ -155,17 +155,29 @@ class SIDPeripheral(Peripheral, Elaboratable):
             phi2_edge.eq(phi2_clk_counter == (DIVIDE_BY-1))
         ]
 
+        # 'always' signals
+        m.d.sync += [
+            self.sid.bus_i.phi2  .eq(phi2),
+            self.sid.cs          .eq(0b0100), # cs_n = 0, cs_io1_n = 1
+        ]
+
+        startup = Signal(8)
+
         # route FIFO'd transactions -> SID
         m.d.sync += self._transactions.r_en.eq(0)
         with m.If(phi2_edge):
+
+            # TODO verify
+            with m.If(startup < 24):
+                m.d.sync += startup.eq(startup+1)
+                m.d.sync += self.sid.bus_i.res.eq(1)
+            with m.Else():
+                m.d.sync += self.sid.bus_i.res.eq(0)
+
             m.d.sync += [
-                # 'always' signals
-                self.sid.bus_i.phi2  .eq(phi2),
-                self.sid.cs          .eq(0b0100), # cs_n = 0, cs_io1_n = 1
                 # maybe consume 1 transaction, set as W instead of R if nothing is pending
                 self._transactions.r_en.eq(1),
                 self.sid.bus_i.r_w_n .eq(self._transactions.level == 0),
-                self.sid.bus_i.res   .eq(0),
                 self.sid.bus_i.addr  .eq(self._transactions.r_data),
                 self.sid.bus_i.data  .eq(self._transactions.r_data >> 5),
                 # audio signals
