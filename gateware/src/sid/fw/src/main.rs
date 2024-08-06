@@ -39,6 +39,13 @@ const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
 const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
 const _PCA9635_MIDI:     [usize; 2] = [8, 9];
 
+use micromath::F32Ext;
+
+fn volts_to_freq(volts: f32) -> f32 {
+    let a3_freq_hz: f32 = 440.0f32;
+    (a3_freq_hz / 8.0f32) * (2.0f32).powf(volts + 2.0f32 - 3.0f32/4.0f32)
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
@@ -73,7 +80,7 @@ fn main() -> ! {
     };
 
     let mut uptime_ms = 0u32;
-    let period_ms = 10u32;
+    let period_ms = 1u32;
 
     let mut toggle_encoder_leds = false;
 
@@ -187,9 +194,43 @@ fn main() -> ! {
 
         pca9635.push().ok();
 
+        let x = pmod.sample_i();
+        if x[0] > 2000 {
+            opts.voice1.gate.value = 1;
+        }
+        if x[0] < 1000 {
+            opts.voice1.gate.value = 0;
+        }
+
+        if x[1] > 2000 {
+            opts.voice2.gate.value = 1;
+        }
+        if x[1] < 1000 {
+            opts.voice2.gate.value = 0;
+        }
+
+        if x[2] > 2000 {
+            opts.voice3.gate.value = 1;
+        }
+        if x[2] < 1000 {
+            opts.voice3.gate.value = 0;
+        }
+
+        let volts: f32 = (x[3] as f32) / 4096.0f32;
+        let freq = volts_to_freq(volts);
+        let sid_freq = 16u16 * (0.05960464f32 * freq) as u16; // assumes 1Mhz SID clk
+                                                      // http://www.sidmusic.org/sid/sidtech2.html
+
         {
+            /*
             sid_poke(&sid, 0, opts.voice1.freq.value as u8);
             sid_poke(&sid, 1, (opts.voice1.freq.value>>8) as u8);
+            */
+
+            opts.voice1.freq.value = sid_freq;
+            sid_poke(&sid, 0, sid_freq as u8);
+            sid_poke(&sid, 1, (sid_freq>>8) as u8);
+
             sid_poke(&sid, 2, opts.voice1.pw.value as u8);
             sid_poke(&sid, 3, (opts.voice1.pw.value>>8) as u8);
 

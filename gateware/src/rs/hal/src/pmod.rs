@@ -35,6 +35,15 @@ macro_rules! impl_eurorack_pmod {
                     ]
                 }
 
+                pub fn sample_i(&self) -> [i16; 4] {
+                    [
+                        self.registers.sample_i0().read().bits() as i16,
+                        self.registers.sample_i1().read().bits() as i16,
+                        self.registers.sample_i2().read().bits() as i16,
+                        self.registers.sample_i3().read().bits() as i16,
+                    ]
+                }
+
                 pub fn led_set_manual(&mut self, index: usize, value: i8)  {
 
                     match index {

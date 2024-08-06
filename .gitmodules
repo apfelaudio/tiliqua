@@ -2,5 +2,5 @@
 	path = gateware/deps/eurorack-pmod
 	url = https://github.com/apfelaudio/eurorack-pmod
 [submodule "gateware/deps/reDIP-SID"]
-	path = gateware/deps/eurorack-pmod
+	path = gateware/deps/reDIP-SID
 	url = https://github.com/daglem/reDIP-SID
