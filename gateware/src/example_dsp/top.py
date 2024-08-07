@@ -540,8 +540,8 @@ class MidiPolyTop(wiring.Component):
 
         # Voice mixdown to stereo. Alternate left/right
         o_channels = 2
-        coefficients = [[o_channels/n_voices, 0.0                ],
-                        [0.0,                 o_channels/n_voices]] * (n_voices // 2)
+        coefficients = [[0.75*o_channels/n_voices, 0.0                ],
+                        [0.0,                      0.75*o_channels/n_voices]] * (n_voices // 2)
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=n_voices, o_channels=o_channels,
             coefficients=coefficients)
@@ -564,7 +564,7 @@ class MidiPolyTop(wiring.Component):
         for lr in [0, 1]:
             dsp.connect_remap(m, hpf_split2.o[lr], output_hpfs[lr].i, lambda o, i : [
                 i.payload.x                     .eq(o.payload),
-                i.payload.cutoff.sas_value()    .eq(50),
+                i.payload.cutoff.sas_value()    .eq(200),
                 i.payload.resonance.sas_value() .eq(20000),
             ])
 
