@@ -8,6 +8,9 @@ use embedded_graphics::{
 
 use crate::opt;
 
+use heapless::String;
+use core::fmt::Write;
+
 pub fn draw_options<D, O>(d: &mut D, opts: &O,
                        pos_x: u32, pos_y: u32, hue: u8) -> Result<(), D::Error>
 where
@@ -84,6 +87,88 @@ where
               Point::new(vx-3, (vy - 13 + vspace*opts_view.len()) as i32))
               .into_styled(stroke)
               .draw(d)?;
+
+    Ok(())
+}
+
+const NOTE_NAMES: [&'static str; 12] = [
+    "C",
+    "C#",
+    "D",
+    "D#",
+    "E",
+    "F",
+    "F#",
+    "G",
+    "G#",
+    "A",
+    "A#",
+    "B",
+];
+
+fn midi_note_name<const N: usize>(s: &mut String<N>, note: u8) {
+    if note >= 12 {
+        write!(s, "{}{}", NOTE_NAMES[(note%12) as usize],
+               (note / 12) - 1);
+    }
+}
+
+fn draw_voice<D>(d: &mut D, sx: i32, sy: u32, note: u8, cutoff: u8, hue: u8) -> Result<(), D::Error>
+where
+    D: DrawTarget<Color = Gray8>,
+{
+    let font_small_white = MonoTextStyle::new(&FONT_9X15, Gray8::WHITE);
+
+
+    let mut stroke_gain = PrimitiveStyleBuilder::new()
+        .stroke_color(Gray8::new(0x1))
+        .stroke_width(1)
+        .build();
+
+
+    let mut s: String<16> = String::new();
+
+    if cutoff > 0 {
+        midi_note_name(&mut s, note);
+        stroke_gain = PrimitiveStyleBuilder::new()
+            .stroke_color(Gray8::new((cutoff & 0xF0) + hue))
+            .stroke_width(1)
+            .build();
+    }
+
+    // Pitch text + box
+
+    Text::new(
+        &s,
+        Point::new(sx+11, sy as i32 + 14),
+        font_small_white,
+    )
+    .draw(d)?;
+
+    // LPF visualization
+
+    let filter_x = sx+2;
+    let filter_y = (sy as i32) + 19;
+    let filter_w = 40;
+    let filter_h = 16;
+    let filter_skew = 2;
+    let filter_pos: i32 = ((filter_w as f32) * (cutoff as f32 / 256.0f32)) as i32;
+
+    Line::new(Point::new(filter_x,            filter_y),
+              Point::new(filter_x+filter_pos, filter_y))
+              .into_styled(stroke_gain)
+              .draw(d)?;
+
+    Line::new(Point::new(filter_x+filter_skew+filter_pos, filter_y+filter_h),
+              Point::new(filter_x+filter_w+filter_skew,               filter_y+filter_h))
+              .into_styled(stroke_gain)
+              .draw(d)?;
+
+    Line::new(Point::new(filter_x+filter_pos, filter_y),
+              Point::new(filter_x+filter_pos+filter_skew, filter_y+filter_h))
+              .into_styled(stroke_gain)
+              .draw(d)?;
+
 
     Ok(())
 }
@@ -224,6 +309,13 @@ mod tests {
 
         disp.img = ImageBuffer::new(H_ACTIVE, V_ACTIVE);
         draw_options(&mut disp, &opts, H_ACTIVE-200, V_ACTIVE-100, 0).ok();
+
+        let n_voices = 8;
+        for n in 0..8 {
+            draw_voice(&mut disp, 100, 100 + n * (V_ACTIVE-200) / n_voices,
+                       12, 127, 0).ok();
+        }
+
         disp.img.save("draw_opt_test.png").unwrap();
     }
 

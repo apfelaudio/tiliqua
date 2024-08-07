@@ -152,8 +152,12 @@ fn main() -> ! {
 
         let notes = synth.voice_notes();
         let cutoffs = synth.voice_cutoffs();
-        info!("note0: {}", notes[0]);
-        info!("cutoff0: {}", cutoffs[0]);
+
+        let n_voices = 8;
+        for n in 0..8 {
+            draw_voice(&mut disp, 100, 100 + n * (V_ACTIVE-200) / n_voices,
+                       notes[n], cutoffs[n], opts.xbeam.hue.value).ok();
+        }
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;
