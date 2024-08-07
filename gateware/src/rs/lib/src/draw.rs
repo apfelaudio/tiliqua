@@ -113,7 +113,7 @@ fn midi_note_name<const N: usize>(s: &mut String<N>, note: u8) {
     }
 }
 
-fn draw_voice<D>(d: &mut D, sx: i32, sy: u32, note: u8, cutoff: u8, hue: u8) -> Result<(), D::Error>
+pub fn draw_voice<D>(d: &mut D, sx: i32, sy: u32, note: u8, cutoff: u8, hue: u8) -> Result<(), D::Error>
 where
     D: DrawTarget<Color = Gray8>,
 {
@@ -131,7 +131,7 @@ where
     if cutoff > 0 {
         midi_note_name(&mut s, note);
         stroke_gain = PrimitiveStyleBuilder::new()
-            .stroke_color(Gray8::new((cutoff & 0xF0) + hue))
+            .stroke_color(Gray8::new(0xA0 + hue))
             .stroke_width(1)
             .build();
     }

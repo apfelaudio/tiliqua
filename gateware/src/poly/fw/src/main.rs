@@ -154,9 +154,9 @@ fn main() -> ! {
         let cutoffs = synth.voice_cutoffs();
 
         let n_voices = 8;
-        for n in 0..8 {
-            draw_voice(&mut disp, 100, 100 + n * (V_ACTIVE-200) / n_voices,
-                       notes[n], cutoffs[n], opts.xbeam.hue.value).ok();
+        for ix in 0usize..8usize {
+            draw::draw_voice(&mut display, 100, 100 + (ix as u32) * (V_ACTIVE-200) / n_voices,
+                             notes[ix], cutoffs[ix], opts.xbeam.hue.value).ok();
         }
 
         for n in 0..16 {
