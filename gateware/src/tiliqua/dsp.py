@@ -28,9 +28,10 @@ class Split(wiring.Component):
     Split a single stream into multiple independent streams.
     """
 
-    def __init__(self, n_channels, replicate=False):
+    def __init__(self, n_channels, replicate=False, source=None):
         self.n_channels = n_channels
         self.replicate  = replicate
+        self.source     = source
 
         if self.replicate:
             super().__init__({
@@ -67,7 +68,15 @@ class Split(wiring.Component):
                 with m.If(flow[n]):
                     m.d.sync += done[n].eq(1)
 
+        if self.source is not None:
+            wiring.connect(m, self.source, self.i)
+
         return m
+
+    def wire_ready(self, m, channels):
+        """Set out channels as permanently READY so they don't block progress."""
+        for n in channels:
+            wiring.connect(m, self.o[n], ASQ_READY)
 
 class Merge(wiring.Component):
 
@@ -75,8 +84,9 @@ class Merge(wiring.Component):
     Merge multiple independent streams into a single stream.
     """
 
-    def __init__(self, n_channels):
+    def __init__(self, n_channels, sink=None):
         self.n_channels = n_channels
+        self.sink       = sink
         super().__init__({
             "i": In(stream.Signature(ASQ)).array(n_channels),
             "o": Out(stream.Signature(data.ArrayLayout(ASQ, n_channels))),
@@ -89,7 +99,41 @@ class Merge(wiring.Component):
         m.d.comb += [self.o.payload[n].eq(self.i[n].payload) for n in range(self.n_channels)]
         m.d.comb += self.o.valid.eq(Cat([self.i[n].valid for n in range(self.n_channels)]).all())
 
+        if self.sink is not None:
+            wiring.connect(m, self.o, self.sink)
+
         return m
+
+    def wire_valid(self, m, channels):
+        """Set in channels as permanently VALID so they don't block progress."""
+        for n in channels:
+            wiring.connect(m, ASQ_VALID, self.i[n])
+
+def connect_remap(m, stream_o, stream_i, mapping):
+    """
+    Connect 2 streams, bypassing normal wiring.connect() checks
+    that the signatures match. This allows easily remapping fields when
+    you are trying to connect streams with different signatures.
+
+    For example, say I have a stream with an ArrayLayout payload and want to
+    map it to a different stream with a StructLayout payload, and the underlying
+    bit-representation of both layouts do not match, I can remap using:
+
+    ```
+    dsp.connect_remap(m, vca_merge2a.o, vca0.i, lambda o, i : [
+        i.payload.x   .eq(o.payload[0]),
+        i.payload.gain.eq(o.payload[1] << 2)
+    ])
+    ```
+
+    This is a bit of a hack. TODO perhaps implement this as a StreamConverter
+    such that we can still use wiring.connect?.
+    """
+
+    m.d.comb += mapping(stream_o, stream_i) + [
+        stream_i.valid.eq(stream_o.valid),
+        stream_o.ready.eq(stream_i.ready)
+    ]
 
 class VCA(wiring.Component):
 

@@ -456,9 +456,6 @@ class MidiPolyTop(wiring.Component):
         # supported simultaneous voices
         n_voices = 8
 
-        # delay effect on output mix
-        diffuser = True
-
         # Create LUTs from midi note to freq_inc (ASQ tuning into NCO).
         # Store it in memories where the address is the midi note,
         # and the data coming out is directly routed to NCO freq_inc.
@@ -496,11 +493,9 @@ class MidiPolyTop(wiring.Component):
                         m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
 
         # analog ins
-        m.submodules.split4 = split4 = dsp.Split(n_channels=4)
-        wiring.connect(m, wiring.flipped(self.i), split4.i)
-        #wiring.connect(m, split4.o[1], dsp.ASQ_READY)
-        wiring.connect(m, split4.o[2], dsp.ASQ_READY)
-        wiring.connect(m, split4.o[3], dsp.ASQ_READY)
+        m.submodules.cv_in = cv_in = dsp.Split(
+                n_channels=4, source=wiring.flipped(self.i))
+        cv_in.wire_ready(m, [2, 3])
 
         for n in range(n_voices):
 
@@ -509,36 +504,38 @@ class MidiPolyTop(wiring.Component):
             with m.If(last_cc1 < voice_tracker.o[n].payload.velocity):
                 m.d.comb += boxcars[n].i.payload.sas_value().eq(last_cc1 << 4)
             with m.Else():
-                m.d.comb += boxcars[n].i.payload.sas_value().eq(voice_tracker.o[n].payload.velocity << 4)
+                m.d.comb += boxcars[n].i.payload.sas_value().eq(
+                        voice_tracker.o[n].payload.velocity << 4)
 
             m.d.comb += [
                 # Connect voice.note -> note to frequency LUT
                 rports[n].en.eq(1),
                 rports[n].addr.eq(voice_tracker.o[n].payload.note),
+            ]
 
-                # Connect LUT output -> NCO.i (clocked at i.valid for normal sample rate)
-                ncos[n].i.valid.eq(split4.o[0].valid),
-                ncos[n].i.payload.freq_inc.eq(rports[n].data),
+            # Connect LUT output -> NCO.i (clocked at i.valid for normal sample rate)
+            dsp.connect_remap(m, cv_in.o[0], ncos[n].i, lambda o, i : [
                 # For fun, phase mod on audio in #0
-                ncos[n].i.payload.phase.eq(split4.o[0].payload),
-                split4.o[0].ready.eq(ncos[n].i.ready),
+                i.payload.phase   .eq(o.payload),
+                i.payload.freq_inc.eq(rports[n].data) # ok, always valid
+            ])
 
-                # Boxcar synchronization (don't let it block anything)
+            # Connect voice.vel and NCO.o -> SVF.i
+            dsp.connect_remap(m, ncos[n].o, svfs[n].i, lambda o, i : [
+                i.payload.x                    .eq(o.payload >> 1),
+                i.payload.resonance.sas_value().eq(8000),
+                i.payload.cutoff               .eq(boxcars[n].o.payload) # hack
+            ])
+
+            # Connect SVF LPF -> merge channel
+            dsp.connect_remap(m, svfs[n].o, merge.i[n], lambda o, i : [
+                i.payload.eq(o.payload.lp),
+            ])
+
+            # HACK: Boxcar synchronization
+            m.d.comb += [
                 boxcars[n].i.valid.eq(ncos[n].o.valid),
                 boxcars[n].o.ready.eq(svfs[n].i.ready),
-
-                # Connect voice.vel and NCO.o -> SVF.i
-                svfs[n].i.valid.eq(ncos[n].o.valid),
-                svfs[n].i.payload.x.eq(ncos[n].o.payload >> 1),
-                svfs[n].i.payload.cutoff.eq(boxcars[n].o.payload),
-                #svfs[n].i.payload.cutoff.eq(1000),
-                svfs[n].i.payload.resonance.sas_value().eq(8000),
-                ncos[n].o.ready.eq(svfs[n].i.ready),
-
-                # Connect SVF -> merge channel
-                svfs[n].o.ready.eq(merge.i[n].ready),
-                merge.i[n].valid.eq(svfs[n].o.valid),
-                merge.i[n].payload.eq(svfs[n].o.payload.lp),
             ]
 
         # Voice mixdown to stereo. Alternate left/right
@@ -550,84 +547,82 @@ class MidiPolyTop(wiring.Component):
             coefficients=coefficients)
         wiring.connect(m, merge.o, matrix_mix.i),
 
-        # Optional output delay (diffuser)
-        if diffuser:
-            m.submodules.diffuser = diffuser = Diffuser()
-
-            def scaled_tanh(x):
-                return math.tanh(3.0*x)
-
-            m.submodules.vca0 = vca0 = dsp.GainVCA()
-            m.submodules.vca1 = vca1 = dsp.GainVCA()
-            m.submodules.waveshaper0 = waveshaper0 = dsp.WaveShaper(lut_function=scaled_tanh)
-            m.submodules.waveshaper1 = waveshaper1 = dsp.WaveShaper(lut_function=scaled_tanh)
-
-            m.submodules.diffuser_split4 = diffuser_split4 = dsp.Split(n_channels=4)
-
-            wiring.connect(m, diffuser.o, diffuser_split4.i)
-            wiring.connect(m, diffuser_split4.o[0], dsp.ASQ_READY)
-            wiring.connect(m, diffuser_split4.o[1], dsp.ASQ_READY)
-
-            m.submodules.vca_merge2a = vca_merge2a = dsp.Merge(n_channels=2)
-            m.submodules.vca_merge2b = vca_merge2b = dsp.Merge(n_channels=2)
-
-            m.submodules.cv_gain_split2 = cv_gain_split2 = dsp.Split(n_channels=2, replicate=True)
-            wiring.connect(m, split4.o[1], cv_gain_split2.i)
-            wiring.connect(m, diffuser_split4.o[2], vca_merge2a.i[0])
-            wiring.connect(m, diffuser_split4.o[3], vca_merge2b.i[0])
-            wiring.connect(m, cv_gain_split2.o[0],  vca_merge2a.i[1])
-            wiring.connect(m, cv_gain_split2.o[1],  vca_merge2b.i[1])
-            #wiring.connect(m, vca_merge2a.o, vca0.i)
-            #wiring.connect(m, vca_merge2b.o, vca1.i)
-
-            # override
-            m.d.comb += [
-                vca0.i.valid.eq(vca_merge2a.o.valid),
-                vca1.i.valid.eq(vca_merge2b.o.valid),
-                vca_merge2a.o.ready.eq(vca0.i.ready),
-                vca_merge2b.o.ready.eq(vca1.i.ready),
-                vca0.i.payload.x.eq(vca_merge2a.o.payload[0]),
-                vca1.i.payload.x.eq(vca_merge2b.o.payload[0]),
-                vca0.i.payload.gain.eq(vca_merge2a.o.payload[1] << 2),
-                vca1.i.payload.gain.eq(vca_merge2b.o.payload[1] << 2),
-            ]
-
-            wiring.connect(m, vca0.o, waveshaper0.i)
-            wiring.connect(m, vca1.o, waveshaper1.i)
-
-            m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
-
-            wiring.connect(m, dsp.ASQ_VALID, merge4.i[0])
-            wiring.connect(m, dsp.ASQ_VALID, merge4.i[1])
-            wiring.connect(m, waveshaper0.o, merge4.i[2])
-            wiring.connect(m, waveshaper1.o, merge4.i[3])
-
-            wiring.connect(m, merge4.o, wiring.flipped(self.o))
-
-        out = self.o if diffuser == False else diffuser.i
+        m.submodules.diffuser = diffuser = Diffuser()
 
         # Stereo HPF to remove DC from any voices in 'zero cutoff'
         # Route to audio output channels 2 & 3
+
         output_hpfs = [dsp.SVF() for _ in range(o_channels)]
         m.submodules += output_hpfs
-        m.d.comb += [
-            matrix_mix.o.ready.eq(output_hpfs[0].i.ready & output_hpfs[1].i.ready),
-            output_hpfs[0].i.valid.eq(matrix_mix.o.valid),
-            output_hpfs[1].i.valid.eq(matrix_mix.o.valid),
-            output_hpfs[0].i.payload.x.eq(matrix_mix.o.payload[0]),
-            output_hpfs[1].i.payload.x.eq(matrix_mix.o.payload[1]),
-            output_hpfs[0].i.payload.cutoff.sas_value().eq(50),
-            output_hpfs[1].i.payload.cutoff.sas_value().eq(50),
-            output_hpfs[0].i.payload.resonance.sas_value().eq(20000),
-            output_hpfs[1].i.payload.resonance.sas_value().eq(20000),
 
-            # output connections
-            output_hpfs[0].o.ready.eq(out.ready),
-            output_hpfs[1].o.ready.eq(out.ready),
-            out.payload[2].eq(output_hpfs[0].o.payload.hp << 2),
-            out.payload[3].eq(output_hpfs[1].o.payload.hp << 2),
-            out.valid.eq(output_hpfs[0].o.valid & output_hpfs[1].o.valid),
-        ]
+        m.submodules.hpf_split2 = hpf_split2 = dsp.Split(n_channels=2, source=matrix_mix.o)
+
+        dsp.connect_remap(m, hpf_split2.o[0], output_hpfs[0].i, lambda o, i : [
+            i.payload.x                     .eq(o.payload),
+            i.payload.cutoff.sas_value()    .eq(50),
+            i.payload.resonance.sas_value() .eq(20000),
+        ])
+
+        dsp.connect_remap(m, hpf_split2.o[1], output_hpfs[1].i, lambda o, i : [
+            i.payload.x                     .eq(o.payload),
+            i.payload.cutoff.sas_value()    .eq(50),
+            i.payload.resonance.sas_value() .eq(20000),
+        ])
+
+        m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=diffuser.i)
+        hpf_merge4.wire_valid(m, [0, 1])
+
+        dsp.connect_remap(m, output_hpfs[0].o, hpf_merge4.i[2], lambda o, i : [
+            i.payload.eq(o.payload.hp << 2)
+        ])
+        dsp.connect_remap(m, output_hpfs[1].o, hpf_merge4.i[3], lambda o, i : [
+            i.payload.eq(o.payload.hp << 2)
+        ])
+
+        # Stereo distortion effect after diffuser.
+
+        def scaled_tanh(x):
+            return math.tanh(3.0*x)
+
+        m.submodules.vca0 = vca0 = dsp.GainVCA()
+        m.submodules.vca1 = vca1 = dsp.GainVCA()
+        m.submodules.waveshaper0 = waveshaper0 = dsp.WaveShaper(lut_function=scaled_tanh)
+        m.submodules.waveshaper1 = waveshaper1 = dsp.WaveShaper(lut_function=scaled_tanh)
+
+        m.submodules.diffuser_split4 = diffuser_split4 = dsp.Split(
+                n_channels=4, source=diffuser.o)
+        diffuser_split4.wire_ready(m, [0, 1])
+
+        m.submodules.vca_merge2a = vca_merge2a = dsp.Merge(n_channels=2)
+        m.submodules.vca_merge2b = vca_merge2b = dsp.Merge(n_channels=2)
+
+        m.submodules.cv_gain_split2 = cv_gain_split2 = dsp.Split(n_channels=2, replicate=True)
+        wiring.connect(m, cv_in.o[1], cv_gain_split2.i)
+        wiring.connect(m, diffuser_split4.o[2], vca_merge2a.i[0])
+        wiring.connect(m, diffuser_split4.o[3], vca_merge2b.i[0])
+        wiring.connect(m, cv_gain_split2.o[0],  vca_merge2a.i[1])
+        wiring.connect(m, cv_gain_split2.o[1],  vca_merge2b.i[1])
+
+        dsp.connect_remap(m, vca_merge2a.o, vca0.i, lambda o, i : [
+            i.payload.x   .eq(o.payload[0]),
+            i.payload.gain.eq(o.payload[1] << 2)
+        ])
+
+        dsp.connect_remap(m, vca_merge2b.o, vca1.i, lambda o, i : [
+            i.payload.x   .eq(o.payload[0]),
+            i.payload.gain.eq(o.payload[1] << 2),
+        ])
+
+        wiring.connect(m, vca0.o, waveshaper0.i)
+        wiring.connect(m, vca1.o, waveshaper1.i)
+
+        m.submodules.merge4 = merge4 = dsp.Merge(
+                n_channels=4, sink=wiring.flipped(self.o))
+        merge4.wire_valid(m, [0, 1])
+
+        wiring.connect(m, waveshaper0.o, merge4.i[2])
+        wiring.connect(m, waveshaper1.o, merge4.i[3])
+
 
         return m
 
