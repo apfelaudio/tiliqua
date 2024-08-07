@@ -547,6 +547,8 @@ class MidiPolyTop(wiring.Component):
             coefficients=coefficients)
         wiring.connect(m, merge.o, matrix_mix.i),
 
+        # Output diffuser
+
         m.submodules.diffuser = diffuser = Diffuser()
 
         # Stereo HPF to remove DC from any voices in 'zero cutoff'
@@ -556,73 +558,56 @@ class MidiPolyTop(wiring.Component):
         m.submodules += output_hpfs
 
         m.submodules.hpf_split2 = hpf_split2 = dsp.Split(n_channels=2, source=matrix_mix.o)
-
-        dsp.connect_remap(m, hpf_split2.o[0], output_hpfs[0].i, lambda o, i : [
-            i.payload.x                     .eq(o.payload),
-            i.payload.cutoff.sas_value()    .eq(50),
-            i.payload.resonance.sas_value() .eq(20000),
-        ])
-
-        dsp.connect_remap(m, hpf_split2.o[1], output_hpfs[1].i, lambda o, i : [
-            i.payload.x                     .eq(o.payload),
-            i.payload.cutoff.sas_value()    .eq(50),
-            i.payload.resonance.sas_value() .eq(20000),
-        ])
-
         m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=diffuser.i)
         hpf_merge4.wire_valid(m, [0, 1])
 
-        dsp.connect_remap(m, output_hpfs[0].o, hpf_merge4.i[2], lambda o, i : [
-            i.payload.eq(o.payload.hp << 2)
-        ])
-        dsp.connect_remap(m, output_hpfs[1].o, hpf_merge4.i[3], lambda o, i : [
-            i.payload.eq(o.payload.hp << 2)
-        ])
+        for lr in [0, 1]:
+            dsp.connect_remap(m, hpf_split2.o[lr], output_hpfs[lr].i, lambda o, i : [
+                i.payload.x                     .eq(o.payload),
+                i.payload.cutoff.sas_value()    .eq(50),
+                i.payload.resonance.sas_value() .eq(20000),
+            ])
 
-        # Stereo distortion effect after diffuser.
+            dsp.connect_remap(m, output_hpfs[lr].o, hpf_merge4.i[2+lr], lambda o, i : [
+                i.payload.eq(o.payload.hp << 2)
+            ])
 
-        def scaled_tanh(x):
-            return math.tanh(3.0*x)
-
-        m.submodules.vca0 = vca0 = dsp.GainVCA()
-        m.submodules.vca1 = vca1 = dsp.GainVCA()
-        m.submodules.waveshaper0 = waveshaper0 = dsp.WaveShaper(lut_function=scaled_tanh)
-        m.submodules.waveshaper1 = waveshaper1 = dsp.WaveShaper(lut_function=scaled_tanh)
+        # Implement stereo distortion effect after diffuser.
 
         m.submodules.diffuser_split4 = diffuser_split4 = dsp.Split(
                 n_channels=4, source=diffuser.o)
         diffuser_split4.wire_ready(m, [0, 1])
 
-        m.submodules.vca_merge2a = vca_merge2a = dsp.Merge(n_channels=2)
-        m.submodules.vca_merge2b = vca_merge2b = dsp.Merge(n_channels=2)
+        m.submodules.cv_gain_split2 = cv_gain_split2 = dsp.Split(
+                n_channels=2, replicate=True, source=cv_in.o[1])
 
-        m.submodules.cv_gain_split2 = cv_gain_split2 = dsp.Split(n_channels=2, replicate=True)
-        wiring.connect(m, cv_in.o[1], cv_gain_split2.i)
-        wiring.connect(m, diffuser_split4.o[2], vca_merge2a.i[0])
-        wiring.connect(m, diffuser_split4.o[3], vca_merge2b.i[0])
-        wiring.connect(m, cv_gain_split2.o[0],  vca_merge2a.i[1])
-        wiring.connect(m, cv_gain_split2.o[1],  vca_merge2b.i[1])
+        def scaled_tanh(x):
+            return math.tanh(3.0*x)
 
-        dsp.connect_remap(m, vca_merge2a.o, vca0.i, lambda o, i : [
-            i.payload.x   .eq(o.payload[0]),
-            i.payload.gain.eq(o.payload[1] << 2)
-        ])
+        outs = []
+        for lr in [0, 1]:
+            vca = dsp.GainVCA()
+            waveshaper = dsp.WaveShaper(lut_function=scaled_tanh)
+            vca_merge2 = dsp.Merge(n_channels=2)
+            m.submodules += [vca, waveshaper, vca_merge2]
 
-        dsp.connect_remap(m, vca_merge2b.o, vca1.i, lambda o, i : [
-            i.payload.x   .eq(o.payload[0]),
-            i.payload.gain.eq(o.payload[1] << 2),
-        ])
+            wiring.connect(m, diffuser_split4.o[2+lr], vca_merge2.i[0])
+            wiring.connect(m, cv_gain_split2.o[lr],    vca_merge2.i[1])
 
-        wiring.connect(m, vca0.o, waveshaper0.i)
-        wiring.connect(m, vca1.o, waveshaper1.i)
+            dsp.connect_remap(m, vca_merge2.o, vca.i, lambda o, i : [
+                i.payload.x   .eq(o.payload[0]),
+                i.payload.gain.eq(o.payload[1] << 2)
+            ])
 
+            wiring.connect(m, vca.o, waveshaper.i)
+            outs.append(waveshaper.o)
+
+        # Final outputs on channel 2, 3
         m.submodules.merge4 = merge4 = dsp.Merge(
                 n_channels=4, sink=wiring.flipped(self.o))
         merge4.wire_valid(m, [0, 1])
-
-        wiring.connect(m, waveshaper0.o, merge4.i[2])
-        wiring.connect(m, waveshaper1.o, merge4.i[3])
-
+        wiring.connect(m, outs[0], merge4.i[2])
+        wiring.connect(m, outs[1], merge4.i[3])
 
         return m
 
