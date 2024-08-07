@@ -448,7 +448,10 @@ class MidiPolyTop(wiring.Component):
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    i_midi: In(stream.Signature(midi.MidiMessage))
+    i_midi:  In(stream.Signature(midi.MidiMessage))
+
+    i_touch: In(8).array(8)
+    i_jack:  In(8)
 
     def elaborate(self, platform):
         m = Module()
@@ -482,6 +485,7 @@ class MidiPolyTop(wiring.Component):
         # Connect MIDI stream -> voice tracker
         wiring.connect(m, wiring.flipped(self.i_midi), voice_tracker.i)
 
+        """
         # Use CC1 (mod wheel) as upper bound on filter cutoff.
         last_cc1 = Signal(8, reset=255)
         with m.If(self.i_midi.valid):
@@ -491,6 +495,7 @@ class MidiPolyTop(wiring.Component):
                     # mod wheel is CC 1
                     with m.If(msg.midi_payload.control_change.controller_number == 1):
                         m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
+        """
 
         # analog ins
         m.submodules.cv_in = cv_in = dsp.Split(
@@ -499,6 +504,7 @@ class MidiPolyTop(wiring.Component):
 
         for n in range(n_voices):
 
+            """
             # Filter cutoff on all channels is min(mod wheel, note velocity)
             # Cutoff itself is smoothed by boxcars before being sent to SVF cutoff.
             with m.If(last_cc1 < voice_tracker.o[n].payload.velocity):
@@ -506,17 +512,35 @@ class MidiPolyTop(wiring.Component):
             with m.Else():
                 m.d.comb += boxcars[n].i.payload.sas_value().eq(
                         voice_tracker.o[n].payload.velocity << 4)
+            """
 
+            # first 5 channels
+            if n <= 5:
+                with m.If(self.i_jack[n] == 0):
+                    m.d.comb += boxcars[n].i.payload.sas_value().eq(self.i_touch[n] << 3)
+                with m.Else():
+                    m.d.comb += boxcars[n].i.payload.eq(0)
+
+            """
             m.d.comb += [
                 # Connect voice.note -> note to frequency LUT
                 rports[n].en.eq(1),
                 rports[n].addr.eq(voice_tracker.o[n].payload.note),
             ]
+            """
+
+            touch_note_map = [48, 48+7, 48+12, 48+12+3, 48+12+7, 48+24, 0, 0]
+
+            m.d.comb += [
+                rports[n].en.eq(1),
+                rports[n].addr.eq(touch_note_map[n]),
+            ]
 
             # Connect LUT output -> NCO.i (clocked at i.valid for normal sample rate)
             dsp.connect_remap(m, cv_in.o[0], ncos[n].i, lambda o, i : [
                 # For fun, phase mod on audio in #0
-                i.payload.phase   .eq(o.payload),
+                #i.payload.phase   .eq(o.payload),
+                i.payload.phase   .eq(0),
                 i.payload.freq_inc.eq(rports[n].data) # ok, always valid
             ])
 
@@ -596,7 +620,8 @@ class MidiPolyTop(wiring.Component):
 
             dsp.connect_remap(m, vca_merge2.o, vca.i, lambda o, i : [
                 i.payload.x   .eq(o.payload[0]),
-                i.payload.gain.eq(o.payload[1] << 2)
+                #i.payload.gain.eq(o.payload[1] << 2)
+                i.payload.gain.eq(fixed.Const(2.5, shape=fixed.SQ(2, ASQ.f_width))),
             ])
 
             wiring.connect(m, vca.o, waveshaper.i)
@@ -738,6 +763,12 @@ class CoreTop(Elaboratable):
             wiring.connect(m, serialrx.o, midi_decode.i)
             wiring.connect(m, midi_decode.o, self.core.i_midi)
 
+        if hasattr(self.core, "i_jack"):
+            m.d.comb += self.core.i_jack.eq(pmod0.jack)
+
+        if hasattr(self.core, "i_touch"):
+            m.d.comb += [self.core.i_touch[n].eq(pmod0.touch[n]) for n in range(0, 8)]
+
         return m
 
 def get_core(name):
@@ -755,7 +786,7 @@ def get_core(name):
         "waveshaper": (False, DualWaveshaper),
         "nco":        (False, QuadNCO),
         "midicv":     (False, MidiCVTop),
-        "midipoly":   (False, MidiPolyTop),
+        "midipoly":   (True, MidiPolyTop),
     }
 
     if name not in cores:
@@ -769,6 +800,7 @@ def build():
     core_name = '' if len(sys.argv) < 2 else sys.argv[1]
     os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
+    os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
     os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
     touch, cls_core = get_core(core_name)
     top = CoreTop(cls_core, touch=touch)
