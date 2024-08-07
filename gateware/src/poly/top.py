@@ -108,6 +108,11 @@ class PolySynth(wiring.Component):
 
     drive: In(unsigned(16))
 
+    voice_states: Out(data.StructLayout({
+        "note":  unsigned(8),
+        "cutoff": unsigned(8),
+    })).array(8)
+
     def elaborate(self, platform):
         m = Module()
 
@@ -156,6 +161,11 @@ class PolySynth(wiring.Component):
         cv_in.wire_ready(m, [2, 3])
 
         for n in range(n_voices):
+
+            m.d.comb += [
+                self.voice_states[n].note.eq(rports[n].addr),
+                self.voice_states[n].cutoff.eq(boxcars[n].i.payload.as_value() >> 3),
+            ]
 
             # Filter cutoff on all channels is min(mod wheel, note velocity)
             # Cutoff itself is smoothed by boxcars before being sent to SVF cutoff.
@@ -272,6 +282,11 @@ class PolySynth(wiring.Component):
 
 class SynthPeripheral(Peripheral, Elaboratable):
 
+    """
+    Bridges SoC memory space such that we can peek and poke
+    registers of the polysynth engine from our SoC.
+    """
+
     def __init__(self, synth=None):
 
         super().__init__()
@@ -281,6 +296,24 @@ class SynthPeripheral(Peripheral, Elaboratable):
         # CSRs
         bank                   = self.csr_bank()
         self._drive            = bank.csr(16, "w")
+
+        self._voice0_note      = bank.csr(8, "r")
+        self._voice1_note      = bank.csr(8, "r")
+        self._voice2_note      = bank.csr(8, "r")
+        self._voice3_note      = bank.csr(8, "r")
+        self._voice4_note      = bank.csr(8, "r")
+        self._voice5_note      = bank.csr(8, "r")
+        self._voice6_note      = bank.csr(8, "r")
+        self._voice7_note      = bank.csr(8, "r")
+
+        self._voice0_cutoff    = bank.csr(8, "r")
+        self._voice1_cutoff    = bank.csr(8, "r")
+        self._voice2_cutoff    = bank.csr(8, "r")
+        self._voice3_cutoff    = bank.csr(8, "r")
+        self._voice4_cutoff    = bank.csr(8, "r")
+        self._voice5_cutoff    = bank.csr(8, "r")
+        self._voice6_cutoff    = bank.csr(8, "r")
+        self._voice7_cutoff    = bank.csr(8, "r")
 
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
@@ -294,14 +327,20 @@ class SynthPeripheral(Peripheral, Elaboratable):
         with m.If(self._drive.w_stb):
             m.d.sync += self.synth.drive.eq(self._drive.w_data)
 
+        for n in range(8):
+            m.d.comb += [
+                getattr(self, f"_voice{n}_note").r_data  .eq(self.synth.voice_states[n].note),
+                getattr(self, f"_voice{n}_cutoff").r_data.eq(self.synth.voice_states[n].cutoff)
+            ]
+
         return m
 
 
 class VSPeripheral(Peripheral, Elaboratable):
 
     """
-    Placeholder peripheral that bridges SoC memory space such that
-    we can tweak vectorscope properties from Rust.
+    Bridges SoC memory space such that we can peek and poke
+    registers of the vectorscope stroke engine from our SoC.
     """
 
     def __init__(self):

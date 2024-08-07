@@ -11,6 +11,7 @@ use tiliqua_fw::Timer0;
 use tiliqua_fw::I2c0;
 use tiliqua_fw::Encoder0;
 use tiliqua_fw::EurorackPmod0;
+use tiliqua_fw::Polysynth0;
 
 use log::info;
 
@@ -99,7 +100,7 @@ fn main() -> ! {
 
     let vs = peripherals.VS_PERIPH;
 
-    let synth = peripherals.SYNTH_PERIPH;
+    let mut synth = Polysynth0::new(peripherals.SYNTH_PERIPH);
 
     let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
 
@@ -147,7 +148,12 @@ fn main() -> ! {
         vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
 
         let drive_smooth = drive_smoother.proc(Fix::from_bits(opts.poly.drive.value as i32)).to_bits() as u16;
-        synth.drive().write(|w| unsafe { w.drive().bits(drive_smooth) } );
+        synth.set_drive(drive_smooth);
+
+        let notes = synth.voice_notes();
+        let cutoffs = synth.voice_cutoffs();
+        info!("note0: {}", notes[0]);
+        info!("cutoff0: {}", cutoffs[0]);
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;
