@@ -93,7 +93,7 @@ fn main() -> ! {
     };
 
     let mut uptime_ms = 0u32;
-    let period_ms = 10u32;
+    let period_ms = 5u32;
 
     let mut opts = opts::Options::new();
 

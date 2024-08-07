@@ -355,7 +355,8 @@ class PolySoc(TiliquaSoc):
         # scope stroke bridge from audio stream
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
         self.stroke = Stroke(
-                fb_base=self.video.fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
+                fb_base=self.video.fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size,
+                fs=48000, n_upsample=8)
         self.soc.psram.add_master(self.stroke.bus)
         # scope controls
         self.vs_periph = VSPeripheral()
