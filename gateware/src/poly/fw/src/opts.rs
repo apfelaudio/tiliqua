@@ -11,8 +11,18 @@ use strum_macros::{EnumIter, IntoStaticStr};
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
 pub enum Screen {
+    Poly,
     Xbeam,
 }
+
+#[derive(Clone)]
+pub struct PolyOptions {
+    pub selected: Option<usize>,
+    pub drive: NumOption<u16>,
+}
+
+impl_option_view!(PolyOptions,
+                  drive);
 
 #[derive(Clone)]
 pub struct XbeamOptions {
@@ -32,10 +42,12 @@ pub struct Options {
     pub modify: bool,
     pub screen: EnumOption<Screen>,
 
+    pub poly:  PolyOptions,
     pub xbeam: XbeamOptions,
 }
 
 impl_option_page!(Options,
+                  (Screen::Poly,  poly),
                   (Screen::Xbeam, xbeam));
 
 impl Options {
@@ -44,10 +56,20 @@ impl Options {
             modify: false,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
-                value: Screen::Xbeam,
+                value: Screen::Poly,
+            },
+            poly: PolyOptions {
+                selected: None,
+                drive: NumOption{
+                    name: String::from_str("drive").unwrap(),
+                    value: 16384,
+                    step: 2048,
+                    min: 0,
+                    max: 32768,
+                },
             },
             xbeam: XbeamOptions {
-                selected: Some(0),
+                selected: None,
                 persist: NumOption{
                     name: String::from_str("persist").unwrap(),
                     value: 1024,

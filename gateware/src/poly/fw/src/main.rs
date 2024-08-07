@@ -76,6 +76,8 @@ fn main() -> ! {
 
     let vs = peripherals.VS_PERIPH;
 
+    let synth = peripherals.SYNTH_PERIPH;
+
     let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
 
     let mut toggle_encoder_leds = false;
@@ -118,6 +120,8 @@ fn main() -> ! {
         vs.intensity().write(|w| unsafe { w.intensity().bits(opts.xbeam.intensity.value) } );
         vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
         vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
+
+        synth.drive().write(|w| unsafe { w.drive().bits(opts.poly.drive.value) } );
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;

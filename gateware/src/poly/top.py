@@ -106,6 +106,8 @@ class PolySynth(wiring.Component):
 
     i_midi: In(stream.Signature(midi.MidiMessage))
 
+    drive: In(unsigned(16))
+
     def elaborate(self, platform):
         m = Module()
 
@@ -252,7 +254,8 @@ class PolySynth(wiring.Component):
 
             dsp.connect_remap(m, vca_merge2.o, vca.i, lambda o, i : [
                 i.payload.x   .eq(o.payload[0]),
-                i.payload.gain.eq(o.payload[1] << 2)
+                #i.payload.gain.eq(o.payload[1] << 2)
+                i.payload.gain.eq(self.drive << 2)
             ])
 
             wiring.connect(m, vca.o, waveshaper.i)
@@ -264,6 +267,32 @@ class PolySynth(wiring.Component):
         merge4.wire_valid(m, [0, 1])
         wiring.connect(m, outs[0], merge4.i[2])
         wiring.connect(m, outs[1], merge4.i[3])
+
+        return m
+
+class SynthPeripheral(Peripheral, Elaboratable):
+
+    def __init__(self, synth=None):
+
+        super().__init__()
+
+        self.synth = synth
+
+        # CSRs
+        bank                   = self.csr_bank()
+        self._drive            = bank.csr(16, "w")
+
+        # Peripheral bus
+        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
+        self.bus        = self._bridge.bus
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.bridge  = self._bridge
+
+        with m.If(self._drive.w_stb):
+            m.d.sync += self.synth.drive.eq(self._drive.w_data)
 
         return m
 
@@ -331,10 +360,16 @@ class PolySoc(TiliquaSoc):
         # scope controls
         self.vs_periph = VSPeripheral()
         self.soc.add_peripheral(self.vs_periph, addr=0xf0006000)
+        # synth controls
+        self.synth_periph = SynthPeripheral()
+        self.soc.add_peripheral(self.synth_periph, addr=0xf0007000)
 
     def elaborate(self, platform):
 
         m = Module()
+
+        m.submodules.polysynth = polysynth = PolySynth()
+        self.synth_periph.synth = polysynth
 
         m.submodules += super().elaborate(platform)
 
@@ -359,8 +394,6 @@ class PolySoc(TiliquaSoc):
             self.stroke.intensity.eq(self.vs_periph.intensity),
             self.stroke.scale.eq(self.vs_periph.scale),
         ]
-
-        m.submodules.polysynth = polysynth = PolySynth()
 
         # polysynth midi
         midi_pins = platform.request("midi")
