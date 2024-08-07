@@ -32,6 +32,29 @@ use tiliqua_lib::opt::*;
 
 use tiliqua_lib::generated_constants::*;
 
+use fixed::{FixedI32, types::extra::U16};
+
+/// Fixed point DSP below should use 32-bit integers with a 16.16 split.
+/// This could be made generic below, but isn't to reduce noise...
+pub type Fix = FixedI32<U16>;
+
+struct OnePoleSmoother {
+    y_k1: Fix,
+}
+
+impl OnePoleSmoother {
+    fn new() -> Self {
+        OnePoleSmoother {
+            y_k1: Fix::from_num(0),
+        }
+    }
+
+    fn proc(&mut self, x_k: Fix) -> Fix {
+        self.y_k1 = self.y_k1 * Fix::from_num(0.95f32) + x_k * Fix::from_num(0.05f32);
+        self.y_k1
+    }
+}
+
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE);
 
 const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
@@ -84,6 +107,8 @@ fn main() -> ! {
 
     let mut time_since_encoder_touched: u32 = 0;
 
+    let mut drive_smoother = OnePoleSmoother::new();
+
     loop {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
@@ -121,7 +146,8 @@ fn main() -> ! {
         vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
         vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
 
-        synth.drive().write(|w| unsafe { w.drive().bits(opts.poly.drive.value) } );
+        let drive_smooth = drive_smoother.proc(Fix::from_bits(opts.poly.drive.value as i32)).to_bits() as u16;
+        synth.drive().write(|w| unsafe { w.drive().bits(drive_smooth) } );
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;
