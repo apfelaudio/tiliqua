@@ -46,6 +46,10 @@ macro_rules! impl_polysynth {
                 pub fn set_drive(&mut self, value: u16)  {
                     self.registers.drive().write(|w| unsafe { w.drive().bits(value) } );
                 }
+
+                pub fn set_reso(&mut self, value: u16)  {
+                    self.registers.reso().write(|w| unsafe { w.reso().bits(value) } );
+                }
             }
         )+
     };

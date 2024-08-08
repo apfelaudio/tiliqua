@@ -19,10 +19,12 @@ pub enum Screen {
 pub struct PolyOptions {
     pub selected: Option<usize>,
     pub drive: NumOption<u16>,
+    pub reso:  NumOption<u16>,
 }
 
 impl_option_view!(PolyOptions,
-                  drive);
+                  drive,
+                  reso);
 
 #[derive(Clone)]
 pub struct XbeamOptions {
@@ -61,10 +63,17 @@ impl Options {
             poly: PolyOptions {
                 selected: None,
                 drive: NumOption{
-                    name: String::from_str("drive").unwrap(),
+                    name: String::from_str("overdrive").unwrap(),
                     value: 16384,
                     step: 2048,
                     min: 0,
+                    max: 32768,
+                },
+                reso: NumOption{
+                    name: String::from_str("resonance").unwrap(),
+                    value: 16384,
+                    step: 2048,
+                    min: 8192,
                     max: 32768,
                 },
             },

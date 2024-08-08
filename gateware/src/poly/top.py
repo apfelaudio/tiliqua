@@ -107,6 +107,7 @@ class PolySynth(wiring.Component):
     i_midi: In(stream.Signature(midi.MidiMessage))
 
     drive: In(unsigned(16))
+    reso: In(unsigned(16))
 
     voice_states: Out(data.StructLayout({
         "note":  unsigned(8),
@@ -191,7 +192,7 @@ class PolySynth(wiring.Component):
             # Connect voice.vel and NCO.o -> SVF.i
             dsp.connect_remap(m, ncos[n].o, svfs[n].i, lambda o, i : [
                 i.payload.x                    .eq(o.payload >> 1),
-                i.payload.resonance.sas_value().eq(8000),
+                i.payload.resonance.sas_value().eq(self.reso),
                 i.payload.cutoff               .eq(boxcars[n].o.payload) # hack
             ])
 
@@ -296,6 +297,7 @@ class SynthPeripheral(Peripheral, Elaboratable):
         # CSRs
         bank                   = self.csr_bank()
         self._drive            = bank.csr(16, "w")
+        self._reso             = bank.csr(16, "w")
 
         self._voice0_note      = bank.csr(8, "r")
         self._voice1_note      = bank.csr(8, "r")
@@ -326,6 +328,9 @@ class SynthPeripheral(Peripheral, Elaboratable):
 
         with m.If(self._drive.w_stb):
             m.d.sync += self.synth.drive.eq(self._drive.w_data)
+
+        with m.If(self._reso.w_stb):
+            m.d.sync += self.synth.reso.eq(self._reso.w_data)
 
         for n in range(8):
             m.d.comb += [

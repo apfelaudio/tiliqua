@@ -110,6 +110,8 @@ fn main() -> ! {
 
     let mut drive_smoother = OnePoleSmoother::new();
 
+    let mut reso_smoother = OnePoleSmoother::new();
+
     loop {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
@@ -149,6 +151,9 @@ fn main() -> ! {
 
         let drive_smooth = drive_smoother.proc(Fix::from_bits(opts.poly.drive.value as i32)).to_bits() as u16;
         synth.set_drive(drive_smooth);
+
+        let reso_smooth = reso_smoother.proc(Fix::from_bits(opts.poly.reso.value as i32)).to_bits() as u16;
+        synth.set_reso(reso_smooth);
 
         let notes = synth.voice_notes();
         let cutoffs = synth.voice_cutoffs();

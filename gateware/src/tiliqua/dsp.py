@@ -693,7 +693,6 @@ class MatrixMix(wiring.Component):
         # coefficient update logic
 
         m.d.comb += [
-            self.c.ready.eq(1), # TODO: replace: state == WAIT-VALID || WAIT-READY
             wport.addr.eq(Cat(self.c.payload.o_x, self.c.payload.i_y)),
             wport.en.eq(self.c.valid),
             wport.data.eq(self.c.payload.v),
@@ -703,6 +702,7 @@ class MatrixMix(wiring.Component):
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
+                m.d.comb += self.c.ready.eq(1), # permit coefficient updates
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
                     m.d.sync += [
@@ -743,6 +743,7 @@ class MatrixMix(wiring.Component):
                 with m.If(done):
                     m.next = 'WAIT-READY'
             with m.State('WAIT-READY'):
+                m.d.comb += self.c.ready.eq(1), # permit coefficient updates
                 m.d.comb += [
                     self.o.valid.eq(1),
                 ]
