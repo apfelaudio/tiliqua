@@ -68,7 +68,7 @@ class TiliquaSoc(Elaboratable):
 
         self.soc.add_core_peripherals(
             uart_pins=self.uart_pins,
-            internal_sram_size=32768,
+            internal_sram_size=32768*2,
             internal_sram_init=firmware
         )
 

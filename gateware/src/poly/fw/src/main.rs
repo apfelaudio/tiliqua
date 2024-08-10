@@ -37,6 +37,8 @@ use tiliqua_lib::generated_constants::*;
 
 use fixed::{FixedI32, types::extra::U16};
 
+use micromath::F32Ext;
+
 /// Fixed point DSP below should use 32-bit integers with a 16.16 split.
 /// This could be made generic below, but isn't to reduce noise...
 pub type Fix = FixedI32<U16>;
@@ -120,7 +122,7 @@ fn main() -> ! {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-100, opts.xbeam.hue.value).ok();
+            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.xbeam.hue.value).ok();
 
         }
 
@@ -180,7 +182,14 @@ fn main() -> ! {
 
         let n_voices = 8;
         for ix in 0usize..8usize {
+            /*
             draw::draw_voice(&mut display, 100, 100 + (ix as u32) * (V_ACTIVE-200) / n_voices,
+                             notes[ix], cutoffs[ix], opts.xbeam.hue.value).ok();
+            */
+            let j = 7-ix;
+            draw::draw_voice(&mut display,
+                             ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as i32,
+                             ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as u32 - 15,
                              notes[ix], cutoffs[ix], opts.xbeam.hue.value).ok();
         }
 

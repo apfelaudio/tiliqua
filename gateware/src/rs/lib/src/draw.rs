@@ -109,7 +109,7 @@ const NOTE_NAMES: [&'static str; 12] = [
 fn midi_note_name<const N: usize>(s: &mut String<N>, note: u8) {
     if note >= 12 {
         write!(s, "{}{}", NOTE_NAMES[(note%12) as usize],
-               (note / 12) - 1);
+               (note / 12) - 1).ok();
     }
 }
 
@@ -308,11 +308,13 @@ mod tests {
         opts.toggle_modify();
 
         disp.img = ImageBuffer::new(H_ACTIVE, V_ACTIVE);
-        draw_options(&mut disp, &opts, H_ACTIVE-200, V_ACTIVE-100, 0).ok();
+        draw_options(&mut disp, &opts, H_ACTIVE-200, V_ACTIVE/2, 0).ok();
 
         let n_voices = 8;
         for n in 0..8 {
-            draw_voice(&mut disp, 100, 100 + n * (V_ACTIVE-200) / n_voices,
+            draw_voice(&mut disp,
+                       ((H_ACTIVE as f32)/2.0f32 + 250.0f32*f32::cos(2.3f32 + 2.0f32 * n as f32 / 8.0f32)) as i32,
+                       ((V_ACTIVE as f32)/2.0f32 + 250.0f32*f32::sin(2.3f32 + 2.0f32 * n as f32 / 8.0f32)) as u32,
                        12, 127, 0).ok();
         }
 
