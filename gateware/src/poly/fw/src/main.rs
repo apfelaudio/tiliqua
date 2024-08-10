@@ -27,6 +27,8 @@ use embedded_graphics::{
 };
 
 use tiliqua_fw::opts;
+use tiliqua_fw::opts::ControlInterface;
+
 use tiliqua_lib::draw;
 
 use tiliqua_lib::opt::*;
@@ -171,7 +173,7 @@ fn main() -> ! {
         synth.set_matrix_coefficient(2, 6, coeff_wet);
         synth.set_matrix_coefficient(3, 7, coeff_wet);
 
-        synth.set_touch_control(opts.poly.touch.value == 1);
+        synth.set_touch_control(opts.poly.interface.value == ControlInterface::Touch);
 
         let notes = synth.voice_notes();
         let cutoffs = synth.voice_cutoffs();

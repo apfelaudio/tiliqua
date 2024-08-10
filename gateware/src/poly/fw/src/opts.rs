@@ -15,17 +15,24 @@ pub enum Screen {
     Xbeam,
 }
 
+#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
+#[strum(serialize_all = "kebab-case")]
+pub enum ControlInterface {
+    Touch,
+    MidiCV,
+}
+
 #[derive(Clone)]
 pub struct PolyOptions {
     pub selected: Option<usize>,
-    pub touch:    NumOption<u8>,
-    pub drive:    NumOption<u16>,
-    pub reso:     NumOption<u16>,
-    pub diffuse:  NumOption<u16>,
+    pub interface: EnumOption<ControlInterface>,
+    pub drive:     NumOption<u16>,
+    pub reso:      NumOption<u16>,
+    pub diffuse:   NumOption<u16>,
 }
 
 impl_option_view!(PolyOptions,
-                  touch,
+                  interface,
                   drive,
                   reso,
                   diffuse);
@@ -66,12 +73,9 @@ impl Options {
             },
             poly: PolyOptions {
                 selected: None,
-                touch: NumOption{
-                    name: String::from_str("touch-ctrl").unwrap(),
-                    value: 1,
-                    step: 1,
-                    min: 0,
-                    max: 1,
+                interface: EnumOption{
+                    name: String::from_str("control").unwrap(),
+                    value: ControlInterface::Touch,
                 },
                 drive: NumOption{
                     name: String::from_str("overdrive").unwrap(),
