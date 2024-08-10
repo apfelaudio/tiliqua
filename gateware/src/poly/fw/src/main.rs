@@ -243,8 +243,17 @@ fn main() -> ! {
                 }
             } else {
                 pmod.led_all_auto();
+
+                // output touches on 4/5  aren't automatically routed to LEDs by eurorack-pmod gateware.
+                if opts.poly.interface.value == ControlInterface::Touch {
+                    let touch = pmod.touch();
+                    pmod.led_set_manual(4,(touch[4]>>2) as i8);
+                    pmod.led_set_manual(5,(touch[5]>>2) as i8);
+                }
             }
         }
+
+
 
         pca9635.push().ok();
     }
