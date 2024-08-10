@@ -43,6 +43,14 @@ macro_rules! impl_polysynth {
                     ]
                 }
 
+                pub fn set_matrix_coefficient(&mut self, x_o: u32, y_i: u32, value: i32)  {
+                    // TODO: verify x_o, y_i both < 16. Should be true for any normal use case
+                    // as matrices larger than this won't be able to process things at audio rate.
+                    let reg: u32 = ((x_o & 0xF) << 28) | ((y_i & 0xF) << 24) | ((value as u32) & 0x00FFFFFF);
+                    while self.registers.matrix_busy().read().bits() == 1 { /* wait until last coeff written */ }
+                    self.registers.matrix().write(|w| unsafe { w.matrix().bits(reg) } );
+                }
+
                 pub fn set_drive(&mut self, value: u16)  {
                     self.registers.drive().write(|w| unsafe { w.drive().bits(value) } );
                 }

@@ -692,11 +692,12 @@ class MatrixMix(wiring.Component):
 
         # coefficient update logic
 
-        m.d.comb += [
-            wport.addr.eq(Cat(self.c.payload.o_x, self.c.payload.i_y)),
-            wport.en.eq(self.c.valid),
-            wport.data.eq(self.c.payload.v),
-        ]
+        with m.If(self.c.ready):
+            m.d.comb += [
+                wport.addr.eq(Cat(self.c.payload.o_x, self.c.payload.i_y)),
+                wport.en.eq(self.c.valid),
+                wport.data.eq(self.c.payload.v),
+            ]
 
         # main multiplications state machine
 

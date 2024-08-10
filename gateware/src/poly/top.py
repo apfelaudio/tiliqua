@@ -55,6 +55,8 @@ class Diffuser(wiring.Component):
                           [0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4, 0.4]])# ds3
                           # out0 ------- out3  sw0 ---------- sw3
 
+        self.matrix = matrix_mix
+
         delay_lines = [
             dsp.DelayLine(max_delay=2048),
             dsp.DelayLine(max_delay=4096),
@@ -219,6 +221,7 @@ class PolySynth(wiring.Component):
         # Output diffuser
 
         m.submodules.diffuser = diffuser = Diffuser()
+        self.diffuser = diffuser
 
         # Stereo HPF to remove DC from any voices in 'zero cutoff'
         # Route to audio output channels 2 & 3
@@ -317,6 +320,12 @@ class SynthPeripheral(Peripheral, Elaboratable):
         self._voice6_cutoff    = bank.csr(8, "r")
         self._voice7_cutoff    = bank.csr(8, "r")
 
+        # Matrix coefficient write: 0xXYVVVVVV
+        # X = (outs, column), Y =(ins, row), V = coefficient value (24-bit fixed-point 2.16)
+        # Coefficient is written ASAP, matrix_busy will be set to 1 until it is complete.
+        self._matrix           = bank.csr(32, "w")
+        self._matrix_busy      = bank.csr(1,  "r")
+
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
         self.bus        = self._bridge.bus
@@ -326,17 +335,42 @@ class SynthPeripheral(Peripheral, Elaboratable):
 
         m.submodules.bridge  = self._bridge
 
+        # top-level tweakables
+
         with m.If(self._drive.w_stb):
             m.d.sync += self.synth.drive.eq(self._drive.w_data)
 
         with m.If(self._reso.w_stb):
             m.d.sync += self.synth.reso.eq(self._reso.w_data)
 
+        # voice tracking
+
         for n in range(8):
             m.d.comb += [
                 getattr(self, f"_voice{n}_note").r_data  .eq(self.synth.voice_states[n].note),
                 getattr(self, f"_voice{n}_cutoff").r_data.eq(self.synth.voice_states[n].cutoff)
             ]
+
+        # matrix coefficient update logic (TODO put this in subclass?)
+
+        matrix_busy = Signal()
+        m.d.comb += self._matrix_busy.r_data.eq(matrix_busy)
+        with m.If(self._matrix.w_stb & ~matrix_busy):
+            m.d.sync += [
+                matrix_busy.eq(1),
+                self.synth.diffuser.matrix.c.payload.o_x         .eq(self._matrix.w_data[28:32]),
+                self.synth.diffuser.matrix.c.payload.i_y         .eq(self._matrix.w_data[24:28]),
+                self.synth.diffuser.matrix.c.payload.v.as_value().eq(self._matrix.w_data[ 0:24]),
+                self.synth.diffuser.matrix.c.valid.eq(1),
+            ]
+
+        with m.If(matrix_busy & self.synth.diffuser.matrix.c.ready):
+            # coefficient has been written
+            m.d.sync += [
+                matrix_busy.eq(0),
+                self.synth.diffuser.matrix.c.valid.eq(0),
+            ]
+
 
         return m
 

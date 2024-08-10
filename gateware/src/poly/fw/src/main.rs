@@ -112,6 +112,8 @@ fn main() -> ! {
 
     let mut reso_smoother = OnePoleSmoother::new();
 
+    let mut diffusion_smoother = OnePoleSmoother::new();
+
     loop {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
@@ -154,6 +156,20 @@ fn main() -> ! {
 
         let reso_smooth = reso_smoother.proc(Fix::from_bits(opts.poly.reso.value as i32)).to_bits() as u16;
         synth.set_reso(reso_smooth);
+
+        let diffuse_smooth = diffusion_smoother.proc(Fix::from_bits(opts.poly.diffuse.value as i32)).to_bits() as u16;
+        let coeff_dry: i32 = (32768 - diffuse_smooth) as i32;
+        let coeff_wet: i32 = diffuse_smooth as i32;
+
+        synth.set_matrix_coefficient(0, 0, coeff_dry);
+        synth.set_matrix_coefficient(1, 1, coeff_dry);
+        synth.set_matrix_coefficient(2, 2, coeff_dry);
+        synth.set_matrix_coefficient(3, 3, coeff_dry);
+
+        synth.set_matrix_coefficient(0, 4, coeff_wet);
+        synth.set_matrix_coefficient(1, 5, coeff_wet);
+        synth.set_matrix_coefficient(2, 6, coeff_wet);
+        synth.set_matrix_coefficient(3, 7, coeff_wet);
 
         let notes = synth.voice_notes();
         let cutoffs = synth.voice_cutoffs();

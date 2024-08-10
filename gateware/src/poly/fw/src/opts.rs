@@ -18,13 +18,15 @@ pub enum Screen {
 #[derive(Clone)]
 pub struct PolyOptions {
     pub selected: Option<usize>,
-    pub drive: NumOption<u16>,
-    pub reso:  NumOption<u16>,
+    pub drive:    NumOption<u16>,
+    pub reso:     NumOption<u16>,
+    pub diffuse:  NumOption<u16>,
 }
 
 impl_option_view!(PolyOptions,
                   drive,
-                  reso);
+                  reso,
+                  diffuse);
 
 #[derive(Clone)]
 pub struct XbeamOptions {
@@ -74,6 +76,13 @@ impl Options {
                     value: 16384,
                     step: 2048,
                     min: 8192,
+                    max: 32768,
+                },
+                diffuse: NumOption{
+                    name: String::from_str("diffusion").unwrap(),
+                    value: 12288,
+                    step: 2048,
+                    min: 0,
                     max: 32768,
                 },
             },
