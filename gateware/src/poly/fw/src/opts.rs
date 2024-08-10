@@ -18,12 +18,14 @@ pub enum Screen {
 #[derive(Clone)]
 pub struct PolyOptions {
     pub selected: Option<usize>,
+    pub touch:    NumOption<u8>,
     pub drive:    NumOption<u16>,
     pub reso:     NumOption<u16>,
     pub diffuse:  NumOption<u16>,
 }
 
 impl_option_view!(PolyOptions,
+                  touch,
                   drive,
                   reso,
                   diffuse);
@@ -64,6 +66,13 @@ impl Options {
             },
             poly: PolyOptions {
                 selected: None,
+                touch: NumOption{
+                    name: String::from_str("touch-ctrl").unwrap(),
+                    value: 1,
+                    step: 1,
+                    min: 0,
+                    max: 1,
+                },
                 drive: NumOption{
                     name: String::from_str("overdrive").unwrap(),
                     value: 16384,
@@ -90,7 +99,7 @@ impl Options {
                 selected: None,
                 persist: NumOption{
                     name: String::from_str("persist").unwrap(),
-                    value: 1024,
+                    value: 512,
                     step: 256,
                     min: 512,
                     max: 32768,
@@ -104,7 +113,7 @@ impl Options {
                 },
                 intensity: NumOption{
                     name: String::from_str("intensity").unwrap(),
-                    value: 8,
+                    value: 15,
                     step: 1,
                     min: 0,
                     max: 15,
@@ -118,7 +127,7 @@ impl Options {
                 },
                 scale: NumOption{
                     name: String::from_str("scale").unwrap(),
-                    value: 6,
+                    value: 7,
                     step: 1,
                     min: 0,
                     max: 15,

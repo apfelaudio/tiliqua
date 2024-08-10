@@ -34,8 +34,9 @@ from luna_soc.gateware.csr.base                  import Peripheral
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
 class TiliquaSoc(Elaboratable):
-    def __init__(self, *, firmware_path, dvi_timings, audio_192=False, audio_out_peripheral=True):
+    def __init__(self, *, firmware_path, dvi_timings, audio_192=False, audio_out_peripheral=True, touch=False):
 
+        self.touch = touch
         self.audio_192 = audio_192
         self.dvi_timings = dvi_timings
 
@@ -117,7 +118,7 @@ class TiliquaSoc(Elaboratable):
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
-                touch_enabled=False,
+                touch_enabled=self.touch,
                 audio_192=self.audio_192)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0

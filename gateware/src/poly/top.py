@@ -116,6 +116,11 @@ class PolySynth(wiring.Component):
         "cutoff": unsigned(8),
     })).array(8)
 
+    i_touch_control: In(unsigned(1))
+
+    i_touch: In(8).array(8)
+    i_jack:  In(8)
+
     def elaborate(self, platform):
         m = Module()
 
@@ -170,19 +175,33 @@ class PolySynth(wiring.Component):
                 self.voice_states[n].cutoff.eq(boxcars[n].i.payload.as_value() >> 3),
             ]
 
-            # Filter cutoff on all channels is min(mod wheel, note velocity)
-            # Cutoff itself is smoothed by boxcars before being sent to SVF cutoff.
-            with m.If(last_cc1 < voice_tracker.o[n].payload.velocity):
-                m.d.comb += boxcars[n].i.payload.sas_value().eq(last_cc1 << 4)
+            with m.If(~self.i_touch_control):
+                # Filter cutoff on all channels is min(mod wheel, note velocity)
+                # Cutoff itself is smoothed by boxcars before being sent to SVF cutoff.
+                with m.If(last_cc1 < voice_tracker.o[n].payload.velocity):
+                    m.d.comb += boxcars[n].i.payload.sas_value().eq(last_cc1 << 4)
+                with m.Else():
+                    m.d.comb += boxcars[n].i.payload.sas_value().eq(
+                            voice_tracker.o[n].payload.velocity << 4)
+                # Connect MIDI voice.note -> note to frequency LUT
+                m.d.comb += [
+                    rports[n].en.eq(1),
+                    rports[n].addr.eq(voice_tracker.o[n].payload.note),
+                ]
             with m.Else():
-                m.d.comb += boxcars[n].i.payload.sas_value().eq(
-                        voice_tracker.o[n].payload.velocity << 4)
+                # only first 6 channels touch sensitive
+                if n < 6:
+                    with m.If(self.i_jack[n] == 0):
+                        m.d.comb += boxcars[n].i.payload.sas_value().eq(self.i_touch[n] << 3)
+                    with m.Else():
+                        m.d.comb += boxcars[n].i.payload.eq(0)
+                # Connect notes from fixed scale for touchsynth
+                touch_note_map = [48, 48+7, 48+12, 48+12+3, 48+12+7, 48+24, 0, 0]
+                m.d.comb += [
+                    rports[n].en.eq(1),
+                    rports[n].addr.eq(touch_note_map[n]),
+                ]
 
-            m.d.comb += [
-                # Connect voice.note -> note to frequency LUT
-                rports[n].en.eq(1),
-                rports[n].addr.eq(voice_tracker.o[n].payload.note),
-            ]
 
             # Connect LUT output -> NCO.i (clocked at i.valid for normal sample rate)
             dsp.connect_remap(m, cv_in.o[0], ncos[n].i, lambda o, i : [
@@ -326,6 +345,8 @@ class SynthPeripheral(Peripheral, Elaboratable):
         self._matrix           = bank.csr(32, "w")
         self._matrix_busy      = bank.csr(1,  "r")
 
+        self._touch_control    = bank.csr(1,  "w")
+
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
         self.bus        = self._bridge.bus
@@ -342,6 +363,9 @@ class SynthPeripheral(Peripheral, Elaboratable):
 
         with m.If(self._reso.w_stb):
             m.d.sync += self.synth.reso.eq(self._reso.w_data)
+
+        with m.If(self._touch_control.w_stb):
+            m.d.sync += self.synth.i_touch_control.eq(self._touch_control.w_data)
 
         # voice tracking
 
@@ -429,7 +453,7 @@ class VSPeripheral(Peripheral, Elaboratable):
 class PolySoc(TiliquaSoc):
     def __init__(self, *, firmware_path, dvi_timings):
         super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
-                         audio_out_peripheral=False)
+                         audio_out_peripheral=False, touch=True)
         # scope stroke bridge from audio stream
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
         self.stroke = Stroke(
@@ -481,6 +505,10 @@ class PolySoc(TiliquaSoc):
         m.submodules.midi_decode = midi_decode = midi.MidiDecode()
         wiring.connect(m, serialrx.o, midi_decode.i)
         wiring.connect(m, midi_decode.o, polysynth.i_midi)
+
+        # hook up touch + jack
+        m.d.comb += polysynth.i_jack.eq(pmod0.jack)
+        m.d.comb += [polysynth.i_touch[n].eq(pmod0.touch[n]) for n in range(0, 8)]
 
         # polysynth audio
         wiring.connect(m, astream.istream, polysynth.i)

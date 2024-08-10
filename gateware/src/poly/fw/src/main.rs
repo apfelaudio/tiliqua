@@ -171,6 +171,8 @@ fn main() -> ! {
         synth.set_matrix_coefficient(2, 6, coeff_wet);
         synth.set_matrix_coefficient(3, 7, coeff_wet);
 
+        synth.set_touch_control(opts.poly.touch.value == 1);
+
         let notes = synth.voice_notes();
         let cutoffs = synth.voice_cutoffs();
 
