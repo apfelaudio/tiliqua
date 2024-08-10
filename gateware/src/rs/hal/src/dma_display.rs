@@ -26,15 +26,18 @@ macro_rules! impl_dma_display {
                     for Pixel(coord, color) in pixels.into_iter() {
                         if let Ok((x @ 0..=$H_ACTIVE,
                                    y @ 0..=$V_ACTIVE)) = coord.try_into() {
+                            // Calculate flip
+                            let xf = $V_ACTIVE - y;
+                            let yf = x;
                             // Calculate the index in the framebuffer.
-                            let index: u32 = (x + y * $H_ACTIVE) / 4;
+                            let index: u32 = (xf + yf * $H_ACTIVE) / 4;
                             unsafe {
                                 // TODO: support anything other than Gray8
                                 let mut px = self.framebuffer_base.offset(
                                     index as isize).read_volatile();
-                                px &= !(0xFFu32 << (8*(x%4)));
+                                px &= !(0xFFu32 << (8*(xf%4)));
                                 self.framebuffer_base.offset(index as isize).write_volatile(
-                                    px | ((color.luma() as u32) << (8*(x%4))));
+                                    px | ((color.luma() as u32) << (8*(xf%4))));
                             }
                         }
                     }
