@@ -11,6 +11,7 @@ use tiliqua_fw::Timer0;
 use tiliqua_fw::I2c0;
 use tiliqua_fw::Encoder0;
 use tiliqua_fw::EurorackPmod0;
+use tiliqua_fw::Polysynth0;
 
 use log::info;
 
@@ -26,11 +27,38 @@ use embedded_graphics::{
 };
 
 use tiliqua_fw::opts;
+use tiliqua_fw::opts::ControlInterface;
+
 use tiliqua_lib::draw;
 
 use tiliqua_lib::opt::*;
 
 use tiliqua_lib::generated_constants::*;
+
+use fixed::{FixedI32, types::extra::U16};
+
+use micromath::F32Ext;
+
+/// Fixed point DSP below should use 32-bit integers with a 16.16 split.
+/// This could be made generic below, but isn't to reduce noise...
+pub type Fix = FixedI32<U16>;
+
+struct OnePoleSmoother {
+    y_k1: Fix,
+}
+
+impl OnePoleSmoother {
+    fn new() -> Self {
+        OnePoleSmoother {
+            y_k1: Fix::from_num(0),
+        }
+    }
+
+    fn proc(&mut self, x_k: Fix) -> Fix {
+        self.y_k1 = self.y_k1 * Fix::from_num(0.95f32) + x_k * Fix::from_num(0.05f32);
+        self.y_k1
+    }
+}
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
@@ -70,17 +98,25 @@ fn main() -> ! {
     };
 
     let mut uptime_ms = 0u32;
-    let period_ms = 10u32;
+    let period_ms = 5u32;
 
     let mut opts = opts::Options::new();
 
     let vs = peripherals.VS_PERIPH;
+
+    let mut synth = Polysynth0::new(peripherals.SYNTH_PERIPH);
 
     let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
 
     let mut toggle_encoder_leds = false;
 
     let mut time_since_encoder_touched: u32 = 0;
+
+    let mut drive_smoother = OnePoleSmoother::new();
+
+    let mut reso_smoother = OnePoleSmoother::new();
+
+    let mut diffusion_smoother = OnePoleSmoother::new();
 
     loop {
 
@@ -118,6 +154,44 @@ fn main() -> ! {
         vs.intensity().write(|w| unsafe { w.intensity().bits(opts.xbeam.intensity.value) } );
         vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
         vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
+
+        let drive_smooth = drive_smoother.proc(Fix::from_bits(opts.poly.drive.value as i32)).to_bits() as u16;
+        synth.set_drive(drive_smooth);
+
+        let reso_smooth = reso_smoother.proc(Fix::from_bits(opts.poly.reso.value as i32)).to_bits() as u16;
+        synth.set_reso(reso_smooth);
+
+        let diffuse_smooth = diffusion_smoother.proc(Fix::from_bits(opts.poly.diffuse.value as i32)).to_bits() as u16;
+        let coeff_dry: i32 = (32768 - diffuse_smooth) as i32;
+        let coeff_wet: i32 = diffuse_smooth as i32;
+
+        synth.set_matrix_coefficient(0, 0, coeff_dry);
+        synth.set_matrix_coefficient(1, 1, coeff_dry);
+        synth.set_matrix_coefficient(2, 2, coeff_dry);
+        synth.set_matrix_coefficient(3, 3, coeff_dry);
+
+        synth.set_matrix_coefficient(0, 4, coeff_wet);
+        synth.set_matrix_coefficient(1, 5, coeff_wet);
+        synth.set_matrix_coefficient(2, 6, coeff_wet);
+        synth.set_matrix_coefficient(3, 7, coeff_wet);
+
+        synth.set_touch_control(opts.poly.interface.value == ControlInterface::Touch);
+
+        let notes = synth.voice_notes();
+        let cutoffs = synth.voice_cutoffs();
+
+        let n_voices = 8;
+        for ix in 0usize..8usize {
+            /*
+            draw::draw_voice(&mut display, 100, 100 + (ix as u32) * (V_ACTIVE-200) / n_voices,
+                             notes[ix], cutoffs[ix], opts.xbeam.hue.value).ok();
+            */
+            let j = 7-ix;
+            draw::draw_voice(&mut display,
+                             ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as i32,
+                             ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as u32 - 15,
+                             notes[ix], cutoffs[ix], opts.xbeam.hue.value).ok();
+        }
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;
@@ -169,8 +243,17 @@ fn main() -> ! {
                 }
             } else {
                 pmod.led_all_auto();
+
+                // output touches on 4/5  aren't automatically routed to LEDs by eurorack-pmod gateware.
+                if opts.poly.interface.value == ControlInterface::Touch {
+                    let touch = pmod.touch();
+                    pmod.led_set_manual(4,(touch[4]>>2) as i8);
+                    pmod.led_set_manual(5,(touch[5]>>2) as i8);
+                }
             }
         }
+
+
 
         pca9635.push().ok();
     }

@@ -34,10 +34,14 @@ from luna_soc.gateware.csr.base                  import Peripheral
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
 class TiliquaSoc(Elaboratable):
-    def __init__(self, *, firmware_path, dvi_timings, audio_192=False, audio_out_peripheral=True):
+    def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
+                 audio_out_peripheral=True, touch=False):
 
+        self.touch = touch
         self.audio_192 = audio_192
         self.dvi_timings = dvi_timings
+        # FIXME move somewhere more obvious
+        self.video_rotate_90 = True if os.getenv("TILIQUA_VIDEO_ROTATE") == "1" else False
 
         self.uart_pins = Record([
             ('rx', [('i', 1)]),
@@ -67,7 +71,7 @@ class TiliquaSoc(Elaboratable):
 
         self.soc.add_core_peripherals(
             uart_pins=self.uart_pins,
-            internal_sram_size=32768,
+            internal_sram_size=32768*2,
             internal_sram_init=firmware
         )
 
@@ -117,7 +121,7 @@ class TiliquaSoc(Elaboratable):
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
-                touch_enabled=False,
+                touch_enabled=self.touch,
                 audio_192=self.audio_192)
         # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
@@ -179,4 +183,5 @@ class TiliquaSoc(Elaboratable):
             f.write(f"pub const PSRAM_SZ_WORDS: usize = PSRAM_SZ_BYTES / 4;\n")
             f.write(f"pub const H_ACTIVE: u32         = {self.video.fb_hsize};\n")
             f.write(f"pub const V_ACTIVE: u32         = {self.video.fb_vsize};\n")
+            f.write(f"pub const VIDEO_ROTATE_90: bool = {'true' if self.video_rotate_90 else 'false'};\n")
             f.write(f"pub const PSRAM_FB_BASE: usize  = 0x{self.video.fb_base:x};\n")

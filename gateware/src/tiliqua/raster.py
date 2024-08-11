@@ -197,11 +197,13 @@ class Stroke(wiring.Component):
     # x, y, intensity, color
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1):
+    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, fs=192000, n_upsample=4):
 
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
         self.fb_bytes_per_pixel = fb_bytes_per_pixel
+        self.fs = fs
+        self.n_upsample = n_upsample
 
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
                                       features={"cti", "bte"})
@@ -239,11 +241,10 @@ class Stroke(wiring.Component):
         m.submodules.split = split = dsp.Split(n_channels=4)
         m.submodules.merge = merge = dsp.Merge(n_channels=4)
 
-        N_UP=4
-        m.submodules.resample0 = resample0 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
-        m.submodules.resample1 = resample1 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
-        m.submodules.resample2 = resample2 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
-        m.submodules.resample3 = resample3 = dsp.Resample(fs_in=192000, n_up=N_UP, m_down=1)
+        m.submodules.resample0 = resample0 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
+        m.submodules.resample1 = resample1 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
+        m.submodules.resample2 = resample2 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
+        m.submodules.resample3 = resample3 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
 
         wiring.connect(m, wiring.flipped(self.i), split.i)
 

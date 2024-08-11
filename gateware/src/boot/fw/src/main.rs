@@ -33,7 +33,7 @@ use tiliqua_lib::draw;
 
 use tiliqua_lib::generated_constants::*;
 
-tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE);
+tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
 const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
 const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
@@ -99,7 +99,7 @@ fn main() -> ! {
 
     loop {
 
-        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE-150, 0).ok();
+        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, 0).ok();
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
