@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! impl_dma_display {
     ($(
-        $DMA_DISPLAYX:ident, $H_ACTIVE:expr, $V_ACTIVE:expr
+        $DMA_DISPLAYX:ident, $H_ACTIVE:expr, $V_ACTIVE:expr, $VIDEO_ROTATE_90: expr
     )+) => {
         $(
             struct $DMA_DISPLAYX {
@@ -26,9 +26,8 @@ macro_rules! impl_dma_display {
                     for Pixel(coord, color) in pixels.into_iter() {
                         if let Ok((x @ 0..=$H_ACTIVE,
                                    y @ 0..=$V_ACTIVE)) = coord.try_into() {
-                            // Calculate flip
-                            let xf = $V_ACTIVE - y;
-                            let yf = x;
+                            let xf = if $VIDEO_ROTATE_90 {$V_ACTIVE - y} else {x};
+                            let yf = if $VIDEO_ROTATE_90 {x}             else {y};
                             // Calculate the index in the framebuffer.
                             let index: u32 = (xf + yf * $H_ACTIVE) / 4;
                             unsafe {

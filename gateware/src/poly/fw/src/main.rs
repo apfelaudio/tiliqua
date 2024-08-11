@@ -60,7 +60,7 @@ impl OnePoleSmoother {
     }
 }
 
-tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE);
+tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
 const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
 const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
@@ -122,7 +122,7 @@ fn main() -> ! {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.xbeam.hue.value).ok();
+            draw::draw_options(&mut display, &opts, H_ACTIVE-150, V_ACTIVE/2, opts.xbeam.hue.value).ok();
 
         }
 

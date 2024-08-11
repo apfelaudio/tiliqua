@@ -38,7 +38,7 @@ use tiliqua_lib::generated_constants::*;
 
 const TUSB322I_ADDR:  u8 = 0x47;
 
-tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE);
+tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
 fn psram_memtest(timer: &mut Timer0) {
 

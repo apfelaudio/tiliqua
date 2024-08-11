@@ -115,6 +115,31 @@ jobs:
           name: example-selftest.bit
           path: gateware/build/top.bit
 
+
+  ubuntu-bitstream-poly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pdm-project/setup-pdm@v4
+      - uses: YosysHQ/setup-oss-cad-suite@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            override: True
+            components: rustfmt, clippy, llvm-tools
+            target: riscv32imac-unknown-none-elf
+      - run: cargo install cargo-binutils svd2rust form
+      - run: git submodule update --init --recursive
+      - run: yosys --version
+      - run: |
+          pdm install
+          pdm build_poly
+        working-directory: gateware
+      - uses: actions/upload-artifact@v4
+        with:
+          name: example-poly.bit
+          path: gateware/build/top.bit
+
   ubuntu-bitstream-vectorscope:
     runs-on: ubuntu-latest
     steps:
