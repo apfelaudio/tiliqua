@@ -99,7 +99,7 @@ fn main() -> ! {
 
     loop {
 
-        draw::draw_options(&mut display, &opts, H_ACTIVE-150, V_ACTIVE/2, 0).ok();
+        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, 0).ok();
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 

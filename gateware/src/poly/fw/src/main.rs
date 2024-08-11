@@ -122,7 +122,7 @@ fn main() -> ! {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE-150, V_ACTIVE/2, opts.xbeam.hue.value).ok();
+            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.xbeam.hue.value).ok();
 
         }
 
