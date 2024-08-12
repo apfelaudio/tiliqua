@@ -194,6 +194,7 @@ fn main() -> ! {
 
         pca9635.push().ok();
 
+        /*
         let x = pmod.sample_i();
         if x[0] > 2000 {
             opts.voice1.gate.value = 1;
@@ -220,104 +221,49 @@ fn main() -> ! {
         let freq = volts_to_freq(volts);
         let sid_freq = 16u16 * (0.05960464f32 * freq) as u16; // assumes 1Mhz SID clk
                                                       // http://www.sidmusic.org/sid/sidtech2.html
+        */
 
-        {
-            /*
-            sid_poke(&sid, 0, opts.voice1.freq.value as u8);
-            sid_poke(&sid, 1, (opts.voice1.freq.value>>8) as u8);
-            */
+        use tiliqua_fw::opts::VoiceOptions;
 
-            opts.voice1.freq.value = sid_freq;
-            sid_poke(&sid, 0, sid_freq as u8);
-            sid_poke(&sid, 1, (sid_freq>>8) as u8);
+        let voices: [&VoiceOptions; 3] = [
+            &opts.voice1,
+            &opts.voice2,
+            &opts.voice3,
+        ];
 
-            sid_poke(&sid, 2, opts.voice1.pw.value as u8);
-            sid_poke(&sid, 3, (opts.voice1.pw.value>>8) as u8);
+        for n_voice in 0usize..3usize {
+
+            let base = (7*n_voice) as u8;
+
+            sid_poke(&sid, base+0, voices[n_voice].freq.value as u8);
+            sid_poke(&sid, base+1, (voices[n_voice].freq.value>>8) as u8);
+
+            sid_poke(&sid, base+2, voices[n_voice].pw.value as u8);
+            sid_poke(&sid, base+3, (voices[n_voice].pw.value>>8) as u8);
 
             let mut reg04 = 0u8;
             use crate::opts::Wave;
-            match opts.voice1.wave.value {
+            match voices[n_voice].wave.value {
                 Wave::Triangle => { reg04 |= 0x10; }
                 Wave::Saw      => { reg04 |= 0x20; }
                 Wave::Pulse    => { reg04 |= 0x40; }
                 Wave::Noise    => { reg04 |= 0x80; }
             }
 
-            reg04 |= opts.voice1.gate.value;
-            reg04 |= opts.voice1.sync.value << 1;
-            reg04 |= opts.voice1.ring.value << 2;
+            reg04 |= voices[n_voice].gate.value;
+            reg04 |= voices[n_voice].sync.value << 1;
+            reg04 |= voices[n_voice].ring.value << 2;
 
-            sid_poke(&sid, 4, reg04);
+            sid_poke(&sid, base+4, reg04);
 
-            sid_poke(&sid, 5,
-                opts.voice1.decay.value |
-                (opts.voice1.attack.value << 4));
+            sid_poke(&sid, base+5,
+                voices[n_voice].decay.value |
+                (voices[n_voice].attack.value << 4));
 
-            sid_poke(&sid, 6,
-                opts.voice1.release.value |
-                (opts.voice1.sustain.value << 4));
+            sid_poke(&sid, base+6,
+                voices[n_voice].release.value |
+                (voices[n_voice].sustain.value << 4));
         }
-
-        {
-            sid_poke(&sid, 7+0, opts.voice2.freq.value as u8);
-            sid_poke(&sid, 7+1, (opts.voice2.freq.value>>8) as u8);
-            sid_poke(&sid, 7+2, opts.voice2.pw.value as u8);
-            sid_poke(&sid, 7+3, (opts.voice2.pw.value>>8) as u8);
-
-            let mut reg04 = 0u8;
-            use crate::opts::Wave;
-            match opts.voice2.wave.value {
-                Wave::Triangle => { reg04 |= 0x10; }
-                Wave::Saw      => { reg04 |= 0x20; }
-                Wave::Pulse    => { reg04 |= 0x40; }
-                Wave::Noise    => { reg04 |= 0x80; }
-            }
-
-            reg04 |= opts.voice2.gate.value;
-            reg04 |= opts.voice2.sync.value << 1;
-            reg04 |= opts.voice2.ring.value << 2;
-
-            sid_poke(&sid, 7+4, reg04);
-
-            sid_poke(&sid, 7+5,
-                opts.voice2.decay.value |
-                (opts.voice2.attack.value << 4));
-
-            sid_poke(&sid, 7+6,
-                opts.voice2.release.value |
-                (opts.voice2.sustain.value << 4));
-        }
-
-        {
-            sid_poke(&sid, 14+0, opts.voice3.freq.value as u8);
-            sid_poke(&sid, 14+1, (opts.voice3.freq.value>>8) as u8);
-            sid_poke(&sid, 14+2, opts.voice3.pw.value as u8);
-            sid_poke(&sid, 14+3, (opts.voice3.pw.value>>8) as u8);
-
-            let mut reg04 = 0u8;
-            use crate::opts::Wave;
-            match opts.voice3.wave.value {
-                Wave::Triangle => { reg04 |= 0x10; }
-                Wave::Saw      => { reg04 |= 0x20; }
-                Wave::Pulse    => { reg04 |= 0x40; }
-                Wave::Noise    => { reg04 |= 0x80; }
-            }
-
-            reg04 |= opts.voice3.gate.value;
-            reg04 |= opts.voice3.sync.value << 1;
-            reg04 |= opts.voice3.ring.value << 2;
-
-            sid_poke(&sid, 14+4, reg04);
-
-            sid_poke(&sid, 14+5,
-                opts.voice3.decay.value |
-                (opts.voice3.attack.value << 4));
-
-            sid_poke(&sid, 14+6,
-                opts.voice3.release.value |
-                (opts.voice3.sustain.value << 4));
-        }
-
 
         sid_poke(&sid, 0x15, (opts.filter.cutoff.value & 0x7) as u8);
         sid_poke(&sid, 0x16, (opts.filter.cutoff.value >> 3) as u8);
