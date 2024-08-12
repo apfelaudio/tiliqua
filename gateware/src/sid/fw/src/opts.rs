@@ -12,6 +12,7 @@ use strum_macros::{EnumIter, IntoStaticStr};
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
 pub enum Screen {
+    Modulate,
     Voice1,
     Voice2,
     Voice3,
@@ -81,10 +82,59 @@ impl_option_view!(FilterOptions,
                   v3off,
                   volume);
 
+#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
+#[strum(serialize_all = "kebab-case")]
+pub enum ModulationTarget {
+    Nothing,
+    Frequency1,
+    Frequency2,
+    Frequency3,
+    Gate1,
+    Gate2,
+    Gate3,
+}
+
+pub enum VoiceModulationType {
+    Frequency,
+    Gate
+}
+
+impl ModulationTarget {
+    pub fn modulates_voice(&self) -> Option<(usize, VoiceModulationType)> {
+        use ModulationTarget::*;
+        use VoiceModulationType::*;
+        match *self {
+            Frequency1 => Some((0, Frequency)),
+            Frequency2 => Some((1, Frequency)),
+            Frequency3 => Some((2, Frequency)),
+            Gate1 =>      Some((0, Gate)),
+            Gate2 =>      Some((1, Gate)),
+            Gate3 =>      Some((2, Gate)),
+            _ =>          None
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct ModulateOptions {
+    pub selected:  Option<usize>,
+    pub in0:       EnumOption<ModulationTarget>,
+    pub in1:       EnumOption<ModulationTarget>,
+    pub in2:       EnumOption<ModulationTarget>,
+    pub in3:       EnumOption<ModulationTarget>,
+}
+
+impl_option_view!(ModulateOptions,
+                  in0,
+                  in1,
+                  in2,
+                  in3);
+
 #[derive(Clone)]
 pub struct Options {
     pub modify: bool,
     pub screen: EnumOption<Screen>,
+    pub modulate: ModulateOptions,
     pub voice1: VoiceOptions,
     pub voice2: VoiceOptions,
     pub voice3: VoiceOptions,
@@ -92,6 +142,7 @@ pub struct Options {
 }
 
 impl_option_page!(Options,
+                  (Screen::Modulate, modulate),
                   (Screen::Voice1, voice1),
                   (Screen::Voice2, voice2),
                   (Screen::Voice3, voice3),
@@ -104,7 +155,7 @@ impl VoiceOptions {
             freq: NumOption{
                 name: String::from_str("freq").unwrap(),
                 value: 1000,
-                step: 250,
+                step: 125,
                 min: 0,
                 max: 65500,
             },
@@ -121,7 +172,7 @@ impl VoiceOptions {
             },
             gate: NumOption{
                 name: String::from_str("gate").unwrap(),
-                value: 1,
+                value: 0,
                 step: 1,
                 min: 0,
                 max: 1,
@@ -179,6 +230,25 @@ impl Options {
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
                 value: Screen::Voice1,
+            },
+            modulate: ModulateOptions {
+                selected: None,
+                in0: EnumOption {
+                    name: String::from_str("in0").unwrap(),
+                    value: ModulationTarget::Nothing,
+                },
+                in1: EnumOption {
+                    name: String::from_str("in1").unwrap(),
+                    value: ModulationTarget::Nothing,
+                },
+                in2: EnumOption {
+                    name: String::from_str("in2").unwrap(),
+                    value: ModulationTarget::Nothing,
+                },
+                in3: EnumOption {
+                    name: String::from_str("in3").unwrap(),
+                    value: ModulationTarget::Nothing,
+                },
             },
             voice1: VoiceOptions::new(),
             voice2: VoiceOptions::new(),

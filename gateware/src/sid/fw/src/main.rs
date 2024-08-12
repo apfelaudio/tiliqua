@@ -194,52 +194,59 @@ fn main() -> ! {
 
         pca9635.push().ok();
 
-        /*
+        use tiliqua_fw::opts::{VoiceOptions, ModulationTarget, VoiceModulationType};
+
         let x = pmod.sample_i();
-        if x[0] > 2000 {
-            opts.voice1.gate.value = 1;
-        }
-        if x[0] < 1000 {
-            opts.voice1.gate.value = 0;
-        }
 
-        if x[1] > 2000 {
-            opts.voice2.gate.value = 1;
-        }
-        if x[1] < 1000 {
-            opts.voice2.gate.value = 0;
-        }
+        let voices: [&mut VoiceOptions; 3] = [
+            &mut opts.voice1,
+            &mut opts.voice2,
+            &mut opts.voice3,
+        ];
 
-        if x[2] > 2000 {
-            opts.voice3.gate.value = 1;
-        }
-        if x[2] < 1000 {
-            opts.voice3.gate.value = 0;
-        }
-
-        let volts: f32 = (x[3] as f32) / 4096.0f32;
-        let freq = volts_to_freq(volts);
-        let sid_freq = 16u16 * (0.05960464f32 * freq) as u16; // assumes 1Mhz SID clk
-                                                      // http://www.sidmusic.org/sid/sidtech2.html
-        */
-
-        use tiliqua_fw::opts::VoiceOptions;
-
-        let voices: [&VoiceOptions; 3] = [
-            &opts.voice1,
-            &opts.voice2,
-            &opts.voice3,
+        let mods: [ModulationTarget; 4] = [
+            opts.modulate.in0.value,
+            opts.modulate.in1.value,
+            opts.modulate.in2.value,
+            opts.modulate.in3.value,
         ];
 
         for n_voice in 0usize..3usize {
 
             let base = (7*n_voice) as u8;
 
-            sid_poke(&sid, base+0, voices[n_voice].freq.value as u8);
-            sid_poke(&sid, base+1, (voices[n_voice].freq.value>>8) as u8);
+            let mut freq: u16 = voices[n_voice].freq.value;
+            for (ch, m) in mods.iter().enumerate() {
+                if let Some((target_voice, VoiceModulationType::Frequency)) = m.modulates_voice() {
+                    if target_voice == n_voice {
+                        let volts: f32 = (x[ch] as f32) / 4096.0f32;
+                        let freq_hz = volts_to_freq(volts);
+                        freq = 16u16 * (0.05960464f32 * freq_hz) as u16; // assumes 1Mhz SID clk
+                                                                         // http://www.sidmusic.org/sid/sidtech2.html
+                    }
+                }
+            }
+            sid_poke(&sid, base+0, freq as u8);
+            sid_poke(&sid, base+1, (freq>>8) as u8);
+            voices[n_voice].freq.value = freq;
 
             sid_poke(&sid, base+2, voices[n_voice].pw.value as u8);
             sid_poke(&sid, base+3, (voices[n_voice].pw.value>>8) as u8);
+
+            let mut gate = voices[n_voice].gate.value;
+            for (ch, m) in mods.iter().enumerate() {
+                if let Some((target_voice, VoiceModulationType::Gate)) = m.modulates_voice() {
+                    if target_voice == n_voice {
+                        if x[ch] > 2000 {
+                            gate = 1;
+                        }
+                        if x[ch] < 1000 {
+                            gate = 0;
+                        }
+                    }
+                }
+            }
+            voices[n_voice].gate.value = gate;
 
             let mut reg04 = 0u8;
             use crate::opts::Wave;
@@ -250,7 +257,7 @@ fn main() -> ! {
                 Wave::Noise    => { reg04 |= 0x80; }
             }
 
-            reg04 |= voices[n_voice].gate.value;
+            reg04 |= gate;
             reg04 |= voices[n_voice].sync.value << 1;
             reg04 |= voices[n_voice].ring.value << 2;
 
