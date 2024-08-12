@@ -86,12 +86,14 @@ impl_option_view!(FilterOptions,
 #[strum(serialize_all = "kebab-case")]
 pub enum ModulationTarget {
     Nothing,
-    Frequency1,
-    Frequency2,
-    Frequency3,
+    Freq1,
+    Freq2,
+    Freq3,
+    Freq12,
     Gate1,
     Gate2,
     Gate3,
+    Gate12,
 }
 
 pub enum VoiceModulationType {
@@ -100,16 +102,20 @@ pub enum VoiceModulationType {
 }
 
 impl ModulationTarget {
-    pub fn modulates_voice(&self) -> Option<(usize, VoiceModulationType)> {
+    pub fn modulates_voice(&self, n: usize) -> Option<VoiceModulationType> {
         use ModulationTarget::*;
         use VoiceModulationType::*;
-        match *self {
-            Frequency1 => Some((0, Frequency)),
-            Frequency2 => Some((1, Frequency)),
-            Frequency3 => Some((2, Frequency)),
-            Gate1 =>      Some((0, Gate)),
-            Gate2 =>      Some((1, Gate)),
-            Gate3 =>      Some((2, Gate)),
+        match (n, *self) {
+            (0, Freq1)  => Some(Frequency),
+            (1, Freq2)  => Some(Frequency),
+            (2, Freq3)  => Some(Frequency),
+            (0, Freq12) => Some(Frequency),
+            (1, Freq12) => Some(Frequency),
+            (0, Gate1)  => Some(Gate),
+            (1, Gate2)  => Some(Gate),
+            (2, Gate3)  => Some(Gate),
+            (0, Gate12) => Some(Gate),
+            (1, Gate12) => Some(Gate),
             _ =>          None
         }
     }

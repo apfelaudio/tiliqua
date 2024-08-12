@@ -215,38 +215,38 @@ fn main() -> ! {
 
             let base = (7*n_voice) as u8;
 
+            // MODULATION
+
             let mut freq: u16 = voices[n_voice].freq.value;
+            let mut gate = voices[n_voice].gate.value;
             for (ch, m) in mods.iter().enumerate() {
-                if let Some((target_voice, VoiceModulationType::Frequency)) = m.modulates_voice() {
-                    if target_voice == n_voice {
-                        let volts: f32 = (x[ch] as f32) / 4096.0f32;
-                        let freq_hz = volts_to_freq(volts);
-                        freq = 16u16 * (0.05960464f32 * freq_hz) as u16; // assumes 1Mhz SID clk
-                                                                         // http://www.sidmusic.org/sid/sidtech2.html
+                if let Some(VoiceModulationType::Frequency) = m.modulates_voice(n_voice) {
+                    let volts: f32 = (x[ch] as f32) / 4096.0f32;
+                    let freq_hz = volts_to_freq(volts);
+                    freq = 16u16 * (0.05960464f32 * freq_hz) as u16; // assumes 1Mhz SID clk
+                                                                     // http://www.sidmusic.org/sid/sidtech2.html
+                }
+                if let Some(VoiceModulationType::Gate) = m.modulates_voice(n_voice) {
+                    if x[ch] > 2000 {
+                        gate = 1;
+                    }
+                    if x[ch] < 1000 {
+                        gate = 0;
                     }
                 }
             }
+
+            // Propagate modulation back to menu system
+
+            voices[n_voice].freq.value = freq;
+            voices[n_voice].gate.value = gate;
+
             sid_poke(&sid, base+0, freq as u8);
             sid_poke(&sid, base+1, (freq>>8) as u8);
-            voices[n_voice].freq.value = freq;
 
             sid_poke(&sid, base+2, voices[n_voice].pw.value as u8);
             sid_poke(&sid, base+3, (voices[n_voice].pw.value>>8) as u8);
 
-            let mut gate = voices[n_voice].gate.value;
-            for (ch, m) in mods.iter().enumerate() {
-                if let Some((target_voice, VoiceModulationType::Gate)) = m.modulates_voice() {
-                    if target_voice == n_voice {
-                        if x[ch] > 2000 {
-                            gate = 1;
-                        }
-                        if x[ch] < 1000 {
-                            gate = 0;
-                        }
-                    }
-                }
-            }
-            voices[n_voice].gate.value = gate;
 
             let mut reg04 = 0u8;
             use crate::opts::Wave;
