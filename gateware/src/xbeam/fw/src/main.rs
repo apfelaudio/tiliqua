@@ -76,6 +76,7 @@ fn main() -> ! {
 
     let persist = peripherals.PERSIST_PERIPH;
     let vscope  = peripherals.VECTOR_PERIPH;
+    let scope  = peripherals.SCOPE_PERIPH;
 
     let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
 
@@ -116,10 +117,17 @@ fn main() -> ! {
 
         persist.persist().write(|w| unsafe { w.persist().bits(opts.beam.persist.value) } );
         persist.decay().write(|w| unsafe { w.decay().bits(opts.beam.decay.value) } );
+
         vscope.hue().write(|w| unsafe { w.hue().bits(opts.vector.hue.value) } );
         vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.vector.intensity.value) } );
         vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
         vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
+
+        scope.hue().write(|w| unsafe { w.hue().bits(opts.scope.hue.value) } );
+        scope.intensity().write(|w| unsafe { w.intensity().bits(opts.scope.intensity.value) } );
+        scope.yscale().write(|w| unsafe { w.yscale().bits(opts.scope.yscale.value) } );
+        scope.timebase().write(|w| unsafe { w.timebase().bits(opts.scope.timebase.value) } );
+        scope.ypos().write(|w| unsafe { w.ypos().bits(opts.scope.ypos.value as u16) } );
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;
