@@ -79,9 +79,22 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
 
         super().__init__()
 
-        self.stroke = Stroke(
+        self.stroke0 = Stroke(
                 fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
-        bus.add_master(self.stroke.bus)
+        self.stroke1 = Stroke(
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
+        self.stroke2 = Stroke(
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
+        self.stroke3 = Stroke(
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
+
+        self.strokes = [self.stroke0, self.stroke1, self.stroke2, self.stroke3]
+
+        for s in self.strokes:
+            bus.add_master(s.bus)
+            bus.add_master(s.bus)
+            bus.add_master(s.bus)
+            bus.add_master(s.bus)
 
         self.source            = None
         self.en                = Signal()
@@ -94,8 +107,11 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         self._intensity        = bank.csr(8,  "w")
         self._timebase         = bank.csr(16, "w")
         self._yscale           = bank.csr(8,  "w")
-        self._ypos             = bank.csr(16, "w")
         self._trigger_lvl      = bank.csr(16, "w")
+        self._ypos0            = bank.csr(16, "w")
+        self._ypos1            = bank.csr(16, "w")
+        self._ypos2            = bank.csr(16, "w")
+        self._ypos3            = bank.csr(16, "w")
 
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
@@ -106,13 +122,14 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
 
         m.submodules.bridge  = self._bridge
 
-        m.submodules += self.stroke
+        m.submodules += self.strokes
 
-        m.d.comb += self.stroke.enable.eq(self.en)
+        for s in self.strokes:
+            m.d.comb += s.enable.eq(self.en)
 
         # Scope and trigger
+        # Ch0 is routed through trigger, the rest are not.
         m.submodules.isplit4 = isplit4 = dsp.Split(4, source=self.source)
-        isplit4.wire_ready(m, [1, 2, 3])
 
         # 2 copies of input channel 0
         m.submodules.irep2   = irep2   = dsp.Split(2, replicate=True, source=isplit4.o[0])
@@ -130,29 +147,53 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
             i.payload.trigger.eq(o.payload),
             i.payload.td.eq(self.timebase),
         ])
-        # Rasterize: Ramp => X, Audio => Y
-        m.submodules.merge4 = merge4 = dsp.Merge(4, sink=self.stroke.i)
-        merge4.wire_valid(m, [2, 3])
-        wiring.connect(m, ramp.o,     merge4.i[0])
-        wiring.connect(m, irep2.o[1], merge4.i[1])
+
+        # Split ramp into 4 streams, one for each channel
+        m.submodules.rampsplit4 = rampsplit4 = dsp.Split(4, replicate=True, source=ramp.o)
+
+        # Rasterize ch0: Ramp => X, Audio => Y
+        m.submodules.ch0_merge4 = ch0_merge4 = dsp.Merge(4, sink=self.strokes[0].i)
+        ch0_merge4.wire_valid(m, [2, 3])
+        wiring.connect(m, rampsplit4.o[0], ch0_merge4.i[0])
+        wiring.connect(m, irep2.o[1],      ch0_merge4.i[1])
+
+        # Rasterize ch1-ch3: Ramp => X, Audio => Y
+        for ch in [1, 2, 3]:
+            ch_merge4 = dsp.Merge(4, sink=self.strokes[ch].i)
+            m.submodules += ch_merge4
+            ch_merge4.wire_valid(m, [2, 3])
+            wiring.connect(m, rampsplit4.o[ch], ch_merge4.i[0])
+            wiring.connect(m, isplit4.o[ch],    ch_merge4.i[1])
 
         with m.If(self._hue.w_stb):
-            m.d.sync += self.stroke.hue.eq(self._hue.w_data)
+            for ch, s in enumerate(self.strokes):
+                m.d.sync += s.hue.eq(self._hue.w_data + ch*3)
 
         with m.If(self._intensity.w_stb):
-            m.d.sync += self.stroke.intensity.eq(self._intensity.w_data)
+            for s in self.strokes:
+                m.d.sync += s.intensity.eq(self._intensity.w_data)
 
         with m.If(self._timebase.w_stb):
             m.d.sync += self.timebase.sas_value().eq(self._timebase.w_data)
 
         with m.If(self._yscale.w_stb):
-            m.d.sync += self.stroke.scale_y.eq(self._yscale.w_data)
-
-        with m.If(self._ypos.w_stb):
-            m.d.sync += self.stroke.y_offset.eq(self._ypos.w_data)
+            for s in self.strokes:
+                m.d.sync += s.scale_y.eq(self._yscale.w_data)
 
         with m.If(self._trigger_lvl.w_stb):
             m.d.sync += self.trigger_lvl.sas_value().eq(self._trigger_lvl.w_data)
+
+        with m.If(self._ypos0.w_stb):
+            m.d.sync += self.strokes[0].y_offset.eq(self._ypos0.w_data)
+
+        with m.If(self._ypos1.w_stb):
+            m.d.sync += self.strokes[1].y_offset.eq(self._ypos1.w_data)
+
+        with m.If(self._ypos2.w_stb):
+            m.d.sync += self.strokes[2].y_offset.eq(self._ypos2.w_data)
+
+        with m.If(self._ypos3.w_stb):
+            m.d.sync += self.strokes[3].y_offset.eq(self._ypos3.w_data)
 
         return m
 

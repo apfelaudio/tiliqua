@@ -129,7 +129,11 @@ fn main() -> ! {
         scope.trigger_lvl().write(|w| unsafe { w.trigger_lvl().bits(opts.scope.trigger_lvl.value as u16) } );
         scope.yscale().write(|w| unsafe { w.yscale().bits(opts.scope.yscale.value) } );
         scope.timebase().write(|w| unsafe { w.timebase().bits(opts.scope.timebase.value) } );
-        scope.ypos().write(|w| unsafe { w.ypos().bits(opts.scope.ypos.value as u16) } );
+
+        scope.ypos0().write(|w| unsafe { w.ypos0().bits(opts.scope.ypos0.value as u16) } );
+        scope.ypos1().write(|w| unsafe { w.ypos1().bits(opts.scope.ypos1.value as u16) } );
+        scope.ypos2().write(|w| unsafe { w.ypos2().bits(opts.scope.ypos2.value as u16) } );
+        scope.ypos3().write(|w| unsafe { w.ypos3().bits(opts.scope.ypos3.value as u16) } );
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;
