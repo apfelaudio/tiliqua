@@ -88,7 +88,7 @@ fn main() -> ! {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.beam.ui_hue.value).ok();
+            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.beam.hue.value).ok();
 
         }
 
@@ -136,6 +136,16 @@ fn main() -> ! {
         scope.ypos1().write(|w| unsafe { w.ypos1().bits(opts.scope.ypos1.value as u16) } );
         scope.ypos2().write(|w| unsafe { w.ypos2().bits(opts.scope.ypos2.value as u16) } );
         scope.ypos3().write(|w| unsafe { w.ypos3().bits(opts.scope.ypos3.value as u16) } );
+
+        if opts.screen.value == opts::Screen::Vector {
+            scope.en().write(|w| w.en().bit(false) );
+            vscope.en().write(|w| w.en().bit(true) );
+        }
+
+        if opts.screen.value == opts::Screen::Scope {
+            scope.en().write(|w| w.en().bit(true) );
+            vscope.en().write(|w| w.en().bit(false) );
+        }
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;

@@ -33,11 +33,10 @@ pub struct BeamOptions {
     pub decay: NumOption<u8>,
     pub intensity: NumOption<u8>,
     pub hue: NumOption<u8>,
-    pub ui_hue: NumOption<u8>,
 }
 
 impl_option_view!(BeamOptions,
-                  persist, decay, intensity, hue, ui_hue);
+                  persist, decay, intensity, hue);
 
 #[derive(Clone)]
 pub struct ScopeOptions {
@@ -121,13 +120,6 @@ impl Options {
                 },
                 hue: NumOption{
                     name: String::from_str("hue").unwrap(),
-                    value: 10,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
-                ui_hue: NumOption{
-                    name: String::from_str("ui-hue").unwrap(),
                     value: 10,
                     step: 1,
                     min: 0,

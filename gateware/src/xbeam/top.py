@@ -38,9 +38,12 @@ class VectorTracePeripheral(Peripheral, Elaboratable):
         bus.add_master(self.stroke.bus)
 
         self.i                 = self.stroke.i
+
         self.en                = Signal()
+        self.soc_en            = Signal()
 
         bank                   = self.csr_bank()
+        self._en               = bank.csr(1, "w")
         self._hue              = bank.csr(8, "w")
         self._intensity        = bank.csr(8, "w")
         self._xscale           = bank.csr(8, "w")
@@ -57,7 +60,7 @@ class VectorTracePeripheral(Peripheral, Elaboratable):
 
         m.submodules += self.stroke
 
-        m.d.comb += self.stroke.enable.eq(self.en)
+        m.d.comb += self.stroke.enable.eq(self.en & self.soc_en)
 
         with m.If(self._hue.w_stb):
             m.d.sync += self.stroke.hue.eq(self._hue.w_data)
@@ -70,6 +73,9 @@ class VectorTracePeripheral(Peripheral, Elaboratable):
 
         with m.If(self._yscale.w_stb):
             m.d.sync += self.stroke.scale_y.eq(self._yscale.w_data)
+
+        with m.If(self._en.w_stb):
+            m.d.sync += self.soc_en.eq(self._en.w_data)
 
         return m
 
@@ -90,19 +96,23 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
 
         self.strokes = [self.stroke0, self.stroke1, self.stroke2, self.stroke3]
 
+        self.isplit4 = dsp.Split(4)
+        self.i = self.isplit4.i
+
         for s in self.strokes:
             bus.add_master(s.bus)
             bus.add_master(s.bus)
             bus.add_master(s.bus)
             bus.add_master(s.bus)
 
-        self.source            = None
         self.en                = Signal()
+        self.soc_en            = Signal()
 
         self.timebase          = Signal(shape=dsp.ASQ)
         self.trigger_lvl       = Signal(shape=dsp.ASQ)
 
         bank                   = self.csr_bank()
+        self._en               = bank.csr(1, "w")
         self._hue              = bank.csr(8,  "w")
         self._intensity        = bank.csr(8,  "w")
         self._timebase         = bank.csr(16, "w")
@@ -125,14 +135,14 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         m.submodules += self.strokes
 
         for s in self.strokes:
-            m.d.comb += s.enable.eq(self.en)
+            m.d.comb += s.enable.eq(self.en & self.soc_en)
 
         # Scope and trigger
         # Ch0 is routed through trigger, the rest are not.
-        m.submodules.isplit4 = isplit4 = dsp.Split(4, source=self.source)
+        m.submodules.isplit4 = self.isplit4
 
         # 2 copies of input channel 0
-        m.submodules.irep2   = irep2   = dsp.Split(2, replicate=True, source=isplit4.o[0])
+        m.submodules.irep2   = irep2   = dsp.Split(2, replicate=True, source=self.isplit4.o[0])
 
         # Send one copy to trigger => ramp => X
         m.submodules.trig    = trig    = dsp.Trigger()
@@ -162,8 +172,8 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
             ch_merge4 = dsp.Merge(4, sink=self.strokes[ch].i)
             m.submodules += ch_merge4
             ch_merge4.wire_valid(m, [2, 3])
-            wiring.connect(m, rampsplit4.o[ch], ch_merge4.i[0])
-            wiring.connect(m, isplit4.o[ch],    ch_merge4.i[1])
+            wiring.connect(m, rampsplit4.o[ch],   ch_merge4.i[0])
+            wiring.connect(m, self.isplit4.o[ch], ch_merge4.i[1])
 
         # Wishbone tweakables
 
@@ -196,6 +206,9 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
 
         with m.If(self._ypos3.w_stb):
             m.d.sync += self.strokes[3].y_offset.eq(self._ypos3.w_data)
+
+        with m.If(self._en.w_stb):
+            m.d.sync += self.soc_en.eq(self._en.w_data)
 
         return m
 
@@ -230,11 +243,14 @@ class XbeamSoc(TiliquaSoc):
 
         self.scope_periph.source = astream.istream
 
-        #wiring.connect(m, astream.istream, self.vector_periph.i)
+        with m.If(self.scope_periph.soc_en):
+            wiring.connect(m, astream.istream, self.scope_periph.i)
+        with m.Else():
+            wiring.connect(m, astream.istream, self.vector_periph.i)
 
         # Memory controller hangs if we start making requests to it straight away.
         with m.If(self.permit_bus_traffic):
-            #m.d.sync += self.vector_periph.en.eq(1)
+            m.d.sync += self.vector_periph.en.eq(1)
             m.d.sync += self.scope_periph.en.eq(1)
 
         return m
