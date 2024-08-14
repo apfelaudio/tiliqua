@@ -137,6 +137,9 @@ fn main() -> ! {
         scope.ypos2().write(|w| unsafe { w.ypos2().bits(opts.scope.ypos2.value as u16) } );
         scope.ypos3().write(|w| unsafe { w.ypos3().bits(opts.scope.ypos3.value as u16) } );
 
+        scope.trigger_always().write(
+            |w| w.trigger_always().bit(opts.scope.trigger_mode.value == opts::TriggerMode::Always) );
+
         if opts.screen.value == opts::Screen::Vector {
             scope.en().write(|w| w.en().bit(false) );
             vscope.en().write(|w| w.en().bit(true) );

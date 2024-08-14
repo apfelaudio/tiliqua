@@ -16,6 +16,13 @@ pub enum Screen {
     Scope,
 }
 
+#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
+#[strum(serialize_all = "kebab-case")]
+pub enum TriggerMode {
+    Always,
+    Rising,
+}
+
 #[derive(Clone)]
 pub struct VectorOptions {
     pub selected: Option<usize>,
@@ -42,6 +49,7 @@ impl_option_view!(BeamOptions,
 pub struct ScopeOptions {
     pub selected: Option<usize>,
     pub timebase: NumOption<u16>,
+    pub trigger_mode: EnumOption<TriggerMode>,
     pub trigger_lvl: NumOption<i16>,
     pub yscale: NumOption<u8>,
     pub ypos0: NumOption<i16>,
@@ -51,7 +59,7 @@ pub struct ScopeOptions {
 }
 
 impl_option_view!(ScopeOptions,
-                  timebase, trigger_lvl, yscale,
+                  timebase, trigger_mode, trigger_lvl, yscale,
                   ypos0, ypos1, ypos2, ypos3);
 
 #[derive(Clone)]
@@ -134,6 +142,10 @@ impl Options {
                     step: 128,
                     min: 32,
                     max: 3872,
+                },
+                trigger_mode: EnumOption {
+                    name: String::from_str("trig-mode").unwrap(),
+                    value: TriggerMode::Always,
                 },
                 trigger_lvl: NumOption{
                     name: String::from_str("trig-lvl").unwrap(),

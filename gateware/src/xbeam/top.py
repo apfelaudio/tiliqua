@@ -110,6 +110,7 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
 
         self.timebase          = Signal(shape=dsp.ASQ)
         self.trigger_lvl       = Signal(shape=dsp.ASQ)
+        self.trigger_always    = Signal()
 
         bank                   = self.csr_bank()
         self._en               = bank.csr(1, "w")
@@ -117,6 +118,7 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         self._intensity        = bank.csr(8,  "w")
         self._timebase         = bank.csr(16, "w")
         self._yscale           = bank.csr(8,  "w")
+        self._trigger_always   = bank.csr(1,  "w")
         self._trigger_lvl      = bank.csr(16, "w")
         self._ypos0            = bank.csr(16, "w")
         self._ypos1            = bank.csr(16, "w")
@@ -154,7 +156,7 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         ])
         # Trigger => Ramp
         dsp.connect_remap(m, trig.o, ramp.i, lambda o, i : [
-            i.payload.trigger.eq(o.payload),
+            i.payload.trigger.eq(o.payload | self.trigger_always),
             i.payload.td.eq(self.timebase),
         ])
 
@@ -209,6 +211,9 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
 
         with m.If(self._en.w_stb):
             m.d.sync += self.soc_en.eq(self._en.w_data)
+
+        with m.If(self._trigger_always.w_stb):
+            m.d.sync += self.trigger_always.eq(self._trigger_always.w_data)
 
         return m
 
