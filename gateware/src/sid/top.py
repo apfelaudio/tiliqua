@@ -34,9 +34,17 @@ class SID(wiring.Component):
         "left":  signed(24),
         }))
 
+    # internal signals interesting to see
+    voice0_dca: Out(signed(16))
+    voice1_dca: Out(signed(16))
+    voice2_dca: Out(signed(16))
+
     def add_verilog_sources(self, platform):
         vroot = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                              "../../deps/reDIP-SID/gateware")
+
+        # Use MOS8580 sim, it has no DC offset.
+        platform.add_file("sid_defines.sv", "`define SID2")
 
         # Include all files necessary for top-level 'sid_api.sv' to be instantiated.
 
@@ -103,6 +111,9 @@ class SID(wiring.Component):
             i_cs      = self.cs,
             o_data_o  = self.data_o,
             o_audio_o = self.audio_o,
+            o_voice0_dca_o = self.voice0_dca,
+            o_voice1_dca_o = self.voice1_dca,
+            o_voice2_dca_o = self.voice2_dca,
         )
 
         return m
@@ -210,10 +221,10 @@ class SIDSoc(TiliquaSoc):
 
         m.d.comb += [
             astream.ostream.valid.eq(1),
-            astream.ostream.payload[0].sas_value().eq(self.sid_periph.last_audio_left>>8),
-            astream.ostream.payload[1].sas_value().eq(self.sid_periph.last_audio_right>>8),
-            astream.ostream.payload[2].eq(0),
-            astream.ostream.payload[3].eq(0),
+            astream.ostream.payload[0].sas_value().eq(sid.voice0_dca),
+            astream.ostream.payload[1].sas_value().eq(sid.voice1_dca),
+            astream.ostream.payload[2].sas_value().eq(sid.voice2_dca),
+            astream.ostream.payload[3].sas_value().eq(self.sid_periph.last_audio_left>>8),
         ]
 
         return m
