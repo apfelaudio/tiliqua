@@ -29,12 +29,12 @@ from example_vectorscope.top                     import Stroke
 
 class VectorTracePeripheral(Peripheral, Elaboratable):
 
-    def __init__(self, fb_base, fb_size, bus):
+    def __init__(self, fb_base, fb_size, bus, **kwargs):
 
         super().__init__()
 
-        self.stroke = Stroke(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size)
+        self.stroke = Stroke (
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, **kwargs)
         bus.add_master(self.stroke.bus)
 
         self.i                 = self.stroke.i

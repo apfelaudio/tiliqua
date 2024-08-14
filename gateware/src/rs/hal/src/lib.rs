@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "nightly", feature(error_in_core))]
-#![cfg_attr(feature = "nightly", feature(panic_info_message))]
 #![no_std]
 #![allow(clippy::inline_always)]
 #![allow(clippy::must_use_candidate)]

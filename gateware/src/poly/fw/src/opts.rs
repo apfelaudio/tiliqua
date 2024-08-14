@@ -12,7 +12,8 @@ use strum_macros::{EnumIter, IntoStaticStr};
 #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
 pub enum Screen {
     Poly,
-    Xbeam,
+    Beam,
+    Vector,
 }
 
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
@@ -38,30 +39,41 @@ impl_option_view!(PolyOptions,
                   diffuse);
 
 #[derive(Clone)]
-pub struct XbeamOptions {
+pub struct VectorOptions {
     pub selected: Option<usize>,
-    pub persist: NumOption<u16>,
-    pub hue: NumOption<u8>,
-    pub intensity: NumOption<u8>,
-    pub decay: NumOption<u8>,
-    pub scale: NumOption<u8>,
+    pub xscale: NumOption<u8>,
+    pub yscale: NumOption<u8>,
 }
 
-impl_option_view!(XbeamOptions,
-                  persist, hue, intensity, decay, scale);
+impl_option_view!(VectorOptions,
+                  xscale, yscale);
+
+#[derive(Clone)]
+pub struct BeamOptions {
+    pub selected: Option<usize>,
+    pub persist: NumOption<u16>,
+    pub decay: NumOption<u8>,
+    pub intensity: NumOption<u8>,
+    pub hue: NumOption<u8>,
+}
+
+impl_option_view!(BeamOptions,
+                  persist, decay, intensity, hue);
 
 #[derive(Clone)]
 pub struct Options {
     pub modify: bool,
     pub screen: EnumOption<Screen>,
 
-    pub poly:  PolyOptions,
-    pub xbeam: XbeamOptions,
+    pub poly:   PolyOptions,
+    pub beam:   BeamOptions,
+    pub vector: VectorOptions,
 }
 
 impl_option_page!(Options,
-                  (Screen::Poly,  poly),
-                  (Screen::Xbeam, xbeam));
+                  (Screen::Poly,   poly),
+                  (Screen::Beam,   beam),
+                  (Screen::Vector, vector));
 
 impl Options {
     pub fn new() -> Options {
@@ -99,28 +111,14 @@ impl Options {
                     max: 32768,
                 },
             },
-            xbeam: XbeamOptions {
+            beam: BeamOptions {
                 selected: None,
                 persist: NumOption{
                     name: String::from_str("persist").unwrap(),
-                    value: 512,
+                    value: 1024,
                     step: 256,
                     min: 512,
                     max: 32768,
-                },
-                hue: NumOption{
-                    name: String::from_str("hue").unwrap(),
-                    value: 10,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
-                intensity: NumOption{
-                    name: String::from_str("intensity").unwrap(),
-                    value: 15,
-                    step: 1,
-                    min: 0,
-                    max: 15,
                 },
                 decay: NumOption{
                     name: String::from_str("decay").unwrap(),
@@ -129,8 +127,32 @@ impl Options {
                     min: 0,
                     max: 15,
                 },
-                scale: NumOption{
-                    name: String::from_str("scale").unwrap(),
+                intensity: NumOption{
+                    name: String::from_str("intensity").unwrap(),
+                    value: 10,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+                hue: NumOption{
+                    name: String::from_str("hue").unwrap(),
+                    value: 10,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+            },
+            vector: VectorOptions {
+                selected: None,
+                xscale: NumOption{
+                    name: String::from_str("xscale").unwrap(),
+                    value: 7,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+                yscale: NumOption{
+                    name: String::from_str("yscale").unwrap(),
                     value: 7,
                     step: 1,
                     min: 0,

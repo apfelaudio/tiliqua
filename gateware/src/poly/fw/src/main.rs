@@ -102,7 +102,8 @@ fn main() -> ! {
 
     let mut opts = opts::Options::new();
 
-    let vs = peripherals.VS_PERIPH;
+    let persist = peripherals.PERSIST_PERIPH;
+    let vscope  = peripherals.VECTOR_PERIPH;
 
     let mut synth = Polysynth0::new(peripherals.SYNTH_PERIPH);
 
@@ -122,7 +123,7 @@ fn main() -> ! {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.xbeam.hue.value).ok();
+            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.beam.hue.value).ok();
 
         }
 
@@ -132,16 +133,18 @@ fn main() -> ! {
 
         time_since_encoder_touched += period_ms;
 
-        match encoder.poke_ticks() {
-            1 => {
+        let ticks = encoder.poke_ticks();
+        if ticks >= 1 {
+            for _ in 0..ticks {
                 opts.tick_up();
-                time_since_encoder_touched = 0;
             }
-            -1 => {
+            time_since_encoder_touched = 0;
+        }
+        if ticks <= -1 {
+            for _ in ticks..0 {
                 opts.tick_down();
-                time_since_encoder_touched = 0;
             }
-            _ => {},
+            time_since_encoder_touched = 0;
         }
 
         if encoder.poke_btn() {
@@ -149,11 +152,14 @@ fn main() -> ! {
             time_since_encoder_touched = 0;
         }
 
-        vs.persist().write(|w| unsafe { w.persist().bits(opts.xbeam.persist.value) } );
-        vs.hue().write(|w| unsafe { w.hue().bits(opts.xbeam.hue.value) } );
-        vs.intensity().write(|w| unsafe { w.intensity().bits(opts.xbeam.intensity.value) } );
-        vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
-        vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
+        persist.persist().write(|w| unsafe { w.persist().bits(opts.beam.persist.value) } );
+        persist.decay().write(|w| unsafe { w.decay().bits(opts.beam.decay.value) } );
+
+        vscope.en().write(|w| w.en().bit(true) );
+        vscope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
+        vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
+        vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
+        vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
 
         let drive_smooth = drive_smoother.proc(Fix::from_bits(opts.poly.drive.value as i32)).to_bits() as u16;
         synth.set_drive(drive_smooth);
@@ -180,8 +186,8 @@ fn main() -> ! {
         let notes = synth.voice_notes();
         let cutoffs = synth.voice_cutoffs();
 
-        let n_voices = 8;
-        for ix in 0usize..8usize {
+        let n_voices = 8usize;
+        for ix in 0usize..n_voices {
             /*
             draw::draw_voice(&mut display, 100, 100 + (ix as u32) * (V_ACTIVE-200) / n_voices,
                              notes[ix], cutoffs[ix], opts.xbeam.hue.value).ok();
@@ -190,7 +196,7 @@ fn main() -> ! {
             draw::draw_voice(&mut display,
                              ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as i32,
                              ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as u32 - 15,
-                             notes[ix], cutoffs[ix], opts.xbeam.hue.value).ok();
+                             notes[ix], cutoffs[ix], opts.beam.hue.value).ok();
         }
 
         for n in 0..16 {
