@@ -241,6 +241,8 @@ fn main() -> ! {
             voices[n_voice].freq.value = freq;
             voices[n_voice].gate.value = gate;
 
+            freq = (freq as f32 * (voices[n_voice].freq_os.value as f32 / 1000.0f32)) as u16;
+
             sid_poke(&sid, base+0, freq as u8);
             sid_poke(&sid, base+1, (freq>>8) as u8);
 

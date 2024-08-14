@@ -32,6 +32,7 @@ pub enum Wave {
 pub struct VoiceOptions {
     pub selected: Option<usize>,
     pub freq:    NumOption<u16>,
+    pub freq_os: NumOption<u16>,
     pub pw:      NumOption<u16>,
     pub wave:    EnumOption<Wave>,
     pub gate:    NumOption<u8>,
@@ -45,6 +46,7 @@ pub struct VoiceOptions {
 
 impl_option_view!(VoiceOptions,
                   freq,
+                  freq_os,
                   pw,
                   wave,
                   gate,
@@ -159,11 +161,18 @@ impl VoiceOptions {
         VoiceOptions {
             selected: None,
             freq: NumOption{
-                name: String::from_str("freq").unwrap(),
+                name: String::from_str("f-base").unwrap(),
                 value: 1000,
                 step: 125,
                 min: 0,
                 max: 65500,
+            },
+            freq_os: NumOption{
+                name: String::from_str("f-offs").unwrap(),
+                value: 1000,
+                step: 10,
+                min: 500,
+                max: 2000,
             },
             pw: NumOption{
                 name: String::from_str("pw").unwrap(),
