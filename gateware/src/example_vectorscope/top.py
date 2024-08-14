@@ -121,34 +121,7 @@ class VectorScopeTop(Elaboratable):
         m.submodules.persist = self.persist
         m.submodules.stroke = self.stroke
 
-        """
         wiring.connect(m, astream.istream, self.stroke.i)
-        """
-
-        m.submodules.isplit4 = isplit4 = dsp.Split(4, source=astream.istream)
-        isplit4.wire_ready(m, [1, 2, 3])
-
-        # 2 copies of input channel 0
-        m.submodules.irep2   = irep2   = dsp.Split(2, replicate=True, source=isplit4.o[0])
-
-        # Send one copy to trigger => ramp => X
-        m.submodules.trig    = trig    = dsp.Trigger()
-        m.submodules.ramp    = ramp    = dsp.Ramp()
-        # Audio => Trigger
-        dsp.connect_remap(m, irep2.o[0], trig.i, lambda o, i : [
-            i.payload.sample   .eq(o.payload),
-            i.payload.threshold.eq(fixed.Const(0.0, shape=ASQ)),
-        ])
-        # Trigger => Ramp
-        dsp.connect_remap(m, trig.o, ramp.i, lambda o, i : [
-            i.payload.trigger.eq(o.payload),
-            i.payload.td.eq(fixed.Const(5000.0 / 192000.0, shape=ASQ))
-        ])
-        # Rasterize: Ramp => X, Audio => Y
-        m.submodules.merge4 = merge4 = dsp.Merge(4, sink=self.stroke.i)
-        merge4.wire_valid(m, [2, 3])
-        wiring.connect(m, ramp.o,     merge4.i[0])
-        wiring.connect(m, irep2.o[1], merge4.i[1])
 
         # Memory controller hangs if we start making requests to it straight away.
         on_delay = Signal(32)
