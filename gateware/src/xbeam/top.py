@@ -87,6 +87,7 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         self.en                = Signal()
 
         self.timebase          = Signal(shape=dsp.ASQ)
+        self.trigger_lvl       = Signal(shape=dsp.ASQ)
 
         bank                   = self.csr_bank()
         self._hue              = bank.csr(8,  "w")
@@ -94,6 +95,7 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         self._timebase         = bank.csr(16, "w")
         self._yscale           = bank.csr(8,  "w")
         self._ypos             = bank.csr(16, "w")
+        self._trigger_lvl      = bank.csr(16, "w")
 
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
@@ -121,7 +123,7 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         # Audio => Trigger
         dsp.connect_remap(m, irep2.o[0], trig.i, lambda o, i : [
             i.payload.sample   .eq(o.payload),
-            i.payload.threshold.eq(fixed.Const(0.0, shape=dsp.ASQ)),
+            i.payload.threshold.eq(self.trigger_lvl),
         ])
         # Trigger => Ramp
         dsp.connect_remap(m, trig.o, ramp.i, lambda o, i : [
@@ -148,6 +150,9 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
 
         with m.If(self._ypos.w_stb):
             m.d.sync += self.stroke.y_offset.eq(self._ypos.w_data)
+
+        with m.If(self._trigger_lvl.w_stb):
+            m.d.sync += self.trigger_lvl.sas_value().eq(self._trigger_lvl.w_data)
 
         return m
 

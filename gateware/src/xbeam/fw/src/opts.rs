@@ -19,38 +19,37 @@ pub enum Screen {
 #[derive(Clone)]
 pub struct VectorOptions {
     pub selected: Option<usize>,
-    pub hue: NumOption<u8>,
-    pub intensity: NumOption<u8>,
     pub xscale: NumOption<u8>,
     pub yscale: NumOption<u8>,
 }
 
 impl_option_view!(VectorOptions,
-                  hue, intensity, xscale, yscale);
+                  xscale, yscale);
 
 #[derive(Clone)]
 pub struct BeamOptions {
     pub selected: Option<usize>,
     pub persist: NumOption<u16>,
     pub decay: NumOption<u8>,
+    pub intensity: NumOption<u8>,
+    pub hue: NumOption<u8>,
     pub ui_hue: NumOption<u8>,
 }
 
 impl_option_view!(BeamOptions,
-                  persist, decay, ui_hue);
+                  persist, decay, intensity, hue, ui_hue);
 
 #[derive(Clone)]
 pub struct ScopeOptions {
     pub selected: Option<usize>,
-    pub hue: NumOption<u8>,
-    pub intensity: NumOption<u8>,
     pub timebase: NumOption<u16>,
+    pub trigger_lvl: NumOption<i16>,
     pub yscale: NumOption<u8>,
     pub ypos: NumOption<i16>,
 }
 
 impl_option_view!(ScopeOptions,
-                  hue, intensity, timebase, yscale, ypos);
+                  timebase, trigger_lvl, yscale, ypos);
 
 #[derive(Clone)]
 pub struct Options {
@@ -78,20 +77,6 @@ impl Options {
             },
             vector: VectorOptions {
                 selected: None,
-                hue: NumOption{
-                    name: String::from_str("hue").unwrap(),
-                    value: 10,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
-                intensity: NumOption{
-                    name: String::from_str("intensity").unwrap(),
-                    value: 8,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
                 xscale: NumOption{
                     name: String::from_str("xscale").unwrap(),
                     value: 6,
@@ -123,6 +108,20 @@ impl Options {
                     min: 0,
                     max: 15,
                 },
+                intensity: NumOption{
+                    name: String::from_str("intensity").unwrap(),
+                    value: 8,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+                hue: NumOption{
+                    name: String::from_str("hue").unwrap(),
+                    value: 10,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
                 ui_hue: NumOption{
                     name: String::from_str("ui-hue").unwrap(),
                     value: 10,
@@ -133,26 +132,19 @@ impl Options {
             },
             scope: ScopeOptions {
                 selected: None,
-                hue: NumOption{
-                    name: String::from_str("hue").unwrap(),
-                    value: 10,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
-                intensity: NumOption{
-                    name: String::from_str("intensity").unwrap(),
-                    value: 8,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
                 timebase: NumOption{
                     name: String::from_str("timebase").unwrap(),
                     value: 32,
                     step: 128,
                     min: 32,
                     max: 3872,
+                },
+                trigger_lvl: NumOption{
+                    name: String::from_str("trig-lvl").unwrap(),
+                    value: 0,
+                    step: 512,
+                    min: -512*32,
+                    max: 512*32,
                 },
                 yscale: NumOption{
                     name: String::from_str("yscale").unwrap(),

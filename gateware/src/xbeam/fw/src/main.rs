@@ -118,13 +118,15 @@ fn main() -> ! {
         persist.persist().write(|w| unsafe { w.persist().bits(opts.beam.persist.value) } );
         persist.decay().write(|w| unsafe { w.decay().bits(opts.beam.decay.value) } );
 
-        vscope.hue().write(|w| unsafe { w.hue().bits(opts.vector.hue.value) } );
-        vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.vector.intensity.value) } );
+        vscope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
+        vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
         vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
         vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
 
-        scope.hue().write(|w| unsafe { w.hue().bits(opts.scope.hue.value) } );
-        scope.intensity().write(|w| unsafe { w.intensity().bits(opts.scope.intensity.value) } );
+        scope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
+        scope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
+
+        scope.trigger_lvl().write(|w| unsafe { w.trigger_lvl().bits(opts.scope.trigger_lvl.value as u16) } );
         scope.yscale().write(|w| unsafe { w.yscale().bits(opts.scope.yscale.value) } );
         scope.timebase().write(|w| unsafe { w.timebase().bits(opts.scope.timebase.value) } );
         scope.ypos().write(|w| unsafe { w.ypos().bits(opts.scope.ypos.value as u16) } );
