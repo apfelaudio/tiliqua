@@ -23,7 +23,7 @@ from tiliqua.eurorack_pmod                       import ASQ
 from tiliqua.tiliqua_platform                    import TiliquaPlatform, set_environment_variables
 from tiliqua.tiliqua_soc                         import TiliquaSoc
 
-from example_vectorscope.top                     import Stroke
+from xbeam.top                                   import VectorTracePeripheral
 
 class Diffuser(wiring.Component):
 
@@ -399,73 +399,24 @@ class SynthPeripheral(Peripheral, Elaboratable):
         return m
 
 
-class VSPeripheral(Peripheral, Elaboratable):
-
-    """
-    Bridges SoC memory space such that we can peek and poke
-    registers of the vectorscope stroke engine from our SoC.
-    """
-
-    def __init__(self):
-
-        super().__init__()
-
-        self.persist           = Signal(16, reset=1024)
-        self.hue               = Signal(8,  reset=0)
-        self.intensity         = Signal(8,  reset=4)
-        self.decay             = Signal(8,  reset=1)
-        self.scale             = Signal(8,  reset=6)
-
-        # CSRs
-        bank                   = self.csr_bank()
-        self._persist          = bank.csr(16, "w")
-        self._hue              = bank.csr(8, "w")
-        self._intensity        = bank.csr(8, "w")
-        self._decay            = bank.csr(8, "w")
-        self._scale            = bank.csr(8, "w")
-
-        # Peripheral bus
-        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
-        self.bus        = self._bridge.bus
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.submodules.bridge  = self._bridge
-
-        with m.If(self._persist.w_stb):
-            m.d.sync += self.persist.eq(self._persist.w_data)
-
-        with m.If(self._hue.w_stb):
-            m.d.sync += self.hue.eq(self._hue.w_data)
-
-        with m.If(self._intensity.w_stb):
-            m.d.sync += self.intensity.eq(self._intensity.w_data)
-
-        with m.If(self._decay.w_stb):
-            m.d.sync += self.decay.eq(self._decay.w_data)
-
-        with m.If(self._scale.w_stb):
-            m.d.sync += self.scale.eq(self._scale.w_data)
-
-        return m
-
 class PolySoc(TiliquaSoc):
     def __init__(self, *, firmware_path, dvi_timings):
         super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
                          audio_out_peripheral=False, touch=True)
+
         # scope stroke bridge from audio stream
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
-        self.stroke = Stroke(
-                fb_base=self.video.fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size,
-                fs=48000, n_upsample=8)
-        self.soc.psram.add_master(self.stroke.bus)
-        # scope controls
-        self.vs_periph = VSPeripheral()
-        self.soc.add_peripheral(self.vs_periph, addr=0xf0006000)
+        self.vector_periph = VectorTracePeripheral(
+            fb_base=self.video.fb_base,
+            fb_size=fb_size,
+            bus=self.soc.psram,
+            fs=48000,
+            n_upsample=8)
+        self.soc.add_peripheral(self.vector_periph, addr=0xf0007000)
+
         # synth controls
         self.synth_periph = SynthPeripheral()
-        self.soc.add_peripheral(self.synth_periph, addr=0xf0007000)
+        self.soc.add_peripheral(self.synth_periph, addr=0xf0008000)
 
     def elaborate(self, platform):
 
@@ -479,24 +430,6 @@ class PolySoc(TiliquaSoc):
         pmod0 = self.pmod0_periph.pmod
 
         m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0)
-
-        m.submodules.stroke = self.stroke
-
-        # Memory controller hangs if we start making requests to it straight away.
-        # TODO collapse this into delay already present in super()
-        on_delay = Signal(32)
-        with m.If(on_delay < 0xFFFF):
-            m.d.sync += on_delay.eq(on_delay+1)
-        with m.Else():
-            m.d.sync += self.stroke.enable.eq(1)
-
-        m.d.comb += [
-            self.persist.holdoff.eq(self.vs_periph.persist),
-            self.persist.decay.eq(self.vs_periph.decay),
-            self.stroke.hue.eq(self.vs_periph.hue),
-            self.stroke.intensity.eq(self.vs_periph.intensity),
-            self.stroke.scale.eq(self.vs_periph.scale),
-        ]
 
         # polysynth midi
         midi_pins = platform.request("midi")
@@ -516,10 +449,14 @@ class PolySoc(TiliquaSoc):
 
         # polysynth out -> vectorscope TODO use true split
         m.d.comb += [
-            self.stroke.i.valid.eq(polysynth.o.valid),
-            self.stroke.i.payload[0].eq(polysynth.o.payload[2]),
-            self.stroke.i.payload[1].eq(polysynth.o.payload[3]),
+            self.vector_periph.i.valid.eq(polysynth.o.valid),
+            self.vector_periph.i.payload[0].eq(polysynth.o.payload[2]),
+            self.vector_periph.i.payload[1].eq(polysynth.o.payload[3]),
         ]
+
+        # Memory controller hangs if we start making requests to it straight away.
+        with m.If(self.permit_bus_traffic):
+            m.d.sync += self.vector_periph.en.eq(1)
 
         return m
 

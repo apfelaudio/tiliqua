@@ -164,7 +164,7 @@ impl<T: Copy +
         core::ops::Sub<Output = T> +
         core::cmp::PartialOrd +
         core::fmt::Display>
-    OptionTrait for NumOption<T> where f32: From<T>, usize: From<T> {
+    OptionTrait for NumOption<T> where f32: From<T> {
 
     fn name(&self) -> &OptionString {
         &self.name
@@ -201,13 +201,14 @@ impl<T: Copy +
     }
 
     fn percent(&self) -> f32 {
-        let n: f32 = (self.value - self.min).into();
-        let d: f32 = (self.max - self.min).into();
+        let n: f32 = f32::from(self.value - self.min);
+        let d: f32 = f32::from(self.max - self.min);
         n / d
     }
 
     fn n_unique_values(&self) -> usize {
-        (self.max - self.min).into()
+        // TODO
+        0
     }
 }
 

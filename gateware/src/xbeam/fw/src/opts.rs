@@ -11,32 +11,72 @@ use strum_macros::{EnumIter, IntoStaticStr};
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
 pub enum Screen {
-    Xbeam,
+    Vector,
+    Beam,
+    Scope,
+}
+
+#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
+#[strum(serialize_all = "kebab-case")]
+pub enum TriggerMode {
+    Always,
+    Rising,
 }
 
 #[derive(Clone)]
-pub struct XbeamOptions {
+pub struct VectorOptions {
     pub selected: Option<usize>,
-    pub persist: NumOption<u16>,
-    pub hue: NumOption<u8>,
-    pub intensity: NumOption<u8>,
-    pub decay: NumOption<u8>,
-    pub scale: NumOption<u8>,
+    pub xscale: NumOption<u8>,
+    pub yscale: NumOption<u8>,
 }
 
-impl_option_view!(XbeamOptions,
-                  persist, hue, intensity, decay, scale);
+impl_option_view!(VectorOptions,
+                  xscale, yscale);
+
+#[derive(Clone)]
+pub struct BeamOptions {
+    pub selected: Option<usize>,
+    pub persist: NumOption<u16>,
+    pub decay: NumOption<u8>,
+    pub intensity: NumOption<u8>,
+    pub hue: NumOption<u8>,
+}
+
+impl_option_view!(BeamOptions,
+                  persist, decay, intensity, hue);
+
+#[derive(Clone)]
+pub struct ScopeOptions {
+    pub selected: Option<usize>,
+    pub timebase: NumOption<u16>,
+    pub trigger_mode: EnumOption<TriggerMode>,
+    pub trigger_lvl: NumOption<i16>,
+    pub yscale: NumOption<u8>,
+    pub ypos0: NumOption<i16>,
+    pub ypos1: NumOption<i16>,
+    pub ypos2: NumOption<i16>,
+    pub ypos3: NumOption<i16>,
+}
+
+impl_option_view!(ScopeOptions,
+                  timebase, trigger_mode, trigger_lvl, yscale,
+                  ypos0, ypos1, ypos2, ypos3);
 
 #[derive(Clone)]
 pub struct Options {
     pub modify: bool,
     pub screen: EnumOption<Screen>,
 
-    pub xbeam: XbeamOptions,
+    pub vector: VectorOptions,
+    pub beam:   BeamOptions,
+    pub scope:  ScopeOptions,
 }
 
 impl_option_page!(Options,
-                  (Screen::Xbeam, xbeam));
+                  (Screen::Vector, vector),
+                  (Screen::Beam,     beam),
+                  (Screen::Scope,   scope)
+                  );
 
 impl Options {
     pub fn new() -> Options {
@@ -44,10 +84,27 @@ impl Options {
             modify: false,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
-                value: Screen::Xbeam,
+                value: Screen::Vector,
             },
-            xbeam: XbeamOptions {
-                selected: Some(0),
+            vector: VectorOptions {
+                selected: None,
+                xscale: NumOption{
+                    name: String::from_str("xscale").unwrap(),
+                    value: 6,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+                yscale: NumOption{
+                    name: String::from_str("yscale").unwrap(),
+                    value: 6,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+            },
+            beam: BeamOptions {
+                selected: None,
                 persist: NumOption{
                     name: String::from_str("persist").unwrap(),
                     value: 1024,
@@ -55,9 +112,9 @@ impl Options {
                     min: 512,
                     max: 32768,
                 },
-                hue: NumOption{
-                    name: String::from_str("hue").unwrap(),
-                    value: 10,
+                decay: NumOption{
+                    name: String::from_str("decay").unwrap(),
+                    value: 1,
                     step: 1,
                     min: 0,
                     max: 15,
@@ -69,19 +126,68 @@ impl Options {
                     min: 0,
                     max: 15,
                 },
-                decay: NumOption{
-                    name: String::from_str("decay").unwrap(),
-                    value: 1,
+                hue: NumOption{
+                    name: String::from_str("hue").unwrap(),
+                    value: 10,
                     step: 1,
                     min: 0,
                     max: 15,
                 },
-                scale: NumOption{
-                    name: String::from_str("scale").unwrap(),
-                    value: 6,
+            },
+            scope: ScopeOptions {
+                selected: None,
+                timebase: NumOption{
+                    name: String::from_str("timebase").unwrap(),
+                    value: 32,
+                    step: 128,
+                    min: 32,
+                    max: 3872,
+                },
+                trigger_mode: EnumOption {
+                    name: String::from_str("trig-mode").unwrap(),
+                    value: TriggerMode::Always,
+                },
+                trigger_lvl: NumOption{
+                    name: String::from_str("trig-lvl").unwrap(),
+                    value: 0,
+                    step: 512,
+                    min: -512*32,
+                    max: 512*32,
+                },
+                yscale: NumOption{
+                    name: String::from_str("yscale").unwrap(),
+                    value: 8,
                     step: 1,
                     min: 0,
                     max: 15,
+                },
+                ypos0: NumOption{
+                    name: String::from_str("ypos0").unwrap(),
+                    value: -250,
+                    step: 25,
+                    min: -500,
+                    max: 500,
+                },
+                ypos1: NumOption{
+                    name: String::from_str("ypos1").unwrap(),
+                    value: -75,
+                    step: 25,
+                    min: -500,
+                    max: 500,
+                },
+                ypos2: NumOption{
+                    name: String::from_str("ypos2").unwrap(),
+                    value: 75,
+                    step: 25,
+                    min: -500,
+                    max: 500,
+                },
+                ypos3: NumOption{
+                    name: String::from_str("ypos3").unwrap(),
+                    value: 250,
+                    step: 25,
+                    min: -500,
+                    max: 500,
                 },
             },
         }

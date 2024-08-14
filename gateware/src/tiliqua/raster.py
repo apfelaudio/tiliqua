@@ -197,7 +197,12 @@ class Stroke(wiring.Component):
     # x, y, intensity, color
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, fs=192000, n_upsample=4):
+    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, fs=192000, n_upsample=4,
+                 default_hue=10, default_x=0, default_y=0, video_rotate_90=False):
+
+
+        # FIXME: move this further up chain, collapse env variables
+        self.rotate_90 = True if os.getenv("TILIQUA_VIDEO_ROTATE") == "1" else False
 
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
@@ -213,9 +218,12 @@ class Stroke(wiring.Component):
         self.sample_p = Signal(signed(16)) # intensity modulation TODO
         self.sample_c = Signal(signed(16)) # color modulation DONE
 
-        self.hue       = Signal(4, reset=10); # default blue :)
+        self.hue       = Signal(4, reset=default_hue);
         self.intensity = Signal(4, reset=8);
-        self.scale     = Signal(4, reset=6);
+        self.scale_x   = Signal(4, reset=6);
+        self.scale_y   = Signal(4, reset=6);
+        self.x_offset  = Signal(signed(16), reset=default_x)
+        self.y_offset  = Signal(signed(16), reset=default_y)
 
         self.px_read = Signal(32)
         self.px_sum = Signal(16)
@@ -238,26 +246,32 @@ class Stroke(wiring.Component):
         sample_p = self.sample_p
         sample_c = self.sample_c
 
-        m.submodules.split = split = dsp.Split(n_channels=4)
-        m.submodules.merge = merge = dsp.Merge(n_channels=4)
+        point_stream = None
+        if self.n_upsample is not None and self.n_upsample != 1:
+            # If interpolation is enabled, insert an FIR upsampling stage.
+            m.submodules.split = split = dsp.Split(n_channels=4)
+            m.submodules.merge = merge = dsp.Merge(n_channels=4)
 
-        m.submodules.resample0 = resample0 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
-        m.submodules.resample1 = resample1 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
-        m.submodules.resample2 = resample2 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
-        m.submodules.resample3 = resample3 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
+            m.submodules.resample0 = resample0 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
+            m.submodules.resample1 = resample1 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
+            m.submodules.resample2 = resample2 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
+            m.submodules.resample3 = resample3 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
 
-        wiring.connect(m, wiring.flipped(self.i), split.i)
+            wiring.connect(m, wiring.flipped(self.i), split.i)
 
-        wiring.connect(m, split.o[0], resample0.i)
-        wiring.connect(m, split.o[1], resample1.i)
-        wiring.connect(m, split.o[2], resample2.i)
-        wiring.connect(m, split.o[3], resample3.i)
+            wiring.connect(m, split.o[0], resample0.i)
+            wiring.connect(m, split.o[1], resample1.i)
+            wiring.connect(m, split.o[2], resample2.i)
+            wiring.connect(m, split.o[3], resample3.i)
 
-        wiring.connect(m, resample0.o, merge.i[0])
-        wiring.connect(m, resample1.o, merge.i[1])
-        wiring.connect(m, resample2.o, merge.i[2])
-        wiring.connect(m, resample3.o, merge.i[3])
+            wiring.connect(m, resample0.o, merge.i[0])
+            wiring.connect(m, resample1.o, merge.i[1])
+            wiring.connect(m, resample2.o, merge.i[2])
+            wiring.connect(m, resample3.o, merge.i[3])
 
+            point_stream=merge.o
+        else:
+            point_stream=self.i
 
         px_read = self.px_read
         px_sum = self.px_sum
@@ -268,12 +282,23 @@ class Stroke(wiring.Component):
         fb_hwords = ((self.fb_hsize*self.fb_bytes_per_pixel)//4)
         x_offs = Signal(unsigned(16))
         y_offs = Signal(unsigned(16))
+        subpix_shift = Signal(unsigned(6))
         pixel_offs = Signal(unsigned(32))
-        m.d.comb += [
-            x_offs.eq((fb_hwords//2) + (sample_x>>2)),
-            y_offs.eq(sample_y + (self.fb_vsize//2)),
-            pixel_offs.eq(y_offs*fb_hwords + x_offs),
-        ]
+
+        m.d.comb += pixel_offs.eq(y_offs*fb_hwords + x_offs),
+        if self.rotate_90:
+            # remap pixel offset for 90deg rotation
+            m.d.comb += [
+                subpix_shift.eq((-sample_y)[0:2]*8),
+                x_offs.eq((fb_hwords//2) + ((-sample_y)>>2)),
+                y_offs.eq(sample_x + (self.fb_vsize//2)),
+            ]
+        else:
+            m.d.comb += [
+                subpix_shift.eq(sample_x[0:2]*8),
+                x_offs.eq((fb_hwords//2) + (sample_x>>2)),
+                y_offs.eq(sample_y + (self.fb_vsize//2)),
+            ]
 
         with m.FSM() as fsm:
 
@@ -283,16 +308,14 @@ class Stroke(wiring.Component):
 
             with m.State('LATCH0'):
 
-                m.d.comb += merge.o.ready.eq(1)
+                m.d.comb += point_stream.ready.eq(1)
                 # Fired on every audio sample fs_strobe
-                with m.If(merge.o.valid):
+                with m.If(point_stream.valid):
                     m.d.sync += [
-                        # TODO this >>6 scales input -> screen mapping.
-                        # should be better exposed for tweaking.
-                        sample_x.eq(merge.o.payload[0].sas_value()>>self.scale),
-                        sample_y.eq(merge.o.payload[1].sas_value()>>self.scale),
-                        sample_p.eq(merge.o.payload[2].sas_value()),
-                        sample_c.eq(merge.o.payload[3].sas_value()),
+                        sample_x.eq((point_stream.payload[0].sas_value()>>self.scale_x) + self.x_offset),
+                        sample_y.eq((point_stream.payload[1].sas_value()>>self.scale_y) + self.y_offset),
+                        sample_p.eq(point_stream.payload[2].sas_value()),
+                        sample_c.eq(point_stream.payload[3].sas_value()),
                         sample_intensity.eq(self.intensity),
                     ]
                     m.next = 'LATCH1'
@@ -320,7 +343,7 @@ class Stroke(wiring.Component):
 
                 with m.If(bus.stb & bus.ack):
                     m.d.sync += px_read.eq(bus.dat_r)
-                    m.d.sync += px_sum.eq(((bus.dat_r >> (sample_x[0:2]*8)) & 0xff))
+                    m.d.sync += px_sum.eq(((bus.dat_r >> subpix_shift) & 0xff))
                     m.next = 'WAIT'
 
             with m.State('WAIT'):
@@ -354,13 +377,13 @@ class Stroke(wiring.Component):
 
                 with m.If(px_sum[4:8] + sample_intensity >= 0xF):
                     m.d.comb += bus.dat_w.eq(
-                        (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
-                        (Cat(new_color, white) << (sample_x[0:2]*8))
+                        (px_read & ~(Const(0xFF, unsigned(32)) << subpix_shift)) |
+                        (Cat(new_color, white) << (subpix_shift))
                          )
                 with m.Else():
                     m.d.comb += bus.dat_w.eq(
-                        (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
-                        (Cat(new_color, (px_sum[4:8] + sample_intensity)) << (sample_x[0:2]*8))
+                        (px_read & ~(Const(0xFF, unsigned(32)) << subpix_shift)) |
+                        (Cat(new_color, (px_sum[4:8] + sample_intensity)) << subpix_shift)
                          )
 
                 with m.If(bus.stb & bus.ack):

@@ -74,7 +74,9 @@ fn main() -> ! {
 
     let mut opts = opts::Options::new();
 
-    let vs = peripherals.VS_PERIPH;
+    let persist = peripherals.PERSIST_PERIPH;
+    let vscope  = peripherals.VECTOR_PERIPH;
+    let scope  = peripherals.SCOPE_PERIPH;
 
     let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
 
@@ -86,7 +88,7 @@ fn main() -> ! {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.xbeam.hue.value).ok();
+            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.beam.hue.value).ok();
 
         }
 
@@ -96,16 +98,18 @@ fn main() -> ! {
 
         time_since_encoder_touched += period_ms;
 
-        match encoder.poke_ticks() {
-            1 => {
+        let ticks = encoder.poke_ticks();
+        if ticks >= 1 {
+            for _ in 0..ticks {
                 opts.tick_up();
-                time_since_encoder_touched = 0;
             }
-            -1 => {
+            time_since_encoder_touched = 0;
+        }
+        if ticks <= -1 {
+            for _ in ticks..0 {
                 opts.tick_down();
-                time_since_encoder_touched = 0;
             }
-            _ => {},
+            time_since_encoder_touched = 0;
         }
 
         if encoder.poke_btn() {
@@ -113,11 +117,38 @@ fn main() -> ! {
             time_since_encoder_touched = 0;
         }
 
-        vs.persist().write(|w| unsafe { w.persist().bits(opts.xbeam.persist.value) } );
-        vs.hue().write(|w| unsafe { w.hue().bits(opts.xbeam.hue.value) } );
-        vs.intensity().write(|w| unsafe { w.intensity().bits(opts.xbeam.intensity.value) } );
-        vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
-        vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
+        persist.persist().write(|w| unsafe { w.persist().bits(opts.beam.persist.value) } );
+        persist.decay().write(|w| unsafe { w.decay().bits(opts.beam.decay.value) } );
+
+        vscope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
+        vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
+        vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
+        vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
+
+        scope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
+        scope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
+
+        scope.trigger_lvl().write(|w| unsafe { w.trigger_lvl().bits(opts.scope.trigger_lvl.value as u16) } );
+        scope.yscale().write(|w| unsafe { w.yscale().bits(opts.scope.yscale.value) } );
+        scope.timebase().write(|w| unsafe { w.timebase().bits(opts.scope.timebase.value) } );
+
+        scope.ypos0().write(|w| unsafe { w.ypos0().bits(opts.scope.ypos0.value as u16) } );
+        scope.ypos1().write(|w| unsafe { w.ypos1().bits(opts.scope.ypos1.value as u16) } );
+        scope.ypos2().write(|w| unsafe { w.ypos2().bits(opts.scope.ypos2.value as u16) } );
+        scope.ypos3().write(|w| unsafe { w.ypos3().bits(opts.scope.ypos3.value as u16) } );
+
+        scope.trigger_always().write(
+            |w| w.trigger_always().bit(opts.scope.trigger_mode.value == opts::TriggerMode::Always) );
+
+        if opts.screen.value == opts::Screen::Vector {
+            scope.en().write(|w| w.en().bit(false) );
+            vscope.en().write(|w| w.en().bit(true) );
+        }
+
+        if opts.screen.value == opts::Screen::Scope {
+            scope.en().write(|w| w.en().bit(true) );
+            vscope.en().write(|w| w.en().bit(false) );
+        }
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;
