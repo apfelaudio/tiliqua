@@ -165,6 +165,8 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
             wiring.connect(m, rampsplit4.o[ch], ch_merge4.i[0])
             wiring.connect(m, isplit4.o[ch],    ch_merge4.i[1])
 
+        # Wishbone tweakables
+
         with m.If(self._hue.w_stb):
             for ch, s in enumerate(self.strokes):
                 m.d.sync += s.hue.eq(self._hue.w_data + ch*3)

@@ -98,16 +98,18 @@ fn main() -> ! {
 
         time_since_encoder_touched += period_ms;
 
-        match encoder.poke_ticks() {
-            1 => {
+        let ticks = encoder.poke_ticks();
+        if ticks >= 1 {
+            for _ in 0..ticks {
                 opts.tick_up();
-                time_since_encoder_touched = 0;
             }
-            -1 => {
+            time_since_encoder_touched = 0;
+        }
+        if ticks <= -1 {
+            for _ in ticks..0 {
                 opts.tick_down();
-                time_since_encoder_touched = 0;
             }
-            _ => {},
+            time_since_encoder_touched = 0;
         }
 
         if encoder.poke_btn() {
