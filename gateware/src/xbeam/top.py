@@ -25,30 +25,24 @@ from tiliqua.tiliqua_soc                         import TiliquaSoc
 
 from example_vectorscope.top                     import Stroke
 
-class VSPeripheral(Peripheral, Elaboratable):
+class VectorTracePeripheral(Peripheral, Elaboratable):
 
-    """
-    Placeholder peripheral that bridges SoC memory space such that
-    we can tweak vectorscope properties from Rust.
-    """
-
-    def __init__(self):
+    def __init__(self, fb_base, fb_size, bus):
 
         super().__init__()
 
-        self.persist           = Signal(16, reset=1024)
-        self.hue               = Signal(8,  reset=0)
-        self.intensity         = Signal(8,  reset=4)
-        self.decay             = Signal(8,  reset=1)
-        self.scale             = Signal(8,  reset=6)
+        self.stroke = Stroke(
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size)
+        bus.add_master(self.stroke.bus)
 
-        # CSRs
+        self.i                 = self.stroke.i
+        self.en                = Signal()
+
         bank                   = self.csr_bank()
-        self._persist          = bank.csr(16, "w")
         self._hue              = bank.csr(8, "w")
         self._intensity        = bank.csr(8, "w")
-        self._decay            = bank.csr(8, "w")
-        self._scale            = bank.csr(8, "w")
+        self._xscale           = bank.csr(8, "w")
+        self._yscale           = bank.csr(8, "w")
 
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
@@ -59,20 +53,21 @@ class VSPeripheral(Peripheral, Elaboratable):
 
         m.submodules.bridge  = self._bridge
 
-        with m.If(self._persist.w_stb):
-            m.d.sync += self.persist.eq(self._persist.w_data)
+        m.submodules += self.stroke
+
+        m.d.comb += self.stroke.enable.eq(self.en)
 
         with m.If(self._hue.w_stb):
-            m.d.sync += self.hue.eq(self._hue.w_data)
+            m.d.sync += self.stroke.hue.eq(self._hue.w_data)
 
         with m.If(self._intensity.w_stb):
-            m.d.sync += self.intensity.eq(self._intensity.w_data)
+            m.d.sync += self.stroke.intensity.eq(self._intensity.w_data)
 
-        with m.If(self._decay.w_stb):
-            m.d.sync += self.decay.eq(self._decay.w_data)
+        with m.If(self._xscale.w_stb):
+            m.d.sync += self.stroke.scale_x.eq(self._xscale.w_data)
 
-        with m.If(self._scale.w_stb):
-            m.d.sync += self.scale.eq(self._scale.w_data)
+        with m.If(self._yscale.w_stb):
+            m.d.sync += self.stroke.scale_y.eq(self._yscale.w_data)
 
         return m
 
@@ -82,12 +77,12 @@ class XbeamSoc(TiliquaSoc):
                          audio_out_peripheral=False)
         # scope stroke bridge from audio stream
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
-        self.stroke = Stroke(
-                fb_base=self.video.fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
-        self.soc.psram.add_master(self.stroke.bus)
-        # scope controls
-        self.vs_periph = VSPeripheral()
-        self.soc.add_peripheral(self.vs_periph, addr=0xf0006000)
+
+        self.vector_periph = VectorTracePeripheral(
+            fb_base=self.video.fb_base,
+            fb_size=fb_size,
+            bus=self.soc.psram)
+        self.soc.add_peripheral(self.vector_periph, addr=0xf0007000)
 
     def elaborate(self, platform):
 
@@ -98,25 +93,11 @@ class XbeamSoc(TiliquaSoc):
         pmod0 = self.pmod0_periph.pmod
 
         m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0)
-        wiring.connect(m, astream.istream, self.stroke.i)
-
-        m.submodules.stroke = self.stroke
+        wiring.connect(m, astream.istream, self.vector_periph.i)
 
         # Memory controller hangs if we start making requests to it straight away.
-        # TODO collapse this into delay already present in super()
-        on_delay = Signal(32)
-        with m.If(on_delay < 0xFFFF):
-            m.d.sync += on_delay.eq(on_delay+1)
-        with m.Else():
-            m.d.sync += self.stroke.enable.eq(1)
-
-        m.d.comb += [
-            self.persist.holdoff.eq(self.vs_periph.persist),
-            self.persist.decay.eq(self.vs_periph.decay),
-            self.stroke.hue.eq(self.vs_periph.hue),
-            self.stroke.intensity.eq(self.vs_periph.intensity),
-            self.stroke.scale.eq(self.vs_periph.scale),
-        ]
+        with m.If(self.permit_bus_traffic):
+            m.d.sync += self.vector_periph.en.eq(1)
 
         return m
 

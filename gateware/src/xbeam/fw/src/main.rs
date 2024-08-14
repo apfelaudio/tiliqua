@@ -74,7 +74,8 @@ fn main() -> ! {
 
     let mut opts = opts::Options::new();
 
-    let vs = peripherals.VS_PERIPH;
+    let persist = peripherals.PERSIST_PERIPH;
+    let vscope  = peripherals.VECTOR_PERIPH;
 
     let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
 
@@ -86,7 +87,7 @@ fn main() -> ! {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.xbeam.hue.value).ok();
+            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.beam.ui_hue.value).ok();
 
         }
 
@@ -113,11 +114,12 @@ fn main() -> ! {
             time_since_encoder_touched = 0;
         }
 
-        vs.persist().write(|w| unsafe { w.persist().bits(opts.xbeam.persist.value) } );
-        vs.hue().write(|w| unsafe { w.hue().bits(opts.xbeam.hue.value) } );
-        vs.intensity().write(|w| unsafe { w.intensity().bits(opts.xbeam.intensity.value) } );
-        vs.decay().write(|w| unsafe { w.decay().bits(opts.xbeam.decay.value) } );
-        vs.scale().write(|w| unsafe { w.scale().bits(opts.xbeam.scale.value) } );
+        persist.persist().write(|w| unsafe { w.persist().bits(opts.beam.persist.value) } );
+        persist.decay().write(|w| unsafe { w.decay().bits(opts.beam.decay.value) } );
+        vscope.hue().write(|w| unsafe { w.hue().bits(opts.vector.hue.value) } );
+        vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.vector.intensity.value) } );
+        vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
+        vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
 
         for n in 0..16 {
             pca9635.leds[n] = 0u8;

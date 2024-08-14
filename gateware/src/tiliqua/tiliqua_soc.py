@@ -33,6 +33,49 @@ from luna_soc.gateware.csr.base                  import Peripheral
 
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
+class PersistPeripheral(Peripheral, Elaboratable):
+
+    """
+    Tweak display persistance properties from SoC memory space.
+    """
+
+    def __init__(self, fb_base, fb_size, bus):
+
+        super().__init__()
+
+        self.en                = Signal()
+
+        self.persist = Persistance(
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size)
+        bus.add_master(self.persist.bus)
+
+        # CSRs
+        bank                   = self.csr_bank()
+        self._persist          = bank.csr(16, "w")
+        self._decay            = bank.csr(8, "w")
+
+        # Peripheral bus
+        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
+        self.bus        = self._bridge.bus
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.bridge  = self._bridge
+
+        m.submodules += self.persist
+
+        m.d.comb += self.persist.enable.eq(self.en)
+
+        with m.If(self._persist.w_stb):
+            m.d.sync += self.persist.holdoff.eq(self._persist.w_data)
+
+        with m.If(self._decay.w_stb):
+            m.d.sync += self.persist.decay.eq(self._decay.w_data)
+
+        return m
+
+
 class TiliquaSoc(Elaboratable):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
                  audio_out_peripheral=True, touch=False):
@@ -89,13 +132,6 @@ class TiliquaSoc(Elaboratable):
                 bus_master=self.soc.psram.bus, sim=False)
         self.soc.psram.add_master(self.video.bus)
 
-        # ... add our video persistance effect (all writes gradually fade) -
-        # this is an interesting alternative to double-buffering that looks
-        # kind of like an old CRT with slow-scanning.
-        self.persist = Persistance(
-                fb_base=fb_base, bus_master=self.soc.psram.bus, fb_size=fb_size)
-        self.soc.psram.add_master(self.persist.bus)
-
         self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
         self.soc.add_peripheral(self.i2c0, addr=0xf0002000)
 
@@ -108,6 +144,17 @@ class TiliquaSoc(Elaboratable):
 
         self.temperature_periph = DieTemperaturePeripheral()
         self.soc.add_peripheral(self.temperature_periph, addr=0xf0005000)
+
+        # ... add our video persistance effect (all writes gradually fade) -
+        # this is an interesting alternative to double-buffering that looks
+        # kind of like an old CRT with slow-scanning.
+        self.persist_periph = PersistPeripheral(
+            fb_base=self.video.fb_base,
+            fb_size=fb_size,
+            bus=self.soc.psram)
+        self.soc.add_peripheral(self.persist_periph, addr=0xf0006000)
+
+        self.permit_bus_traffic = Signal()
 
         super().__init__()
 
@@ -127,7 +174,6 @@ class TiliquaSoc(Elaboratable):
         self.pmod0_periph.pmod = pmod0
 
         m.submodules.video = self.video
-        m.submodules.persist = self.persist
         m.submodules.soc = self.soc
 
         # Memory controller hangs if we start making requests to it straight away.
@@ -135,8 +181,9 @@ class TiliquaSoc(Elaboratable):
         with m.If(on_delay < 0xFFFF):
             m.d.sync += on_delay.eq(on_delay+1)
         with m.Else():
+            m.d.sync += self.permit_bus_traffic.eq(1)
             m.d.sync += self.video.enable.eq(1)
-            m.d.sync += self.persist.enable.eq(1)
+            m.d.sync += self.persist_periph.en.eq(1)
 
         # generate our domain clocks/resets
         m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
