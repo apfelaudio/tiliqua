@@ -51,16 +51,17 @@ pub struct ScopeOptions {
     pub timebase: NumOption<u16>,
     pub trigger_mode: EnumOption<TriggerMode>,
     pub trigger_lvl: NumOption<i16>,
-    pub yscale: NumOption<u8>,
     pub ypos0: NumOption<i16>,
     pub ypos1: NumOption<i16>,
     pub ypos2: NumOption<i16>,
     pub ypos3: NumOption<i16>,
+    pub yscale: NumOption<u8>,
+    pub xscale: NumOption<u8>,
 }
 
 impl_option_view!(ScopeOptions,
-                  timebase, trigger_mode, trigger_lvl, yscale,
-                  ypos0, ypos1, ypos2, ypos3);
+                  timebase, trigger_mode, trigger_lvl,
+                  ypos0, ypos1, ypos2, ypos3, yscale, xscale);
 
 #[derive(Clone)]
 pub struct Options {
@@ -154,13 +155,6 @@ impl Options {
                     min: -512*32,
                     max: 512*32,
                 },
-                yscale: NumOption{
-                    name: String::from_str("yscale").unwrap(),
-                    value: 8,
-                    step: 1,
-                    min: 0,
-                    max: 15,
-                },
                 ypos0: NumOption{
                     name: String::from_str("ypos0").unwrap(),
                     value: -250,
@@ -188,6 +182,20 @@ impl Options {
                     step: 25,
                     min: -500,
                     max: 500,
+                },
+                yscale: NumOption{
+                    name: String::from_str("yscale").unwrap(),
+                    value: 8,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+                xscale: NumOption{
+                    name: String::from_str("xscale").unwrap(),
+                    value: 6,
+                    step: 1,
+                    min: 0,
+                    max: 15,
                 },
             },
         }

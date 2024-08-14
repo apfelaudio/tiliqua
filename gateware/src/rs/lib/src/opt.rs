@@ -4,7 +4,7 @@ use heapless::Vec;
 use core::fmt::Write;
 use core::str::FromStr;
 
-pub const MAX_OPTS_PER_TAB: usize = 10;
+pub const MAX_OPTS_PER_TAB: usize = 16;
 pub const MAX_OPT_NAME:     usize = 32;
 
 pub type OptionString = String<MAX_OPT_NAME>;

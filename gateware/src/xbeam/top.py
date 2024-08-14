@@ -117,6 +117,7 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         self._hue              = bank.csr(8,  "w")
         self._intensity        = bank.csr(8,  "w")
         self._timebase         = bank.csr(16, "w")
+        self._xscale           = bank.csr(8,  "w")
         self._yscale           = bank.csr(8,  "w")
         self._trigger_always   = bank.csr(1,  "w")
         self._trigger_lvl      = bank.csr(16, "w")
@@ -190,6 +191,10 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         with m.If(self._timebase.w_stb):
             m.d.sync += self.timebase.sas_value().eq(self._timebase.w_data)
 
+        with m.If(self._xscale.w_stb):
+            for s in self.strokes:
+                m.d.sync += s.scale_x.eq(self._xscale.w_data)
+
         with m.If(self._yscale.w_stb):
             for s in self.strokes:
                 m.d.sync += s.scale_y.eq(self._yscale.w_data)
@@ -252,6 +257,11 @@ class XbeamSoc(TiliquaSoc):
             wiring.connect(m, astream.istream, self.scope_periph.i)
         with m.Else():
             wiring.connect(m, astream.istream, self.vector_periph.i)
+
+        m.d.comb += [
+            astream.ostream.valid.eq(astream.istream.valid & astream.istream.ready),
+            astream.ostream.payload.eq(astream.istream.payload),
+        ]
 
         # Memory controller hangs if we start making requests to it straight away.
         with m.If(self.permit_bus_traffic):

@@ -129,6 +129,7 @@ fn main() -> ! {
         scope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
 
         scope.trigger_lvl().write(|w| unsafe { w.trigger_lvl().bits(opts.scope.trigger_lvl.value as u16) } );
+        scope.xscale().write(|w| unsafe { w.xscale().bits(opts.scope.xscale.value) } );
         scope.yscale().write(|w| unsafe { w.yscale().bits(opts.scope.yscale.value) } );
         scope.timebase().write(|w| unsafe { w.timebase().bits(opts.scope.timebase.value) } );
 
@@ -185,7 +186,9 @@ fn main() -> ! {
         if opts.modify() {
             if toggle_encoder_leds {
                 if let Some(n) = opts.view().selected() {
-                    pmod.led_set_manual(n, i8::MAX);
+                    if n < 8 {
+                        pmod.led_set_manual(n, i8::MAX);
+                    }
                 }
             } else {
                 pmod.led_all_auto();
@@ -196,7 +199,9 @@ fn main() -> ! {
                     pmod.led_set_manual(n, 0i8);
                 }
                 if let Some(n) = opts.view().selected() {
-                    pmod.led_set_manual(n, (((1000-time_since_encoder_touched) * 120) / 1000) as i8);
+                    if n < 8 {
+                        pmod.led_set_manual(n, (((1000-time_since_encoder_touched) * 120) / 1000) as i8);
+                    }
                 }
             } else {
                 pmod.led_all_auto();
