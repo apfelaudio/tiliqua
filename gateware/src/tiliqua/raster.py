@@ -198,7 +198,11 @@ class Stroke(wiring.Component):
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
     def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, fs=192000, n_upsample=4,
-                 default_hue=10, default_x=0, default_y=0):
+                 default_hue=10, default_x=0, default_y=0, video_rotate_90=False):
+
+
+        # FIXME: move this further up chain, collapse env variables
+        self.rotate_90 = True if os.getenv("TILIQUA_VIDEO_ROTATE") == "1" else False
 
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
@@ -278,12 +282,23 @@ class Stroke(wiring.Component):
         fb_hwords = ((self.fb_hsize*self.fb_bytes_per_pixel)//4)
         x_offs = Signal(unsigned(16))
         y_offs = Signal(unsigned(16))
+        subpix_shift = Signal(unsigned(6))
         pixel_offs = Signal(unsigned(32))
-        m.d.comb += [
-            x_offs.eq((fb_hwords//2) + (sample_x>>2)),
-            y_offs.eq(sample_y + (self.fb_vsize//2)),
-            pixel_offs.eq(y_offs*fb_hwords + x_offs),
-        ]
+
+        m.d.comb += pixel_offs.eq(y_offs*fb_hwords + x_offs),
+        if self.rotate_90:
+            # remap pixel offset for 90deg rotation
+            m.d.comb += [
+                subpix_shift.eq((-sample_y)[0:2]*8),
+                x_offs.eq((fb_hwords//2) + ((-sample_y)>>2)),
+                y_offs.eq(sample_x + (self.fb_vsize//2)),
+            ]
+        else:
+            m.d.comb += [
+                subpix_shift.eq(sample_x[0:2]*8),
+                x_offs.eq((fb_hwords//2) + (sample_x>>2)),
+                y_offs.eq(sample_y + (self.fb_vsize//2)),
+            ]
 
         with m.FSM() as fsm:
 
@@ -328,7 +343,7 @@ class Stroke(wiring.Component):
 
                 with m.If(bus.stb & bus.ack):
                     m.d.sync += px_read.eq(bus.dat_r)
-                    m.d.sync += px_sum.eq(((bus.dat_r >> (sample_x[0:2]*8)) & 0xff))
+                    m.d.sync += px_sum.eq(((bus.dat_r >> subpix_shift) & 0xff))
                     m.next = 'WAIT'
 
             with m.State('WAIT'):
@@ -362,13 +377,13 @@ class Stroke(wiring.Component):
 
                 with m.If(px_sum[4:8] + sample_intensity >= 0xF):
                     m.d.comb += bus.dat_w.eq(
-                        (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
-                        (Cat(new_color, white) << (sample_x[0:2]*8))
+                        (px_read & ~(Const(0xFF, unsigned(32)) << subpix_shift)) |
+                        (Cat(new_color, white) << (subpix_shift))
                          )
                 with m.Else():
                     m.d.comb += bus.dat_w.eq(
-                        (px_read & ~(Const(0xFF, unsigned(32)) << (sample_x[0:2]*8))) |
-                        (Cat(new_color, (px_sum[4:8] + sample_intensity)) << (sample_x[0:2]*8))
+                        (px_read & ~(Const(0xFF, unsigned(32)) << subpix_shift)) |
+                        (Cat(new_color, (px_sum[4:8] + sample_intensity)) << subpix_shift)
                          )
 
                 with m.If(bus.stb & bus.ack):
