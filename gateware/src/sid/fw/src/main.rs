@@ -110,7 +110,7 @@ fn main() -> ! {
 
     loop {
 
-        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, 0).ok();
+        draw::draw_options(&mut display, &opts, 100, V_ACTIVE/2, 0).ok();
 
         let hl_wfm: Option<u8> = match opts.screen.value {
             opts::Screen::Voice1 => Some(0),
@@ -139,7 +139,7 @@ fn main() -> ! {
 
         let hl_filter: bool = opts.screen.value == opts::Screen::Filter;
 
-        draw::draw_sid(&mut display, 200, V_ACTIVE/2, 0, hl_wfm, gates, hl_filter, switches, filter_types);
+        draw::draw_sid(&mut display, 100, V_ACTIVE/4+25, 0, hl_wfm, gates, hl_filter, switches, filter_types);
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 

@@ -213,6 +213,14 @@ where
                     .draw(disp).ok()
     };
 
+    let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::new(0xB0 + hue));
+    Text::new(
+        "MOS 6581",
+        Point::new((x+20) as i32, (y-10) as i32),
+        font_small_white,
+    )
+    .draw(d)?;
+
     let spacing = 32;
     for n in 0..3 {
         let ys = n * spacing;
@@ -376,8 +384,8 @@ mod tests {
 
     use image::{ImageBuffer, RgbImage, Rgb};
 
-    const H_ACTIVE: u32 = 800;
-    const V_ACTIVE: u32 = 600;
+    const H_ACTIVE: u32 = 720;
+    const V_ACTIVE: u32 = 720;
 
     struct FakeDisplay {
         img: RgbImage,
@@ -426,8 +434,9 @@ mod tests {
         opts.toggle_modify();
 
         disp.img = ImageBuffer::new(H_ACTIVE, V_ACTIVE);
-        draw_options(&mut disp, &opts, H_ACTIVE-200, V_ACTIVE/2, 0).ok();
+        draw_options(&mut disp, &opts, 100, V_ACTIVE/2, 0).ok();
 
+        /*
         let n_voices = 8;
         for n in 0..8 {
             draw_voice(&mut disp,
@@ -435,8 +444,17 @@ mod tests {
                        ((V_ACTIVE as f32)/2.0f32 + 250.0f32*f32::sin(2.3f32 + 2.0f32 * n as f32 / 8.0f32)) as u32,
                        12, 127, 0).ok();
         }
+        */
 
-        draw_sid(&mut disp, H_ACTIVE/2, V_ACTIVE/2, 0);
+        draw_sid(&mut disp, 100, V_ACTIVE/4+25, 0, None, [false, false, false], false, [false, false, false], [false, false, false]);
+
+         let stroke_grey = PrimitiveStyleBuilder::new()
+                .stroke_color(Gray8::new(0xB0))
+                .stroke_width(1)
+                .build();
+        Circle::new(Point::new(0, 0), H_ACTIVE)
+                    .into_styled(stroke_grey)
+                    .draw(&mut disp).ok();
 
         disp.img.save("draw_opt_test.png").unwrap();
     }
