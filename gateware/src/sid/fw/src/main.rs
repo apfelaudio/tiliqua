@@ -112,6 +112,35 @@ fn main() -> ! {
 
         draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, 0).ok();
 
+        let hl_wfm: Option<u8> = match opts.screen.value {
+            opts::Screen::Voice1 => Some(0),
+            opts::Screen::Voice2 => Some(1),
+            opts::Screen::Voice3 => Some(2),
+            _ => None,
+        };
+
+        let gates: [bool; 3] = [
+            opts.voice1.gate.value == 1,
+            opts.voice2.gate.value == 1,
+            opts.voice3.gate.value == 1,
+        ];
+
+        let switches: [bool; 3] = [
+            opts.filter.filt1.value == 1,
+            opts.filter.filt2.value == 1,
+            opts.filter.filt3.value == 1,
+        ];
+
+        let filter_types: [bool; 3] = [
+            opts.filter.lp.value == 1,
+            opts.filter.bp.value == 1,
+            opts.filter.hp.value == 1,
+        ];
+
+        let hl_filter: bool = opts.screen.value == opts::Screen::Filter;
+
+        draw::draw_sid(&mut display, 200, V_ACTIVE/2, 0, hl_wfm, gates, hl_filter, switches, filter_types);
+
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         encoder.update();
