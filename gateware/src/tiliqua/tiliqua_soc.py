@@ -119,7 +119,7 @@ class TiliquaSoc(Elaboratable):
         )
 
         # ... add memory-mapped psram/hyperram peripheral (128Mbit)
-        self.psram_base = 0x20000000
+        self.psram_base = 0xf1000000
         self.psram_size_bytes = 16*1024*1024
         self.soc.psram = PSRAMPeripheral(size=self.psram_size_bytes)
         self.soc.add_peripheral(self.soc.psram, addr=self.psram_base)
