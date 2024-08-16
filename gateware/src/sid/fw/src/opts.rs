@@ -17,6 +17,14 @@ pub enum Screen {
     Voice2,
     Voice3,
     Filter,
+    Scope,
+}
+
+#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
+#[strum(serialize_all = "kebab-case")]
+pub enum TriggerMode {
+    Always,
+    Rising,
 }
 
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
@@ -84,6 +92,24 @@ impl_option_view!(FilterOptions,
                   v3off,
                   volume);
 
+#[derive(Clone)]
+pub struct ScopeOptions {
+    pub selected: Option<usize>,
+    pub timebase: NumOption<u16>,
+    pub trigger_mode: EnumOption<TriggerMode>,
+    pub trigger_lvl: NumOption<i16>,
+    pub ypos0: NumOption<i16>,
+    pub ypos1: NumOption<i16>,
+    pub ypos2: NumOption<i16>,
+    pub ypos3: NumOption<i16>,
+    pub yscale: NumOption<u8>,
+    pub xscale: NumOption<u8>,
+}
+
+impl_option_view!(ScopeOptions,
+                  timebase, trigger_mode, trigger_lvl,
+                  ypos0, ypos1, ypos2, ypos3, yscale, xscale);
+
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "kebab-case")]
 pub enum ModulationTarget {
@@ -147,6 +173,7 @@ pub struct Options {
     pub voice2: VoiceOptions,
     pub voice3: VoiceOptions,
     pub filter: FilterOptions,
+    pub scope:  ScopeOptions,
 }
 
 impl_option_page!(Options,
@@ -154,7 +181,9 @@ impl_option_page!(Options,
                   (Screen::Voice1, voice1),
                   (Screen::Voice2, voice2),
                   (Screen::Voice3, voice3),
-                  (Screen::Filter, filter));
+                  (Screen::Filter, filter),
+                  (Screen::Scope,   scope)
+                  );
 
 impl VoiceOptions {
     fn new() -> VoiceOptions {
@@ -336,6 +365,69 @@ impl Options {
                 volume: NumOption{
                     name: String::from_str("volume").unwrap(),
                     value: 15,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+            },
+            scope: ScopeOptions {
+                selected: None,
+                timebase: NumOption{
+                    name: String::from_str("timebase").unwrap(),
+                    value: 32,
+                    step: 128,
+                    min: 32,
+                    max: 3872,
+                },
+                trigger_mode: EnumOption {
+                    name: String::from_str("trig-mode").unwrap(),
+                    value: TriggerMode::Always,
+                },
+                trigger_lvl: NumOption{
+                    name: String::from_str("trig-lvl").unwrap(),
+                    value: 0,
+                    step: 512,
+                    min: -512*32,
+                    max: 512*32,
+                },
+                ypos0: NumOption{
+                    name: String::from_str("ypos0").unwrap(),
+                    value: -250,
+                    step: 25,
+                    min: -500,
+                    max: 500,
+                },
+                ypos1: NumOption{
+                    name: String::from_str("ypos1").unwrap(),
+                    value: -75,
+                    step: 25,
+                    min: -500,
+                    max: 500,
+                },
+                ypos2: NumOption{
+                    name: String::from_str("ypos2").unwrap(),
+                    value: 75,
+                    step: 25,
+                    min: -500,
+                    max: 500,
+                },
+                ypos3: NumOption{
+                    name: String::from_str("ypos3").unwrap(),
+                    value: 250,
+                    step: 25,
+                    min: -500,
+                    max: 500,
+                },
+                yscale: NumOption{
+                    name: String::from_str("yscale").unwrap(),
+                    value: 8,
+                    step: 1,
+                    min: 0,
+                    max: 15,
+                },
+                xscale: NumOption{
+                    name: String::from_str("xscale").unwrap(),
+                    value: 6,
                     step: 1,
                     min: 0,
                     max: 15,

@@ -81,7 +81,7 @@ class VectorTracePeripheral(Peripheral, Elaboratable):
 
 class ScopeTracePeripheral(Peripheral, Elaboratable):
 
-    def __init__(self, fb_base, fb_size, bus):
+    def __init__(self, fb_base, fb_size, bus, default_en=False):
 
         super().__init__()
 
@@ -106,7 +106,7 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
             bus.add_master(s.bus)
 
         self.en                = Signal()
-        self.soc_en            = Signal()
+        self.soc_en            = Signal(reset=default_en)
 
         self.timebase          = Signal(shape=dsp.ASQ)
         self.trigger_lvl       = Signal(shape=dsp.ASQ)

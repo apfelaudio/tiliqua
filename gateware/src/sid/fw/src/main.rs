@@ -108,6 +108,8 @@ fn main() -> ! {
     sid_poke(&sid, 1, (freq>>8) as u8);
     sid_poke(&sid, 4, 0x11);   /* Enable gate, triangel waveform. */
 
+    let scope  = peripherals.SCOPE_PERIPH;
+
     loop {
 
         draw::draw_options(&mut display, &opts, 100, V_ACTIVE/2, 0).ok();
@@ -318,5 +320,21 @@ fn main() -> ! {
              (opts.filter.v3off.value  << 7) |
              (opts.filter.volume.value << 0)) as u8
             );
+
+        scope.hue().write(|w| unsafe { w.hue().bits(0) } );
+        scope.intensity().write(|w| unsafe { w.intensity().bits(10) } );
+
+        scope.trigger_lvl().write(|w| unsafe { w.trigger_lvl().bits(opts.scope.trigger_lvl.value as u16) } );
+        scope.xscale().write(|w| unsafe { w.xscale().bits(opts.scope.xscale.value) } );
+        scope.yscale().write(|w| unsafe { w.yscale().bits(opts.scope.yscale.value) } );
+        scope.timebase().write(|w| unsafe { w.timebase().bits(opts.scope.timebase.value) } );
+
+        scope.ypos0().write(|w| unsafe { w.ypos0().bits(opts.scope.ypos0.value as u16) } );
+        scope.ypos1().write(|w| unsafe { w.ypos1().bits(opts.scope.ypos1.value as u16) } );
+        scope.ypos2().write(|w| unsafe { w.ypos2().bits(opts.scope.ypos2.value as u16) } );
+        scope.ypos3().write(|w| unsafe { w.ypos3().bits(opts.scope.ypos3.value as u16) } );
+
+        scope.trigger_always().write(
+            |w| w.trigger_always().bit(opts.scope.trigger_mode.value == opts::TriggerMode::Always) );
     }
 }

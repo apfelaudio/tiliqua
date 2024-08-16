@@ -17,6 +17,8 @@ from tiliqua.tiliqua_platform            import set_environment_variables
 from luna_soc                            import top_level_cli
 from luna_soc.gateware.csr.base          import Peripheral
 
+from xbeam.top                           import ScopeTracePeripheral
+
 class SID(wiring.Component):
 
     clk:     In(1)
@@ -34,7 +36,7 @@ class SID(wiring.Component):
         "left":  signed(24),
         }))
 
-    # internal signals interesting to see
+    # internal signals for each voice after VCA, but before filter, interesting to see
     voice0_dca: Out(signed(16))
     voice1_dca: Out(signed(16))
     voice2_dca: Out(signed(16))
@@ -202,8 +204,17 @@ class SIDSoc(TiliquaSoc):
     def __init__(self, *, firmware_path, dvi_timings):
         super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
                          audio_out_peripheral=False)
+
         self.sid_periph = SIDPeripheral()
-        self.soc.add_peripheral(self.sid_periph, addr=0xf0006000)
+        self.soc.add_peripheral(self.sid_periph, addr=0xf0007000)
+
+        fb_size = (self.video.fb_hsize, self.video.fb_vsize)
+        self.scope_periph = ScopeTracePeripheral(
+            fb_base=self.video.fb_base,
+            fb_size=fb_size,
+            bus=self.soc.psram,
+            default_en=True)
+        self.soc.add_peripheral(self.scope_periph, addr=0xf0008000)
 
     def elaborate(self, platform):
 
@@ -226,6 +237,18 @@ class SIDSoc(TiliquaSoc):
             astream.ostream.payload[2].sas_value().eq(sid.voice2_dca),
             astream.ostream.payload[3].sas_value().eq(self.sid_periph.last_audio_left>>8),
         ]
+
+        m.d.comb += [
+            self.scope_periph.i.valid.eq(astream.ostream.valid),
+            self.scope_periph.i.payload[0].eq(astream.ostream.payload[3]),
+            self.scope_periph.i.payload[1].eq(astream.ostream.payload[0]),
+            self.scope_periph.i.payload[2].eq(astream.ostream.payload[1]),
+            self.scope_periph.i.payload[3].eq(astream.ostream.payload[2]),
+        ]
+
+        # Memory controller hangs if we start making requests to it straight away.
+        with m.If(self.permit_bus_traffic):
+            m.d.sync += self.scope_periph.en.eq(1)
 
         return m
 
