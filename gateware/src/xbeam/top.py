@@ -125,6 +125,7 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         self._ypos1            = bank.csr(16, "w")
         self._ypos2            = bank.csr(16, "w")
         self._ypos3            = bank.csr(16, "w")
+        self._xpos             = bank.csr(16, "w")
 
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
@@ -201,6 +202,10 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
 
         with m.If(self._trigger_lvl.w_stb):
             m.d.sync += self.trigger_lvl.sas_value().eq(self._trigger_lvl.w_data)
+
+        with m.If(self._xpos.w_stb):
+            for s in self.strokes:
+                m.d.sync += s.x_offset.eq(self._xpos.w_data)
 
         with m.If(self._ypos0.w_stb):
             m.d.sync += self.strokes[0].y_offset.eq(self._ypos0.w_data)

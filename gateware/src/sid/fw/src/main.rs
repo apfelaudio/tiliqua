@@ -71,14 +71,6 @@ fn main() -> ! {
         framebuffer_base: PSRAM_FB_BASE as *mut u32,
     };
 
-    // Must flush the dcache for framebuffer writes to go through
-    // TODO: put the framebuffer in the DMA section of Vex address space?
-    let pause_flush = |timer: &mut Timer0, uptime_ms: &mut u32, period_ms: u32| {
-        timer.delay_ms(period_ms);
-        *uptime_ms += period_ms;
-        pac::cpu::vexriscv::flush_dcache();
-    };
-
     let mut uptime_ms = 0u32;
     let period_ms = 1u32;
 
@@ -110,9 +102,11 @@ fn main() -> ! {
 
     let scope  = peripherals.SCOPE_PERIPH;
 
+    let hue = 10u8;
+
     loop {
 
-        draw::draw_options(&mut display, &opts, 100, V_ACTIVE/2, 0).ok();
+        draw::draw_options(&mut display, &opts, 100, V_ACTIVE/2, hue).ok();
 
         let hl_wfm: Option<u8> = match opts.screen.value {
             opts::Screen::Voice1 => Some(0),
@@ -141,24 +135,61 @@ fn main() -> ! {
 
         let hl_filter: bool = opts.screen.value == opts::Screen::Filter;
 
-        draw::draw_sid(&mut display, 100, V_ACTIVE/4+25, 0, hl_wfm, gates, hl_filter, switches, filter_types);
+        draw::draw_sid(&mut display, 100, V_ACTIVE/4+25, hue, hl_wfm, gates, hl_filter, switches, filter_types);
 
-        pause_flush(&mut timer, &mut uptime_ms, period_ms);
+        {
+            let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::new(0xB0 + hue));
+            let hc = (H_ACTIVE/2) as i16;
+            let vc = (V_ACTIVE/2) as i16;
+            Text::new(
+                "out3: combined, post-filter",
+                Point::new((opts.scope.xpos.value + hc - 250) as i32,
+                           (opts.scope.ypos0.value + vc + 50) as i32),
+                font_small_white,
+            )
+            .draw(&mut display).ok();
+            Text::new(
+                "out0: voice 1, post-VCA",
+                Point::new((opts.scope.xpos.value + hc - 250) as i32,
+                           (opts.scope.ypos1.value + vc + 50) as i32),
+                font_small_white,
+            )
+            .draw(&mut display).ok();
+            Text::new(
+                "out1: voice 2, post-VCA",
+                Point::new((opts.scope.xpos.value + hc - 250) as i32,
+                           (opts.scope.ypos2.value + vc + 50) as i32),
+                font_small_white,
+            )
+            .draw(&mut display).ok();
+            Text::new(
+                "out2: voice 3, post-VCA",
+                Point::new((opts.scope.xpos.value + hc - 250) as i32,
+                           (opts.scope.ypos3.value + vc + 50) as i32),
+                font_small_white,
+            )
+            .draw(&mut display).ok();
+        }
+
+        // Flush
+        //pac::cpu::vexriscv::flush_dcache();
 
         encoder.update();
 
         time_since_encoder_touched += period_ms;
 
-        match encoder.poke_ticks() {
-            1 => {
+        let ticks = encoder.poke_ticks();
+        if ticks >= 1 {
+            for _ in 0..ticks {
                 opts.tick_up();
-                time_since_encoder_touched = 0;
             }
-            -1 => {
+            time_since_encoder_touched = 0;
+        }
+        if ticks <= -1 {
+            for _ in ticks..0 {
                 opts.tick_down();
-                time_since_encoder_touched = 0;
             }
-            _ => {},
+            time_since_encoder_touched = 0;
         }
 
         if encoder.poke_btn() {
@@ -333,6 +364,8 @@ fn main() -> ! {
         scope.ypos1().write(|w| unsafe { w.ypos1().bits(opts.scope.ypos1.value as u16) } );
         scope.ypos2().write(|w| unsafe { w.ypos2().bits(opts.scope.ypos2.value as u16) } );
         scope.ypos3().write(|w| unsafe { w.ypos3().bits(opts.scope.ypos3.value as u16) } );
+
+        scope.xpos().write(|w| unsafe { w.xpos().bits(opts.scope.xpos.value as u16) } );
 
         scope.trigger_always().write(
             |w| w.trigger_always().bit(opts.scope.trigger_mode.value == opts::TriggerMode::Always) );

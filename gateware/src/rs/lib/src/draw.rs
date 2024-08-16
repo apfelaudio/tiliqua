@@ -224,6 +224,16 @@ where
     let spacing = 32;
     for n in 0..3 {
         let ys = n * spacing;
+
+        // wiring
+        circle(d, 51, 10+ys, 8);
+        line(d,   33, 10+ys, 42, 10+ys, false);
+        line(d,   32, 26+ys, 50, 26+ys, false);
+        line(d,   51, 19+ys, 51, 26+ys, false);
+        line(d,   46, 5+ys,  56, 15+ys, false);
+        line(d,   46, 15+ys, 56, 5+ys,  false);
+        line(d,   60, 10+ys, 69, 10+ys, false);
+
         // wfm
         let hl_wfm = wfm == Some(n as u8);
         rect(d,  3,  3+ys, 30,    15, hl_wfm);
@@ -239,15 +249,6 @@ where
         line(d, 13, 22+ys, 15, 27+ys, hl_adsr);
         line(d, 16, 27+ys, 24, 27+ys, hl_adsr);
         line(d, 25, 27+ys, 29, 31+ys, hl_adsr);
-
-        // wiring
-        circle(d, 51, 10+ys, 8);
-        line(d,   33, 10+ys, 42, 10+ys, false);
-        line(d,   32, 26+ys, 50, 26+ys, false);
-        line(d,   51, 19+ys, 51, 26+ys, false);
-        line(d,   46, 5+ys,  56, 15+ys, false);
-        line(d,   46, 15+ys, 56, 5+ys,  false);
-        line(d,   60, 10+ys, 69, 10+ys, false);
 
         // switch
         let switch_pos = if switches[n as usize] { 8 } else { 0 };

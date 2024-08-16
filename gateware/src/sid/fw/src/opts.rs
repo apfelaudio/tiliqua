@@ -104,11 +104,12 @@ pub struct ScopeOptions {
     pub ypos3: NumOption<i16>,
     pub yscale: NumOption<u8>,
     pub xscale: NumOption<u8>,
+    pub xpos:  NumOption<i16>,
 }
 
 impl_option_view!(ScopeOptions,
                   timebase, trigger_mode, trigger_lvl,
-                  ypos0, ypos1, ypos2, ypos3, yscale, xscale);
+                  ypos0, ypos1, ypos2, ypos3, yscale, xscale, xpos);
 
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "kebab-case")]
@@ -392,28 +393,28 @@ impl Options {
                 },
                 ypos0: NumOption{
                     name: String::from_str("ypos0").unwrap(),
-                    value: -250,
+                    value: 150,
                     step: 25,
                     min: -500,
                     max: 500,
                 },
                 ypos1: NumOption{
                     name: String::from_str("ypos1").unwrap(),
-                    value: -75,
+                    value: -150,
                     step: 25,
                     min: -500,
                     max: 500,
                 },
                 ypos2: NumOption{
                     name: String::from_str("ypos2").unwrap(),
-                    value: 75,
+                    value: -50,
                     step: 25,
                     min: -500,
                     max: 500,
                 },
                 ypos3: NumOption{
                     name: String::from_str("ypos3").unwrap(),
-                    value: 250,
+                    value: 50,
                     step: 25,
                     min: -500,
                     max: 500,
@@ -427,10 +428,17 @@ impl Options {
                 },
                 xscale: NumOption{
                     name: String::from_str("xscale").unwrap(),
-                    value: 6,
+                    value: 7,
                     step: 1,
                     min: 0,
                     max: 15,
+                },
+                xpos: NumOption{
+                    name: String::from_str("xpos").unwrap(),
+                    value: 175,
+                    step: 25,
+                    min: -500,
+                    max: 500,
                 },
             },
         }
