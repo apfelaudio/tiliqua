@@ -52,8 +52,3 @@ fn exception_handler(trap_frame: &riscv_rt::TrapFrame) -> ! {
     loop {}
 }
 
-#[export_name = "DefaultHandler"]
-fn default_isr_handler() -> ! {
-    error!("default_isr_handler()");
-    loop {}
-}

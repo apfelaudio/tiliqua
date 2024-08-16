@@ -14,6 +14,7 @@ riscv = { version = "=0.10.1", features = ["critical-section-single-hart"] }
 riscv-rt = { version = "=0.11.0" }
 panic-halt = "0.2.0"
 micromath = "2.1.0"
+vexriscv = "0.0.3"
 embedded-graphics = "0.8.1"
 fastrand = { version = "2.1.0", default-features = false }
 heapless = "0.8.0"

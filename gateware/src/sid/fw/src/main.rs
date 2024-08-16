@@ -46,6 +46,22 @@ fn volts_to_freq(volts: f32) -> f32 {
     (a3_freq_hz / 8.0f32) * (2.0f32).powf(volts + 2.0f32 - 3.0f32/4.0f32)
 }
 
+#[export_name = "DefaultHandler"]
+fn isr_handler() {
+    let peripherals = unsafe { pac::Peripherals::steal() };
+    let sysclk = pac::clock::sysclk();
+    let mut timer = Timer0::new(peripherals.TIMER, sysclk);
+    if timer.is_pending() {
+        info!("tick");
+        let sid = peripherals.SID_PERIPH;
+        let sid_poke = |_sid: &pac::SID_PERIPH, addr: u8, data: u8| {
+            _sid.transaction_data().write(
+                |w| unsafe { w.transaction_data().bits(((data as u16) << 5) | (addr as u16)) } );
+        };
+        timer.clear_pending();
+    }
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
@@ -58,6 +74,26 @@ fn main() -> ! {
     let mut timer = Timer0::new(peripherals.TIMER, sysclk);
 
     info!("Hello from Tiliqua bootloader!");
+
+
+    use core::time::Duration;
+    use crate::hal::timer;
+    timer.listen(timer::Event::TimeOut);
+    timer.set_timeout(Duration::from_millis(500));
+    timer.enable();
+
+    unsafe {
+            vexriscv::register::vmim::write(1 << (pac::Interrupt::TIMER as usize));
+
+            // Enable machine external interrupts (basically everything added on by LiteX).
+            riscv::register::mie::set_mext();
+
+            // WARN: Don't do this before IRQs are registered for this scope,
+            // otherwise you'll hang forever :)
+            // Finally enable interrupts
+            riscv::interrupt::enable();
+    }
+
 
     let i2cdev = I2c0::new(peripherals.I2C0);
     let mut pca9635 = Pca9635Driver::new(i2cdev);
