@@ -52,12 +52,24 @@ fn isr_handler() {
     let sysclk = pac::clock::sysclk();
     let mut timer = Timer0::new(peripherals.TIMER, sysclk);
     if timer.is_pending() {
-        info!("tick");
         let sid = peripherals.SID_PERIPH;
         let sid_poke = |_sid: &pac::SID_PERIPH, addr: u8, data: u8| {
             _sid.transaction_data().write(
                 |w| unsafe { w.transaction_data().bits(((data as u16) << 5) | (addr as u16)) } );
         };
+        let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
+        let mut gate: u8 = 0;
+        let x = pmod.sample_i();
+        if x[0] > 2000 {
+            gate = 1;
+        }
+        if x[0] < 1000 {
+            gate = 0;
+        }
+        let mut reg04 = 0u8;
+        reg04 |= 0x20;
+        reg04 |= gate;
+        sid_poke(&sid, 4, reg04);
         timer.clear_pending();
     }
 }
@@ -79,7 +91,7 @@ fn main() -> ! {
     use core::time::Duration;
     use crate::hal::timer;
     timer.listen(timer::Event::TimeOut);
-    timer.set_timeout(Duration::from_millis(500));
+    timer.set_timeout(Duration::from_millis(1));
     timer.enable();
 
     unsafe {
