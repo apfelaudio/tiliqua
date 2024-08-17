@@ -247,6 +247,20 @@ class TiliquaSoc(Elaboratable):
         # Enable LED driver on motherboard
         m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
 
+        # Encoder push override -- hold for N sec will reconfigure
+        # to next BOOTADDR specified by bitstream (normally bootloader).
+        # Best to do this in hardware so we can still recover to the
+        # bootloader even if e.g. a softcore crashes.
+
+        REBOOT_SEC = 3
+        boot_ctr = Signal(unsigned(32))
+        with m.If(self.encoder0.button_sync):
+            m.d.sync += boot_ctr.eq(boot_ctr + 1)
+        with m.Else():
+            m.d.sync += boot_ctr.eq(0)
+        with m.If(boot_ctr > REBOOT_SEC*self.clock_sync_hz):
+            m.d.comb += platform.request("self_program").o.eq(1)
+
         return m
 
     def genrust_constants(self):
