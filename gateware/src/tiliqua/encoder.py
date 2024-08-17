@@ -46,6 +46,8 @@ class EncoderPeripheral(Peripheral, Elaboratable):
         self._step             = bank.csr(8, "r")
         self._button           = bank.csr(1, "r")
 
+        self.button_sync       = Signal()
+
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
         self.bus        = self._bridge.bus
@@ -62,21 +64,8 @@ class EncoderPeripheral(Peripheral, Elaboratable):
         m.d.comb += self.iq_decode.iq.eq(Cat(self.pins.i.i, self.pins.q.i))
         m.d.comb += self._step.r_data.eq(d_steps)
 
-        button_sync = Signal()
-        m.submodules += FFSynchronizer(self.pins.s.i, button_sync, reset=0)
-        m.d.comb += self._button.r_data.eq(button_sync)
-
-
-        # HACK: encoder push override -- hold for 3sec will re-enter bootloader
-        REBOOT_SEC = 3
-        SYSCLK_HZ = 60000000
-        button_counter = Signal(unsigned(32))
-        with m.If(button_sync):
-            m.d.sync += button_counter.eq(button_counter + 1)
-        with m.Else():
-            m.d.sync += button_counter.eq(0)
-        with m.If(button_counter > REBOOT_SEC*SYSCLK_HZ):
-            m.d.comb += platform.request("self_program").o.eq(1)
+        m.submodules += FFSynchronizer(self.pins.s.i, self.button_sync, reset=0)
+        m.d.comb += self._button.r_data.eq(self.button_sync)
 
         with m.If(self._step.r_stb):
             m.d.sync += read_occurred.eq(1)

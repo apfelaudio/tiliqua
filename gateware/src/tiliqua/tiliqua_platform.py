@@ -87,7 +87,9 @@ class _TiliquaPlatform(LatticeECP5Platform):
         Resource("mobo_leds_oe", 0, PinsN("A3", dir="o")),
 
         # DVI: Hotplug Detect
-        Resource("dvi_hpd", 0, Pins("A5", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
+        (Resource("dvi_hpd", 0, Pins("A5", dir="o"),  Attrs(IO_TYPE="LVCMOS33"))
+         if os.getenv("TILIQUA_HPD_HACK") == "1" else
+         Resource("dvi_hpd", 0, Pins("A5", dir="i"),  Attrs(IO_TYPE="LVCMOS33"))),
 
         # TRS MIDI RX
         Resource("midi", 0,
@@ -167,6 +169,14 @@ class TiliquaDomainGenerator(Elaboratable):
 
         # ecppll -i 48 --clkout0 60 --clkout1 120 --clkout2 40 --clkout3 200 --reset -f pll60.v
         # 60MHz for USB (currently also sync domain. fast is for DQS)
+
+        # Hack for circle screen that requires a reset pulse on DVI HPD every time
+        # the bitstream is reconfigured because it is strange.
+        if os.getenv("TILIQUA_HPD_HACK") == "1":
+            counter = Signal(32, reset=0)
+            with m.If(counter < 1000000):
+                m.d.sync += counter.eq(counter + 1)
+            m.d.comb += platform.request("dvi_hpd").o.eq(~(counter < 1000000)),
 
         m.d.comb += [
             ClockSignal("raw48").eq(clk48),
