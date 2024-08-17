@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+amaranth-soc-isr = { path="../../rs/isr", default-features = false }
 tiliqua-hal = { path="../../rs/hal", default-features = false }
 tiliqua-lib = { path = "../../rs/lib" }
 tiliqua-pac = { path="../../rs/pac", default-features = false, features = ["critical-section", "vexriscv"] }
@@ -20,3 +21,4 @@ fastrand = { version = "2.1.0", default-features = false }
 heapless = "0.8.0"
 strum_macros = "0.26.4"
 strum = {version = "0.25.0", features = ["derive"], default-features=false}
+irq = "0.2.3"
