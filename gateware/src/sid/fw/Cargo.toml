@@ -22,3 +22,4 @@ heapless = "0.8.0"
 strum_macros = "0.26.4"
 strum = {version = "0.25.0", features = ["derive"], default-features=false}
 irq = "0.2.3"
+critical-section = "1.1.2"
