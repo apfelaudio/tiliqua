@@ -220,26 +220,6 @@ fn main() -> ! {
 
     let mut opts = Mutex::new(RefCell::new(opts::Options::new()));
 
-    let sid = peripherals.SID_PERIPH;
-
-    let sid_poke = |_sid: &pac::SID_PERIPH, addr: u8, data: u8| {
-        _sid.transaction_data().write(
-            |w| unsafe { w.transaction_data().bits(((data as u16) << 5) | (addr as u16)) } );
-    };
-
-    sid_poke(&sid, 24,15);    /* Turn up the volume */
-    sid_poke(&sid, 5,0);      /* Fast Attack, Decay */
-    sid_poke(&sid, 5+7,0);      /* Fast Attack, Decay */
-    sid_poke(&sid, 5+14,0);      /* Fast Attack, Decay */
-    sid_poke(&sid, 6,0xF0);      /* Full volume on sustain, quick release */
-    sid_poke(&sid, 6+7,0xF0);    /* Full volume on sustain, quick release */
-    sid_poke(&sid, 6+14,0xF0);   /* Full volume on sustain, quick release */
-
-    let freq: u16 = 2000;
-    sid_poke(&sid, 0, freq as u8);
-    sid_poke(&sid, 1, (freq>>8) as u8);
-    sid_poke(&sid, 4, 0x11);   /* Enable gate, triangel waveform. */
-
     let scope  = peripherals.SCOPE_PERIPH;
 
     let hue = 10u8;

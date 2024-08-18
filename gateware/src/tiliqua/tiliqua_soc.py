@@ -114,12 +114,12 @@ class TiliquaSoc(Elaboratable):
 
         self.soc.add_core_peripherals(
             uart_pins=self.uart_pins,
-            internal_sram_size=32768*2,
+            internal_sram_size=32768*4,
             internal_sram_init=firmware
         )
 
         # ... add memory-mapped psram/hyperram peripheral (128Mbit)
-        self.psram_base = 0xf1000000
+        self.psram_base = 0x20000000
         self.psram_size_bytes = 16*1024*1024
         self.soc.psram = PSRAMPeripheral(size=self.psram_size_bytes)
         self.soc.add_peripheral(self.soc.psram, addr=self.psram_base)
