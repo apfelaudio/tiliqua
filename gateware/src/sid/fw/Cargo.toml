@@ -11,8 +11,8 @@ tiliqua-pac = { path="../../rs/pac", default-features = false, features = ["crit
 
 log = "0.4.17"
 embedded-hal = "=1.0.0"
-riscv = { version = "=0.10.1", features = ["critical-section-single-hart"] }
-riscv-rt = { version = "=0.11.0" }
+riscv = { version = "=0.11.1", features = ["critical-section-single-hart"] }
+riscv-rt = { version = "=0.12.2", features = ["single-hart"] }
 panic-halt = "0.2.0"
 micromath = "2.1.0"
 vexriscv = "0.0.3"
@@ -23,3 +23,7 @@ strum_macros = "0.26.4"
 strum = {version = "0.25.0", features = ["derive"], default-features=false}
 irq = "0.2.3"
 critical-section = "1.1.2"
+
+[profile.release]
+lto = true
+opt-level = 3
