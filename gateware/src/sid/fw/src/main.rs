@@ -76,12 +76,12 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>) {
 
     critical_section::with(|cs| {
 
-        let opts = opts.borrow_ref(cs);
+        let mut opts = opts.borrow_ref_mut(cs);
 
-        let voices: [&VoiceOptions; 3] = [
-            &opts.voice1,
-            &opts.voice2,
-            &opts.voice3,
+        let mut voices: [VoiceOptions; 3] = [
+            opts.voice1.clone(),
+            opts.voice2.clone(),
+            opts.voice3.clone(),
         ];
 
         let mods: [ModulationTarget; 4] = [
@@ -133,10 +133,9 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>) {
 
             // Propagate modulation back to menu system
 
-            /*
             voices[n_voice].freq.value = freq;
             voices[n_voice].gate.value = gate;
-            */
+            voices[n_voice].pw.value = pulse_width;
 
             freq = (freq as f32 * (voices[n_voice].freq_os.value as f32 / 1000.0f32)) as u16;
 
@@ -186,6 +185,19 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>) {
              (opts.filter.v3off.value  << 7) |
              (opts.filter.volume.value << 0)) as u8
             );
+
+
+        // Writeback
+        opts.voice1.gate.value = voices[0].gate.value;
+        opts.voice2.gate.value = voices[1].gate.value;
+        opts.voice3.gate.value = voices[2].gate.value;
+        opts.voice1.freq.value = voices[0].freq.value;
+        opts.voice2.freq.value = voices[1].freq.value;
+        opts.voice3.freq.value = voices[2].freq.value;
+        opts.voice1.pw.value = voices[0].pw.value;
+        opts.voice2.pw.value = voices[1].pw.value;
+        opts.voice3.pw.value = voices[2].pw.value;
+        opts.filter.cutoff.value = filt_cut;
     });
 }
 
@@ -237,7 +249,7 @@ fn main() -> ! {
 
     let scope  = peripherals.SCOPE_PERIPH;
 
-    let hue = 10u8;
+    let hue = 6u8;
 
     handler!(timer0 = || timer0_handler(&opts));
 
