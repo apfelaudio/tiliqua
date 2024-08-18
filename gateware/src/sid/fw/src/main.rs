@@ -91,6 +91,17 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>) {
             opts.modulate.in3.value,
         ];
 
+        let mut filt_cut: u16 = opts.filter.cutoff.value;
+        for (ch, m) in mods.iter().enumerate() {
+            if *m == ModulationTarget::FiltCut {
+                if x[ch] > 0 {
+                    filt_cut = (x[ch] >> 3) as u16;
+                } else {
+                    filt_cut = 0u16;
+                }
+            }
+        }
+
         for n_voice in 0usize..3usize {
 
             let base = (7*n_voice) as u8;
@@ -99,6 +110,7 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>) {
 
             let mut freq: u16 = voices[n_voice].freq.value;
             let mut gate = voices[n_voice].gate.value;
+            let mut pulse_width: u16  = voices[n_voice].pw.value;
             for (ch, m) in mods.iter().enumerate() {
                 if let Some(VoiceModulationType::Frequency) = m.modulates_voice(n_voice) {
                     let volts: f32 = (x[ch] as f32) / 4096.0f32;
@@ -114,6 +126,9 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>) {
                         gate = 0;
                     }
                 }
+                if let Some(VoiceModulationType::PulseWidth) = m.modulates_voice(n_voice) {
+                    pulse_width = 2048 + (x[ch] as u16) >> 3;
+                }
             }
 
             // Propagate modulation back to menu system
@@ -128,8 +143,8 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>) {
             sid_poke(&sid, base+0, freq as u8);
             sid_poke(&sid, base+1, (freq>>8) as u8);
 
-            sid_poke(&sid, base+2, voices[n_voice].pw.value as u8);
-            sid_poke(&sid, base+3, (voices[n_voice].pw.value>>8) as u8);
+            sid_poke(&sid, base+2, pulse_width as u8);
+            sid_poke(&sid, base+3, (pulse_width>>8) as u8);
 
 
             let mut reg04 = 0u8;
@@ -156,8 +171,8 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>) {
                 (voices[n_voice].sustain.value << 4));
         }
 
-        sid_poke(&sid, 0x15, (opts.filter.cutoff.value & 0x7) as u8);
-        sid_poke(&sid, 0x16, (opts.filter.cutoff.value >> 3) as u8);
+        sid_poke(&sid, 0x15, (filt_cut & 0x7) as u8);
+        sid_poke(&sid, 0x16, (filt_cut >> 3) as u8);
         sid_poke(&sid, 0x17,
             (opts.filter.filt1.value |
             (opts.filter.filt2.value << 1) |

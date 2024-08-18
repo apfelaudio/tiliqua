@@ -123,11 +123,16 @@ pub enum ModulationTarget {
     Gate2,
     Gate3,
     Gate12,
+    PWidth1,
+    PWidth2,
+    PWidth3,
+    FiltCut,
 }
 
 pub enum VoiceModulationType {
     Frequency,
-    Gate
+    Gate,
+    PulseWidth
 }
 
 impl ModulationTarget {
@@ -145,6 +150,9 @@ impl ModulationTarget {
             (2, Gate3)  => Some(Gate),
             (0, Gate12) => Some(Gate),
             (1, Gate12) => Some(Gate),
+            (0, PWidth1)  => Some(PulseWidth),
+            (1, PWidth2)  => Some(PulseWidth),
+            (2, PWidth3)  => Some(PulseWidth),
             _ =>          None
         }
     }
