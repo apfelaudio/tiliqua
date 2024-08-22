@@ -157,7 +157,7 @@ class PolySynth(wiring.Component):
         last_cc1 = Signal(8, reset=255)
         # Pitch bend
         pb = Signal(signed(16))
-        last_pb = Signal(shape=ASQ, reset=0)
+        last_pb = Signal(shape=ASQ)
 
         with m.If(self.i_midi.valid):
             msg = self.i_midi.payload
@@ -176,6 +176,10 @@ class PolySynth(wiring.Component):
         m.submodules.cv_in = cv_in = dsp.Split(
                 n_channels=4, source=wiring.flipped(self.i))
         cv_in.wire_ready(m, [2, 3])
+
+        pb_factor = fixed.Const(0.1225, shape=ASQ)
+        pb_scaled = Signal(shape=ASQ)
+        m.d.comb += pb_scaled.eq(pb_factor * last_pb)
 
         for n in range(n_voices):
 
@@ -211,12 +215,14 @@ class PolySynth(wiring.Component):
                     rports[n].addr.eq(touch_note_map[n]),
                 ]
 
+            finc = Signal(shape=ASQ)
+            m.d.comb += finc.eq(rports[n].data)
 
             # Connect LUT output -> NCO.i (clocked at i.valid for normal sample rate)
             dsp.connect_remap(m, cv_in.o[0], ncos[n].i, lambda o, i : [
                 # For fun, phase mod on audio in #0
                 i.payload.phase   .eq(o.payload),
-                i.payload.freq_inc.eq(rports[n].data) # ok, always valid
+                i.payload.freq_inc.eq(finc + finc*pb_scaled) # ok, always valid
             ])
 
             # Connect voice.vel and NCO.o -> SVF.i
