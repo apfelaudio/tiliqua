@@ -155,6 +155,10 @@ class PolySynth(wiring.Component):
 
         # Use CC1 (mod wheel) as upper bound on filter cutoff.
         last_cc1 = Signal(8, reset=255)
+        # Pitch bend
+        pb = Signal(signed(16))
+        last_pb = Signal(shape=ASQ, reset=0)
+
         with m.If(self.i_midi.valid):
             msg = self.i_midi.payload
             with m.Switch(msg.midi_type):
@@ -162,6 +166,11 @@ class PolySynth(wiring.Component):
                     # mod wheel is CC 1
                     with m.If(msg.midi_payload.control_change.controller_number == 1):
                         m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
+                with m.Case(midi.MessageType.PITCH_BEND):
+                    # convert 14-bit pitch bend to 16-bit signed ASQ -1 .. 1
+                    m.d.comb += pb.eq(Cat(msg.midi_payload.pitch_bend.lsb,
+                                          msg.midi_payload.pitch_bend.msb))
+                    m.d.sync += last_pb.sas_value().eq(pb-(2*8192))
 
         # analog ins
         m.submodules.cv_in = cv_in = dsp.Split(
@@ -287,7 +296,6 @@ class PolySynth(wiring.Component):
 
             dsp.connect_remap(m, vca_merge2.o, vca.i, lambda o, i : [
                 i.payload.x   .eq(o.payload[0]),
-                #i.payload.gain.eq(o.payload[1] << 2)
                 i.payload.gain.eq(self.drive << 2)
             ])
 
@@ -300,6 +308,11 @@ class PolySynth(wiring.Component):
         merge4.wire_valid(m, [0, 1])
         wiring.connect(m, outs[0], merge4.i[2])
         wiring.connect(m, outs[1], merge4.i[3])
+
+        m.d.comb += [
+                merge4.i[0].payload.eq(last_cc1 << 7),
+                merge4.i[1].payload.eq(last_pb)
+        ]
 
         return m
 
