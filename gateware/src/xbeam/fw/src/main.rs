@@ -11,6 +11,7 @@ use tiliqua_fw::Timer0;
 use tiliqua_fw::I2c0;
 use tiliqua_fw::Encoder0;
 use tiliqua_fw::EurorackPmod0;
+use tiliqua_fw::Video0;
 
 use log::info;
 
@@ -74,11 +75,12 @@ fn main() -> ! {
 
     let mut opts = opts::Options::new();
 
-    let persist = peripherals.PERSIST_PERIPH;
     let vscope  = peripherals.VECTOR_PERIPH;
     let scope  = peripherals.SCOPE_PERIPH;
 
     let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
+
+    let mut video = Video0::new(peripherals.VIDEO_PERIPH);
 
     let mut toggle_encoder_leds = false;
 
@@ -117,8 +119,8 @@ fn main() -> ! {
             time_since_encoder_touched = 0;
         }
 
-        persist.persist().write(|w| unsafe { w.persist().bits(opts.beam.persist.value) } );
-        persist.decay().write(|w| unsafe { w.decay().bits(opts.beam.decay.value) } );
+        video.set_persist(opts.beam.persist.value);
+        video.set_decay(opts.beam.decay.value);
 
         vscope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
         vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
