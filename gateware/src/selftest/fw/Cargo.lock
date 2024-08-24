@@ -394,6 +394,7 @@ dependencies = [
  "embedded-graphics",
  "heapless",
  "log",
+ "micromath",
  "strum",
  "strum_macros 0.26.4",
 ]
