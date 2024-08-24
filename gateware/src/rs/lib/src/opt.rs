@@ -41,6 +41,7 @@ pub trait OptionPageEncoderInterface {
     fn toggle_modify(&mut self);
     fn tick_up(&mut self);
     fn tick_down(&mut self);
+    fn consume_ticks(&mut self, ticks: i8);
 }
 
 #[derive(Clone)]
@@ -155,6 +156,19 @@ where
             }
         } else if self.modify() {
             self.screen_mut().tick_down();
+        }
+    }
+
+    fn consume_ticks(&mut self, ticks: i8) {
+        if ticks >= 1 {
+            for _ in 0..ticks {
+                self.tick_up();
+            }
+        }
+        if ticks <= -1 {
+            for _ in ticks..0 {
+                self.tick_down();
+            }
         }
     }
 }

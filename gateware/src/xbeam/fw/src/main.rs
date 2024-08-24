@@ -29,16 +29,13 @@ use embedded_graphics::{
 use tiliqua_fw::opts;
 use tiliqua_lib::draw;
 use tiliqua_lib::palette;
+use tiliqua_lib::leds;
 
 use tiliqua_lib::opt::*;
 
 use tiliqua_lib::generated_constants::*;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
-
-const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
-const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
-const _PCA9635_MIDI:     [usize; 2] = [8, 9];
 
 pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
     for i in 0..PX_INTENSITY_MAX {
@@ -121,19 +118,10 @@ fn main() -> ! {
         time_since_encoder_touched += period_ms;
 
         let ticks = encoder.poke_ticks();
-        if ticks >= 1 {
-            for _ in 0..ticks {
-                opts.tick_up();
-            }
+        if ticks != 0 {
+            opts.consume_ticks(ticks);
             time_since_encoder_touched = 0;
         }
-        if ticks <= -1 {
-            for _ in ticks..0 {
-                opts.tick_down();
-            }
-            time_since_encoder_touched = 0;
-        }
-
         if encoder.poke_btn() {
             opts.toggle_modify();
             time_since_encoder_touched = 0;
@@ -181,29 +169,8 @@ fn main() -> ! {
             toggle_encoder_leds = !toggle_encoder_leds;
         }
 
-        if let Some(n) = opts.view().selected() {
-            let o = opts.view().options()[n];
-            let c = o.percent();
-            for n in 0..6 {
-                if ((n as f32)*0.5f32/6.0f32 + 0.5) < c {
-                    pca9635.leds[PCA9635_BAR_RED[n]] = 0xff as u8;
-                } else {
-                    pca9635.leds[PCA9635_BAR_RED[n]] = 0 as u8;
-                }
-                if ((n as f32)*-0.5f32/6.0f32 + 0.5) > c {
-                    pca9635.leds[PCA9635_BAR_GREEN[n]] = 0xff as u8;
-                } else {
-                    pca9635.leds[PCA9635_BAR_GREEN[n]] = 0 as u8;
-                }
-            }
-
-            if opts.modify() && !toggle_encoder_leds {
-                for n in 0..6 {
-                    pca9635.leds[PCA9635_BAR_GREEN[n]] = 0 as u8;
-                    pca9635.leds[PCA9635_BAR_RED[n]] = 0 as u8;
-                }
-            }
-        }
+        leds::mobo_pca9635_set_bargraph(&opts, &mut pca9635.leds,
+                                        toggle_encoder_leds);
 
         if opts.modify() {
             if toggle_encoder_leds {
