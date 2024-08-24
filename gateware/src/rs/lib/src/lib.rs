@@ -2,7 +2,7 @@
 
 pub mod opt;
 pub mod draw;
-pub mod log;
+pub mod logger;
 pub mod generated_constants;
 pub mod palette;
 pub mod leds;

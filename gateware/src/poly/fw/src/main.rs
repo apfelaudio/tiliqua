@@ -6,13 +6,8 @@ use tiliqua_hal as hal;
 
 use hal::hal::delay::DelayNs;
 
-use tiliqua_fw::Serial0;
-use tiliqua_fw::Timer0;
-use tiliqua_fw::I2c0;
-use tiliqua_fw::Encoder0;
-use tiliqua_fw::EurorackPmod0;
-use tiliqua_fw::Polysynth0;
-use tiliqua_fw::Video0;
+use tiliqua_fw::*;
+use tiliqua_fw::opts::ControlInterface;
 
 use log::info;
 
@@ -27,8 +22,6 @@ use embedded_graphics::{
     prelude::*,
 };
 
-use tiliqua_fw::opts;
-use tiliqua_fw::opts::ControlInterface;
 
 use tiliqua_lib::draw;
 use tiliqua_lib::palette;

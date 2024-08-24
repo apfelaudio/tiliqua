@@ -18,7 +18,7 @@ use core::panic::PanicInfo;
 use core::cell::RefCell;
 use core::fmt::Write;
 
-use tiliqua_lib::log::WriteLogger;
+use tiliqua_lib::logger::WriteLogger;
 
 use log::*;
 

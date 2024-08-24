@@ -6,13 +6,9 @@ use tiliqua_hal as hal;
 
 use hal::hal::delay::DelayNs;
 
-use tiliqua_fw::Serial0;
-use tiliqua_fw::Timer0;
-use tiliqua_fw::I2c0;
-use tiliqua_fw::Encoder0;
-use tiliqua_fw::EurorackPmod0;
+use tiliqua_fw::*;
 
-use log::{info};
+use log::info;
 
 use riscv_rt::entry;
 
@@ -27,11 +23,8 @@ use embedded_graphics::{
     text::{Alignment, Text},
 };
 
-use tiliqua_fw::opts;
+use tiliqua_lib::*;
 use tiliqua_lib::opt::*;
-use tiliqua_lib::draw;
-use tiliqua_lib::leds;
-
 use tiliqua_lib::generated_constants::*;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
