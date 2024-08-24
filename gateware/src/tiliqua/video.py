@@ -499,10 +499,11 @@ class FramebufferPHY(wiring.Component):
                   palette_b.write_port()]
         # split rgb payload into one write for each rgb memory
         m.d.comb += [
-            wports[0].data.eq(self.palette_rgb.payload.rgb[0 : 8]),
+            wports[0].data.eq(self.palette_rgb.payload.rgb[16:24]),
             wports[1].data.eq(self.palette_rgb.payload.rgb[8 :16]),
-            wports[2].data.eq(self.palette_rgb.payload.rgb[16:24]),
+            wports[2].data.eq(self.palette_rgb.payload.rgb[0 : 8]),
         ]
+        m.d.comb += self.palette_rgb.ready.eq(1)
         # hook up position and stream valid -> write enable.
         for wport in wports:
             with m.If(self.palette_rgb.ready):

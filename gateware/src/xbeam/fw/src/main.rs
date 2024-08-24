@@ -86,6 +86,14 @@ fn main() -> ! {
 
     let mut time_since_encoder_touched: u32 = 0;
 
+    for i in 0..16 {
+        for h in 0..16 {
+            // something grayscale
+            let rgb: u8 = (i*15) as u8;
+            video.set_palette_rgb(i, h, rgb, 0, 0);
+        }
+    }
+
     loop {
 
         if time_since_encoder_touched < 1000 || opts.modify() {
