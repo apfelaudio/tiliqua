@@ -33,11 +33,63 @@ use tiliqua_lib::opt::*;
 
 use tiliqua_lib::generated_constants::*;
 
+use micromath::F32Ext;
+
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
 const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
 const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
 const _PCA9635_MIDI:     [usize; 2] = [8, 9];
+
+fn hue2rgb(p: f32, q: f32, mut t: f32) -> f32 {
+    if t < 0.0 {
+        t += 1.0;
+    }
+    if t > 1.0 {
+        t -= 1.0;
+    }
+    if t < 1.0 / 6.0 {
+        return p + (q - p) * 6.0 * t;
+    }
+    if t < 0.5 {
+        return q;
+    }
+    if t < 2.0 / 3.0 {
+        return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
+    }
+    p
+}
+
+struct RGB {
+    r: u8,
+    g: u8,
+    b: u8,
+}
+
+/// Converts an HSL color value to RGB. Conversion formula
+/// adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+/// Assumes h, s, and l are contained in the set [0, 1] and
+/// returns RGB in the set [0, 255].
+fn hsl2rgb(h: f32, s: f32, l: f32) -> RGB {
+    if s == 0.0 {
+        // achromatic
+        let gray = (l * 255.0) as u8;
+        return RGB { r: gray, g: gray, b: gray };
+    }
+
+    let q = if l < 0.5 {
+        l * (1.0 + s)
+    } else {
+        l + s - l * s
+    };
+    let p = 2.0 * l - q;
+
+    RGB {
+        r: (hue2rgb(p, q, h + 1.0 / 3.0) * 255.0) as u8,
+        g: (hue2rgb(p, q, h) * 255.0) as u8,
+        b: (hue2rgb(p, q, h - 1.0 / 3.0) * 255.0) as u8,
+    }
+}
 
 #[entry]
 fn main() -> ! {
@@ -86,11 +138,17 @@ fn main() -> ! {
 
     let mut time_since_encoder_touched: u32 = 0;
 
-    for i in 0..16 {
-        for h in 0..16 {
-            // something grayscale
-            let rgb: u8 = (i*15) as u8;
-            video.set_palette_rgb(i, h, rgb, 0, 0);
+    let n_i = 16i32;
+    let n_h = 16i32;
+    for i in 0..n_i {
+        for h in 0..n_h {
+            //let rgb = hsl2rgb((h as f32)/16.0f32, 0.75f32, (i as f32)/16.0f32);
+            let fac = 1.35f32;
+            let hue = (h as f32)/(n_h as f32);
+            let saturation = 0.9f32;
+            let intensity = fac.powi(i+1) / fac.powi(n_i);
+            let rgb = hsl2rgb(hue, saturation, intensity);
+            video.set_palette_rgb(i as u32, h as u32, rgb.r, rgb.g, rgb.b);
         }
     }
 
