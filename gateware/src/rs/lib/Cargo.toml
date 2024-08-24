@@ -13,6 +13,7 @@ embedded-graphics = "0.8.1"
 heapless = "0.8.0"
 strum_macros = "0.26.4"
 strum = {version = "0.25.0", features = ["derive"], default-features=false}
+micromath = "2.1.0"
 
 [dev-dependencies]
 critical-section = { version = "1.1.2", features = ["std"] }

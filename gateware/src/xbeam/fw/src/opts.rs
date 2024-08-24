@@ -1,6 +1,7 @@
 use tiliqua_lib::opt::*;
 use tiliqua_lib::impl_option_view;
 use tiliqua_lib::impl_option_page;
+use tiliqua_lib::palette::ColorPalette;
 
 use heapless::String;
 
@@ -32,15 +33,6 @@ pub struct VectorOptions {
 
 impl_option_view!(VectorOptions,
                   xscale, yscale);
-
-#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
-#[strum(serialize_all = "kebab-case")]
-pub enum ColorPalette {
-    Exp,
-    Linear,
-    Gray,
-    InvGray,
-}
 
 #[derive(Clone)]
 pub struct BeamOptions {

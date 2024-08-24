@@ -259,3 +259,5 @@ class TiliquaSoc(Elaboratable):
             f.write(f"pub const V_ACTIVE: u32         = {self.video.fb_vsize};\n")
             f.write(f"pub const VIDEO_ROTATE_90: bool = {'true' if self.video_rotate_90 else 'false'};\n")
             f.write(f"pub const PSRAM_FB_BASE: usize  = 0x{self.video.fb_base:x};\n")
+            f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
+            f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
