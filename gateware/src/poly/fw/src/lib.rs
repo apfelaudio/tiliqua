@@ -28,5 +28,9 @@ tiliqua_hal::impl_polysynth! {
     Polysynth0: pac::SYNTH_PERIPH,
 }
 
+tiliqua_hal::impl_video! {
+    Video0: pac::VIDEO_PERIPH,
+}
+
 pub mod handlers;
 pub mod opts;

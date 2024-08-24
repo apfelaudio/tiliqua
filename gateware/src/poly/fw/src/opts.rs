@@ -1,6 +1,7 @@
 use tiliqua_lib::opt::*;
 use tiliqua_lib::impl_option_view;
 use tiliqua_lib::impl_option_page;
+use tiliqua_lib::palette::ColorPalette;
 
 use heapless::String;
 
@@ -55,10 +56,11 @@ pub struct BeamOptions {
     pub decay: NumOption<u8>,
     pub intensity: NumOption<u8>,
     pub hue: NumOption<u8>,
+    pub palette: EnumOption<ColorPalette>,
 }
 
 impl_option_view!(BeamOptions,
-                  persist, decay, intensity, hue);
+                  persist, decay, intensity, hue, palette);
 
 #[derive(Clone)]
 pub struct Options {
@@ -140,6 +142,10 @@ impl Options {
                     step: 1,
                     min: 0,
                     max: 15,
+                },
+                palette: EnumOption {
+                    name: String::from_str("palette").unwrap(),
+                    value: ColorPalette::Exp,
                 },
             },
             vector: VectorOptions {
