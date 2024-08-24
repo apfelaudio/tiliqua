@@ -33,6 +33,15 @@ pub struct VectorOptions {
 impl_option_view!(VectorOptions,
                   xscale, yscale);
 
+#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
+#[strum(serialize_all = "kebab-case")]
+pub enum ColorPalette {
+    Exp,
+    Linear,
+    Gray,
+    InvGray,
+}
+
 #[derive(Clone)]
 pub struct BeamOptions {
     pub selected: Option<usize>,
@@ -40,10 +49,11 @@ pub struct BeamOptions {
     pub decay: NumOption<u8>,
     pub intensity: NumOption<u8>,
     pub hue: NumOption<u8>,
+    pub palette: EnumOption<ColorPalette>,
 }
 
 impl_option_view!(BeamOptions,
-                  persist, decay, intensity, hue);
+                  persist, decay, intensity, hue, palette);
 
 #[derive(Clone)]
 pub struct ScopeOptions {
@@ -133,6 +143,10 @@ impl Options {
                     step: 1,
                     min: 0,
                     max: 15,
+                },
+                palette: EnumOption {
+                    name: String::from_str("palette").unwrap(),
+                    value: ColorPalette::Exp,
                 },
             },
             scope: ScopeOptions {

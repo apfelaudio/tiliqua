@@ -27,6 +27,7 @@ use embedded_graphics::{
 };
 
 use tiliqua_fw::opts;
+use tiliqua_fw::opts::ColorPalette;
 use tiliqua_lib::draw;
 
 use tiliqua_lib::opt::*;
@@ -91,6 +92,37 @@ fn hsl2rgb(h: f32, s: f32, l: f32) -> RGB {
     }
 }
 
+fn write_palette(video: &mut Video0, p: ColorPalette) {
+    let n_i = 16i32;
+    let n_h = 16i32;
+    for i in 0..n_i {
+        for h in 0..n_h {
+            match p {
+                ColorPalette::Exp => {
+                    let fac = 1.35f32;
+                    let hue = (h as f32)/(n_h as f32);
+                    let saturation = 0.9f32;
+                    let intensity = fac.powi(i+1) / fac.powi(n_i);
+                    let rgb = hsl2rgb(hue, saturation, intensity);
+                    video.set_palette_rgb(i as u32, h as u32, rgb.r, rgb.g, rgb.b);
+                },
+                ColorPalette::Linear => {
+                    let rgb = hsl2rgb((h as f32)/(n_h as f32), 0.9f32, (i as f32)/(n_h as f32));
+                    video.set_palette_rgb(i as u32, h as u32, rgb.r, rgb.g, rgb.b);
+                },
+                ColorPalette::Gray => {
+                    let gray: u8 = (i * 16) as u8;
+                    video.set_palette_rgb(i as u32, h as u32, gray, gray, gray);
+                },
+                ColorPalette::InvGray => {
+                    let gray: u8 = 255u8 - (i * 16) as u8;
+                    video.set_palette_rgb(i as u32, h as u32, gray, gray, gray);
+                }
+            }
+        }
+    }
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
@@ -138,21 +170,14 @@ fn main() -> ! {
 
     let mut time_since_encoder_touched: u32 = 0;
 
-    let n_i = 16i32;
-    let n_h = 16i32;
-    for i in 0..n_i {
-        for h in 0..n_h {
-            //let rgb = hsl2rgb((h as f32)/16.0f32, 0.75f32, (i as f32)/16.0f32);
-            let fac = 1.35f32;
-            let hue = (h as f32)/(n_h as f32);
-            let saturation = 0.9f32;
-            let intensity = fac.powi(i+1) / fac.powi(n_i);
-            let rgb = hsl2rgb(hue, saturation, intensity);
-            video.set_palette_rgb(i as u32, h as u32, rgb.r, rgb.g, rgb.b);
-        }
-    }
+    let mut last_palette = opts.beam.palette.value;
 
     loop {
+
+        if opts.beam.palette.value != last_palette {
+            write_palette(&mut video, opts.beam.palette.value);
+            last_palette = opts.beam.palette.value;
+        }
 
         if time_since_encoder_touched < 1000 || opts.modify() {
 
