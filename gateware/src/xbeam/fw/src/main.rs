@@ -170,6 +170,8 @@ fn main() -> ! {
 
     let mut time_since_encoder_touched: u32 = 0;
 
+    // Write default palette setting
+    write_palette(&mut video, opts.beam.palette.value);
     let mut last_palette = opts.beam.palette.value;
 
     loop {
