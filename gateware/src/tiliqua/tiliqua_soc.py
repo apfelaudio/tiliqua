@@ -251,7 +251,6 @@ class TiliquaSoc(Elaboratable):
         # to next BOOTADDR specified by bitstream (normally bootloader).
         # Best to do this in hardware so we can still recover to the
         # bootloader even if e.g. a softcore crashes.
-
         REBOOT_SEC = 3
         boot_ctr = Signal(unsigned(32))
         with m.If(self.encoder0.button_sync):

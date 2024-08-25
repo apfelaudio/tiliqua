@@ -479,6 +479,17 @@ class USB2AudioInterface(Elaboratable):
                 to_usb_stream=channels_to_usb_stream.channel_stream_in,
                 from_usb_stream=usb_to_channel_stream.channel_stream_out)
 
+        enc = platform.request("encoder", 0)
+        REBOOT_SEC = 3
+        CLK_SYNC_HZ = 60000000
+        boot_ctr = Signal(unsigned(32))
+        with m.If(enc.i.i):
+            m.d.sync += boot_ctr.eq(boot_ctr + 1)
+        with m.Else():
+            m.d.sync += boot_ctr.eq(0)
+        with m.If(boot_ctr > REBOOT_SEC*CLK_SYNC_HZ):
+            m.d.comb += platform.request("self_program").o.eq(1)
+
         jack_period = Signal(32)
         jack_usb = Signal(8)
         m.submodules.jack_sync = FFSynchronizer(pmod0.jack, jack_usb, o_domain="usb")
