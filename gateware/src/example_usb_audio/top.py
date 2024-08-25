@@ -483,12 +483,14 @@ class USB2AudioInterface(Elaboratable):
         REBOOT_SEC = 3
         CLK_SYNC_HZ = 60000000
         boot_ctr = Signal(unsigned(32))
-        with m.If(enc.i.i):
+        self_program = Signal(reset=0)
+        m.d.comb += platform.request("self_program").o.eq(self_program)
+        with m.If(enc.s.i):
             m.d.sync += boot_ctr.eq(boot_ctr + 1)
         with m.Else():
             m.d.sync += boot_ctr.eq(0)
         with m.If(boot_ctr > REBOOT_SEC*CLK_SYNC_HZ):
-            m.d.comb += platform.request("self_program").o.eq(1)
+            m.d.sync += self_program.eq(1)
 
         jack_period = Signal(32)
         jack_usb = Signal(8)
@@ -506,7 +508,7 @@ class USB2AudioInterface(Elaboratable):
         with m.FSM(domain="usb") as fsm:
             with m.State("WAIT"):
                 # 100Hz // TODO make this delta
-                with m.If(jack_period == int(60000000 / 40)):
+                with m.If(jack_period == int(CLK_SYNC_HZ / 40)):
                     m.d.usb += [
                         jack_period.eq(0),
                         touch_ch.eq(0)
