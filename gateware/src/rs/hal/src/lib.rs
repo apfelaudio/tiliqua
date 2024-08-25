@@ -11,6 +11,7 @@ pub mod encoder;
 pub mod pca9635;
 pub mod pmod;
 pub mod polysynth;
+pub mod video;
 
 pub use embedded_hal as hal;
 pub use embedded_hal_nb as hal_nb;

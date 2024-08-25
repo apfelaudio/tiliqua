@@ -16,6 +16,8 @@ from amaranth.lib.cdc      import FFSynchronizer
 from amaranth.utils        import log2_int
 from amaranth.hdl.mem      import Memory
 
+from amaranth_future       import stream
+
 from luna_soc.gateware.vendor.amaranth_soc import wishbone
 
 from dataclasses import dataclass
@@ -245,7 +247,7 @@ class DVITimingGenerator(wiring.Component):
         return m
 
 
-class FramebufferPHY(Elaboratable):
+class FramebufferPHY(wiring.Component):
 
     """
     Read pixels from a framebuffer in PSRAM and send them to the display.
@@ -257,8 +259,6 @@ class FramebufferPHY(Elaboratable):
 
     def __init__(self, *, dvi_timings: DVITimings, fb_base, bus_master,
                  fb_size, fifo_depth=1024, sim=False, fb_bytes_per_pixel=1):
-
-        super().__init__()
 
         self.sim = sim
         self.fifo_depth = fifo_depth
@@ -286,6 +286,14 @@ class FramebufferPHY(Elaboratable):
         self.phy_r = Signal(8)
         self.phy_g = Signal(8)
         self.phy_b = Signal(8)
+
+        # Color palette tweaking interface
+        super().__init__({
+            "palette_rgb": In(stream.Signature(data.StructLayout({
+                "p": unsigned(8),
+                "rgb": unsigned(24),
+                }))),
+        })
 
     @staticmethod
     def compute_color_palette():
@@ -484,5 +492,24 @@ class FramebufferPHY(Elaboratable):
             phy_g.eq(rd_port_g.data),
             phy_b.eq(rd_port_b.data),
         ]
+
+        # palette write interface (p=position, rgb=value)
+        wports = [palette_r.write_port(),
+                  palette_g.write_port(),
+                  palette_b.write_port()]
+        # split rgb payload into one write for each rgb memory
+        m.d.comb += [
+            wports[0].data.eq(self.palette_rgb.payload.rgb[16:24]),
+            wports[1].data.eq(self.palette_rgb.payload.rgb[8 :16]),
+            wports[2].data.eq(self.palette_rgb.payload.rgb[0 : 8]),
+        ]
+        m.d.comb += self.palette_rgb.ready.eq(1)
+        # hook up position and stream valid -> write enable.
+        for wport in wports:
+            with m.If(self.palette_rgb.ready):
+                m.d.comb += [
+                    wport.addr.eq(self.palette_rgb.payload.p),
+                    wport.en.eq(self.palette_rgb.valid),
+                ]
 
         return m

@@ -33,17 +33,18 @@ from luna_soc.gateware.csr.base                  import Peripheral
 
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
-class PersistPeripheral(Peripheral, Elaboratable):
+class VideoPeripheral(Peripheral, Elaboratable):
 
     """
     Tweak display persistance properties from SoC memory space.
     """
 
-    def __init__(self, fb_base, fb_size, bus):
+    def __init__(self, fb_base, fb_size, bus, video):
 
         super().__init__()
 
         self.en                = Signal()
+        self.video             = video
 
         self.persist = Persistance(
                 fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size)
@@ -53,6 +54,12 @@ class PersistPeripheral(Peripheral, Elaboratable):
         bank                   = self.csr_bank()
         self._persist          = bank.csr(16, "w")
         self._decay            = bank.csr(8, "w")
+
+        # Palette coefficient write: 0xPPRRGGBB
+        # P = palette position (0..255), RGB = red, green, blue value displayed.
+        # Value is written ASAP, palette_busy will be set to 1 until it is complete.
+        self._palette           = bank.csr(32, "w")
+        self._palette_busy      = bank.csr(1,  "r")
 
         # Peripheral bus
         self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
@@ -72,6 +79,25 @@ class PersistPeripheral(Peripheral, Elaboratable):
 
         with m.If(self._decay.w_stb):
             m.d.sync += self.persist.decay.eq(self._decay.w_data)
+
+        # palette update logic (TODO put this in subclass?)
+
+        palette_busy = Signal()
+        m.d.comb += self._palette_busy.r_data.eq(palette_busy)
+        with m.If(self._palette.w_stb & ~palette_busy):
+            m.d.sync += [
+                palette_busy.eq(1),
+                self.video.palette_rgb.payload.p  .eq(self._palette.w_data[24:32]),
+                self.video.palette_rgb.payload.rgb.eq(self._palette.w_data[ 0:24]),
+                self.video.palette_rgb.valid.eq(1),
+            ]
+
+        with m.If(palette_busy & self.video.palette_rgb.ready):
+            # coefficient has been written
+            m.d.sync += [
+                palette_busy.eq(0),
+                self.video.palette_rgb.valid.eq(0),
+            ]
 
         return m
 
@@ -148,11 +174,12 @@ class TiliquaSoc(Elaboratable):
         # ... add our video persistance effect (all writes gradually fade) -
         # this is an interesting alternative to double-buffering that looks
         # kind of like an old CRT with slow-scanning.
-        self.persist_periph = PersistPeripheral(
+        self.video_periph = VideoPeripheral(
             fb_base=self.video.fb_base,
             fb_size=fb_size,
-            bus=self.soc.psram)
-        self.soc.add_peripheral(self.persist_periph, addr=0xf0006000)
+            bus=self.soc.psram,
+            video=self.video)
+        self.soc.add_peripheral(self.video_periph, addr=0xf0006000)
 
         self.permit_bus_traffic = Signal()
 
@@ -183,7 +210,7 @@ class TiliquaSoc(Elaboratable):
         with m.Else():
             m.d.sync += self.permit_bus_traffic.eq(1)
             m.d.sync += self.video.enable.eq(1)
-            m.d.sync += self.persist_periph.en.eq(1)
+            m.d.sync += self.video_periph.en.eq(1)
 
         # generate our domain clocks/resets
         m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
@@ -232,3 +259,5 @@ class TiliquaSoc(Elaboratable):
             f.write(f"pub const V_ACTIVE: u32         = {self.video.fb_vsize};\n")
             f.write(f"pub const VIDEO_ROTATE_90: bool = {'true' if self.video_rotate_90 else 'false'};\n")
             f.write(f"pub const PSRAM_FB_BASE: usize  = 0x{self.video.fb_base:x};\n")
+            f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
+            f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
