@@ -6,10 +6,7 @@ use tiliqua_hal as hal;
 
 use hal::hal::delay::DelayNs;
 
-use tiliqua_fw::Serial0;
-use tiliqua_fw::Timer0;
-use tiliqua_fw::I2c0;
-use tiliqua_fw::Encoder0;
+use tiliqua_fw::*;
 
 use log::{info, error};
 

@@ -6,13 +6,9 @@ use tiliqua_hal as hal;
 
 use hal::hal::delay::DelayNs;
 
-use tiliqua_fw::Serial0;
-use tiliqua_fw::Timer0;
-use tiliqua_fw::I2c0;
-use tiliqua_fw::Encoder0;
-use tiliqua_fw::EurorackPmod0;
+use tiliqua_fw::*;
 
-use log::{info};
+use log::info;
 
 use riscv_rt::entry;
 
@@ -27,17 +23,11 @@ use embedded_graphics::{
     text::{Alignment, Text},
 };
 
-use tiliqua_fw::opts;
+use tiliqua_lib::*;
 use tiliqua_lib::opt::*;
-use tiliqua_lib::draw;
-
 use tiliqua_lib::generated_constants::*;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
-
-const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
-const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
-const _PCA9635_MIDI:     [usize; 2] = [8, 9];
 
 fn print_rebooting<D>(d: &mut D, rng: &mut fastrand::Rng)
 where
@@ -99,7 +89,7 @@ fn main() -> ! {
 
     loop {
 
-        draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, 0).ok();
+        draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, 0).ok();
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
@@ -107,18 +97,11 @@ fn main() -> ! {
 
         time_since_encoder_touched += period_ms;
 
-        match encoder.poke_ticks() {
-            1 => {
-                opts.tick_up();
-                time_since_encoder_touched = 0;
-            }
-            -1 => {
-                opts.tick_down();
-                time_since_encoder_touched = 0;
-            }
-            _ => {},
+        let ticks = encoder.poke_ticks();
+        if ticks != 0 {
+            opts.consume_ticks(ticks);
+            time_since_encoder_touched = 0;
         }
-
         if encoder.poke_btn() {
             opts.toggle_modify();
             time_since_encoder_touched = 0;
@@ -132,29 +115,8 @@ fn main() -> ! {
             toggle_encoder_leds = !toggle_encoder_leds;
         }
 
-        if let Some(n) = opts.view().selected() {
-            let o = opts.view().options()[n];
-            let c = o.percent();
-            for n in 0..6 {
-                if ((n as f32)*0.5f32/6.0f32 + 0.5) < c {
-                    pca9635.leds[PCA9635_BAR_RED[n]] = 0xff as u8;
-                } else {
-                    pca9635.leds[PCA9635_BAR_RED[n]] = 0 as u8;
-                }
-                if ((n as f32)*-0.5f32/6.0f32 + 0.5) > c {
-                    pca9635.leds[PCA9635_BAR_GREEN[n]] = 0xff as u8;
-                } else {
-                    pca9635.leds[PCA9635_BAR_GREEN[n]] = 0 as u8;
-                }
-            }
-
-            if opts.modify() && !toggle_encoder_leds {
-                for n in 0..6 {
-                    pca9635.leds[PCA9635_BAR_GREEN[n]] = 0 as u8;
-                    pca9635.leds[PCA9635_BAR_RED[n]] = 0 as u8;
-                }
-            }
-        }
+        leds::mobo_pca9635_set_bargraph(&opts, &mut pca9635.leds,
+                                        toggle_encoder_leds);
 
         if opts.modify() {
             print_rebooting(&mut display, &mut rng);
