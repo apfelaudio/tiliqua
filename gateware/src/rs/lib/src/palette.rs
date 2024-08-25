@@ -64,8 +64,8 @@ pub fn hsl2rgb(h: f32, s: f32, l: f32) -> RGB {
 }
 
 pub fn compute_color(i: i32, h: i32, p: ColorPalette) -> RGB {
-    let n_i: i32 = PX_INTENSITY_MAX;
-    let n_h: i32 = PX_HUE_MAX;
+    let n_i: i32 = 16;
+    let n_h: i32 = 16;
     match p {
         ColorPalette::Exp => {
             let fac = 1.35f32;

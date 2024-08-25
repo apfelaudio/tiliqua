@@ -77,7 +77,7 @@ fn main() -> ! {
     };
 
     let mut uptime_ms = 0u32;
-    let period_ms = 10u32;
+    let period_ms = 2u32;
 
     let mut rng = fastrand::Rng::with_seed(0);
 
@@ -87,9 +87,20 @@ fn main() -> ! {
 
     let mut opts = opts::Options::new();
 
+    let mut aa_ix = 0u32;
+
+    let mut video = Video0::new(peripherals.VIDEO_PERIPH);
+
+    video.set_persist(2048);
+
     loop {
 
         draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, 0).ok();
+
+        for _ in 0..5 {
+            draw::draw_apfelaudio(&mut display, (H_ACTIVE/2) as i32, (V_ACTIVE/2+200) as i32, aa_ix);
+            aa_ix += 1;
+        }
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
@@ -123,7 +134,7 @@ fn main() -> ! {
             if toggle_encoder_leds {
                 if let Some(n) = opts.view().selected() {
                     pmod.led_set_manual(n, i8::MAX);
-                    if time_since_encoder_touched > 250 {
+                    if time_since_encoder_touched > 150 {
                         info!("BITSTREAM{}\n\r", n);
                     }
                 }
