@@ -264,6 +264,7 @@ class TiliquaSoc(Elaboratable):
 
     def genrust_constants(self):
         with open("src/rs/lib/src/generated_constants.rs", "w") as f:
+            f.write(f"pub const BITSTREAM_NAME: &str  = \"{os.getenv('TILIQUA_BITSTREAM_NAME')}\";\n")
             f.write(f"pub const CLOCK_SYNC_HZ: u32    = {self.clock_sync_hz};\n")
             f.write(f"pub const PSRAM_BASE: usize     = 0x{self.psram_base:x};\n")
             f.write(f"pub const PSRAM_SZ_BYTES: usize = 0x{self.psram_size_bytes:x};\n")

@@ -6,6 +6,8 @@ use embedded_graphics::{
     prelude::*,
 };
 
+use crate::generated_constants::*;
+
 use crate::opt;
 
 use heapless::String;
@@ -87,6 +89,13 @@ where
               Point::new(vx-3, (vy - 13 + vspace*opts_view.len()) as i32))
               .into_styled(stroke)
               .draw(d)?;
+
+    Text::with_alignment(
+        BITSTREAM_NAME,
+        Point::new(360, 700),
+        font_small_white,
+        Alignment::Center
+    ).draw(d)?;
 
     Ok(())
 }
@@ -576,8 +585,8 @@ mod tests {
 
     use image::{ImageBuffer, RgbImage, Rgb};
 
-    const H_ACTIVE: u32 = 800;
-    const V_ACTIVE: u32 = 600;
+    const H_ACTIVE: u32 = 720;
+    const V_ACTIVE: u32 = 720;
 
     struct FakeDisplay {
         img: RgbImage,
