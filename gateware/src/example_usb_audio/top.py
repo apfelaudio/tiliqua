@@ -10,7 +10,7 @@ from amaranth.build        import *
 from amaranth.lib.cdc      import FFSynchronizer
 from amaranth.lib.fifo     import SyncFIFO, AsyncFIFO, SyncFIFOBuffered
 
-from luna                import top_level_cli
+from luna_soc                                    import top_level_cli
 from luna.usb2           import (USBDevice,
                                  USBIsochronousInMemoryEndpoint,
                                  USBIsochronousOutStreamEndpoint,
@@ -31,7 +31,7 @@ from luna.gateware.stream.generator           import StreamSerializer
 from luna.gateware.stream                     import StreamInterface
 from luna.gateware.architecture.car           import PHYResetController
 
-from tiliqua.tiliqua_platform import TiliquaPlatform
+from tiliqua.tiliqua_platform import TiliquaPlatform, set_environment_variables
 from tiliqua.eurorack_pmod import EurorackPmod
 from vendor.ila import AsyncSerialILA, AsyncSerialILAFrontend
 
@@ -40,6 +40,10 @@ from example_usb_audio.usb_stream_to_channels import USBStreamToChannels
 from example_usb_audio.channels_to_usb_stream import ChannelsToUSBStream
 from example_usb_audio.audio_to_channels      import AudioToChannels
 
+from tiliqua.tiliqua_soc                      import TiliquaSoc
+from xbeam.top                                import VectorTracePeripheral, ScopeTracePeripheral
+
+from amaranth_future       import fixed, stream
 
 class USB2AudioInterface(Elaboratable):
     """ USB Audio Class v2 interface """
@@ -47,8 +51,9 @@ class USB2AudioInterface(Elaboratable):
     MAX_PACKET_SIZE = int(224 // 8 * NR_CHANNELS)
     MAX_PACKET_SIZE_MIDI = 64
 
-    def __init__(self, use_ila):
+    def __init__(self, use_ila, pmod=None):
         self.use_ila = False
+        self.pmod0 = pmod
         super().__init__()
 
     def create_descriptors(self):
@@ -312,7 +317,7 @@ class USB2AudioInterface(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.car = platform.clock_domain_generator()
+        #m.submodules.car = platform.clock_domain_generator()
 
         ulpi = platform.request(platform.default_usb_connection)
         m.submodules.usb = usb = USBDevice(bus=ulpi)
@@ -470,27 +475,11 @@ class USB2AudioInterface(Elaboratable):
             usb_to_channel_stream.no_channels_in.eq(self.NR_CHANNELS),
         ]
 
-        m.submodules.pmod0 = pmod0 = EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True)
-
+        pmod0 = self.pmod0
         m.submodules.audio_to_channels = AudioToChannels(
                 pmod0,
                 to_usb_stream=channels_to_usb_stream.channel_stream_in,
                 from_usb_stream=usb_to_channel_stream.channel_stream_out)
-
-        enc = platform.request("encoder", 0)
-        REBOOT_SEC = 3
-        CLK_SYNC_HZ = 60000000
-        boot_ctr = Signal(unsigned(32))
-        self_program = Signal(reset=0)
-        m.d.comb += platform.request("self_program").o.eq(self_program)
-        with m.If(enc.s.i):
-            m.d.sync += boot_ctr.eq(boot_ctr + 1)
-        with m.Else():
-            m.d.sync += boot_ctr.eq(0)
-        with m.If(boot_ctr > REBOOT_SEC*CLK_SYNC_HZ):
-            m.d.sync += self_program.eq(1)
 
         jack_period = Signal(32)
         jack_usb = Signal(8)
@@ -504,6 +493,8 @@ class USB2AudioInterface(Elaboratable):
                     FFSynchronizer(pmod0.touch[n], touch_usb[n], o_domain="usb"))
 
         touch_ch = Signal(3)
+
+        CLK_SYNC_HZ = 60000000
 
         with m.FSM(domain="usb") as fsm:
             with m.State("WAIT"):
@@ -713,14 +704,68 @@ class UAC2RequestHandlers(USBRequestHandler):
 
                 return m
 
-def build(ila=False):
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
-    top = USB2AudioInterface(use_ila=ila)
-    TiliquaPlatform().build(top)
-    if ila:
-        # TODO: program bitstream with openFPGAloader before starting frontend
-        # TODO: make serial port selectable
-        frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
-        frontend.emit_vcd("out.vcd")
+class XbeamSoc(TiliquaSoc):
+    def __init__(self, *, firmware_path, dvi_timings):
+        super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
+                         audio_out_peripheral=False)
+        # scope stroke bridge from audio stream
+        fb_size = (self.video.fb_hsize, self.video.fb_vsize)
+
+        self.vector_periph = VectorTracePeripheral(
+            fb_base=self.video.fb_base,
+            fb_size=fb_size,
+            bus=self.soc.psram, fs=48000, n_upsample=6)
+        self.soc.add_peripheral(self.vector_periph, addr=0xf0007000)
+
+        self.scope_periph = ScopeTracePeripheral(
+            fb_base=self.video.fb_base,
+            fb_size=fb_size,
+            bus=self.soc.psram)
+        self.soc.add_peripheral(self.scope_periph, addr=0xf0008000)
+
+    def elaborate(self, platform):
+
+        m = Module()
+
+        m.submodules += super().elaborate(platform)
+
+        pmod0 = self.pmod0_periph.pmod
+
+        m.submodules.usb = USB2AudioInterface(use_ila=False, pmod=pmod0)
+
+        m.submodules.scope_fifo = scope_fifo = AsyncFIFO(
+                width=pmod0.sample_o.shape().size, depth=8,
+                w_domain="audio", r_domain="sync")
+        scope_stream = stream.fifo_r_stream(scope_fifo)
+        m.d.audio += [
+            scope_fifo.w_en.eq(pmod0.fs_strobe),
+            scope_fifo.w_data.eq(pmod0.sample_o),
+        ]
+
+        with m.If(self.scope_periph.soc_en):
+            m.d.comb += [
+                self.scope_periph.i.valid.eq(scope_stream.valid),
+                self.scope_periph.i.payload.eq(scope_stream.payload),
+                scope_stream.ready.eq(self.scope_periph.i.ready),
+            ]
+        with m.Else():
+            m.d.comb += [
+                self.vector_periph.i.valid.eq(scope_stream.valid),
+                self.vector_periph.i.payload.eq(scope_stream.payload),
+                scope_stream.ready.eq(self.vector_periph.i.ready),
+            ]
+
+        # Memory controller hangs if we start making requests to it straight away.
+        with m.If(self.permit_bus_traffic):
+            m.d.sync += self.vector_periph.en.eq(1)
+            m.d.sync += self.scope_periph.en.eq(1)
+
+        return m
+
+if __name__ == "__main__":
+    dvi_timings = set_environment_variables()
+    this_directory = os.path.dirname(os.path.realpath(__file__))
+    design = XbeamSoc(firmware_path=os.path.join(this_directory, "fw/firmware.bin"),
+                        dvi_timings=dvi_timings)
+    design.genrust_constants()
+    top_level_cli(design)

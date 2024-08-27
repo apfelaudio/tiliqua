@@ -25,9 +25,8 @@ build_selftest = { shell = "./scripts/build_soc.sh selftest" }
 build_boot     = { shell = "./scripts/build_soc.sh boot" }
 build_xbeam    = { shell = "./scripts/build_soc.sh xbeam" }
 build_poly     = { shell = "./scripts/build_soc.sh poly" }
+build_usb_audio = { shell = "./scripts/build_soc.sh example_usb_audio" }
 # bitstreams that don't include an SoC
-build_usb_audio = { call = "example_usb_audio.top:build(ila=False)" }
-build_usb_audio_ila = { call = "example_usb_audio.top:build(ila=True)" }
 build_dsp_core = { call = "example_dsp.top:build()" }
 sim_dsp_core = { call = "example_dsp.top:simulate()" }
 build_vectorscope = { call = "example_vectorscope.top:build()" }

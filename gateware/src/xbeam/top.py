@@ -88,13 +88,13 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         super().__init__()
 
         self.stroke0 = Stroke(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, fs=48000, n_upsample=None)
         self.stroke1 = Stroke(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, fs=48000, n_upsample=None)
         self.stroke2 = Stroke(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, fs=48000, n_upsample=None)
         self.stroke3 = Stroke(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
+                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, fs=48000, n_upsample=None)
 
         self.strokes = [self.stroke0, self.stroke1, self.stroke2, self.stroke3]
 
@@ -225,11 +225,13 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         return m
 
 class XbeamSoc(TiliquaSoc):
-    def __init__(self, *, firmware_path, dvi_timings):
-        super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=True,
+    def __init__(self, *, firmware_path, dvi_timings, with_core=True):
+        super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
                          audio_out_peripheral=False)
         # scope stroke bridge from audio stream
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
+
+        self.with_core=with_core
 
         self.vector_periph = VectorTracePeripheral(
             fb_base=self.video.fb_base,
@@ -251,28 +253,29 @@ class XbeamSoc(TiliquaSoc):
 
         pmod0 = self.pmod0_periph.pmod
 
-        m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0)
+        if self.with_core:
 
-        self.scope_periph.source = astream.istream
+            m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0)
+            self.scope_periph.source = astream.istream
 
-        core_name = os.getenv("TILIQUA_XBEAM_CORE", "mirror")
-        touch_en, self.core_cls = get_core(core_name)
-        self.core = self.core_cls()
-        m.submodules.core = self.core
+            core_name = os.getenv("TILIQUA_XBEAM_CORE", "mirror")
+            touch_en, self.core_cls = get_core(core_name)
+            self.core = self.core_cls()
+            m.submodules.core = self.core
 
-        wiring.connect(m, astream.istream, self.core.i)
-        wiring.connect(m, self.core.o, astream.ostream)
+            wiring.connect(m, astream.istream, self.core.i)
+            wiring.connect(m, self.core.o, astream.ostream)
 
-        with m.If(self.scope_periph.soc_en):
-            m.d.comb += [
-                self.scope_periph.i.valid.eq(self.core.o.valid & self.core.o.ready),
-                self.scope_periph.i.payload.eq(self.core.o.payload),
-            ]
-        with m.Else():
-            m.d.comb += [
-                self.vector_periph.i.valid.eq(self.core.o.valid & self.core.o.ready),
-                self.vector_periph.i.payload.eq(self.core.o.payload),
-            ]
+            with m.If(self.scope_periph.soc_en):
+                m.d.comb += [
+                    self.scope_periph.i.valid.eq(self.core.o.valid & self.core.o.ready),
+                    self.scope_periph.i.payload.eq(self.core.o.payload),
+                ]
+            with m.Else():
+                m.d.comb += [
+                    self.vector_periph.i.valid.eq(self.core.o.valid & self.core.o.ready),
+                    self.vector_periph.i.payload.eq(self.core.o.payload),
+                ]
 
         # Memory controller hangs if we start making requests to it straight away.
         with m.If(self.permit_bus_traffic):
