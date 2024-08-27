@@ -27,6 +27,8 @@ from tiliqua.tiliqua_soc                         import TiliquaSoc
 
 from example_vectorscope.top                     import Stroke
 
+from example_dsp.top                             import get_core
+
 class VectorTracePeripheral(Peripheral, Elaboratable):
 
     def __init__(self, fb_base, fb_size, bus, **kwargs):
@@ -253,15 +255,24 @@ class XbeamSoc(TiliquaSoc):
 
         self.scope_periph.source = astream.istream
 
-        with m.If(self.scope_periph.soc_en):
-            wiring.connect(m, astream.istream, self.scope_periph.i)
-        with m.Else():
-            wiring.connect(m, astream.istream, self.vector_periph.i)
+        core_name = os.getenv("TILIQUA_XBEAM_CORE", "mirror")
+        touch_en, self.core_cls = get_core(core_name)
+        self.core = self.core_cls()
+        m.submodules.core = self.core
 
-        m.d.comb += [
-            astream.ostream.valid.eq(astream.istream.valid & astream.istream.ready),
-            astream.ostream.payload.eq(astream.istream.payload),
-        ]
+        wiring.connect(m, astream.istream, self.core.i)
+        wiring.connect(m, self.core.o, astream.ostream)
+
+        with m.If(self.scope_periph.soc_en):
+            m.d.comb += [
+                self.scope_periph.i.valid.eq(self.core.o.valid & self.core.o.ready),
+                self.scope_periph.i.payload.eq(self.core.o.payload),
+            ]
+        with m.Else():
+            m.d.comb += [
+                self.vector_periph.i.valid.eq(self.core.o.valid & self.core.o.ready),
+                self.vector_periph.i.payload.eq(self.core.o.payload),
+            ]
 
         # Memory controller hangs if we start making requests to it straight away.
         with m.If(self.permit_bus_traffic):
