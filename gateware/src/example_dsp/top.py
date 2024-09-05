@@ -633,6 +633,7 @@ def simulate():
                            "-Wno-WIDTHTRUNC",
                            "-Wno-TIMESCALEMOD",
                            "-Wno-PINMISSING",
+                           "-Wno-ASCRANGE",
                            "-cc",
                            "--trace-fst",
                            "--exe",
