@@ -9,14 +9,14 @@ import os
 
 from amaranth                   import *
 from amaranth.build             import *
-from amaranth.lib               import wiring, data
+from amaranth.lib               import wiring, data, stream
 from amaranth.lib.wiring        import In, Out
 from amaranth.lib.fifo          import AsyncFIFO
 from amaranth.lib.cdc           import FFSynchronizer
 
-from amaranth_future       import fixed, stream
+from example_usb_audio.util     import EdgeToPulse
 
-from example_usb_audio.util import EdgeToPulse
+from amaranth_future            import fixed
 
 WIDTH = 16
 
@@ -53,11 +53,8 @@ class AudioStream(wiring.Component):
                 width=self.eurorack_pmod.sample_o.shape().size, depth=self.fifo_depth,
                 w_domain=self.stream_domain, r_domain="audio")
 
-        adc_stream = stream.fifo_r_stream(adc_fifo)
-        dac_stream = wiring.flipped(stream.fifo_w_stream(dac_fifo))
-
-        wiring.connect(m, adc_stream, wiring.flipped(self.istream))
-        wiring.connect(m, wiring.flipped(self.ostream), dac_stream)
+        wiring.connect(m, adc_fifo.r_stream, wiring.flipped(self.istream))
+        wiring.connect(m, wiring.flipped(self.ostream), dac_fifo.w_stream)
 
         eurorack_pmod = self.eurorack_pmod
 

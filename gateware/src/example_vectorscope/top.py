@@ -25,14 +25,14 @@ import subprocess
 
 from amaranth              import *
 from amaranth.build        import *
-from amaranth.lib          import wiring, data
+from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import AsyncFIFO, SyncFIFO
 from amaranth.lib.cdc      import FFSynchronizer
 from amaranth.utils        import log2_int
 from amaranth.hdl.mem      import Memory
 
-from amaranth_future       import stream, fixed
+from amaranth_future       import fixed
 
 from tiliqua.tiliqua_platform import TiliquaPlatform, TiliquaDomainGenerator, set_environment_variables
 from tiliqua                  import eurorack_pmod, dsp

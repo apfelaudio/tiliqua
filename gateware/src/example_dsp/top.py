@@ -13,11 +13,11 @@ import math
 
 from amaranth              import *
 from amaranth.build        import *
-from amaranth.lib          import wiring, data
+from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 
 
-from amaranth_future       import stream, fixed
+from amaranth_future       import fixed
 
 from tiliqua.tiliqua_platform import TiliquaPlatform
 from tiliqua                  import eurorack_pmod, dsp, midi

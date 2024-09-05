@@ -7,10 +7,9 @@
 
 from amaranth              import *
 from amaranth.lib.fifo     import SyncFIFOBuffered
-from amaranth.lib          import wiring, data, enum
+from amaranth.lib          import wiring, data, enum, stream
 from amaranth.lib.wiring   import In, Out
 
-from amaranth_future       import stream
 from vendor.serial         import AsyncSerialRX
 
 MIDI_BAUD_RATE = 31250
@@ -89,8 +88,7 @@ class SerialRx(wiring.Component):
         ]
 
         # RX FIFO -> output stream
-        rstream = stream.fifo_r_stream(self.rx_fifo)
-        wiring.connect(m, rstream, wiring.flipped(self.o))
+        wiring.connect(m, self.rx_fifo.r_stream, wiring.flipped(self.o))
 
         return m
 

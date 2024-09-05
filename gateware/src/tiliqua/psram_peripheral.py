@@ -64,7 +64,7 @@ class Peripheral(wiring.Component):
 
         # phy and controller
         self.psram_phy = None
-        self.psram     = FakeHyperRAMDQSInterface()
+        self.psram     = FakeHyperRAMDQSInterface() if sim else None
 
     def add_master(self, bus):
         self._hram_arbiter.add(bus)

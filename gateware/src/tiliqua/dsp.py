@@ -6,7 +6,7 @@
 """Streaming DSP library with a strong focus on audio."""
 
 from amaranth              import *
-from amaranth.lib          import wiring, data
+from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import SyncFIFO
 from amaranth.hdl.mem      import Memory
@@ -14,7 +14,7 @@ from amaranth.utils        import log2_int
 
 from scipy import signal
 
-from amaranth_future       import stream, fixed
+from amaranth_future       import fixed
 
 from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
 

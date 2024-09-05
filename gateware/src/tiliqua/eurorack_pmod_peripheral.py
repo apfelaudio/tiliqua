@@ -2,13 +2,13 @@ import os
 
 from amaranth                   import *
 from amaranth.build             import *
-from amaranth.lib               import wiring, data
+from amaranth.lib               import wiring, data, stream
 from amaranth.lib.wiring        import In, Out
 from amaranth.lib.fifo          import AsyncFIFO
 from amaranth.lib.cdc           import FFSynchronizer
 from luna_soc.gateware.csr.base import Peripheral
 
-from amaranth_future       import fixed, stream
+from amaranth_future            import fixed
 
 from example_usb_audio.util import EdgeToPulse
 
