@@ -13,7 +13,7 @@ from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import AsyncFIFO, SyncFIFO
 from amaranth.lib.cdc      import FFSynchronizer
-from amaranth.utils        import log2_int
+from amaranth.utils        import exact_log2
 from amaranth.lib.memory   import Memory
 
 from amaranth_soc          import wishbone
@@ -276,7 +276,7 @@ class FramebufferPHY(wiring.Component):
 
         # Tracking in DVI domain
         self.dvi_tgen = DomainRenamer("dvi")(DVITimingGenerator(dvi_timings))
-        self.bytecounter = Signal(log2_int(4//self.fb_bytes_per_pixel))
+        self.bytecounter = Signal(exact_log2(4//self.fb_bytes_per_pixel))
         self.last_word   = Signal(32)
         self.consume_started = Signal(1, reset=0)
 
