@@ -253,13 +253,11 @@ class TiliquaSoc(Component):
         m.submodules += [uart0_provider, self.uart0]
         wiring.connect(m, self.uart0.pins, uart0_provider.pins)
 
-        """
         # timer0
         m.submodules += self.timer0
 
         # timer1
         m.submodules += self.timer1
-        """
 
         # psram
         m.submodules += self.psram_periph

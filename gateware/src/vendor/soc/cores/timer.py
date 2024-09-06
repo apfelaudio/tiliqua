@@ -51,10 +51,10 @@ class Peripheral(wiring.Component):
         # csr decoder
         self._decoder = csr.Decoder(addr_width=5, data_width=8)
         self._decoder.add(self._bridge.bus)
-        self._decoder.add(self._events.bus, name="ev")
+        # FIXME: this segfaults yosys somehow!
+        # self._decoder.add(self._events.bus, name="ev")
 
         super().__init__({
-            #"bus":    In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
             "bus":    Out(self._decoder.bus.signature),
             "irq":    Out(unsigned(1)),
         })
