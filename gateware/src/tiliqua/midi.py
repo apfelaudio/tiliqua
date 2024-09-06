@@ -10,7 +10,7 @@ from amaranth.lib.fifo     import SyncFIFOBuffered
 from amaranth.lib          import wiring, data, enum, stream
 from amaranth.lib.wiring   import In, Out
 
-from vendor.serial         import AsyncSerialRX
+from amaranth_stdio.serial import AsyncSerialRX
 
 MIDI_BAUD_RATE = 31250
 
