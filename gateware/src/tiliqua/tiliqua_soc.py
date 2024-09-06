@@ -17,8 +17,10 @@ from amaranth.lib.wiring                         import Component, In, Out, flip
 
 from amaranth_soc                                import csr, gpio, wishbone
 from amaranth_soc.csr.wishbone                   import WishboneCSRBridge
+
 from vendor.soc.cores                            import sram, timer, uart
 from vendor.soc.cpu                              import InterruptController, VexRiscv
+from vendor.soc                                  import readbin
 
 from tiliqua.tiliqua_platform                    import TiliquaPlatform
 
@@ -106,6 +108,7 @@ class TiliquaSoc(Component):
 
         super().__init__({})
 
+        self.firmware_path = firmware_path
         self.touch = touch
         self.audio_192 = audio_192
         self.dvi_timings = dvi_timings
@@ -224,9 +227,11 @@ class TiliquaSoc(Component):
 
     def elaborate(self, platform):
 
-        # FIXME assert os.path.exists(self.firmware_path)
 
         m = Module()
+
+        self.mainram.init = readbin.get_mem_data(self.firmware_path, data_width=32, endianness="little")
+        assert self.mainram.init
 
         # bus
         m.submodules += [self.wb_arbiter, self.wb_decoder]
