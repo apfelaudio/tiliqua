@@ -5,6 +5,7 @@
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 
+import argparse
 import logging
 import os
 import sys
@@ -21,6 +22,7 @@ from amaranth_soc.csr.wishbone                   import WishboneCSRBridge
 from vendor.soc.cores                            import sram, timer, uart
 from vendor.soc.cpu                              import InterruptController, VexRiscv
 from vendor.soc                                  import readbin
+from vendor.soc.generate                         import GenerateSVD
 
 from tiliqua.tiliqua_platform                    import TiliquaPlatform
 
@@ -315,8 +317,9 @@ class TiliquaSoc(Component):
 
         return m
 
-    def genrust_constants(self):
-        with open("src/rs/lib/src/generated_constants.rs", "w") as f:
+    def genrust_constants(self, dst):
+        print("writing", dst)
+        with open(dst, "w") as f:
             f.write(f"pub const CLOCK_SYNC_HZ: u32    = {self.clock_sync_hz};\n")
             f.write(f"pub const PSRAM_BASE: usize     = 0x{self.psram_base:x};\n")
             f.write(f"pub const PSRAM_SZ_BYTES: usize = 0x{self.psram_size:x};\n")
@@ -327,3 +330,53 @@ class TiliquaSoc(Component):
             f.write(f"pub const PSRAM_FB_BASE: usize  = 0x{self.video.fb_base:x};\n")
             f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
             f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
+
+memory_x = """MEMORY {{
+    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}
+}}
+REGION_ALIAS("REGION_TEXT", mainram);
+REGION_ALIAS("REGION_RODATA", mainram);
+REGION_ALIAS("REGION_DATA", mainram);
+REGION_ALIAS("REGION_BSS", mainram);
+REGION_ALIAS("REGION_HEAP", mainram);
+REGION_ALIAS("REGION_STACK", mainram);
+"""
+
+def top_level_cli(fragment, *pos_args, **kwargs):
+
+    # Configure logging.
+    logging.getLogger().setLevel(logging.DEBUG)
+
+    # Parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--genrust', action='store_true',
+        help="If provided, artifacts needed to build Rust firmware are generated. Bitstream is not built")
+    args = parser.parse_args()
+
+    # If this isn't a fragment directly, interpret it as an object that will build one.
+    name = fragment.__name__ if callable(fragment) else fragment.__class__.__name__
+    if callable(fragment):
+        fragment = fragment(*pos_args, **kwargs)
+
+    if args.genrust:
+        # FIXME: put these in SVD?
+        fragment.genrust_constants("src/rs/lib/src/generated_constants.rs")
+
+        # Generate top-level SVD
+        dst_svd = "build/soc.svd"
+        print("generating", dst_svd)
+        with open(dst_svd, "w") as f:
+            GenerateSVD(fragment).generate(file=f)
+
+        # Generate linker regions
+        dst_mem = "build/memory.x"
+        print("generating", dst_mem)
+        with open(dst_mem, "w") as f:
+            f.write(memory_x.format(mainram_base=hex(fragment.mainram_base),
+                                    mainram_size=hex(fragment.mainram.size)))
+
+        sys.exit(0)
+
+    TiliquaPlatform().build(fragment)
+
+    return fragment

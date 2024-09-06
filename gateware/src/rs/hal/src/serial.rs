@@ -66,8 +66,8 @@ macro_rules! impl_serial {
             // trait: hal_nb::serial::Write
             impl $crate::hal_nb::serial::Write for $SERIALX {
                 fn write(&mut self, byte: u8) -> $crate::nb::Result<(), Self::Error> {
-                    if self.registers.tx_rdy().read().tx_rdy().bit() {
-                        self.registers.tx_data().write(|w| unsafe { w.tx_data().bits(byte.into()) });
+                    if self.registers.tx_ready().read().txe().bit() {
+                        self.registers.tx_data().write(|w| unsafe { w.data().bits(byte.into()) });
                         Ok(())
                     } else {
                         Err($crate::nb::Error::WouldBlock)
@@ -75,7 +75,7 @@ macro_rules! impl_serial {
                 }
 
                 fn flush(&mut self) -> $crate::nb::Result<(), Self::Error> {
-                    if self.registers.tx_rdy().read().tx_rdy().bit() {
+                    if self.registers.tx_ready().read().txe().bit() {
                         Ok(())
                     } else {
                         Err($crate::nb::Error::WouldBlock)

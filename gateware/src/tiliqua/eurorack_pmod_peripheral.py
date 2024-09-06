@@ -22,8 +22,11 @@ from example_usb_audio.util     import EdgeToPulse
 
 class Peripheral(wiring.Component):
 
-    class SampleReg(csr.Register, access="r"):
+    class ISampleReg(csr.Register, access="r"):
         sample: csr.Field(csr.action.R, unsigned(16))
+
+    class OSampleReg(csr.Register, access="w"):
+        sample: csr.Field(csr.action.W, unsigned(16))
 
     class TouchReg(csr.Register, access="r"):
         touch: csr.Field(csr.action.R, unsigned(8))
@@ -46,12 +49,12 @@ class Peripheral(wiring.Component):
         regs = csr.Builder(addr_width=6, data_width=8)
 
         # ADC and input samples
-        self._sample_adc = [regs.add(f"sample_adc{i}", self.SampleReg()) for i in range(4)]
-        self._sample_i = [regs.add(f"sample_i{i}", self.SampleReg()) for i in range(4)]
+        self._sample_adc = [regs.add(f"sample_adc{i}", self.ISampleReg()) for i in range(4)]
+        self._sample_i = [regs.add(f"sample_i{i}", self.ISampleReg()) for i in range(4)]
 
         # Output samples
         if self.enable_out:
-            self._sample_o = [regs.add(f"sample_o{i}", self.LEDReg()) for i in range(4)]
+            self._sample_o = [regs.add(f"sample_o{i}", self.OSampleReg()) for i in range(4)]
 
         # Touch sensing
         self._touch = [regs.add(f"touch{i}", self.TouchReg()) for i in range(8)]
@@ -81,8 +84,8 @@ class Peripheral(wiring.Component):
             m.submodules += FFSynchronizer(self.pmod.sample_adc[i], self._sample_adc[i].f.sample.r_data, reset=0)
             m.submodules += FFSynchronizer(self.pmod.sample_i[i], self._sample_i[i].f.sample.r_data, reset=0)
             if self.enable_out:
-                with m.If(self._sample_o[i].f.led.w_stb):
-                    m.d.sync += self.pmod.sample_o[i].eq(self._sample_o[i].f.led.w_data)
+                with m.If(self._sample_o[i].f.sample.w_stb):
+                    m.d.sync += self.pmod.sample_o[i].eq(self._sample_o[i].f.sample.w_data)
 
         for i in range(8):
             m.submodules += FFSynchronizer(self.pmod.touch[i], self._touch[i].f.touch.r_data, reset=0)

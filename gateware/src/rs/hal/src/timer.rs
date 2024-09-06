@@ -50,17 +50,17 @@ macro_rules! impl_timer {
             impl $TIMERX {
                 /// Current timer count
                 pub fn counter(&self) -> u32 {
-                    self.registers.ctr().read().ctr().bits()
+                    self.registers.counter().read().value().bits()
                 }
 
                 /// Disable timer
                 pub fn disable(&self) {
-                    self.registers.en().write(|w| w.en().bit(false));
+                    self.registers.enable().write(|w| w.enable().bit(false));
                 }
 
                 /// Enable timer
                 pub fn enable(&self) {
-                    self.registers.en().write(|w| w.en().bit(true));
+                    self.registers.enable().write(|w| w.enable().bit(true));
                 }
 
                 /// Set timeout using a [`core::time::Duration`]
@@ -83,12 +83,13 @@ macro_rules! impl_timer {
                 /// Set timeout using system ticks
                 pub fn set_timeout_ticks(&mut self, ticks: u32) {
                     self.registers.reload().write(|w| unsafe {
-                        w.reload().bits(ticks)
+                        w.value().bits(ticks)
                     });
                 }
             }
 
-            // interrupts
+            // TODO interrupts
+            /*
             impl $TIMERX {
                 /// Start listening for [`Event`]
                 pub fn listen(&mut self, event: $crate::timer::Event) {
@@ -119,26 +120,29 @@ macro_rules! impl_timer {
                     self.registers.ev_pending().write(|w| w.pending().bit(pending));
                 }
             }
+            */
 
             // trait: hal::delay::DelayNs
             impl $crate::hal::delay::DelayNs for $TIMERX {
                 fn delay_ns(&mut self, ns: u32) {
 
+                    /* TODO
                     // Be careful not to overflow.
                     let ticks: u32 = (self.clk / 1_000_000) * (ns / 1_000);
 
                     // TODO: add low clamp for 1usec?
 
                     // start timer
-                    self.registers.reload().write(|w| unsafe { w.reload().bits(0) });
-                    self.registers.ctr().write(|w| unsafe { w.ctr().bits(ticks) });
-                    self.registers.en().write(|w| w.en().bit(true));
+                    self.registers.reload().write(|w| unsafe { w.value().bits(0) });
+                    self.registers.counter().write(|w| unsafe { w.value().bits(ticks) });
+                    self.registers.enable().write(|w| w.enable().bit(true));
 
                     // wait for timer to hit zero
-                    while self.registers.ctr().read().ctr().bits() > 0 {}
+                    while self.registers.counter().read().value().bits() > 0 {}
 
                     // reset timer
-                    self.registers.en().write(|w| w.en().bit(false));
+                    self.registers.enable().write(|w| w.enable().bit(false));
+                    */
                 }
             }
         )+
