@@ -9,7 +9,7 @@ from amaranth              import *
 from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import SyncFIFO
-from amaranth.hdl.mem      import Memory
+from amaranth.lib.memory   import Memory
 from amaranth.utils        import log2_int
 
 from scipy import signal
@@ -342,9 +342,10 @@ class WaveShaper(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
+        # TODO (amaranth 0.5+): use native ASQ shape in LUT memory
         m.submodules.mem = mem = Memory(
-            width=ASQ.as_shape().width, depth=self.lut_size, init=self.lut)
-        rport = mem.read_port(transparent=True)
+            shape=signed(ASQ.as_shape().width), depth=self.lut_size, init=self.lut)
+        rport = mem.read_port()
 
         ltype = fixed.SQ(self.lut_addr_width-1, ASQ.f_width-self.lut_addr_width+1)
 
@@ -531,10 +532,11 @@ class DelayLine(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
+        # TODO (amaranth 0.5+): use native ASQ shape in LUT memory
         m.submodules.mem = mem = Memory(
-            width=ASQ.as_shape().width, depth=self.max_delay, init=[])
+            shape=signed(ASQ.as_shape().width), depth=self.max_delay, init=[])
         wport = mem.write_port()
-        rport = mem.read_port(transparent=True)
+        rport = mem.read_port(transparent_for=(wport,))
 
         wrpointer = Signal(self.address_width)
         rdpointer = Signal(self.address_width)
@@ -725,9 +727,10 @@ class MatrixMix(wiring.Component):
 
         assert(len(coefficients_flat) == i_channels*o_channels)
 
-        # coefficient memory
+        # matrix coefficient memory
+        # TODO (amaranth 0.5+): use native shape in LUT memory
         self.mem = Memory(
-            width=self.ctype.as_shape().width,
+            shape=signed(self.ctype.as_shape().width),
             depth=i_channels*o_channels, init=coefficients_flat)
 
         super().__init__({
@@ -745,7 +748,7 @@ class MatrixMix(wiring.Component):
 
         m.submodules.mem = self.mem
         wport = self.mem.write_port()
-        rport = self.mem.read_port(transparent=True)
+        rport = self.mem.read_port(transparent_for=(wport,))
 
         i_latch = Signal(data.ArrayLayout(self.ctype, self.i_channels))
         o_accum = Signal(data.ArrayLayout(

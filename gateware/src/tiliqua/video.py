@@ -14,7 +14,7 @@ from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import AsyncFIFO, SyncFIFO
 from amaranth.lib.cdc      import FFSynchronizer
 from amaranth.utils        import log2_int
-from amaranth.hdl.mem      import Memory
+from amaranth.lib.memory   import Memory
 
 from amaranth_soc          import wishbone
 
@@ -471,9 +471,9 @@ class FramebufferPHY(wiring.Component):
                 m.d.dvi += last_word.eq(last_word >> 8)
 
         rs, gs, bs = self.compute_color_palette()
-        m.submodules.palette_r = palette_r = Memory(width=8, depth=256, init=rs)
-        m.submodules.palette_g = palette_g = Memory(width=8, depth=256, init=gs)
-        m.submodules.palette_b = palette_b = Memory(width=8, depth=256, init=bs)
+        m.submodules.palette_r = palette_r = Memory(shape=unsigned(8), depth=256, init=rs)
+        m.submodules.palette_g = palette_g = Memory(shape=unsigned(8), depth=256, init=gs)
+        m.submodules.palette_b = palette_b = Memory(shape=unsigned(8), depth=256, init=bs)
 
         rd_port_r = palette_r.read_port(domain="comb")
         rd_port_g = palette_g.read_port(domain="comb")
