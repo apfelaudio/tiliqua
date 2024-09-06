@@ -97,7 +97,7 @@ class _TiliquaPlatform(LatticeECP5Platform):
         # - address 0x05: PCA9635 LED driver
         # - address 0x47: TUSB322I USB-C controller
         # - address 0x50: DVI EDID EEPROM (through 3V3 <-> 5V translator)
-        Resource("mobo_i2c", 0,
+        Resource("i2c", 0,
             Subsignal("sda",    Pins("A7", dir="io")),
             Subsignal("scl",    Pins("B8", dir="io")),
         ),

@@ -7,88 +7,87 @@
 
 import logging
 import os
+import sys
 
 from amaranth                                    import *
+from amaranth.build                              import Attrs, Pins, PinsN, Platform, Resource, Subsignal
 from amaranth.hdl.rec                            import Record
 from amaranth.lib                                import wiring, data
+from amaranth.lib.wiring                         import Component, In, Out, flipped, connect
 
-from luna_soc.gateware.cpu.vexriscv              import VexRiscv
-from luna_soc.gateware.lunasoc                   import LunaSoC
-from luna_soc.gateware.csr                       import GpioPeripheral, LedPeripheral
-
-from luna_soc.util.readbin                       import get_mem_data
+from amaranth_soc                                import csr, gpio, wishbone
+from amaranth_soc.csr.wishbone                   import WishboneCSRBridge
+from vendor.soc.cores                            import sram, timer, uart
+from vendor.soc.cpu                              import InterruptController, VexRiscv
 
 from tiliqua.tiliqua_platform                    import TiliquaPlatform
-from tiliqua.psram_peripheral                    import PSRAMPeripheral
 
-from tiliqua.i2c                                 import I2CPeripheral
-from tiliqua.encoder                             import EncoderPeripheral
-from tiliqua.dtr                                 import DieTemperaturePeripheral
-from tiliqua.video                               import DVI_TIMINGS, FramebufferPHY
+from tiliqua                                     import psram_peripheral, i2c, encoder, dtr, video, eurorack_pmod_peripheral
 from tiliqua                                     import eurorack_pmod
 
 from example_vectorscope.top                     import Persistance
 
-from luna_soc.gateware.csr.base                  import Peripheral
-
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
-class VideoPeripheral(Peripheral, Elaboratable):
+class VideoPeripheral(wiring.Component):
 
-    """
-    Tweak display persistance properties from SoC memory space.
-    """
+    class PersistReg(csr.Register, access="w"):
+        persist: csr.Field(csr.action.W, unsigned(16))
 
-    def __init__(self, fb_base, fb_size, bus, video):
+    class DecayReg(csr.Register, access="w"):
+        decay: csr.Field(csr.action.W, unsigned(8))
 
-        super().__init__()
+    class PaletteReg(csr.Register, access="w"):
+        palette: csr.Field(csr.action.W, unsigned(32))
 
-        self.en                = Signal()
-        self.video             = video
+    class PaletteBusyReg(csr.Register, access="r"):
+        busy: csr.Field(csr.action.R, unsigned(1))
 
+    def __init__(self, fb_base, fb_size, bus_dma, video):
+        self.en = Signal()
+        self.video = video
         self.persist = Persistance(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size)
-        bus.add_master(self.persist.bus)
+            fb_base=fb_base, bus_master=bus_dma.bus, fb_size=fb_size)
+        bus_dma.add_master(self.persist.bus)
 
-        # CSRs
-        bank                   = self.csr_bank()
-        self._persist          = bank.csr(16, "w")
-        self._decay            = bank.csr(8, "w")
+        regs = csr.Builder(addr_width=5, data_width=8)
 
-        # Palette coefficient write: 0xPPRRGGBB
-        # P = palette position (0..255), RGB = red, green, blue value displayed.
-        # Value is written ASAP, palette_busy will be set to 1 until it is complete.
-        self._palette           = bank.csr(32, "w")
-        self._palette_busy      = bank.csr(1,  "r")
+        self._persist = regs.add("persist", self.PersistReg())
+        self._decay = regs.add("decay", self.DecayReg())
+        self._palette = regs.add("palette", self.PaletteReg())
+        self._palette_busy = regs.add("palette_busy", self.PaletteBusyReg())
 
-        # Peripheral bus
-        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
-        self.bus        = self._bridge.bus
+        self._bridge = csr.Bridge(regs.as_memory_map())
+
+        super().__init__({
+            "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+        })
+        self.bus.memory_map = self._bridge.bus.memory_map
 
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.bridge  = self._bridge
-
+        m.submodules.bridge = self._bridge
         m.submodules += self.persist
+
+        connect(m, flipped(self.bus), self._bridge.bus)
 
         m.d.comb += self.persist.enable.eq(self.en)
 
-        with m.If(self._persist.w_stb):
-            m.d.sync += self.persist.holdoff.eq(self._persist.w_data)
+        with m.If(self._persist.f.persist.w_stb):
+            m.d.sync += self.persist.holdoff.eq(self._persist.f.persist.w_data)
 
-        with m.If(self._decay.w_stb):
-            m.d.sync += self.persist.decay.eq(self._decay.w_data)
+        with m.If(self._decay.f.decay.w_stb):
+            m.d.sync += self.persist.decay.eq(self._decay.f.decay.w_data)
 
-        # palette update logic (TODO put this in subclass?)
-
+        # palette update logic
         palette_busy = Signal()
-        m.d.comb += self._palette_busy.r_data.eq(palette_busy)
-        with m.If(self._palette.w_stb & ~palette_busy):
+        m.d.comb += self._palette_busy.f.busy.r_data.eq(palette_busy)
+
+        with m.If(self._palette.f.palette.w_stb & ~palette_busy):
             m.d.sync += [
                 palette_busy.eq(1),
-                self.video.palette_rgb.payload.p  .eq(self._palette.w_data[24:32]),
-                self.video.palette_rgb.payload.rgb.eq(self._palette.w_data[ 0:24]),
+                self.video.palette_rgb.payload.p.eq(self._palette.f.palette.w_data[24:32]),
+                self.video.palette_rgb.payload.rgb.eq(self._palette.f.palette.w_data[0:24]),
                 self.video.palette_rgb.valid.eq(1),
             ]
 
@@ -101,10 +100,11 @@ class VideoPeripheral(Peripheral, Elaboratable):
 
         return m
 
-
-class TiliquaSoc(Elaboratable):
+class TiliquaSoc(Component):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
                  audio_out_peripheral=True, touch=False):
+
+        super().__init__({})
 
         self.touch = touch
         self.audio_192 = audio_192
@@ -112,96 +112,187 @@ class TiliquaSoc(Elaboratable):
         # FIXME move somewhere more obvious
         self.video_rotate_90 = True if os.getenv("TILIQUA_VIDEO_ROTATE") == "1" else False
 
-        self.uart_pins = Record([
-            ('rx', [('i', 1)]),
-            ('tx', [('o', 1)])
-        ])
-
-        self.i2c_pins = Record([
-            ('sda', [('i', 1), ('o', 1), ('oe', 1)]),
-            ('scl', [('i', 1), ('o', 1), ('oe', 1)]),
-        ])
-
-        self.encoder_pins = Record([
-            ('i', [('i', 1)]),
-            ('q', [('i', 1)]),
-            ('s', [('i', 1)])
-        ])
-
         self.clock_sync_hz = TILIQUA_CLOCK_SYNC_HZ
-        self.soc = LunaSoC(
-            cpu=VexRiscv(reset_addr=0x40000000, variant="cynthion"),
-            clock_frequency=self.clock_sync_hz,
+
+        self.mainram_base         = 0x00000000
+        self.mainram_size         = 0x00010000  # 65536 bytes
+        self.psram_base           = 0x20000000
+        self.psram_size           = 16*1024*1024
+        self.csr_base             = 0xf0000000
+        # (gap) leds/gpio0
+        self.uart0_base           = 0x00000200
+        self.timer0_base          = 0x00000300
+        self.timer0_irq           = 0
+        self.timer1_base          = 0x00000400
+        self.timer1_irq           = 1
+        self.i2c0_base            = 0x00000500
+        self.encoder0_base        = 0x00000600
+        self.pmod0_periph_base    = 0x00000700
+        self.dtr0_base            = 0x00000800
+        self.video_periph_base    = 0x00000900
+
+        # cpu
+        self.cpu = VexRiscv(
+            variant="cynthion",
+            reset_addr=self.mainram_base
         )
 
-        self.firmware_path = firmware_path
-        firmware = get_mem_data(firmware_path,
-                                data_width=32, endianness="little")
+        # interrupt controller
+        self.interrupt_controller = InterruptController(width=len(self.cpu.irq_external))
 
-        self.soc.add_core_peripherals(
-            uart_pins=self.uart_pins,
-            internal_sram_size=32768*2,
-            internal_sram_init=firmware
+        # bus
+        self.wb_arbiter  = wishbone.Arbiter(
+            addr_width=30,
+            data_width=32,
+            granularity=8,
+            features={"cti", "bte", "err"}
+        )
+        self.wb_decoder  = wishbone.Decoder(
+            addr_width=30,
+            data_width=32,
+            granularity=8,
+            features={"cti", "bte", "err"}
         )
 
-        # ... add memory-mapped psram/hyperram peripheral (128Mbit)
-        self.psram_base = 0x20000000
-        self.psram_size_bytes = 16*1024*1024
-        self.soc.psram = PSRAMPeripheral(size=self.psram_size_bytes)
-        self.soc.add_peripheral(self.soc.psram, addr=self.psram_base)
+        # mainram
+        self.mainram = sram.Peripheral(size=self.mainram_size)
+        self.wb_decoder.add(self.mainram.bus, addr=self.mainram_base, name="mainram")
 
-        # ... add our video PHY (DMAs from PSRAM starting at fb_base)
+        # csr decoder
+        self.csr_decoder = csr.Decoder(addr_width=28, data_width=8)
+
+        # uart0
+        uart_baud_rate = 115200
+        divisor = int(self.clock_sync_hz // uart_baud_rate)
+        self.uart0 = uart.Peripheral(divisor=divisor)
+        self.csr_decoder.add(self.uart0.bus, addr=self.uart0_base, name="uart0")
+
+        # timer0
+        self.timer0 = timer.Peripheral(width=32)
+        self.csr_decoder.add(self.timer0.bus, addr=self.timer0_base, name="timer0")
+        self.interrupt_controller.add(self.timer0, number=self.timer0_irq, name="timer0")
+
+        # timer1
+        self.timer1 = timer.Peripheral(width=32)
+        self.csr_decoder.add(self.timer1.bus, addr=self.timer1_base, name="timer1")
+        self.interrupt_controller.add(self.timer1, name="timer1", number=self.timer1_irq)
+
+        # psram peripheral
+        self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size)
+        self.wb_decoder.add(self.psram_periph.bus, addr=self.psram_base, name="psram")
+
+        # video PHY (DMAs from PSRAM starting at fb_base)
         fb_base = self.psram_base
         fb_size = (dvi_timings.h_active, dvi_timings.v_active)
-        self.video = FramebufferPHY(
+        self.video = video.FramebufferPHY(
                 fb_base=fb_base, dvi_timings=dvi_timings, fb_size=fb_size,
-                bus_master=self.soc.psram.bus, sim=False)
-        self.soc.psram.add_master(self.video.bus)
+                bus_master=self.psram_periph.bus, sim=False)
+        self.psram_periph.add_master(self.video.bus)
 
-        self.i2c0 = I2CPeripheral(pads=self.i2c_pins, period_cyc=240)
-        self.soc.add_peripheral(self.i2c0, addr=0xf0002000)
+        # mobo i2c
+        self.i2c0 = i2c.Peripheral(period_cyc=240)
+        self.csr_decoder.add(self.i2c0.bus, addr=self.i2c0_base, name="i2c0")
 
-        self.encoder0 = EncoderPeripheral(pins=self.encoder_pins)
-        self.soc.add_peripheral(self.encoder0, addr=0xf0003000)
+        # encoder
+        self.encoder0 = encoder.Peripheral()
+        self.csr_decoder.add(self.encoder0.bus, addr=self.encoder0_base, name="encoder0")
 
-        self.pmod0_periph = eurorack_pmod.EurorackPmodPeripheral(
+        # pmod periph
+        self.pmod0_periph = eurorack_pmod_peripheral.Peripheral(
                 pmod=None, enable_out=audio_out_peripheral)
-        self.soc.add_peripheral(self.pmod0_periph, addr=0xf0004000)
+        self.csr_decoder.add(self.pmod0_periph.bus, addr=self.pmod0_periph_base, name="pmod0_periph")
 
-        self.temperature_periph = DieTemperaturePeripheral()
-        self.soc.add_peripheral(self.temperature_periph, addr=0xf0005000)
+        # die temperature
+        self.dtr0 = dtr.Peripheral()
+        self.csr_decoder.add(self.dtr0.bus, addr=self.dtr0_base, name="dtr0")
 
-        # ... add our video persistance effect (all writes gradually fade) -
+        # video persistance effect (all writes gradually fade) -
         # this is an interesting alternative to double-buffering that looks
         # kind of like an old CRT with slow-scanning.
         self.video_periph = VideoPeripheral(
             fb_base=self.video.fb_base,
             fb_size=fb_size,
-            bus=self.soc.psram,
+            bus_dma=self.psram_periph,
             video=self.video)
-        self.soc.add_peripheral(self.video_periph, addr=0xf0006000)
+        self.csr_decoder.add(self.video_periph.bus, addr=self.video_periph_base, name="video_periph")
 
         self.permit_bus_traffic = Signal()
 
-        super().__init__()
+        # wishbone csr bridge
+        self.wb_to_csr = WishboneCSRBridge(self.csr_decoder.bus, data_width=32)
+        self.wb_decoder.add(self.wb_to_csr.wb_bus, addr=self.csr_base, sparse=False, name="wb_to_csr")
 
     def elaborate(self, platform):
 
-        assert os.path.exists(self.firmware_path)
+        # FIXME assert os.path.exists(self.firmware_path)
 
         m = Module()
 
+        # bus
+        m.submodules += [self.wb_arbiter, self.wb_decoder]
+        wiring.connect(m, self.wb_arbiter.bus, self.wb_decoder.bus)
+
+        # cpu
+        m.submodules += self.cpu
+        self.wb_arbiter.add(self.cpu.ibus)
+        self.wb_arbiter.add(self.cpu.dbus)
+
+        # interrupt controller
+        m.submodules += self.interrupt_controller
+        # TODO wiring.connect(m, self.cpu.irq_external, self.irqs.pending)
+        m.d.comb += self.cpu.irq_external.eq(self.interrupt_controller.pending)
+
+        # mainram
+        m.submodules += self.mainram
+
+        # csr decoder
+        m.submodules += self.csr_decoder
+
+        # uart0
+        uart0_provider = uart.Provider(0)
+        m.submodules += [uart0_provider, self.uart0]
+        wiring.connect(m, self.uart0.pins, uart0_provider.pins)
+
+        """
+        # timer0
+        m.submodules += self.timer0
+
+        # timer1
+        m.submodules += self.timer1
+        """
+
+        # psram
+        m.submodules += self.psram_periph
+
+        # video PHY
+        m.submodules += self.video
+
+        # i2c0
+        i2c0_provider = i2c.Provider()
+        m.submodules += [i2c0_provider, self.i2c0]
+        wiring.connect(m, self.i2c0.pins, i2c0_provider.pins)
+
+        # encoder0
+        encoder0_provider = encoder.Provider()
+        m.submodules += [encoder0_provider, self.encoder0]
+        wiring.connect(m, self.encoder0.pins, encoder0_provider.pins)
+
+        # pmod0
         # add a eurorack pmod instance without an audio stream for basic self-testing
+        # connect it to our test peripheral before instantiating SoC.
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
                 touch_enabled=self.touch,
                 audio_192=self.audio_192)
-        # connect it to our test peripheral before instantiating SoC.
         self.pmod0_periph.pmod = pmod0
+        m.submodules += self.pmod0_periph
 
-        m.submodules.video = self.video
-        m.submodules.soc = self.soc
+        # die temperature
+        m.submodules += self.dtr0
+
+        # video periph / persist
+        m.submodules += self.video_periph
 
         # Memory controller hangs if we start making requests to it straight away.
         on_delay = Signal(32)
@@ -216,34 +307,6 @@ class TiliquaSoc(Elaboratable):
         m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
                                                            pixclk_pll=self.dvi_timings.pll)
 
-        # Connect up our UART
-        uart_io = platform.request("uart", 0)
-        m.d.comb += [
-            uart_io.tx.o.eq(self.uart_pins.tx),
-            self.uart_pins.rx.eq(uart_io.rx)
-        ]
-        if hasattr(uart_io.tx, 'oe'):
-            m.d.comb += uart_io.tx.oe.eq(~self.soc.uart._phy.tx.rdy),
-
-        # Connect up the rotary encoder + switch
-        enc = platform.request("encoder", 0)
-        m.d.comb += [
-            self.encoder_pins.i.i.eq(enc.i.i),
-            self.encoder_pins.q.i.eq(enc.q.i),
-            self.encoder_pins.s.i.eq(enc.s.i),
-        ]
-
-        # Connect i2c peripheral to mobo i2c
-        mobo_i2c = platform.request("mobo_i2c")
-        m.d.comb += [
-            mobo_i2c.sda.o.eq(self.i2c_pins.sda.o),
-            mobo_i2c.sda.oe.eq(self.i2c_pins.sda.oe),
-            self.i2c_pins.sda.i.eq(mobo_i2c.sda.i),
-            mobo_i2c.scl.o.eq(self.i2c_pins.scl.o),
-            mobo_i2c.scl.oe.eq(self.i2c_pins.scl.oe),
-            self.i2c_pins.scl.i.eq(mobo_i2c.scl.i),
-        ]
-
         # Enable LED driver on motherboard
         m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
 
@@ -253,7 +316,7 @@ class TiliquaSoc(Elaboratable):
         with open("src/rs/lib/src/generated_constants.rs", "w") as f:
             f.write(f"pub const CLOCK_SYNC_HZ: u32    = {self.clock_sync_hz};\n")
             f.write(f"pub const PSRAM_BASE: usize     = 0x{self.psram_base:x};\n")
-            f.write(f"pub const PSRAM_SZ_BYTES: usize = 0x{self.psram_size_bytes:x};\n")
+            f.write(f"pub const PSRAM_SZ_BYTES: usize = 0x{self.psram_size:x};\n")
             f.write(f"pub const PSRAM_SZ_WORDS: usize = PSRAM_SZ_BYTES / 4;\n")
             f.write(f"pub const H_ACTIVE: u32         = {self.video.fb_hsize};\n")
             f.write(f"pub const V_ACTIVE: u32         = {self.video.fb_vsize};\n")

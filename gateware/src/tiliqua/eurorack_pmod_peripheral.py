@@ -1,123 +1,102 @@
+# Peripheral for accessing eurorack-pmod hardware from an SoC.
+#
+# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
+#
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+#
+
 import os
 
 from amaranth                   import *
 from amaranth.build             import *
 from amaranth.lib               import wiring, data, stream
-from amaranth.lib.wiring        import In, Out
+from amaranth.lib.wiring        import In, Out, flipped, connect
 from amaranth.lib.fifo          import AsyncFIFO
 from amaranth.lib.cdc           import FFSynchronizer
-from luna_soc.gateware.csr.base import Peripheral
+
+from amaranth_soc               import csr
 
 from amaranth_future            import fixed
 
-from example_usb_audio.util import EdgeToPulse
+from example_usb_audio.util     import EdgeToPulse
 
-class EurorackPmodPeripheral(Peripheral, Elaboratable):
+class Peripheral(wiring.Component):
 
-    """
-    Extremely basic SoC peripheral for eurorack-pmod self-testing.
-    TODO: extend this to allow glitch-free audio streaming with a FIFO interface.
-    """
+    class SampleReg(csr.Register, access="r"):
+        sample: csr.Field(csr.action.R, unsigned(16))
+
+    class TouchReg(csr.Register, access="r"):
+        touch: csr.Field(csr.action.R, unsigned(8))
+
+    class LEDReg(csr.Register, access="w"):
+        led: csr.Field(csr.action.W, unsigned(8))
+
+    class JackReg(csr.Register, access="r"):
+        jack: csr.Field(csr.action.R, unsigned(8))
+
+    class EEPROMReg(csr.Register, access="r"):
+        mfg: csr.Field(csr.action.R, unsigned(8))
+        dev: csr.Field(csr.action.R, unsigned(8))
+        serial: csr.Field(csr.action.R, unsigned(32))
 
     def __init__(self, *, pmod, enable_out=False, **kwargs):
-
-        super().__init__()
-
         self.pmod = pmod
         self.enable_out = enable_out
 
-        # CSRs
-        bank                   = self.csr_bank()
+        regs = csr.Builder(addr_width=6, data_width=8)
 
-        # CODEC samples
-        # TODO: synchronize to audio clock domain.
-        # TODO: setattr breaks amaranth's name tracer for CSRs?
+        # ADC and input samples
+        self._sample_adc = [regs.add(f"sample_adc{i}", self.SampleReg()) for i in range(4)]
+        self._sample_i = [regs.add(f"sample_i{i}", self.SampleReg()) for i in range(4)]
 
-        # raw ADC samples
-        self._sample_adc0 = bank.csr(16, "r")
-        self._sample_adc1 = bank.csr(16, "r")
-        self._sample_adc2 = bank.csr(16, "r")
-        self._sample_adc3 = bank.csr(16, "r")
-
-        # calibrated incoming samples
-        self._sample_i0   = bank.csr(16, "r")
-        self._sample_i1   = bank.csr(16, "r")
-        self._sample_i2   = bank.csr(16, "r")
-        self._sample_i3   = bank.csr(16, "r")
-
-        # calibrated outgoing samples
+        # Output samples
         if self.enable_out:
-            self._sample_o0   = bank.csr(16, "w")
-            self._sample_o1   = bank.csr(16, "w")
-            self._sample_o2   = bank.csr(16, "w")
-            self._sample_o3   = bank.csr(16, "w")
+            self._sample_o = [regs.add(f"sample_o{i}", self.LEDReg()) for i in range(4)]
 
-        # continuous touch sensing
-        self._touch0      = bank.csr(8, "r")
-        self._touch1      = bank.csr(8, "r")
-        self._touch2      = bank.csr(8, "r")
-        self._touch3      = bank.csr(8, "r")
-        self._touch4      = bank.csr(8, "r")
-        self._touch5      = bank.csr(8, "r")
-        self._touch6      = bank.csr(8, "r")
-        self._touch7      = bank.csr(8, "r")
+        # Touch sensing
+        self._touch = [regs.add(f"touch{i}", self.TouchReg()) for i in range(8)]
 
-        # manual LED outputs
-        self._led_mode  = bank.csr(8, "w")
-        self._led0      = bank.csr(8, "w")
-        self._led1      = bank.csr(8, "w")
-        self._led2      = bank.csr(8, "w")
-        self._led3      = bank.csr(8, "w")
-        self._led4      = bank.csr(8, "w")
-        self._led5      = bank.csr(8, "w")
-        self._led6      = bank.csr(8, "w")
-        self._led7      = bank.csr(8, "w")
+        # LED control
+        self._led_mode = regs.add("led_mode", self.LEDReg())
+        self._led = [regs.add(f"led{i}", self.LEDReg()) for i in range(8)]
 
-        # Data from I2C peripherals on eurorack-pmod hardware.
-        self._jack             = bank.csr(8, "r")
-        self._eeprom_mfg       = bank.csr(8, "r")
-        self._eeprom_dev       = bank.csr(8, "r")
-        self._eeprom_serial    = bank.csr(32, "r")
+        # I2C peripheral data
+        self._jack = regs.add("jack", self.JackReg())
+        self._eeprom = regs.add("eeprom", self.EEPROMReg())
 
-        # Peripheral bus
-        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
-        self.bus        = self._bridge.bus
+        self._bridge = csr.Bridge(regs.as_memory_map())
+
+        super().__init__({
+            "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+        })
+        self.bus.memory_map = self._bridge.bus.memory_map
 
     def elaborate(self, platform):
         m = Module()
+        m.submodules.bridge = self._bridge
 
-        m.submodules.bridge  = self._bridge
+        connect(m, flipped(self.bus), self._bridge.bus)
 
-        # Hook all pmod signals up to CSRs
-
-        for n in range(4):
-            m.submodules += FFSynchronizer(
-                    self.pmod.sample_adc[n], getattr(self, f"_sample_adc{n}").r_data, reset=0)
-            m.submodules += FFSynchronizer(
-                    self.pmod.sample_i[n], getattr(self, f"_sample_i{n}").r_data, reset=0)
+        for i in range(4):
+            m.submodules += FFSynchronizer(self.pmod.sample_adc[i], self._sample_adc[i].f.sample.r_data, reset=0)
+            m.submodules += FFSynchronizer(self.pmod.sample_i[i], self._sample_i[i].f.sample.r_data, reset=0)
             if self.enable_out:
-                with m.If(getattr(self, f"_sample_o{n}").w_stb):
-                    # TODO proper sync
-                    m.d.sync += self.pmod.sample_o[n].eq(getattr(self, f"_sample_o{n}").w_data)
+                with m.If(self._sample_o[i].f.led.w_stb):
+                    m.d.sync += self.pmod.sample_o[i].eq(self._sample_o[i].f.led.w_data)
 
-        for n in range(8):
-            m.submodules += FFSynchronizer(
-                    self.pmod.touch[n], getattr(self, f"_touch{n}").r_data, reset=0)
+        for i in range(8):
+            m.submodules += FFSynchronizer(self.pmod.touch[i], self._touch[i].f.touch.r_data, reset=0)
 
-        # LED control
-        with m.If(self._led_mode.w_stb):
-            m.d.sync += self.pmod.led_mode.eq(self._led_mode.w_data)
-        for n in range(8):
-            with m.If(getattr(self, f"_led{n}").w_stb):
-                m.d.sync += self.pmod.led[n].eq(getattr(self, f"_led{n}").w_data)
+        with m.If(self._led_mode.f.led.w_stb):
+            m.d.sync += self.pmod.led_mode.eq(self._led_mode.f.led.w_data)
 
-        m.submodules += FFSynchronizer(
-                self.pmod.jack, self._jack.r_data, reset=0)
-        m.submodules += FFSynchronizer(
-                self.pmod.eeprom_mfg, self._eeprom_mfg.r_data, reset=0)
-        m.submodules += FFSynchronizer(
-                self.pmod.eeprom_dev, self._eeprom_dev.r_data, reset=0)
-        m.submodules += FFSynchronizer(
-                self.pmod.eeprom_serial, self._eeprom_serial.r_data, reset=0)
+        for i in range(8):
+            with m.If(self._led[i].f.led.w_stb):
+                m.d.sync += self.pmod.led[i].eq(self._led[i].f.led.w_data)
+
+        m.submodules += FFSynchronizer(self.pmod.jack, self._jack.f.jack.r_data, reset=0)
+        m.submodules += FFSynchronizer(self.pmod.eeprom_mfg, self._eeprom.f.mfg.r_data, reset=0)
+        m.submodules += FFSynchronizer(self.pmod.eeprom_dev, self._eeprom.f.dev.r_data, reset=0)
+        m.submodules += FFSynchronizer(self.pmod.eeprom_serial, self._eeprom.f.serial.r_data, reset=0)
 
         return m
