@@ -126,9 +126,7 @@ class TiliquaSoc(Component):
 
         self.clock_sync_hz = TILIQUA_CLOCK_SYNC_HZ
 
-        self.bootrom_base         = 0x00000000
-        self.bootrom_size         = 0x00000020
-        self.mainram_base         = 0x40000000
+        self.mainram_base         = 0x00000000
         self.mainram_size         = 0x00010000  # 65536 bytes
         self.psram_base           = 0x20000000
         self.psram_size           = 16*1024*1024
@@ -168,10 +166,6 @@ class TiliquaSoc(Component):
             alignment=0,
             features={"cti", "bte", "err"}
         )
-
-        # bootrom (TODO: remove this)
-        self.bootrom = sram.Peripheral(size=self.bootrom_size)
-        self.wb_decoder.add(self.bootrom.bus, addr=self.bootrom_base, name="bootrom")
 
         # mainram
         self.mainram = sram.Peripheral(size=self.mainram_size)
@@ -262,9 +256,6 @@ class TiliquaSoc(Component):
         m.submodules += self.interrupt_controller
         # TODO wiring.connect(m, self.cpu.irq_external, self.irqs.pending)
         m.d.comb += self.cpu.irq_external.eq(self.interrupt_controller.pending)
-
-        # bootrom
-        m.submodules += self.bootrom
 
         # mainram
         m.submodules += self.mainram
