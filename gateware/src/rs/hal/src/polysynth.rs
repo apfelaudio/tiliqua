@@ -19,27 +19,27 @@ macro_rules! impl_polysynth {
 
                 pub fn voice_notes(&self) -> [u8; 8] {
                     [
-                        self.registers.voice0_note().read().bits() as u8,
-                        self.registers.voice1_note().read().bits() as u8,
-                        self.registers.voice2_note().read().bits() as u8,
-                        self.registers.voice3_note().read().bits() as u8,
-                        self.registers.voice4_note().read().bits() as u8,
-                        self.registers.voice5_note().read().bits() as u8,
-                        self.registers.voice6_note().read().bits() as u8,
-                        self.registers.voice7_note().read().bits() as u8,
+                        self.registers.voice_note0().read().bits() as u8,
+                        self.registers.voice_note1().read().bits() as u8,
+                        self.registers.voice_note2().read().bits() as u8,
+                        self.registers.voice_note3().read().bits() as u8,
+                        self.registers.voice_note4().read().bits() as u8,
+                        self.registers.voice_note5().read().bits() as u8,
+                        self.registers.voice_note6().read().bits() as u8,
+                        self.registers.voice_note7().read().bits() as u8,
                     ]
                 }
 
                 pub fn voice_cutoffs(&self) -> [u8; 8] {
                     [
-                        self.registers.voice0_cutoff().read().bits() as u8,
-                        self.registers.voice1_cutoff().read().bits() as u8,
-                        self.registers.voice2_cutoff().read().bits() as u8,
-                        self.registers.voice3_cutoff().read().bits() as u8,
-                        self.registers.voice4_cutoff().read().bits() as u8,
-                        self.registers.voice5_cutoff().read().bits() as u8,
-                        self.registers.voice6_cutoff().read().bits() as u8,
-                        self.registers.voice7_cutoff().read().bits() as u8,
+                        self.registers.voice_cutoff0().read().bits() as u8,
+                        self.registers.voice_cutoff1().read().bits() as u8,
+                        self.registers.voice_cutoff2().read().bits() as u8,
+                        self.registers.voice_cutoff3().read().bits() as u8,
+                        self.registers.voice_cutoff4().read().bits() as u8,
+                        self.registers.voice_cutoff5().read().bits() as u8,
+                        self.registers.voice_cutoff6().read().bits() as u8,
+                        self.registers.voice_cutoff7().read().bits() as u8,
                     ]
                 }
 
@@ -52,16 +52,16 @@ macro_rules! impl_polysynth {
                 }
 
                 pub fn set_drive(&mut self, value: u16)  {
-                    self.registers.drive().write(|w| unsafe { w.drive().bits(value) } );
+                    self.registers.drive().write(|w| unsafe { w.value().bits(value) } );
                 }
 
                 pub fn set_reso(&mut self, value: u16)  {
-                    self.registers.reso().write(|w| unsafe { w.reso().bits(value) } );
+                    self.registers.reso().write(|w| unsafe { w.value().bits(value) } );
                 }
 
                 pub fn set_touch_control(&mut self, value: bool)  {
                     self.registers.touch_control().write(
-                        |w| unsafe { w.touch_control().bit(value) } );
+                        |w| unsafe { w.value().bit(value) } );
                 }
             }
         )+

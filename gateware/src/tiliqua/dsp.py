@@ -1030,7 +1030,7 @@ class Boxcar(wiring.Component):
             width=ASQ.as_shape().width, depth=self.n)
 
         # route input -> fifo
-        wiring.connect(m, wiring.flipped(self.i), wiring.flipped(stream.fifo_w_stream(fifo)))
+        wiring.connect(m, wiring.flipped(self.i), fifo.w_stream)
 
         # accumulator maintenance
         m.d.sync += fifo_r_en_l.eq(fifo.r_en)

@@ -9,22 +9,23 @@ import math
 
 from amaranth                                    import *
 from amaranth.hdl.rec                            import Record
-from amaranth.lib                                import wiring, data
-from amaranth.lib.wiring                         import In, Out
+from amaranth.lib                                import wiring, data, stream
+from amaranth.lib.wiring                         import In, Out, connect, flipped
 
-from amaranth_future                             import stream, fixed
+from amaranth_soc                                import csr
 
-from luna_soc.util.readbin                       import get_mem_data
-from luna_soc                                    import top_level_cli
-from luna_soc.gateware.csr.base                  import Peripheral
+from amaranth_future                             import fixed
 
 from tiliqua                                     import eurorack_pmod, dsp, midi
 from tiliqua.eurorack_pmod                       import ASQ
 from tiliqua.tiliqua_platform                    import TiliquaPlatform, set_environment_variables
-from tiliqua.tiliqua_soc                         import TiliquaSoc
+from tiliqua.tiliqua_soc                         import TiliquaSoc, top_level_cli
 
 from xbeam.top                                   import VectorTracePeripheral
 
+# TODO: reconcile this with Diffuser in tiliqua.dsp
+# it's almost the same, just some coefficients tweaked so it doesn't
+# saturate quite as easily.
 class Diffuser(wiring.Component):
 
     """
@@ -136,6 +137,7 @@ class PolySynth(wiring.Component):
             freq = 440 * 2**((i-69)/12.0)
             freq_inc = freq * (1.0 / sample_rate_hz)
             lut.append(fixed.Const(freq_inc, shape=ASQ)._value)
+        # TODO: port to lib.memory (for amaranth ~= 0.5)
         mems = [Memory(width=ASQ.as_shape().width, depth=len(lut), init=lut)
                 for _ in range(n_voices)]
         rports = [mems[n].read_port(transparent=True) for n in range(n_voices)]
@@ -303,91 +305,85 @@ class PolySynth(wiring.Component):
 
         return m
 
-class SynthPeripheral(Peripheral, Elaboratable):
+class SynthPeripheral(wiring.Component):
 
     """
     Bridges SoC memory space such that we can peek and poke
     registers of the polysynth engine from our SoC.
     """
 
+    class Drive(csr.Register, access="w"):
+        value: csr.Field(csr.action.W, unsigned(16))
+
+    class Reso(csr.Register, access="w"):
+        value: csr.Field(csr.action.W, unsigned(16))
+
+    class VoiceNote(csr.Register, access="r"):
+        note: csr.Field(csr.action.R, unsigned(8))
+
+    class VoiceCutoff(csr.Register, access="r"):
+        cutoff: csr.Field(csr.action.R, unsigned(8))
+
+    # Matrix coefficient write: 0xXYVVVVVV
+    # X = (outs, column), Y =(ins, row), V = coefficient value (24-bit fixed-point 2.16)
+    # Coefficient is written ASAP, matrix_busy will be set to 1 until it is complete.
+    # TODO: split into explicit fields
+    class Matrix(csr.Register, access="w"):
+        matrix: csr.Field(csr.action.W, unsigned(32))
+
+    class MatrixBusy(csr.Register, access="r"):
+        busy: csr.Field(csr.action.R, unsigned(1))
+
+    class TouchControl(csr.Register, access="w"):
+        value: csr.Field(csr.action.W, unsigned(1))
+
     def __init__(self, synth=None):
-
-        super().__init__()
-
         self.synth = synth
-
-        # CSRs
-        bank                   = self.csr_bank()
-        self._drive            = bank.csr(16, "w")
-        self._reso             = bank.csr(16, "w")
-
-        self._voice0_note      = bank.csr(8, "r")
-        self._voice1_note      = bank.csr(8, "r")
-        self._voice2_note      = bank.csr(8, "r")
-        self._voice3_note      = bank.csr(8, "r")
-        self._voice4_note      = bank.csr(8, "r")
-        self._voice5_note      = bank.csr(8, "r")
-        self._voice6_note      = bank.csr(8, "r")
-        self._voice7_note      = bank.csr(8, "r")
-
-        self._voice0_cutoff    = bank.csr(8, "r")
-        self._voice1_cutoff    = bank.csr(8, "r")
-        self._voice2_cutoff    = bank.csr(8, "r")
-        self._voice3_cutoff    = bank.csr(8, "r")
-        self._voice4_cutoff    = bank.csr(8, "r")
-        self._voice5_cutoff    = bank.csr(8, "r")
-        self._voice6_cutoff    = bank.csr(8, "r")
-        self._voice7_cutoff    = bank.csr(8, "r")
-
-        # Matrix coefficient write: 0xXYVVVVVV
-        # X = (outs, column), Y =(ins, row), V = coefficient value (24-bit fixed-point 2.16)
-        # Coefficient is written ASAP, matrix_busy will be set to 1 until it is complete.
-        self._matrix           = bank.csr(32, "w")
-        self._matrix_busy      = bank.csr(1,  "r")
-
-        self._touch_control    = bank.csr(1,  "w")
-
-        # Peripheral bus
-        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
-        self.bus        = self._bridge.bus
+        regs = csr.Builder(addr_width=5, data_width=8)
+        self._drive = regs.add("drive", self.Drive())
+        self._reso = regs.add("reso", self.Reso())
+        self._voice_notes = [regs.add(f"voice_note{i}", self.VoiceNote()) for i in range(8)]
+        self._voice_cutoffs = [regs.add(f"voice_cutoff{i}", self.VoiceCutoff()) for i in range(8)]
+        self._matrix = regs.add("matrix", self.Matrix())
+        self._matrix_busy = regs.add("matrix_busy", self.MatrixBusy())
+        self._touch_control = regs.add("touch_control", self.TouchControl())
+        self._bridge = csr.Bridge(regs.as_memory_map())
+        super().__init__({
+            "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+        })
+        self.bus.memory_map = self._bridge.bus.memory_map
 
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.bridge  = self._bridge
+        m.submodules.bridge = self._bridge
+        connect(m, flipped(self.bus), self._bridge.bus)
 
         # top-level tweakables
-
-        with m.If(self._drive.w_stb):
-            m.d.sync += self.synth.drive.eq(self._drive.w_data)
-
-        with m.If(self._reso.w_stb):
-            m.d.sync += self.synth.reso.eq(self._reso.w_data)
-
-        with m.If(self._touch_control.w_stb):
-            m.d.sync += self.synth.i_touch_control.eq(self._touch_control.w_data)
+        with m.If(self._drive.f.value.w_stb):
+            m.d.sync += self.synth.drive.eq(self._drive.f.value.w_data)
+        with m.If(self._reso.f.value.w_stb):
+            m.d.sync += self.synth.reso.eq(self._reso.f.value.w_data)
+        with m.If(self._touch_control.f.value.w_stb):
+            m.d.sync += self.synth.i_touch_control.eq(self._touch_control.f.value.w_data)
 
         # voice tracking
-
-        for n in range(8):
+        for i, (voice_note, voice_cutoff) in enumerate(zip(self._voice_notes, self._voice_cutoffs)):
             m.d.comb += [
-                getattr(self, f"_voice{n}_note").r_data  .eq(self.synth.voice_states[n].note),
-                getattr(self, f"_voice{n}_cutoff").r_data.eq(self.synth.voice_states[n].cutoff)
+                voice_note.f.note.r_data.eq(self.synth.voice_states[i].note),
+                voice_cutoff.f.cutoff.r_data.eq(self.synth.voice_states[i].cutoff)
             ]
 
-        # matrix coefficient update logic (TODO put this in subclass?)
-
+        # matrix coefficient update logic
         matrix_busy = Signal()
-        m.d.comb += self._matrix_busy.r_data.eq(matrix_busy)
-        with m.If(self._matrix.w_stb & ~matrix_busy):
+        m.d.comb += self._matrix_busy.f.busy.r_data.eq(matrix_busy)
+        with m.If(self._matrix.f.matrix.w_stb & ~matrix_busy):
             m.d.sync += [
                 matrix_busy.eq(1),
-                self.synth.diffuser.matrix.c.payload.o_x         .eq(self._matrix.w_data[28:32]),
-                self.synth.diffuser.matrix.c.payload.i_y         .eq(self._matrix.w_data[24:28]),
-                self.synth.diffuser.matrix.c.payload.v.as_value().eq(self._matrix.w_data[ 0:24]),
+                self.synth.diffuser.matrix.c.payload.o_x         .eq(self._matrix.f.matrix.w_data[28:32]),
+                self.synth.diffuser.matrix.c.payload.i_y         .eq(self._matrix.f.matrix.w_data[24:28]),
+                self.synth.diffuser.matrix.c.payload.v.as_value().eq(self._matrix.f.matrix.w_data[ 0:24]),
                 self.synth.diffuser.matrix.c.valid.eq(1),
             ]
-
         with m.If(matrix_busy & self.synth.diffuser.matrix.c.ready):
             # coefficient has been written
             m.d.sync += [
@@ -395,32 +391,43 @@ class SynthPeripheral(Peripheral, Elaboratable):
                 self.synth.diffuser.matrix.c.valid.eq(0),
             ]
 
-
         return m
-
 
 class PolySoc(TiliquaSoc):
     def __init__(self, *, firmware_path, dvi_timings):
-        super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
-                         audio_out_peripheral=False, touch=True)
 
-        # scope stroke bridge from audio stream
+        # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.
+        super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
+                         audio_out_peripheral=False, touch=True, finalize_csr_bridge=False)
+
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
+
+        # WARN: TiliquaSoc ends at 0x00000900
+        self.vector_periph_base = 0x00001000
+        self.synth_periph_base  = 0x00001100
+
         self.vector_periph = VectorTracePeripheral(
             fb_base=self.video.fb_base,
             fb_size=fb_size,
-            bus=self.soc.psram,
+            bus_dma=self.psram_periph,
             fs=48000,
             n_upsample=8)
-        self.soc.add_peripheral(self.vector_periph, addr=0xf0007000)
+        self.csr_decoder.add(self.vector_periph.bus, addr=self.vector_periph_base, name="vector_periph")
 
         # synth controls
         self.synth_periph = SynthPeripheral()
-        self.soc.add_peripheral(self.synth_periph, addr=0xf0008000)
+        self.csr_decoder.add(self.synth_periph.bus, addr=self.synth_periph_base, name="synth_periph")
+
+        # now we can freeze the memory map
+        self.finalize_csr_bridge()
 
     def elaborate(self, platform):
 
         m = Module()
+
+        m.submodules += self.vector_periph
+
+        m.submodules += self.synth_periph
 
         m.submodules.polysynth = polysynth = PolySynth()
         self.synth_periph.synth = polysynth
@@ -466,5 +473,4 @@ if __name__ == "__main__":
     this_directory = os.path.dirname(os.path.realpath(__file__))
     design = PolySoc(firmware_path=os.path.join(this_directory, "fw/firmware.bin"),
                      dvi_timings=dvi_timings)
-    design.genrust_constants()
     top_level_cli(design)

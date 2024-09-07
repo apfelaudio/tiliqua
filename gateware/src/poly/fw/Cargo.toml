@@ -10,8 +10,8 @@ tiliqua-pac = { path="../../rs/pac", default-features = false, features = ["crit
 
 log = "0.4.17"
 embedded-hal = "=1.0.0"
-riscv = { version = "=0.10.1", features = ["critical-section-single-hart"] }
-riscv-rt = { version = "=0.11.0" }
+riscv = { version = "=0.11.1", features = ["critical-section-single-hart"] }
+riscv-rt = { version = "=0.12.2", features = ["single-hart"] }
 panic-halt = "0.2.0"
 micromath = "2.1.0"
 embedded-graphics = "0.8.1"
