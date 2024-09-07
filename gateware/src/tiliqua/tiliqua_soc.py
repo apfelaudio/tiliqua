@@ -126,7 +126,9 @@ class TiliquaSoc(Component):
 
         self.clock_sync_hz = TILIQUA_CLOCK_SYNC_HZ
 
-        self.mainram_base         = 0x00000000
+        self.bootrom_base         = 0x00000000
+        self.bootrom_size         = 0x00000020
+        self.mainram_base         = 0x40000000
         self.mainram_size         = 0x00010000  # 65536 bytes
         self.psram_base           = 0x20000000
         self.psram_size           = 16*1024*1024
@@ -163,8 +165,13 @@ class TiliquaSoc(Component):
             addr_width=30,
             data_width=32,
             granularity=8,
+            alignment=0,
             features={"cti", "bte", "err"}
         )
+
+        # bootrom (TODO: remove this)
+        self.bootrom = sram.Peripheral(size=self.bootrom_size)
+        self.wb_decoder.add(self.bootrom.bus, addr=self.bootrom_base, name="bootrom")
 
         # mainram
         self.mainram = sram.Peripheral(size=self.mainram_size)
@@ -256,16 +263,20 @@ class TiliquaSoc(Component):
         # TODO wiring.connect(m, self.cpu.irq_external, self.irqs.pending)
         m.d.comb += self.cpu.irq_external.eq(self.interrupt_controller.pending)
 
+        # bootrom
+        m.submodules += self.bootrom
+
         # mainram
         m.submodules += self.mainram
 
         # csr decoder
         m.submodules += self.csr_decoder
 
+        # uart0
+        m.submodules += self.uart0
         if not isinstance(platform, SimPlatform):
-            # uart0
             uart0_provider = uart.Provider(0)
-            m.submodules += [uart0_provider, self.uart0]
+            m.submodules += uart0_provider
             wiring.connect(m, self.uart0.pins, uart0_provider.pins)
 
         # timer0
@@ -315,8 +326,13 @@ class TiliquaSoc(Component):
             # Enable LED driver on motherboard
             m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
 
+        # wishbone csr bridge
+        m.submodules += self.wb_to_csr
+
         # Memory controller hangs if we start making requests to it straight away.
         on_delay = Signal(32)
+        with m.If(on_delay < 0xFF):
+            m.d.comb += self.cpu.ext_reset.eq(1)
         with m.If(on_delay < 0xFFFF):
             m.d.sync += on_delay.eq(on_delay+1)
         with m.Else():
@@ -327,6 +343,7 @@ class TiliquaSoc(Component):
         return m
 
     def genrust_constants(self, dst):
+        # TODO: move these to SVD vendor section
         print("writing", dst)
         with open(dst, "w") as f:
             f.write(f"pub const CLOCK_SYNC_HZ: u32    = {self.clock_sync_hz};\n")
@@ -365,6 +382,7 @@ def sim(fragment):
                            "-Wno-WIDTHTRUNC",
                            "-Wno-TIMESCALEMOD",
                            "-Wno-PINMISSING",
+                           "-Wno-ASCRANGE",
                            "-cc",
                            "--trace-fst",
                            "--exe",

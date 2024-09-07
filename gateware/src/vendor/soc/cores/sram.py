@@ -67,7 +67,7 @@ class Peripheral(wiring.Component):
 
         super().__init__({
             "bus": In(wishbone.Signature(addr_width=exact_log2(size_words), data_width=data_width,
-                                         granularity=granularity)),
+                                         granularity=granularity, features={"cti", "bte"})),
         })
 
         memory_map = MemoryMap(addr_width=exact_log2(size), data_width=granularity)
@@ -89,18 +89,35 @@ class Peripheral(wiring.Component):
     def elaborate(self, platform):
         m = Module()
         m.submodules.mem = self._mem
+        mem_rp = self._mem.read_port()
 
         incr = Signal.like(self.bus.adr)
 
-        mem_rp = self._mem.read_port()
+        with m.Switch(self.bus.bte):
+            with m.Case(wishbone.BurstTypeExt.LINEAR):
+                m.d.comb += incr.eq(self.bus.adr + 1)
+            with m.Case(wishbone.BurstTypeExt.WRAP_4):
+                m.d.comb += incr[:2].eq(self.bus.adr[:2] + 1)
+                m.d.comb += incr[2:].eq(self.bus.adr[2:])
+            with m.Case(wishbone.BurstTypeExt.WRAP_8):
+                m.d.comb += incr[:3].eq(self.bus.adr[:3] + 1)
+                m.d.comb += incr[3:].eq(self.bus.adr[3:])
+            with m.Case(wishbone.BurstTypeExt.WRAP_16):
+                m.d.comb += incr[:4].eq(self.bus.adr[:4] + 1)
+                m.d.comb += incr[4:].eq(self.bus.adr[4:])
+
         m.d.comb += self.bus.dat_r.eq(mem_rp.data)
+
+        # We'll ACK below
+        # with m.If(self.bus.ack):
+        #     m.d.sync += self.bus.ack.eq(0)
 
         with m.If(self.bus.cyc & self.bus.stb):
             m.d.sync += self.bus.ack.eq(1)
-            m.d.comb += mem_rp.addr.eq(self.bus.adr)
-
-        with m.If(self.bus.ack):
-            m.d.sync += self.bus.ack.eq(0)
+            with m.If((self.bus.cti == wishbone.CycleType.INCR_BURST) & self.bus.ack):
+                m.d.comb += mem_rp.addr.eq(incr)
+            with m.Else():
+                m.d.comb += mem_rp.addr.eq(self.bus.adr)
 
         if self.writable:
             mem_wp = self._mem.write_port(granularity=self.granularity)
@@ -108,5 +125,14 @@ class Peripheral(wiring.Component):
             m.d.comb += mem_wp.data.eq(self.bus.dat_w)
             with m.If(self.bus.cyc & self.bus.stb & self.bus.we):
                 m.d.comb += mem_wp.en.eq(self.bus.sel)
+
+        # From: lunasoc.gateware.soc.memory.WishboneRAM
+        # We can handle any transaction request in a single cycle, when our RAM handles
+        # the read or write. Accordingly, we'll ACK the cycle after any request.
+        m.d.sync += self.bus.ack.eq(
+            self.bus.cyc &
+            self.bus.stb &
+            ~self.bus.ack
+        )
 
         return m
