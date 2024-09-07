@@ -74,6 +74,7 @@ macro_rules! impl_i2c {
                     while self.registers.busy().read().busy().bit() { }
 
                     // TODO more error flags
+                    // Note: this error flag is cleared on the next transaction start().
                     if self.registers.err().read().error().bit() {
                         return Err($crate::hal::i2c::ErrorKind::Other);
                     }

@@ -90,8 +90,9 @@ class Peripheral(wiring.Component):
     rx_data : read-only
         Read FIFO. 8-bit entries, one per successful read transaction.
         This should only be read once 'busy' has deasserted.
-    err : read/write
-        Read FIFO. 8-bit entries, one per successful read transaction.
+    err : read
+        '1' if an error (e.g. NACK) has occurred.
+        this flag is reset on a new set of transactions ('start' is set).
 
     TODO
     ----
@@ -207,6 +208,7 @@ class Peripheral(wiring.Component):
                     m.next = 'START'
 
             with m.State('START'):
+                m.d.sync += err.eq(0)
                 with m.If(~i2c.busy):
                     m.d.comb += i2c.start.eq(1),
                     m.next = 'SEND_DEV_ADDRESS'
