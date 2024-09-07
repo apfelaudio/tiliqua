@@ -104,13 +104,6 @@ class VideoPeripheral(wiring.Component):
 
         return m
 
-class SimPlatform():
-    def __init__(self):
-        self.files = []
-        pass
-    def add_file(self, file_name, contents):
-        self.files.append(file_name)
-
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
                  audio_out_peripheral=True, touch=False, finalize_csr_bridge=True):
@@ -272,11 +265,9 @@ class TiliquaSoc(Component):
         m.submodules += self.csr_decoder
 
         # uart0
-        m.submodules += self.uart0
-        if not isinstance(platform, SimPlatform):
-            uart0_provider = uart.Provider(0)
-            m.submodules += uart0_provider
-            wiring.connect(m, self.uart0.pins, uart0_provider.pins)
+        uart0_provider = uart.Provider(0)
+        m.submodules += [self.uart0, uart0_provider]
+        wiring.connect(m, self.uart0.pins, uart0_provider.pins)
 
         # timer0
         m.submodules += self.timer0
@@ -284,46 +275,45 @@ class TiliquaSoc(Component):
         # timer1
         m.submodules += self.timer1
 
-        if not isinstance(platform, SimPlatform):
-            # psram
-            m.submodules += self.psram_periph
+        # psram
+        m.submodules += self.psram_periph
 
-            # video PHY
-            m.submodules += self.video
+        # video PHY
+        m.submodules += self.video
 
-            # i2c0
-            i2c0_provider = i2c.Provider()
-            m.submodules += [i2c0_provider, self.i2c0]
-            wiring.connect(m, self.i2c0.pins, i2c0_provider.pins)
+        # i2c0
+        i2c0_provider = i2c.Provider()
+        m.submodules += [i2c0_provider, self.i2c0]
+        wiring.connect(m, self.i2c0.pins, i2c0_provider.pins)
 
-            # encoder0
-            encoder0_provider = encoder.Provider()
-            m.submodules += [encoder0_provider, self.encoder0]
-            wiring.connect(m, self.encoder0.pins, encoder0_provider.pins)
+        # encoder0
+        encoder0_provider = encoder.Provider()
+        m.submodules += [encoder0_provider, self.encoder0]
+        wiring.connect(m, self.encoder0.pins, encoder0_provider.pins)
 
-            # pmod0
-            # add a eurorack pmod instance without an audio stream for basic self-testing
-            # connect it to our test peripheral before instantiating SoC.
-            m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                    pmod_pins=platform.request("audio_ffc"),
-                    hardware_r33=True,
-                    touch_enabled=self.touch,
-                    audio_192=self.audio_192)
-            self.pmod0_periph.pmod = pmod0
-            m.submodules += self.pmod0_periph
+        # pmod0
+        # add a eurorack pmod instance without an audio stream for basic self-testing
+        # connect it to our test peripheral before instantiating SoC.
+        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                pmod_pins=platform.request("audio_ffc"),
+                hardware_r33=True,
+                touch_enabled=self.touch,
+                audio_192=self.audio_192)
+        self.pmod0_periph.pmod = pmod0
+        m.submodules += self.pmod0_periph
 
-            # die temperature
-            m.submodules += self.dtr0
+        # die temperature
+        m.submodules += self.dtr0
 
-            # video periph / persist
-            m.submodules += self.video_periph
+        # video periph / persist
+        m.submodules += self.video_periph
 
-            # generate our domain clocks/resets
-            m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
-                                                               pixclk_pll=self.dvi_timings.pll)
+        # generate our domain clocks/resets
+        m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
+                                                           pixclk_pll=self.dvi_timings.pll)
 
-            # Enable LED driver on motherboard
-            m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
+        # Enable LED driver on motherboard
+        m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
 
         # wishbone csr bridge
         m.submodules += self.wb_to_csr
@@ -355,54 +345,6 @@ class TiliquaSoc(Component):
             f.write(f"pub const PSRAM_FB_BASE: usize  = 0x{self.video.fb_base:x};\n")
             f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
             f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
-
-def sim(fragment):
-    import subprocess
-    from amaranth.back import verilog
-
-    build_dst = "build"
-    dst = f"{build_dst}/tiliqua_soc.v"
-    print(f"write verilog implementation of 'tiliqua_soc' to '{dst}'...")
-
-    sim_platform = SimPlatform()
-
-    os.makedirs(build_dst, exist_ok=True)
-    with open(dst, "w") as f:
-        f.write(verilog.convert(fragment, platform=sim_platform, ports=[
-            ]))
-
-    verilator_dst = "build/obj_dir"
-    print(f"verilate '{dst}' into C++ binary...")
-    subprocess.check_call(["verilator",
-                           "-Wno-COMBDLY",
-                           "-Wno-CASEINCOMPLETE",
-                           "-Wno-CASEOVERLAP",
-                           "-Wno-WIDTHEXPAND",
-                           "-Wno-WIDTHTRUNC",
-                           "-Wno-TIMESCALEMOD",
-                           "-Wno-PINMISSING",
-                           "-Wno-ASCRANGE",
-                           "-cc",
-                           "--trace-fst",
-                           "--exe",
-                           "--Mdir", f"{verilator_dst}",
-                           "--build",
-                           "-j", "0",
-                           "-Ibuild",
-                           "-CFLAGS", f"-DSYNC_CLK_HZ={fragment.clock_sync_hz}",
-                           "../../src/selftest/sim.cpp",
-                           f"{dst}",
-                           ] + [
-                               f for f in sim_platform.files
-                               if f.endswith(".svh") or f.endswith(".sv") or f.endswith(".v")
-                           ],
-                          env=os.environ)
-
-    print(f"run verilated binary '{verilator_dst}/Vtiliqua_soc'...")
-    subprocess.check_call([f"{verilator_dst}/Vtiliqua_soc"],
-                          env=os.environ)
-
-    print(f"done.")
 
 memory_x = """MEMORY {{
     mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}
@@ -450,10 +392,6 @@ def top_level_cli(fragment, *pos_args, **kwargs):
             f.write(memory_x.format(mainram_base=hex(fragment.mainram_base),
                                     mainram_size=hex(fragment.mainram.size)))
 
-        sys.exit(0)
-
-    if args.sim:
-        sim(fragment)
         sys.exit(0)
 
     TiliquaPlatform().build(fragment)
