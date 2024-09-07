@@ -6,9 +6,9 @@
 
 from amaranth                    import *
 from amaranth.lib                import wiring, data
-from amaranth.lib.wiring         import In, Out
+from amaranth.lib.wiring         import Component, In, Out, flipped, connect
 from amaranth.lib.cdc            import FFSynchronizer
-from luna_soc.gateware.csr.base  import Peripheral
+from amaranth_soc                import csr
 
 class IQDecode(wiring.Component):
 
@@ -31,54 +31,85 @@ class IQDecode(wiring.Component):
                                           self.iq_history[0][1]).xor()),
         return m
 
-class EncoderPeripheral(Peripheral, Elaboratable):
+class PinSignature(wiring.Signature):
+    def __init__(self):
+        super().__init__({
+            "i":  In(unsigned(1)),
+            "q":  In(unsigned(1)),
+            "s":  In(unsigned(1)),
+        })
 
-    def __init__(self, *, pins, **kwargs):
-
-        super().__init__()
-
-        # Encoder logic
-        self.pins              = pins
-        self.iq_decode         = IQDecode()
-
-        # CSRs
-        bank                   = self.csr_bank()
-        self._step             = bank.csr(8, "r")
-        self._button           = bank.csr(1, "r")
-
-        # Peripheral bus
-        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
-        self.bus        = self._bridge.bus
+class Provider(Component):
+    def __init__(self):
+        super().__init__({
+            "pins": In(PinSignature())
+        })
 
     def elaborate(self, platform):
         m = Module()
+        enc = platform.request("encoder")
+        m.d.comb += [
+            self.pins.i.eq(enc.i.i),
+            self.pins.q.eq(enc.q.i),
+            self.pins.s.eq(enc.s.i),
+        ]
+        return m
 
-        m.submodules.bridge  = self._bridge
+class Peripheral(wiring.Component):
+
+    class StepReg(csr.Register, access="r"):
+        step: csr.Field(csr.action.R, signed(8))
+
+    class ButtonReg(csr.Register, access="r"):
+        button: csr.Field(csr.action.R, unsigned(1))
+
+    def __init__(self, **kwargs):
+        self.iq_decode = IQDecode()
+
+        regs = csr.Builder(addr_width=5, data_width=8)
+
+        self._step = regs.add("step", self.StepReg())
+        self._button = regs.add("button", self.ButtonReg())
+
+        self._bridge = csr.Bridge(regs.as_memory_map())
+
+        super().__init__({
+            "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+            "pins": Out(PinSignature()),
+        })
+        self.bus.memory_map = self._bridge.bus.memory_map
+
+    def elaborate(self, platform):
+        m = Module()
+        m.submodules.bridge = self._bridge
         m.submodules.iq_decode = self.iq_decode
 
-        read_occurred = Signal()
-        d_steps       = Signal(signed(8))
+        connect(m, flipped(self.bus), self._bridge.bus)
 
-        m.d.comb += self.iq_decode.iq.eq(Cat(self.pins.i.i, self.pins.q.i))
-        m.d.comb += self._step.r_data.eq(d_steps)
+        read_occurred = Signal()
+        d_steps = Signal(signed(8))
+
+        m.d.comb += self.iq_decode.iq.eq(Cat(self.pins.i, self.pins.q))
+        m.d.comb += self._step.f.step.r_data.eq(d_steps)
 
         button_sync = Signal()
-        m.submodules += FFSynchronizer(self.pins.s.i, button_sync, reset=0)
-        m.d.comb += self._button.r_data.eq(button_sync)
-
+        m.submodules += FFSynchronizer(self.pins.s, button_sync, reset=0)
+        m.d.comb += self._button.f.button.r_data.eq(button_sync)
 
         # HACK: encoder push override -- hold for 3sec will re-enter bootloader
         REBOOT_SEC = 3
         SYSCLK_HZ = 60000000
         button_counter = Signal(unsigned(32))
+
         with m.If(button_sync):
             m.d.sync += button_counter.eq(button_counter + 1)
         with m.Else():
             m.d.sync += button_counter.eq(0)
+
         with m.If(button_counter > REBOOT_SEC*SYSCLK_HZ):
             m.d.comb += platform.request("self_program").o.eq(1)
 
-        with m.If(self._step.r_stb):
+        with m.If(self._step.f.step.r_stb):
             m.d.sync += read_occurred.eq(1)
 
         with m.If(self.iq_decode.step):

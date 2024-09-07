@@ -42,11 +42,11 @@ fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
 
     // initialize logging
-    let serial = Serial0::new(peripherals.UART);
+    let serial = Serial0::new(peripherals.UART0);
     tiliqua_fw::handlers::logger_init(serial);
 
     let sysclk = pac::clock::sysclk();
-    let mut timer = Timer0::new(peripherals.TIMER, sysclk);
+    let mut timer = Timer0::new(peripherals.TIMER0, sysclk);
 
     info!("Hello from Tiliqua XBEAM!");
 
@@ -128,27 +128,27 @@ fn main() -> ! {
         scope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
         scope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
 
-        scope.trigger_lvl().write(|w| unsafe { w.trigger_lvl().bits(opts.scope.trigger_lvl.value as u16) } );
+        scope.trigger_lvl().write(|w| unsafe { w.trigger_level().bits(opts.scope.trigger_lvl.value as u16) } );
         scope.xscale().write(|w| unsafe { w.xscale().bits(opts.scope.xscale.value) } );
         scope.yscale().write(|w| unsafe { w.yscale().bits(opts.scope.yscale.value) } );
         scope.timebase().write(|w| unsafe { w.timebase().bits(opts.scope.timebase.value) } );
 
-        scope.ypos0().write(|w| unsafe { w.ypos0().bits(opts.scope.ypos0.value as u16) } );
-        scope.ypos1().write(|w| unsafe { w.ypos1().bits(opts.scope.ypos1.value as u16) } );
-        scope.ypos2().write(|w| unsafe { w.ypos2().bits(opts.scope.ypos2.value as u16) } );
-        scope.ypos3().write(|w| unsafe { w.ypos3().bits(opts.scope.ypos3.value as u16) } );
+        scope.ypos0().write(|w| unsafe { w.ypos().bits(opts.scope.ypos0.value as u16) } );
+        scope.ypos1().write(|w| unsafe { w.ypos().bits(opts.scope.ypos1.value as u16) } );
+        scope.ypos2().write(|w| unsafe { w.ypos().bits(opts.scope.ypos2.value as u16) } );
+        scope.ypos3().write(|w| unsafe { w.ypos().bits(opts.scope.ypos3.value as u16) } );
 
         scope.trigger_always().write(
             |w| w.trigger_always().bit(opts.scope.trigger_mode.value == opts::TriggerMode::Always) );
 
         if opts.screen.value == opts::Screen::Vector {
-            scope.en().write(|w| w.en().bit(false) );
-            vscope.en().write(|w| w.en().bit(true) );
+            scope.en().write(|w| w.enable().bit(false) );
+            vscope.en().write(|w| w.enable().bit(true) );
         }
 
         if opts.screen.value == opts::Screen::Scope {
-            scope.en().write(|w| w.en().bit(true) );
-            vscope.en().write(|w| w.en().bit(false) );
+            scope.en().write(|w| w.enable().bit(true) );
+            vscope.en().write(|w| w.enable().bit(false) );
         }
 
         for n in 0..16 {

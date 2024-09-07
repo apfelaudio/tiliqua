@@ -8,11 +8,39 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 from amaranth                    import *
+from amaranth.lib                import wiring
+from amaranth.lib.wiring         import Component, In, Out, flipped, connect
 from amaranth.lib.fifo           import SyncFIFO
+from amaranth_soc                import csr, gpio
 from luna.gateware.interface.i2c import I2CInitiator
-from luna_soc.gateware.csr.base  import Peripheral
 
-class I2CPeripheral(Peripheral, Elaboratable):
+class PinSignature(wiring.Signature):
+    def __init__(self):
+        super().__init__({
+            "sda":  Out(gpio.PinSignature()),
+            "scl":  Out(gpio.PinSignature()),
+        })
+
+class Provider(Component):
+    def __init__(self):
+        super().__init__({
+            "pins": In(PinSignature())
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+        i2c = platform.request("i2c")
+        m.d.comb += [
+            i2c.sda.o.eq(self.pins.sda.o),
+            i2c.sda.oe.eq(self.pins.sda.oe),
+            self.pins.sda.i.eq(i2c.sda.i),
+            i2c.scl.o.eq(self.pins.scl.o),
+            i2c.scl.oe.eq(self.pins.scl.oe),
+            self.pins.scl.i.eq(i2c.scl.i),
+        ]
+        return m
+
+class Peripheral(wiring.Component):
 
     """Transaction-based I2C peripheral.
 
@@ -62,8 +90,9 @@ class I2CPeripheral(Peripheral, Elaboratable):
     rx_data : read-only
         Read FIFO. 8-bit entries, one per successful read transaction.
         This should only be read once 'busy' has deasserted.
-    err : read/write
-        Read FIFO. 8-bit entries, one per successful read transaction.
+    err : read
+        '1' if an error (e.g. NACK) has occurred.
+        this flag is reset on a new set of transactions ('start' is set).
 
     TODO
     ----
@@ -74,84 +103,97 @@ class I2CPeripheral(Peripheral, Elaboratable):
       byte per the transaction() contract.
     """
 
-    def __init__(self, *, pads, period_cyc, clk_stretch=False,
+    class BusyReg(csr.Register, access="r"):
+        busy: csr.Field(csr.action.R, unsigned(1))
+
+    class StartReg(csr.Register, access="w"):
+        start: csr.Field(csr.action.W, unsigned(1))
+
+    class AddressReg(csr.Register, access="w"):
+        address: csr.Field(csr.action.W, unsigned(7))
+
+    class TransactionDataReg(csr.Register, access="w"):
+        data: csr.Field(csr.action.W, unsigned(9))
+
+    class TransactionRdyReg(csr.Register, access="r"):
+        ready: csr.Field(csr.action.R, unsigned(1))
+
+    class RxDataReg(csr.Register, access="r"):
+        data: csr.Field(csr.action.R, unsigned(8))
+
+    class ErrorReg(csr.Register, access="rw"):
+        error: csr.Field(csr.action.R, unsigned(1))
+
+    def __init__(self, *, period_cyc, clk_stretch=False,
                  transaction_depth=32, rx_depth=8, **kwargs):
+        self.period_cyc = period_cyc
+        self.clk_stretch = clk_stretch
 
-        super().__init__()
-
-        self.pads          = pads
-        self.period_cyc    = period_cyc
-        self.clk_stretch   = clk_stretch
-
-        self.data_width        = 8
-        self.addr_width        = 7
+        self.data_width = 8
+        self.addr_width = 7
         self.transaction_width = self.data_width + 1
 
         self._transactions = SyncFIFO(width=self.transaction_width, depth=transaction_depth)
-        self._rx_fifo      = SyncFIFO(width=self.data_width, depth=rx_depth)
+        self._rx_fifo = SyncFIFO(width=self.data_width, depth=rx_depth)
 
-        # CSRs
-        bank                   = self.csr_bank()
-        self._busy             = bank.csr(1, "r")
-        self._start            = bank.csr(1, "w")
-        self._address          = bank.csr(self.addr_width, "w")
-        self._transaction_data = bank.csr(self.transaction_width, "w")
-        self._transaction_rdy = bank.csr(1, "r")
-        self._rx_data          = bank.csr(self.data_width, "r")
-        self._err              = bank.csr(1, "rw")
+        regs = csr.Builder(addr_width=5, data_width=8)
 
-        # Storage for CSRs
-        self.address           = Signal(self.addr_width)
+        self._busy = regs.add("busy", self.BusyReg())
+        self._start = regs.add("start", self.StartReg())
+        self._address = regs.add("address", self.AddressReg())
+        self._transaction_data = regs.add("transaction_data", self.TransactionDataReg())
+        self._transaction_rdy = regs.add("transaction_rdy", self.TransactionRdyReg())
+        self._rx_data = regs.add("rx_data", self.RxDataReg())
+        self._err = regs.add("err", self.ErrorReg())
 
-        # Wires to the last transaction FIFO output
-        self.transaction_rw    = Signal()
-        self.transaction_data  = Signal(self.data_width)
+        self._bridge = csr.Bridge(regs.as_memory_map())
 
-        # Peripheral bus
-        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
-        self.bus        = self._bridge.bus
+        super().__init__({
+            "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+            "pins": Out(PinSignature()),
+        })
+        self.bus.memory_map = self._bridge.bus.memory_map
+
+        self.address = Signal(self.addr_width)
+        self.transaction_rw = Signal()
+        self.transaction_data = Signal(self.data_width)
 
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.bridge  = self._bridge
+        m.submodules.bridge = self._bridge
         m.submodules.rx_fifo = self._rx_fifo
         m.submodules.transactions = self._transactions
 
+        connect(m, flipped(self.bus), self._bridge.bus)
+
         err = Signal()
 
-        with m.If(self._address.w_stb):
-            m.d.sync += self.address.eq(self._address.w_data)
+        with m.If(self._address.f.address.w_stb):
+            m.d.sync += self.address.eq(self._address.f.address.w_data)
 
-        m.d.comb += self._err.r_data.eq(err)
-        with m.If(self._err.w_stb):
-            m.d.sync += err.eq(self._err.w_data)
+        m.d.comb += self._err.f.error.r_data.eq(err)
 
         m.d.comb += [
-            # Transactions FIFO <- CSRs
-            self._transactions.w_en       .eq(self._transaction_data.w_stb),
-            self._transactions.w_data     .eq(self._transaction_data.w_data),
-            self._transaction_rdy.r_data .eq(self._transactions.w_rdy),
-            # CSRs <- Rx FIFO
-            self._rx_data.r_data          .eq(self._rx_fifo.r_data),
-            self._rx_fifo.r_en            .eq(self._rx_data.r_stb),
-            # PHY <- Transactions FIFO
-            self.transaction_rw          .eq(self._transactions.r_data[8]),
-            self.transaction_data        .eq(self._transactions.r_data[0:8]),
+            self._transactions.w_en.eq(self._transaction_data.f.data.w_stb),
+            self._transactions.w_data.eq(self._transaction_data.f.data.w_data),
+            self._transaction_rdy.f.ready.r_data.eq(self._transactions.w_rdy),
+            self._rx_data.f.data.r_data.eq(self._rx_fifo.r_data),
+            self._rx_fifo.r_en.eq(self._rx_data.f.data.r_stb),
+            self.transaction_rw.eq(self._transactions.r_data[8]),
+            self.transaction_data.eq(self._transactions.r_data[0:8]),
         ]
 
-        # I2C initiator (low level manager) and default signal values
-        m.submodules.i2c = i2c = I2CInitiator(pads=self.pads, period_cyc=self.period_cyc, clk_stretch=self.clk_stretch)
+        m.submodules.i2c = i2c = I2CInitiator(pads=self.pins, period_cyc=self.period_cyc, clk_stretch=self.clk_stretch)
         m.d.comb += [
-            i2c.start .eq(0),
-            i2c.write .eq(0),
-            i2c.read  .eq(0),
-            i2c.stop  .eq(0),
+            i2c.start.eq(0),
+            i2c.write.eq(0),
+            i2c.read.eq(0),
+            i2c.stop.eq(0),
         ]
 
         current_transaction_rw = Signal()
-        transaction_stb        = Signal()
-        last_transaction       = Signal()
+        transaction_stb = Signal()
+        last_transaction = Signal()
 
         m.d.comb += self._transactions.r_en.eq(transaction_stb)
         m.d.comb += last_transaction.eq(self._transactions.level == 0)
@@ -159,13 +201,14 @@ class I2CPeripheral(Peripheral, Elaboratable):
         with m.FSM() as fsm:
 
             # We're busy whenever we're not IDLE; indicate so.
-            m.d.comb += self._busy.r_data.eq(~fsm.ongoing('IDLE'))
+            m.d.comb += self._busy.f.busy.r_data.eq(~fsm.ongoing('IDLE'))
 
             with m.State('IDLE'):
-                with m.If(self._start.w_stb & self._start.w_data):
+                with m.If(self._start.f.start.w_stb & self._start.f.start.w_data):
                     m.next = 'START'
 
             with m.State('START'):
+                m.d.sync += err.eq(0)
                 with m.If(~i2c.busy):
                     m.d.comb += i2c.start.eq(1),
                     m.next = 'SEND_DEV_ADDRESS'

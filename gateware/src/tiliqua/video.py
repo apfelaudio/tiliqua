@@ -9,16 +9,14 @@ import os
 
 from amaranth              import *
 from amaranth.build        import *
-from amaranth.lib          import wiring, data
+from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import AsyncFIFO, SyncFIFO
 from amaranth.lib.cdc      import FFSynchronizer
-from amaranth.utils        import log2_int
-from amaranth.hdl.mem      import Memory
+from amaranth.utils        import exact_log2
+from amaranth.lib.memory   import Memory
 
-from amaranth_future       import stream
-
-from luna_soc.gateware.vendor.amaranth_soc import wishbone
+from amaranth_soc          import wishbone
 
 from dataclasses import dataclass
 
@@ -278,7 +276,7 @@ class FramebufferPHY(wiring.Component):
 
         # Tracking in DVI domain
         self.dvi_tgen = DomainRenamer("dvi")(DVITimingGenerator(dvi_timings))
-        self.bytecounter = Signal(log2_int(4//self.fb_bytes_per_pixel))
+        self.bytecounter = Signal(exact_log2(4//self.fb_bytes_per_pixel))
         self.last_word   = Signal(32)
         self.consume_started = Signal(1, reset=0)
 
@@ -473,9 +471,9 @@ class FramebufferPHY(wiring.Component):
                 m.d.dvi += last_word.eq(last_word >> 8)
 
         rs, gs, bs = self.compute_color_palette()
-        m.submodules.palette_r = palette_r = Memory(width=8, depth=256, init=rs)
-        m.submodules.palette_g = palette_g = Memory(width=8, depth=256, init=gs)
-        m.submodules.palette_b = palette_b = Memory(width=8, depth=256, init=bs)
+        m.submodules.palette_r = palette_r = Memory(shape=unsigned(8), depth=256, init=rs)
+        m.submodules.palette_g = palette_g = Memory(shape=unsigned(8), depth=256, init=gs)
+        m.submodules.palette_b = palette_b = Memory(shape=unsigned(8), depth=256, init=bs)
 
         rd_port_r = palette_r.read_port(domain="comb")
         rd_port_g = palette_g.read_port(domain="comb")

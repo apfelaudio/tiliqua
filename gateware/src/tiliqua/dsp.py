@@ -6,15 +6,15 @@
 """Streaming DSP library with a strong focus on audio."""
 
 from amaranth              import *
-from amaranth.lib          import wiring, data
+from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import SyncFIFO
-from amaranth.hdl.mem      import Memory
-from amaranth.utils        import log2_int
+from amaranth.lib.memory   import Memory
+from amaranth.utils        import exact_log2
 
 from scipy import signal
 
-from amaranth_future       import stream, fixed
+from amaranth_future       import fixed
 
 from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
 
@@ -317,10 +317,8 @@ class WaveShaper(wiring.Component):
     o: Out(stream.Signature(ASQ))
 
     def __init__(self, lut_function=None, lut_size=512, continuous=False):
-        # lut_size must be a power of 2
-        assert(2**log2_int(lut_size) == lut_size)
         self.lut_size = lut_size
-        self.lut_addr_width = log2_int(lut_size)
+        self.lut_addr_width = exact_log2(lut_size)
         self.continuous = continuous
 
         # build LUT such that we can index into it using 2s
@@ -342,9 +340,10 @@ class WaveShaper(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
+        # TODO (amaranth 0.5+): use native ASQ shape in LUT memory
         m.submodules.mem = mem = Memory(
-            width=ASQ.as_shape().width, depth=self.lut_size, init=self.lut)
-        rport = mem.read_port(transparent=True)
+            shape=signed(ASQ.as_shape().width), depth=self.lut_size, init=self.lut)
+        rport = mem.read_port()
 
         ltype = fixed.SQ(self.lut_addr_width-1, ASQ.f_width-self.lut_addr_width+1)
 
@@ -518,10 +517,8 @@ class DelayLine(wiring.Component):
     """
 
     def __init__(self, max_delay=512):
-        # max_delay must be a power of 2
-        assert(2**log2_int(max_delay) == max_delay)
         self.max_delay = max_delay
-        self.address_width = log2_int(max_delay)
+        self.address_width = exact_log2(max_delay)
         super().__init__({
             "sw": In(stream.Signature(ASQ)),
             "da": In(stream.Signature(unsigned(self.address_width))),
@@ -531,10 +528,11 @@ class DelayLine(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
+        # TODO (amaranth 0.5+): use native ASQ shape in LUT memory
         m.submodules.mem = mem = Memory(
-            width=ASQ.as_shape().width, depth=self.max_delay, init=[])
+            shape=signed(ASQ.as_shape().width), depth=self.max_delay, init=[])
         wport = mem.write_port()
-        rport = mem.read_port(transparent=True)
+        rport = mem.read_port(transparent_for=(wport,))
 
         wrpointer = Signal(self.address_width)
         rdpointer = Signal(self.address_width)
@@ -594,18 +592,17 @@ class PitchShift(wiring.Component):
     """
 
     def __init__(self, delayln, xfade=256):
-        assert(2**log2_int(xfade) == xfade)
         assert(xfade <= delayln.max_delay/4)
         self.delayln    = delayln
         self.xfade      = xfade
-        self.xfade_bits = log2_int(xfade)
+        self.xfade_bits = exact_log2(xfade)
         # delay type: integer component is index into delay line
         # +1 is necessary so that we don't overflow on adding grain_sz.
         self.dtype = fixed.SQ(self.delayln.address_width+1, 8)
         super().__init__({
             "i": In(stream.Signature(data.StructLayout({
                     "pitch": self.dtype,
-                    "grain_sz": unsigned(log2_int(delayln.max_delay)),
+                    "grain_sz": unsigned(exact_log2(delayln.max_delay)),
                   }))),
             "o": Out(stream.Signature(ASQ)),
         })
@@ -707,8 +704,6 @@ class MatrixMix(wiring.Component):
 
     def __init__(self, i_channels, o_channels, coefficients):
 
-        assert(2**log2_int(i_channels) == i_channels)
-        assert(2**log2_int(o_channels) == o_channels)
         assert(len(coefficients)       == i_channels)
         assert(len(coefficients[0])    == o_channels)
 
@@ -725,16 +720,17 @@ class MatrixMix(wiring.Component):
 
         assert(len(coefficients_flat) == i_channels*o_channels)
 
-        # coefficient memory
+        # matrix coefficient memory
+        # TODO (amaranth 0.5+): use native shape in LUT memory
         self.mem = Memory(
-            width=self.ctype.as_shape().width,
+            shape=signed(self.ctype.as_shape().width),
             depth=i_channels*o_channels, init=coefficients_flat)
 
         super().__init__({
             "i": In(stream.Signature(data.ArrayLayout(ASQ, i_channels))),
             "c": In(stream.Signature(data.StructLayout({
-                "o_x": unsigned(log2_int(self.o_channels)),
-                "i_y": unsigned(log2_int(self.i_channels)),
+                "o_x": unsigned(exact_log2(self.o_channels)),
+                "i_y": unsigned(exact_log2(self.i_channels)),
                 "v":   self.ctype
                 }))),
             "o": Out(stream.Signature(data.ArrayLayout(ASQ, o_channels))),
@@ -745,18 +741,18 @@ class MatrixMix(wiring.Component):
 
         m.submodules.mem = self.mem
         wport = self.mem.write_port()
-        rport = self.mem.read_port(transparent=True)
+        rport = self.mem.read_port(transparent_for=(wport,))
 
         i_latch = Signal(data.ArrayLayout(self.ctype, self.i_channels))
         o_accum = Signal(data.ArrayLayout(
             fixed.SQ(self.ctype.i_width*2, self.ctype.f_width),
             self.o_channels))
 
-        i_ch   = Signal(log2_int(self.i_channels))
-        o_ch   = Signal(log2_int(self.o_channels))
+        i_ch   = Signal(exact_log2(self.i_channels))
+        o_ch   = Signal(exact_log2(self.o_channels))
         # i/o channel index, one cycle behind.
-        l_i_ch = Signal(log2_int(self.i_channels))
-        o_ch_l = Signal(log2_int(self.o_channels))
+        l_i_ch = Signal(exact_log2(self.i_channels))
+        o_ch_l = Signal(exact_log2(self.o_channels))
         # we've finished all accumulation steps.
         done = Signal(1)
 
@@ -894,8 +890,8 @@ class FIR(wiring.Component):
                     m.next = "WAIT-READY"
                 with m.Else():
                     m.d.sync += [
-                        a.eq(x[ix]),
-                        b.eq(taps[ix]),
+                        a.as_value().eq(x[ix].as_value()),
+                        b.as_value().eq(taps[ix].as_value()),
                         ix.eq(ix + 1)
                     ]
             with m.State('WAIT-READY'):
@@ -1015,7 +1011,7 @@ class Boxcar(wiring.Component):
 
     def __init__(self, n: int=32, hpf=False):
         # pow2 constraint on N allows us to shift instead of divide
-        assert(2**log2_int(n) == n)
+        assert(2**exact_log2(n) == n)
         self.n = n
         self.hpf = hpf
         super().__init__()
@@ -1025,7 +1021,7 @@ class Boxcar(wiring.Component):
         m = Module()
 
         # accumulator should be large enough to fit N samples
-        accumulator = Signal(fixed.SQ(2 + log2_int(self.n), ASQ.f_width))
+        accumulator = Signal(fixed.SQ(2 + exact_log2(self.n), ASQ.f_width))
         fifo_r_asq  = Signal(ASQ)
         fifo_r_en_l = Signal()
 
@@ -1034,7 +1030,7 @@ class Boxcar(wiring.Component):
             width=ASQ.as_shape().width, depth=self.n)
 
         # route input -> fifo
-        wiring.connect(m, wiring.flipped(self.i), wiring.flipped(stream.fifo_w_stream(fifo)))
+        wiring.connect(m, wiring.flipped(self.i), fifo.w_stream)
 
         # accumulator maintenance
         m.d.sync += fifo_r_en_l.eq(fifo.r_en)
@@ -1053,10 +1049,10 @@ class Boxcar(wiring.Component):
         # output route to output, accumulator division
         if self.hpf:
             # boxcar hpf
-            m.d.comb += self.o.payload.eq(fifo_r_asq - (accumulator >> log2_int(self.n))),
+            m.d.comb += self.o.payload.eq(fifo_r_asq - (accumulator >> exact_log2(self.n))),
         else:
             # normal averaging lpf
-            m.d.comb += self.o.payload.eq(accumulator >> log2_int(self.n)),
+            m.d.comb += self.o.payload.eq(accumulator >> exact_log2(self.n)),
         m.d.comb += [
             self.o.valid.eq(fifo.level == self.n), # VERIFY
             fifo.r_en.eq(self.o.valid & self.o.ready),

@@ -23,7 +23,7 @@ from tiliqua.tiliqua_platform import TiliquaPlatform
 class BootStubTop(Elaboratable):
     def elaborate(self, platform):
         m = Module()
-        m.d.comb += platform.request("self_program").eq(1)
+        m.d.comb += platform.request("self_program").o.eq(1)
         return m
 
 def build():

@@ -48,11 +48,11 @@ fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
 
     // initialize logging
-    let serial = Serial0::new(peripherals.UART);
+    let serial = Serial0::new(peripherals.UART0);
     tiliqua_fw::handlers::logger_init(serial);
 
     let sysclk = pac::clock::sysclk();
-    let mut timer = Timer0::new(peripherals.TIMER, sysclk);
+    let mut timer = Timer0::new(peripherals.TIMER0, sysclk);
 
     info!("Hello from Tiliqua bootloader!");
 

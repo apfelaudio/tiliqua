@@ -55,13 +55,13 @@ macro_rules! impl_i2c {
                             Operation::Write(bytes) => {
                                 for b in bytes.iter() {
                                     self.registers.transaction_data().write(
-                                        |w| unsafe { w.transaction_data().bits(0x0000u16 | *b as u16) } );
+                                        |w| unsafe { w.data().bits(0x0000u16 | *b as u16) } );
                                 }
                             }
                             Operation::Read(bytes) => {
                                 for b in bytes.iter() {
                                     self.registers.transaction_data().write(
-                                        |w| unsafe { w.transaction_data().bits(0x0100u16 | *b as u16) } );
+                                        |w| unsafe { w.data().bits(0x0100u16 | *b as u16) } );
                                 }
                             },
                         }
@@ -74,7 +74,8 @@ macro_rules! impl_i2c {
                     while self.registers.busy().read().busy().bit() { }
 
                     // TODO more error flags
-                    if self.registers.err().read().err().bit() {
+                    // Note: this error flag is cleared on the next transaction start().
+                    if self.registers.err().read().error().bit() {
                         return Err($crate::hal::i2c::ErrorKind::Other);
                     }
 

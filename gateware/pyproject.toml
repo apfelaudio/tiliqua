@@ -5,10 +5,12 @@ description = "USB Audio example for Tiliqua"
 
 requires-python = ">=3.9,<=3.11"
 dependencies = [
-    "amaranth[builtin-yosys]~=0.4",
+    "amaranth[builtin-yosys]~=0.5",
     "amaranth-boards @ git+https://github.com/amaranth-lang/amaranth-boards@main",
-    "luna-usb @ git+https://github.com/schnommus/luna@seb/isochronous-rebase-12-06-24",
-    "luna-soc @ git+https://github.com/greatscottgadgets/luna-soc@main",
+    "amaranth-soc @ git+https://github.com/amaranth-lang/amaranth-soc@main",
+    "amaranth-stdio @ git+https://github.com/amaranth-lang/amaranth-stdio@main",
+    "luna-usb @ git+https://github.com/schnommus/luna@seb/iso-amaranth5",
+    #"luna-soc @ git+https://github.com/greatscottgadgets/luna-soc@main",
     "scipy>=1.9.3",
     "matplotlib>=3.9.0",
 ]

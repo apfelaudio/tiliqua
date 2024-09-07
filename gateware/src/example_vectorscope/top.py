@@ -25,21 +25,22 @@ import subprocess
 
 from amaranth              import *
 from amaranth.build        import *
-from amaranth.lib          import wiring, data
+from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import AsyncFIFO, SyncFIFO
 from amaranth.lib.cdc      import FFSynchronizer
 from amaranth.utils        import log2_int
 from amaranth.hdl.mem      import Memory
 
-from amaranth_future       import stream, fixed
+from amaranth_future       import fixed
 
 from tiliqua.tiliqua_platform import TiliquaPlatform, TiliquaDomainGenerator, set_environment_variables
 from tiliqua                  import eurorack_pmod, dsp
 from tiliqua.eurorack_pmod    import ASQ
 
-from tiliqua.psram_peripheral import PSRAMPeripheral
-from luna_soc.gateware.vendor.amaranth_soc import wishbone
+from tiliqua                  import psram_peripheral
+
+from amaranth_soc             import wishbone
 
 from amaranth.back import verilog
 
@@ -62,8 +63,7 @@ class VectorScopeTop(Elaboratable):
         self.sim = sim
 
         # One PSRAM with an internal arbiter to support multiple DMA masters.
-        self.hyperram = PSRAMPeripheral(
-                size=16*1024*1024, sim=sim)
+        self.hyperram = psram_peripheral.Peripheral(size=16*1024*1024, sim=sim)
 
         fb_base = 0x0
         fb_size = (dvi_timings.h_active, dvi_timings.v_active)
@@ -183,8 +183,8 @@ def sim():
         f.write(verilog.convert(top, ports=[
             ClockSignal("sync"),
             ResetSignal("sync"),
-            ClockSignal("dvi"),
-            ResetSignal("dvi"),
+            #ClockSignal("dvi"), # why is this auto-added?
+            #ResetSignal("dvi"),
             ClockSignal("audio"),
             ResetSignal("audio"),
             top.hyperram.psram.idle,

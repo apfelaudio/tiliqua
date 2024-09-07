@@ -72,11 +72,11 @@ fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
 
     // initialize logging
-    let serial = Serial0::new(peripherals.UART);
+    let serial = Serial0::new(peripherals.UART0);
     tiliqua_fw::handlers::logger_init(serial);
 
     let sysclk = pac::clock::sysclk();
-    let mut timer = Timer0::new(peripherals.TIMER, sysclk);
+    let mut timer = Timer0::new(peripherals.TIMER0, sysclk);
 
     info!("Hello from Tiliqua XBEAM!");
 
@@ -157,7 +157,7 @@ fn main() -> ! {
         video.set_persist(opts.beam.persist.value);
         video.set_decay(opts.beam.decay.value);
 
-        vscope.en().write(|w| w.en().bit(true) );
+        vscope.en().write(|w| w.enable().bit(true) );
         vscope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
         vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
         vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );

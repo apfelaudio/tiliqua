@@ -14,6 +14,96 @@ from amaranth import Const, Signal, Module, Cat, Elaboratable, Record, ClockSign
 from amaranth.hdl.rec import DIR_FANIN, DIR_FANOUT
 from amaranth.lib.cdc import FFSynchronizer
 
+class FakeHyperRAMDQSInterface(Elaboratable):
+
+    """
+    Fake HyperRAMDQSInterface used for simulation.
+
+    This is just HyperRAMDQSInterface with the dependency
+    on the PHY removed and extra signals added for memory
+    injection/instrumentation, such that it is possible
+    to simulate an SoC against the true RAM timings.
+    """
+
+    HIGH_LATENCY_CLOCKS = 5
+
+    def __init__(self):
+        self.reset            = Signal()
+        self.address          = Signal(32)
+        self.register_space   = Signal()
+        self.perform_write    = Signal()
+        self.single_page      = Signal()
+        self.start_transfer   = Signal()
+        self.final_word       = Signal()
+        self.idle             = Signal()
+        self.read_ready       = Signal()
+        self.write_ready      = Signal()
+        self.read_data        = Signal(32)
+        self.write_data       = Signal(32)
+        self.write_mask       = Signal(4) # TODO
+        # signals used for simulation interface
+        self.fsm              = Signal(8)
+        self.address_ptr      = Signal(32)
+        self.read_data_view   = Signal(32)
+
+    def elaborate(self, platform):
+        m = Module()
+        is_read         = Signal()
+        is_register     = Signal()
+        is_multipage    = Signal()
+        extra_latency   = Signal()
+        latency_clocks_remaining  = Signal(range(0, self.HIGH_LATENCY_CLOCKS + 1))
+        with m.FSM() as fsm:
+            with m.State('IDLE'):
+                m.d.comb += self.idle        .eq(1)
+                with m.If(self.start_transfer):
+                    m.next = 'LATCH_RWDS'
+                    m.d.sync += [
+                        is_read             .eq(~self.perform_write),
+                        is_register         .eq(self.register_space),
+                        is_multipage        .eq(~self.single_page),
+                        # address is specified with 16-bit granularity.
+                        # <<1 gets us to 8-bit for our fake uint8 storage.
+                        self.address_ptr    .eq(self.address<<1),
+                    ]
+            with m.State("LATCH_RWDS"):
+                m.next="SHIFT_COMMAND0"
+            with m.State('SHIFT_COMMAND0'):
+                m.next = 'SHIFT_COMMAND1'
+            with m.State('SHIFT_COMMAND1'):
+                with m.If(is_register & ~is_read):
+                    m.next = 'WRITE_DATA'
+                with m.Else():
+                    m.next = "HANDLE_LATENCY"
+                    m.d.sync += latency_clocks_remaining.eq(self.HIGH_LATENCY_CLOCKS)
+            with m.State('HANDLE_LATENCY'):
+                m.d.sync += latency_clocks_remaining.eq(latency_clocks_remaining - 1)
+                with m.If(latency_clocks_remaining == 0):
+                    with m.If(is_read):
+                        m.next = 'READ_DATA'
+                    with m.Else():
+                        m.next = 'WRITE_DATA'
+            with m.State('READ_DATA'):
+                m.d.comb += [
+                    self.read_data     .eq(self.read_data_view),
+                    self.read_ready    .eq(1),
+                ]
+                m.d.sync += self.address_ptr.eq(self.address_ptr + 4)
+                with m.If(self.final_word):
+                    m.next = 'RECOVERY'
+            with m.State("WRITE_DATA"):
+                m.d.comb += self.write_ready.eq(1),
+                m.d.sync += self.address_ptr.eq(self.address_ptr + 4)
+                with m.If(is_register):
+                    m.next = 'IDLE'
+                with m.Elif(self.final_word):
+                    m.next = 'RECOVERY'
+            with m.State('RECOVERY'):
+                m.d.sync += self.address_ptr.eq(0)
+                m.next = 'IDLE'
+        m.d.comb += self.fsm.eq(fsm.state)
+        return m
+
 class HyperBusPHY(Record):
     """ Record representing a 32-bit HyperBus interface for use with a 4:1 PHY module. """
 

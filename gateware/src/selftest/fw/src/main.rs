@@ -199,7 +199,7 @@ where
     .draw(d).ok();
 }
 
-fn print_die_temperature<D>(d: &mut D, dtr: &pac::TEMPERATURE_PERIPH)
+fn print_die_temperature<D>(d: &mut D, dtr: &pac::DTR0)
 where
     D: DrawTarget<Color = Gray8>,
 {
@@ -251,11 +251,11 @@ fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
 
     // initialize logging
-    let serial = Serial0::new(peripherals.UART);
+    let serial = Serial0::new(peripherals.UART0);
     tiliqua_fw::handlers::logger_init(serial);
 
     let sysclk = pac::clock::sysclk();
-    let mut timer = Timer0::new(peripherals.TIMER, sysclk);
+    let mut timer = Timer0::new(peripherals.TIMER0, sysclk);
 
     info!("Hello from Tiliqua selftest!");
 
@@ -273,7 +273,7 @@ fn main() -> ! {
 
     let pmod = peripherals.PMOD0_PERIPH;
 
-    let dtr = peripherals.TEMPERATURE_PERIPH;
+    let dtr = peripherals.DTR0;
 
     let mut display = DMADisplay {
         framebuffer_base: PSRAM_FB_BASE as *mut u32,
@@ -323,13 +323,13 @@ fn main() -> ! {
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         // Write something to the CODEC outputs / LEDs
-        pmod.sample_o0().write(|w| unsafe { w.sample_o0().bits(
+        pmod.sample_o0().write(|w| unsafe { w.sample().bits(
             ((f32::sin((uptime_ms as f32)/200.0f32 + 0.0) * 16000.0f32) as i16) as u16) } );
-        pmod.sample_o1().write(|w| unsafe { w.sample_o1().bits(
+        pmod.sample_o1().write(|w| unsafe { w.sample().bits(
             ((f32::sin((uptime_ms as f32)/200.0f32 + 1.0) * 16000.0f32) as i16) as u16) } );
-        pmod.sample_o2().write(|w| unsafe { w.sample_o2().bits(
+        pmod.sample_o2().write(|w| unsafe { w.sample().bits(
             ((f32::sin((uptime_ms as f32)/200.0f32 + 2.0) * 16000.0f32) as i16) as u16) } );
-        pmod.sample_o3().write(|w| unsafe { w.sample_o3().bits(
+        pmod.sample_o3().write(|w| unsafe { w.sample().bits(
             ((f32::sin((uptime_ms as f32)/200.0f32 + 3.0) * 16000.0f32) as i16) as u16) } );
 
         for n in 0..16 {

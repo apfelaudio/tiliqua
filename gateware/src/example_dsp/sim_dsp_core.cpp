@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
                     */
                     //top->__024signal = 1000;
                     top->__024signal = (int16_t)10000.0*sin((float)n_samples / 50.0);
-                    top->__024signal__0241 = (int16_t)10000.0*cos((float)n_samples / 10.0);
+                    top->__024signal__0246 = (int16_t)10000.0*cos((float)n_samples / 10.0);
                     ++n_samples;
                 } else {
                     if (top->fs_strobe) {

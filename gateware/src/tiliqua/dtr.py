@@ -6,34 +6,37 @@
 
 from amaranth                    import *
 from amaranth.lib                import wiring, data
-from amaranth.lib.wiring         import In, Out
+from amaranth.lib.wiring         import In, Out, flipped, connect
 from amaranth.lib.cdc            import FFSynchronizer
-from luna_soc.gateware.csr.base  import Peripheral
+from amaranth_soc                import csr
 
-class DieTemperaturePeripheral(Peripheral, Elaboratable):
+class Peripheral(wiring.Component):
+
+    class TemperatureReg(csr.Register, access="r"):
+        temperature: csr.Field(csr.action.R, unsigned(8))
 
     def __init__(self, **kwargs):
+        regs = csr.Builder(addr_width=5, data_width=8)
 
-        super().__init__()
+        self._temperature = regs.add("temperature", self.TemperatureReg())
 
-        # CSRs
-        bank                   = self.csr_bank()
-        self._temperature      = bank.csr(8, "r")
+        self._bridge = csr.Bridge(regs.as_memory_map())
 
-        # Peripheral bus
-        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
-        self.bus        = self._bridge.bus
+        super().__init__({
+            "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+        })
+        self.bus.memory_map = self._bridge.bus.memory_map
 
     def elaborate(self, platform):
         m = Module()
+        m.submodules.bridge = self._bridge
 
-        m.submodules.bridge  = self._bridge
+        connect(m, flipped(self.bus), self._bridge.bus)
 
-        read_cnt    = Signal(32)
-
+        read_cnt = Signal(32)
         start_pulse = Signal()
-        dtr_valid   = Signal()
-        dtr_code    = Signal(6)
+        dtr_valid = Signal()
+        dtr_code = Signal(6)
 
         m.submodules.dtr = Instance("DTR",
             i_STARTPULSE = start_pulse,
@@ -45,6 +48,7 @@ class DieTemperaturePeripheral(Peripheral, Elaboratable):
             o_DTROUT1    = dtr_code[1],
             o_DTROUT0    = dtr_code[0],
         )
+
         m.d.sync += read_cnt.eq(read_cnt + 1)
         with m.If(read_cnt == 60000000):
             m.d.sync += read_cnt.eq(0)
@@ -57,6 +61,6 @@ class DieTemperaturePeripheral(Peripheral, Elaboratable):
         with m.If(dtr_valid):
             m.d.sync += valid_code.eq(dtr_code)
 
-        m.d.comb += self._temperature.r_data.eq(valid_code)
+        m.d.comb += self._temperature.f.temperature.r_data.eq(valid_code)
 
         return m

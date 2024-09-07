@@ -15,8 +15,7 @@ SOC=src/$1
 
 # generate artifacts from design
 mkdir -p build
-pdm run $SOC/top.py --generate-svd > build/soc.svd
-pdm run $SOC/top.py --generate-memory-x > build/memory.x
+pdm run $SOC/top.py --genrust
 
 # create the PAC
 make -C src/rs/pac
@@ -32,4 +31,4 @@ cp build/memory.x $SOC/fw/memory.x
 # if the firmware is not present, luna-soc silently fills it with zeroes
 
 # build final bitstream
-pdm run $SOC/top.py --dry-run --keep-files
+pdm run $SOC/top.py
