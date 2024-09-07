@@ -126,23 +126,21 @@ macro_rules! impl_timer {
             impl $crate::hal::delay::DelayNs for $TIMERX {
                 fn delay_ns(&mut self, ns: u32) {
 
-                    /* TODO
                     // Be careful not to overflow.
                     let ticks: u32 = (self.clk / 1_000_000) * (ns / 1_000);
 
                     // TODO: add low clamp for 1usec?
 
                     // start timer
-                    self.registers.reload().write(|w| unsafe { w.value().bits(0) });
-                    self.registers.counter().write(|w| unsafe { w.value().bits(ticks) });
                     self.registers.enable().write(|w| w.enable().bit(true));
+                    self.registers.reload().write(|w| unsafe { w.value().bits(0) });
+                    self.registers.oneshot().write(|w| unsafe { w.value().bits(ticks) });
 
                     // wait for timer to hit zero
                     while self.registers.counter().read().value().bits() > 0 {}
 
                     // reset timer
                     self.registers.enable().write(|w| w.enable().bit(false));
-                    */
                 }
             }
         )+

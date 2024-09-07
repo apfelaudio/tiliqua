@@ -173,6 +173,9 @@ class TiliquaSoc(Component):
         self.uart0 = uart.Peripheral(divisor=divisor)
         self.csr_decoder.add(self.uart0.bus, addr=self.uart0_base, name="uart0")
 
+        # FIXME: timer events / isrs currently not implemented, adding the event
+        # bus to the csr decoder segfaults yosys somehow ...
+
         # timer0
         self.timer0 = timer.Peripheral(width=32)
         self.csr_decoder.add(self.timer0.bus, addr=self.timer0_base, name="timer0")
