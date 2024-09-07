@@ -9,8 +9,6 @@ from amaranth                            import *
 from tiliqua.tiliqua_soc                 import TiliquaSoc, top_level_cli
 from tiliqua.tiliqua_platform            import set_environment_variables
 
-from vendor.soc.generate                 import GenerateSVD
-
 if __name__ == "__main__":
     dvi_timings = set_environment_variables()
     this_directory = os.path.dirname(os.path.realpath(__file__))

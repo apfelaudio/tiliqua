@@ -113,7 +113,7 @@ class SimPlatform():
 
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
-                 audio_out_peripheral=True, touch=False):
+                 audio_out_peripheral=True, touch=False, finalize_csr_bridge=True):
 
         super().__init__({})
 
@@ -231,7 +231,15 @@ class TiliquaSoc(Component):
 
         self.permit_bus_traffic = Signal()
 
-        # wishbone csr bridge
+        if finalize_csr_bridge:
+            self.finalize_csr_bridge()
+
+    def finalize_csr_bridge(self):
+
+        # Finalizing the CSR bridge / peripheral memory map may not be desirable in __init__
+        # if we want to add more after this class has been instantiated. So it's optional
+        # during __init__ but MUST be called once before the design is elaborated.
+
         self.wb_to_csr = WishboneCSRBridge(self.csr_decoder.bus, data_width=32)
         self.wb_decoder.add(self.wb_to_csr.wb_bus, addr=self.csr_base, sparse=False, name="wb_to_csr")
 

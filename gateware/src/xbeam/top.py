@@ -12,128 +12,152 @@ import os
 import sys
 
 from amaranth                                    import *
-from amaranth.hdl.rec                            import Record
-from amaranth.lib                                import wiring, data
+from amaranth.lib                                import wiring, data, stream
+from amaranth.lib.wiring                         import In, Out, flipped, connect
 
-from amaranth_future                             import stream, fixed
+from amaranth_soc                                import csr
 
-from luna_soc.util.readbin                       import get_mem_data
-from luna_soc                                    import top_level_cli
-from luna_soc.gateware.csr.base                  import Peripheral
+from amaranth_future                             import fixed
 
 from tiliqua                                     import eurorack_pmod, dsp
 from tiliqua.tiliqua_platform                    import TiliquaPlatform, set_environment_variables
-from tiliqua.tiliqua_soc                         import TiliquaSoc
+from tiliqua.tiliqua_soc                         import TiliquaSoc, top_level_cli
 
 from example_vectorscope.top                     import Stroke
 
-class VectorTracePeripheral(Peripheral, Elaboratable):
+class VectorTracePeripheral(wiring.Component):
 
-    def __init__(self, fb_base, fb_size, bus, **kwargs):
+    class EnableReg(csr.Register, access="w"):
+        enable: csr.Field(csr.action.W, unsigned(1))
 
-        super().__init__()
+    class HueReg(csr.Register, access="w"):
+        hue: csr.Field(csr.action.W, unsigned(8))
 
-        self.stroke = Stroke (
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, **kwargs)
-        bus.add_master(self.stroke.bus)
+    class IntensityReg(csr.Register, access="w"):
+        intensity: csr.Field(csr.action.W, unsigned(8))
 
-        self.i                 = self.stroke.i
+    class XScaleReg(csr.Register, access="w"):
+        xscale: csr.Field(csr.action.W, unsigned(8))
 
-        self.en                = Signal()
-        self.soc_en            = Signal()
+    class YScaleReg(csr.Register, access="w"):
+        yscale: csr.Field(csr.action.W, unsigned(8))
 
-        bank                   = self.csr_bank()
-        self._en               = bank.csr(1, "w")
-        self._hue              = bank.csr(8, "w")
-        self._intensity        = bank.csr(8, "w")
-        self._xscale           = bank.csr(8, "w")
-        self._yscale           = bank.csr(8, "w")
+    def __init__(self, fb_base, fb_size, bus_dma, **kwargs):
+        self.stroke = Stroke(fb_base=fb_base, bus_master=bus_dma.bus, fb_size=fb_size, **kwargs)
+        bus_dma.add_master(self.stroke.bus)
+        self.i = self.stroke.i
+        self.en = Signal()
+        self.soc_en = Signal()
 
-        # Peripheral bus
-        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
-        self.bus        = self._bridge.bus
+        regs = csr.Builder(addr_width=5, data_width=8)
+
+        self._en = regs.add("en", self.EnableReg())
+        self._hue = regs.add("hue", self.HueReg())
+        self._intensity = regs.add("intensity", self.IntensityReg())
+        self._xscale = regs.add("xscale", self.XScaleReg())
+        self._yscale = regs.add("yscale", self.YScaleReg())
+
+        self._bridge = csr.Bridge(regs.as_memory_map())
+
+        super().__init__({
+            "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+        })
+        self.bus.memory_map = self._bridge.bus.memory_map
 
     def elaborate(self, platform):
         m = Module()
-
-        m.submodules.bridge  = self._bridge
-
+        m.submodules.bridge = self._bridge
         m.submodules += self.stroke
+
+        connect(m, flipped(self.bus), self._bridge.bus)
 
         m.d.comb += self.stroke.enable.eq(self.en & self.soc_en)
 
-        with m.If(self._hue.w_stb):
-            m.d.sync += self.stroke.hue.eq(self._hue.w_data)
+        with m.If(self._hue.f.hue.w_stb):
+            m.d.sync += self.stroke.hue.eq(self._hue.f.hue.w_data)
 
-        with m.If(self._intensity.w_stb):
-            m.d.sync += self.stroke.intensity.eq(self._intensity.w_data)
+        with m.If(self._intensity.f.intensity.w_stb):
+            m.d.sync += self.stroke.intensity.eq(self._intensity.f.intensity.w_data)
 
-        with m.If(self._xscale.w_stb):
-            m.d.sync += self.stroke.scale_x.eq(self._xscale.w_data)
+        with m.If(self._xscale.f.xscale.w_stb):
+            m.d.sync += self.stroke.scale_x.eq(self._xscale.f.xscale.w_data)
 
-        with m.If(self._yscale.w_stb):
-            m.d.sync += self.stroke.scale_y.eq(self._yscale.w_data)
+        with m.If(self._yscale.f.yscale.w_stb):
+            m.d.sync += self.stroke.scale_y.eq(self._yscale.f.yscale.w_data)
 
-        with m.If(self._en.w_stb):
-            m.d.sync += self.soc_en.eq(self._en.w_data)
+        with m.If(self._en.f.enable.w_stb):
+            m.d.sync += self.soc_en.eq(self._en.f.enable.w_data)
 
         return m
 
-class ScopeTracePeripheral(Peripheral, Elaboratable):
+class ScopeTracePeripheral(wiring.Component):
 
-    def __init__(self, fb_base, fb_size, bus):
+    class Enable(csr.Register, access="w"):
+        enable: csr.Field(csr.action.W, unsigned(1))
 
-        super().__init__()
+    class Hue(csr.Register, access="w"):
+        hue: csr.Field(csr.action.W, unsigned(8))
 
-        self.stroke0 = Stroke(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
-        self.stroke1 = Stroke(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
-        self.stroke2 = Stroke(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
-        self.stroke3 = Stroke(
-                fb_base=fb_base, bus_master=bus.bus, fb_size=fb_size, n_upsample=None)
+    class Intensity(csr.Register, access="w"):
+        intensity: csr.Field(csr.action.W, unsigned(8))
 
-        self.strokes = [self.stroke0, self.stroke1, self.stroke2, self.stroke3]
+    class Timebase(csr.Register, access="w"):
+        timebase: csr.Field(csr.action.W, unsigned(16))
+
+    class XScale(csr.Register, access="w"):
+        xscale: csr.Field(csr.action.W, unsigned(8))
+
+    class YScale(csr.Register, access="w"):
+        yscale: csr.Field(csr.action.W, unsigned(8))
+
+    class TriggerAlways(csr.Register, access="w"):
+        trigger_always: csr.Field(csr.action.W, unsigned(1))
+
+    class TriggerLevel(csr.Register, access="w"):
+        trigger_level: csr.Field(csr.action.W, unsigned(16))
+
+    class YPosition(csr.Register, access="w"):
+        ypos: csr.Field(csr.action.W, unsigned(16))
+
+    def __init__(self, fb_base, fb_size, bus_dma):
+        self.strokes = [Stroke(fb_base=fb_base, bus_master=bus_dma.bus, fb_size=fb_size, n_upsample=None)
+                        for _ in range(4)]
 
         self.isplit4 = dsp.Split(4)
         self.i = self.isplit4.i
 
         for s in self.strokes:
-            bus.add_master(s.bus)
-            bus.add_master(s.bus)
-            bus.add_master(s.bus)
-            bus.add_master(s.bus)
+            bus_dma.add_master(s.bus)
 
-        self.en                = Signal()
-        self.soc_en            = Signal()
+        self.en = Signal()
+        self.soc_en = Signal()
 
-        self.timebase          = Signal(shape=dsp.ASQ)
-        self.trigger_lvl       = Signal(shape=dsp.ASQ)
-        self.trigger_always    = Signal()
+        self.timebase = Signal(shape=dsp.ASQ)
+        self.trigger_lvl = Signal(shape=dsp.ASQ)
+        self.trigger_always = Signal()
 
-        bank                   = self.csr_bank()
-        self._en               = bank.csr(1, "w")
-        self._hue              = bank.csr(8,  "w")
-        self._intensity        = bank.csr(8,  "w")
-        self._timebase         = bank.csr(16, "w")
-        self._xscale           = bank.csr(8,  "w")
-        self._yscale           = bank.csr(8,  "w")
-        self._trigger_always   = bank.csr(1,  "w")
-        self._trigger_lvl      = bank.csr(16, "w")
-        self._ypos0            = bank.csr(16, "w")
-        self._ypos1            = bank.csr(16, "w")
-        self._ypos2            = bank.csr(16, "w")
-        self._ypos3            = bank.csr(16, "w")
+        regs = csr.Builder(addr_width=5, data_width=8)
+        self._en = regs.add("en", self.Enable())
+        self._hue = regs.add("hue", self.Hue())
+        self._intensity = regs.add("intensity", self.Intensity())
+        self._timebase = regs.add("timebase", self.Timebase())
+        self._xscale = regs.add("xscale", self.XScale())
+        self._yscale = regs.add("yscale", self.YScale())
+        self._trigger_always = regs.add("trigger_always", self.TriggerAlways())
+        self._trigger_lvl = regs.add("trigger_lvl", self.TriggerLevel())
+        self._ypos = [regs.add(f"ypos{i}", self.YPosition()) for i in range(4)]
 
-        # Peripheral bus
-        self._bridge    = self.bridge(data_width=32, granularity=8, alignment=2)
-        self.bus        = self._bridge.bus
+        self._bridge = csr.Bridge(regs.as_memory_map())
+        super().__init__({
+            "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+        })
+        self.bus.memory_map = self._bridge.bus.memory_map
 
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.bridge  = self._bridge
+        m.submodules.bridge = self._bridge
+        connect(m, flipped(self.bus), self._bridge.bus)
 
         m.submodules += self.strokes
 
@@ -145,18 +169,18 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         m.submodules.isplit4 = self.isplit4
 
         # 2 copies of input channel 0
-        m.submodules.irep2   = irep2   = dsp.Split(2, replicate=True, source=self.isplit4.o[0])
+        m.submodules.irep2 = irep2 = dsp.Split(2, replicate=True, source=self.isplit4.o[0])
 
         # Send one copy to trigger => ramp => X
-        m.submodules.trig    = trig    = dsp.Trigger()
-        m.submodules.ramp    = ramp    = dsp.Ramp()
+        m.submodules.trig = trig = dsp.Trigger()
+        m.submodules.ramp = ramp = dsp.Ramp()
         # Audio => Trigger
-        dsp.connect_remap(m, irep2.o[0], trig.i, lambda o, i : [
-            i.payload.sample   .eq(o.payload),
+        dsp.connect_remap(m, irep2.o[0], trig.i, lambda o, i: [
+            i.payload.sample.eq(o.payload),
             i.payload.threshold.eq(self.trigger_lvl),
         ])
         # Trigger => Ramp
-        dsp.connect_remap(m, trig.o, ramp.i, lambda o, i : [
+        dsp.connect_remap(m, trig.o, ramp.i, lambda o, i: [
             i.payload.trigger.eq(o.payload | self.trigger_always),
             i.payload.td.eq(self.timebase),
         ])
@@ -168,82 +192,88 @@ class ScopeTracePeripheral(Peripheral, Elaboratable):
         m.submodules.ch0_merge4 = ch0_merge4 = dsp.Merge(4, sink=self.strokes[0].i)
         ch0_merge4.wire_valid(m, [2, 3])
         wiring.connect(m, rampsplit4.o[0], ch0_merge4.i[0])
-        wiring.connect(m, irep2.o[1],      ch0_merge4.i[1])
+        wiring.connect(m, irep2.o[1], ch0_merge4.i[1])
 
         # Rasterize ch1-ch3: Ramp => X, Audio => Y
-        for ch in [1, 2, 3]:
+        for ch in range(1, 4):
             ch_merge4 = dsp.Merge(4, sink=self.strokes[ch].i)
             m.submodules += ch_merge4
             ch_merge4.wire_valid(m, [2, 3])
-            wiring.connect(m, rampsplit4.o[ch],   ch_merge4.i[0])
+            wiring.connect(m, rampsplit4.o[ch], ch_merge4.i[0])
             wiring.connect(m, self.isplit4.o[ch], ch_merge4.i[1])
 
         # Wishbone tweakables
 
-        with m.If(self._hue.w_stb):
+        with m.If(self._hue.f.hue.w_stb):
             for ch, s in enumerate(self.strokes):
-                m.d.sync += s.hue.eq(self._hue.w_data + ch*3)
+                m.d.sync += s.hue.eq(self._hue.f.hue.w_data + ch*3)
 
-        with m.If(self._intensity.w_stb):
+        with m.If(self._intensity.f.intensity.w_stb):
             for s in self.strokes:
-                m.d.sync += s.intensity.eq(self._intensity.w_data)
+                m.d.sync += s.intensity.eq(self._intensity.f.intensity.w_data)
 
-        with m.If(self._timebase.w_stb):
-            m.d.sync += self.timebase.sas_value().eq(self._timebase.w_data)
+        with m.If(self._timebase.f.timebase.w_stb):
+            m.d.sync += self.timebase.sas_value().eq(self._timebase.f.timebase.w_data)
 
-        with m.If(self._xscale.w_stb):
+        with m.If(self._xscale.f.xscale.w_stb):
             for s in self.strokes:
-                m.d.sync += s.scale_x.eq(self._xscale.w_data)
+                m.d.sync += s.scale_x.eq(self._xscale.f.xscale.w_data)
 
-        with m.If(self._yscale.w_stb):
+        with m.If(self._yscale.f.yscale.w_stb):
             for s in self.strokes:
-                m.d.sync += s.scale_y.eq(self._yscale.w_data)
+                m.d.sync += s.scale_y.eq(self._yscale.f.yscale.w_data)
 
-        with m.If(self._trigger_lvl.w_stb):
-            m.d.sync += self.trigger_lvl.sas_value().eq(self._trigger_lvl.w_data)
+        with m.If(self._trigger_lvl.f.trigger_level.w_stb):
+            m.d.sync += self.trigger_lvl.sas_value().eq(self._trigger_lvl.f.trigger_level.w_data)
 
-        with m.If(self._ypos0.w_stb):
-            m.d.sync += self.strokes[0].y_offset.eq(self._ypos0.w_data)
+        for i, ypos_reg in enumerate(self._ypos):
+            with m.If(ypos_reg.f.ypos.w_stb):
+                m.d.sync += self.strokes[i].y_offset.eq(ypos_reg.f.ypos.w_data)
 
-        with m.If(self._ypos1.w_stb):
-            m.d.sync += self.strokes[1].y_offset.eq(self._ypos1.w_data)
+        with m.If(self._en.f.enable.w_stb):
+            m.d.sync += self.soc_en.eq(self._en.f.enable.w_data)
 
-        with m.If(self._ypos2.w_stb):
-            m.d.sync += self.strokes[2].y_offset.eq(self._ypos2.w_data)
-
-        with m.If(self._ypos3.w_stb):
-            m.d.sync += self.strokes[3].y_offset.eq(self._ypos3.w_data)
-
-        with m.If(self._en.w_stb):
-            m.d.sync += self.soc_en.eq(self._en.w_data)
-
-        with m.If(self._trigger_always.w_stb):
-            m.d.sync += self.trigger_always.eq(self._trigger_always.w_data)
+        with m.If(self._trigger_always.f.trigger_always.w_stb):
+            m.d.sync += self.trigger_always.eq(self._trigger_always.f.trigger_always.w_data)
 
         return m
 
 class XbeamSoc(TiliquaSoc):
     def __init__(self, *, firmware_path, dvi_timings):
+
+        # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.
         super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=True,
-                         audio_out_peripheral=False)
+                         audio_out_peripheral=False, finalize_csr_bridge=False)
+
         # scope stroke bridge from audio stream
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
+
+        # WARN: TiliquaSoc ends at 0x00000900
+        self.vector_periph_base = 0x00001000
+        self.scope_periph_base  = 0x00001100
 
         self.vector_periph = VectorTracePeripheral(
             fb_base=self.video.fb_base,
             fb_size=fb_size,
-            bus=self.soc.psram)
-        self.soc.add_peripheral(self.vector_periph, addr=0xf0007000)
+            bus_dma=self.psram_periph)
+        self.csr_decoder.add(self.vector_periph.bus, addr=self.vector_periph_base, name="vector_periph")
 
         self.scope_periph = ScopeTracePeripheral(
             fb_base=self.video.fb_base,
             fb_size=fb_size,
-            bus=self.soc.psram)
-        self.soc.add_peripheral(self.scope_periph, addr=0xf0008000)
+            bus_dma=self.psram_periph)
+        self.csr_decoder.add(self.scope_periph.bus, addr=self.scope_periph_base, name="scope_periph")
+
+        # now we can freeze the memory map
+        self.finalize_csr_bridge()
 
     def elaborate(self, platform):
 
         m = Module()
+
+        m.submodules += self.vector_periph
+
+        m.submodules += self.scope_periph
 
         m.submodules += super().elaborate(platform)
 
@@ -275,6 +305,5 @@ if __name__ == "__main__":
     dvi_timings = set_environment_variables()
     this_directory = os.path.dirname(os.path.realpath(__file__))
     design = XbeamSoc(firmware_path=os.path.join(this_directory, "fw/firmware.bin"),
-                        dvi_timings=dvi_timings)
-    design.genrust_constants()
+                      dvi_timings=dvi_timings)
     top_level_cli(design)
