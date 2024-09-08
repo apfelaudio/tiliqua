@@ -76,20 +76,21 @@ class Peripheral(wiring.Component):
     -------------
     start : write-only
         Write a '1' to execute all transactions in the transaction FIFO.
-    busy : read-only
-        If the core is currently executing transactions, '1', else '0'.
     address : write-only
         7-bit address of the target I2C device for the transactions.
-    transaction_data : write-only
-        Transaction FIFO. 9-bit entries where the most-significant bit
-        should be 0 for write and 1 for read operations. The least
-        significant 8 bits are the data to write (for write transactions),
+    transaction : write-only
+        Transaction FIFO. Each entry can be a write or read transaction.
+        The 8 bit data words are the data to write (for write transactions),
         or simply ignored (for read transactions).
-    transaction_rdy : write-only
-        If there is space in the transaction FIFO, '1', else '0'.
     rx_data : read-only
         Read FIFO. 8-bit entries, one per successful read transaction.
         This should only be read once 'busy' has deasserted.
+
+    -- status registers --
+    busy : read-only
+        If the core is currently executing transactions, '1', else '0'.
+    transaction_full : write-only
+        If the transaction FIFO is full, '1', else '0'.
     err : read
         '1' if an error (e.g. NACK) has occurred.
         this flag is reset on a new set of transactions ('start' is set).
@@ -103,26 +104,23 @@ class Peripheral(wiring.Component):
       byte per the transaction() contract.
     """
 
-    class BusyReg(csr.Register, access="r"):
-        busy: csr.Field(csr.action.R, unsigned(1))
-
     class StartReg(csr.Register, access="w"):
         start: csr.Field(csr.action.W, unsigned(1))
 
     class AddressReg(csr.Register, access="w"):
         address: csr.Field(csr.action.W, unsigned(7))
 
-    class TransactionDataReg(csr.Register, access="w"):
-        data: csr.Field(csr.action.W, unsigned(9))
-
-    class TransactionRdyReg(csr.Register, access="r"):
-        ready: csr.Field(csr.action.R, unsigned(1))
+    class TransactionReg(csr.Register, access="w"):
+        rw:   csr.Field(csr.action.W, unsigned(1))
+        data: csr.Field(csr.action.W, unsigned(8))
 
     class RxDataReg(csr.Register, access="r"):
         data: csr.Field(csr.action.R, unsigned(8))
 
-    class ErrorReg(csr.Register, access="rw"):
-        error: csr.Field(csr.action.R, unsigned(1))
+    class StatusReg(csr.Register, access="r"):
+        busy:             csr.Field(csr.action.R, unsigned(1))
+        transaction_full: csr.Field(csr.action.R, unsigned(1))
+        error:            csr.Field(csr.action.R, unsigned(1))
 
     def __init__(self, *, period_cyc, clk_stretch=False,
                  transaction_depth=32, rx_depth=8, **kwargs):
@@ -138,13 +136,11 @@ class Peripheral(wiring.Component):
 
         regs = csr.Builder(addr_width=5, data_width=8)
 
-        self._busy = regs.add("busy", self.BusyReg())
         self._start = regs.add("start", self.StartReg())
         self._address = regs.add("address", self.AddressReg())
-        self._transaction_data = regs.add("transaction_data", self.TransactionDataReg())
-        self._transaction_rdy = regs.add("transaction_rdy", self.TransactionRdyReg())
+        self._transaction_reg = regs.add("transaction_reg", self.TransactionReg())
         self._rx_data = regs.add("rx_data", self.RxDataReg())
-        self._err = regs.add("err", self.ErrorReg())
+        self._status = regs.add("status", self.StatusReg())
 
         self._bridge = csr.Bridge(regs.as_memory_map())
 
@@ -171,12 +167,13 @@ class Peripheral(wiring.Component):
         with m.If(self._address.f.address.w_stb):
             m.d.sync += self.address.eq(self._address.f.address.w_data)
 
-        m.d.comb += self._err.f.error.r_data.eq(err)
+        m.d.comb += self._status.f.error.r_data.eq(err)
 
         m.d.comb += [
-            self._transactions.w_en.eq(self._transaction_data.f.data.w_stb),
-            self._transactions.w_data.eq(self._transaction_data.f.data.w_data),
-            self._transaction_rdy.f.ready.r_data.eq(self._transactions.w_rdy),
+            self._transactions.w_en.eq(self._transaction_reg.element.w_stb),
+            self._transactions.w_data.eq(Cat(self._transaction_reg.f.data.w_data,
+                                             self._transaction_reg.f.rw.w_data)),
+            self._status.f.transaction_full.r_data.eq(~self._transactions.w_rdy),
             self._rx_data.f.data.r_data.eq(self._rx_fifo.r_data),
             self._rx_fifo.r_en.eq(self._rx_data.f.data.r_stb),
             self.transaction_rw.eq(self._transactions.r_data[8]),
@@ -201,7 +198,7 @@ class Peripheral(wiring.Component):
         with m.FSM() as fsm:
 
             # We're busy whenever we're not IDLE; indicate so.
-            m.d.comb += self._busy.f.busy.r_data.eq(~fsm.ongoing('IDLE'))
+            m.d.comb += self._status.f.busy.r_data.eq(~fsm.ongoing('IDLE'))
 
             with m.State('IDLE'):
                 with m.If(self._start.f.start.w_stb & self._start.f.start.w_data):
