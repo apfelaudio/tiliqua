@@ -13,7 +13,9 @@ from amaranth.utils       import exact_log2
 from amaranth_soc         import wishbone
 from amaranth_soc.memory  import MemoryMap
 
-from vendor.psram         import FakeHyperRAMDQSInterface, HyperRAMDQSInterface, HyperRAMDQSPHY
+from vendor.psram         import HyperRAMDQSInterface, HyperRAMDQSPHY
+
+from tiliqua.sim          import FakeHyperRAMDQSInterface
 
 class Peripheral(wiring.Component):
 

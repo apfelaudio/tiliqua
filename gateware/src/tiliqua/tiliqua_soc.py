@@ -25,10 +25,9 @@ from vendor.soc                                  import readbin
 from vendor.soc.generate                         import GenerateSVD
 
 from tiliqua.tiliqua_platform                    import TiliquaPlatform
-from tiliqua.sim                                 import FakeEurorackPmod, FakeTiliquaDomainGenerator
 
 from tiliqua                                     import psram_peripheral, i2c, encoder, dtr, video, eurorack_pmod_peripheral
-from tiliqua                                     import eurorack_pmod
+from tiliqua                                     import sim, eurorack_pmod
 
 from example_vectorscope.top                     import Persistance
 
@@ -109,13 +108,6 @@ class VideoPeripheral(wiring.Component):
             ]
 
         return m
-
-class SimPlatform():
-    def __init__(self):
-        self.files = {}
-        pass
-    def add_file(self, file_name, contents):
-        self.files[file_name] = contents
 
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
@@ -283,7 +275,7 @@ class TiliquaSoc(Component):
 
         # uart0
         m.submodules += self.uart0
-        if not isinstance(platform, SimPlatform):
+        if sim.is_hw(platform):
             uart0_provider = uart.Provider(0)
             m.submodules += uart0_provider
             wiring.connect(m, self.uart0.pins, uart0_provider.pins)
@@ -296,14 +288,14 @@ class TiliquaSoc(Component):
 
         # i2c0
         m.submodules += self.i2c0
-        if not isinstance(platform, SimPlatform):
+        if sim.is_hw(platform):
             i2c0_provider = i2c.Provider()
             m.submodules += i2c0_provider
             wiring.connect(m, self.i2c0.pins, i2c0_provider.pins)
 
         # encoder0
         m.submodules += self.encoder0
-        if not isinstance(platform, SimPlatform):
+        if sim.is_hw(platform):
             encoder0_provider = encoder.Provider()
             m.submodules += encoder0_provider
             wiring.connect(m, self.encoder0.pins, encoder0_provider.pins)
@@ -317,9 +309,7 @@ class TiliquaSoc(Component):
         # video periph / persist
         m.submodules += self.video_periph
 
-        if isinstance(platform, SimPlatform):
-            m.submodules.car = FakeTiliquaDomainGenerator()
-        else:
+        if sim.is_hw(platform):
             # pmod0
             # add a eurorack pmod instance without an audio stream for basic self-testing
             # connect it to our test peripheral before instantiating SoC.
@@ -350,6 +340,8 @@ class TiliquaSoc(Component):
                 m.d.sync += button_counter.eq(button_counter + 1)
             with m.Else():
                 m.d.sync += button_counter.eq(0)
+        else:
+            m.submodules.car = sim.FakeTiliquaDomainGenerator()
 
         # wishbone csr bridge
         m.submodules += self.wb_to_csr
@@ -381,90 +373,6 @@ class TiliquaSoc(Component):
             f.write(f"pub const PSRAM_FB_BASE: usize  = 0x{self.video.fb_base:x};\n")
             f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
             f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
-
-def sim(fragment, tracing=False):
-    import subprocess
-    from amaranth.back import verilog
-
-    build_dst = "build"
-    dst = f"{build_dst}/tiliqua_soc.v"
-    print(f"write verilog implementation of 'tiliqua_soc' to '{dst}'...")
-
-    # Main purpose of using this custom platform instead of
-    # simply None is to track extra files added to the build.
-    sim_platform = SimPlatform()
-
-    os.makedirs(build_dst, exist_ok=True)
-    with open(dst, "w") as f:
-        f.write(verilog.convert(
-            fragment,
-            platform=sim_platform,
-            ports={
-                "clk_sync":       (ClockSignal("sync"),                        None),
-                "rst_sync":       (ResetSignal("sync"),                        None),
-                "clk_dvi":        (ClockSignal("dvi"),                         None),
-                "rst_dvi":        (ResetSignal("dvi"),                         None),
-                "uart0_w_data":   (fragment.uart0._tx_data.f.data.w_data,      None),
-                "uart0_w_stb":    (fragment.uart0._tx_data.f.data.w_stb,       None),
-                "address_ptr":    (fragment.psram_periph.psram.address_ptr,    None),
-                "read_data_view": (fragment.psram_periph.psram.read_data_view, None),
-                "write_data":     (fragment.psram_periph.psram.write_data,     None),
-                "read_ready":     (fragment.psram_periph.psram.read_ready,     None),
-                "write_ready":    (fragment.psram_periph.psram.write_ready,    None),
-                "dvi_x":          (fragment.video.dvi_tgen.x,                  None),
-                "dvi_y":          (fragment.video.dvi_tgen.y,                  None),
-                "dvi_r":          (fragment.video.phy_r,                       None),
-                "dvi_g":          (fragment.video.phy_g,                       None),
-                "dvi_b":          (fragment.video.phy_b,                       None),
-            }))
-
-    # Write all additional files added with platform.add_file()
-    # to build/ directory, so verilator build can find them.
-    for file in sim_platform.files:
-        with open(os.path.join("build", file), "w") as f:
-            f.write(sim_platform.files[file])
-
-    tracing_flags = ["--trace-fst", "--trace-structs"] if tracing else []
-
-    # TODO: warn if this is far from the PLL output?
-    dvi_clk_hz = int(fragment.video.dvi_tgen.timings.pll.pixel_clk_mhz * 1e6)
-    dvi_h_active = fragment.video.dvi_tgen.timings.h_active
-    dvi_v_active = fragment.video.dvi_tgen.timings.v_active
-
-    verilator_dst = "build/obj_dir"
-    print(f"verilate '{dst}' into C++ binary...")
-    subprocess.check_call(["verilator",
-                           "-Wno-COMBDLY",
-                           "-Wno-CASEINCOMPLETE",
-                           "-Wno-CASEOVERLAP",
-                           "-Wno-WIDTHEXPAND",
-                           "-Wno-WIDTHTRUNC",
-                           "-Wno-TIMESCALEMOD",
-                           "-Wno-PINMISSING",
-                           "-Wno-ASCRANGE",
-                           "-cc"] + tracing_flags + [
-                           "--exe",
-                           "--Mdir", f"{verilator_dst}",
-                           "--build",
-                           "-j", "0",
-                           "-Ibuild",
-                           "-CFLAGS", f"-DSYNC_CLK_HZ={fragment.clock_sync_hz}",
-                           "-CFLAGS", f"-DDVI_H_ACTIVE={dvi_h_active}",
-                           "-CFLAGS", f"-DDVI_V_ACTIVE={dvi_v_active}",
-                           "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
-                           "../../src/selftest/sim.cpp",
-                           f"{dst}",
-                           ] + [
-                               f for f in sim_platform.files
-                               if f.endswith(".svh") or f.endswith(".sv") or f.endswith(".v")
-                           ],
-                          env=os.environ)
-
-    print(f"run verilated binary '{verilator_dst}/Vtiliqua_soc'...")
-    subprocess.check_call([f"{verilator_dst}/Vtiliqua_soc"],
-                          env=os.environ)
-
-    print(f"done.")
 
 memory_x = """MEMORY {{
     mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}
@@ -516,7 +424,7 @@ def top_level_cli(fragment, *pos_args, **kwargs):
         sys.exit(0)
 
     if args.sim:
-        sim(fragment, args.trace_fst)
+        sim.simulate_soc(fragment, args.trace_fst)
         sys.exit(0)
 
     TiliquaPlatform().build(fragment)
