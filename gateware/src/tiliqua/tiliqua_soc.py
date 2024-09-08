@@ -59,10 +59,10 @@ class VideoPeripheral(wiring.Component):
 
         regs = csr.Builder(addr_width=5, data_width=8)
 
-        self._persist = regs.add("persist", self.PersistReg())
-        self._decay = regs.add("decay", self.DecayReg())
-        self._palette = regs.add("palette", self.PaletteReg())
-        self._palette_busy = regs.add("palette_busy", self.PaletteBusyReg())
+        self._persist      = regs.add("persist",      self.PersistReg(),     offset=0x0)
+        self._decay        = regs.add("decay",        self.DecayReg(),       offset=0x4)
+        self._palette      = regs.add("palette",      self.PaletteReg(),     offset=0x8)
+        self._palette_busy = regs.add("palette_busy", self.PaletteBusyReg(), offset=0xC)
 
         self._bridge = csr.Bridge(regs.as_memory_map())
 

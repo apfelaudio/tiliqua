@@ -136,11 +136,11 @@ class Peripheral(wiring.Component):
 
         regs = csr.Builder(addr_width=5, data_width=8)
 
-        self._start = regs.add("start", self.StartReg(), offset=0x0)
-        self._address = regs.add("address", self.AddressReg(), offset=0x4)
+        self._start           = regs.add("start",           self.StartReg(),       offset=0x0)
+        self._address         = regs.add("address",         self.AddressReg(),     offset=0x4)
         self._transaction_reg = regs.add("transaction_reg", self.TransactionReg(), offset=0x8)
-        self._rx_data = regs.add("rx_data", self.RxDataReg(), offset=0xA)
-        self._status = regs.add("status", self.StatusReg(), offset=0xC)
+        self._rx_data         = regs.add("rx_data",         self.RxDataReg(),      offset=0xC)
+        self._status          = regs.add("status",          self.StatusReg(),      offset=0x10)
 
         self._bridge = csr.Bridge(regs.as_memory_map())
 

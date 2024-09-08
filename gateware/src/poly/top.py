@@ -336,13 +336,14 @@ class SynthPeripheral(wiring.Component):
 
     def __init__(self, synth=None):
         self.synth = synth
-        regs = csr.Builder(addr_width=5, data_width=8)
-        self._drive = regs.add("drive", self.Drive())
-        self._reso = regs.add("reso", self.Reso())
-        self._voices = [regs.add(f"voices{i}", self.Voice()) for i in range(8)]
-        self._matrix = regs.add("matrix", self.Matrix())
-        self._matrix_busy = regs.add("matrix_busy", self.MatrixBusy())
-        self._touch_control = regs.add("touch_control", self.TouchControl())
+        regs = csr.Builder(addr_width=6, data_width=8)
+        self._drive         = regs.add("drive",         self.Drive(),        offset=0x0)
+        self._reso          = regs.add("reso",          self.Reso(),         offset=0x4)
+        self._voices        = [regs.add(f"voices{i}",   self.Voice(),
+                               offset=0x8+i*4) for i in range(8)]
+        self._matrix        = regs.add("matrix",        self.Matrix(),       offset=0x28)
+        self._matrix_busy   = regs.add("matrix_busy",   self.MatrixBusy(),   offset=0x2C)
+        self._touch_control = regs.add("touch_control", self.TouchControl(), offset=0x30)
         self._bridge = csr.Bridge(regs.as_memory_map())
         super().__init__({
             "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
