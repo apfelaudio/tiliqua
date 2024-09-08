@@ -156,6 +156,8 @@ def is_hw(platform):
 
 def simulate_soc(fragment, tracing=False):
 
+    fragment.add_simulated_cores()
+
     build_dst = "build"
     dst = f"{build_dst}/tiliqua_soc.v"
     print(f"write verilog implementation of 'tiliqua_soc' to '{dst}'...")

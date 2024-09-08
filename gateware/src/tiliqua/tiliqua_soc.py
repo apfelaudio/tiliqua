@@ -111,11 +111,10 @@ class VideoPeripheral(wiring.Component):
 
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
-                 audio_out_peripheral=True, touch=False, finalize_csr_bridge=True, sim=True):
+                 audio_out_peripheral=True, touch=False, finalize_csr_bridge=True):
 
         super().__init__({})
 
-        self.sim = sim
         self.firmware_path = firmware_path
         self.touch = touch
         self.audio_192 = audio_192
@@ -193,7 +192,7 @@ class TiliquaSoc(Component):
         self.interrupt_controller.add(self.timer1, name="timer1", number=self.timer1_irq)
 
         # psram peripheral
-        self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size, sim=self.sim)
+        self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size)
         self.wb_decoder.add(self.psram_periph.bus, addr=self.psram_base, name="psram")
 
         # video PHY (DMAs from PSRAM starting at fb_base)
@@ -201,7 +200,7 @@ class TiliquaSoc(Component):
         fb_size = (dvi_timings.h_active, dvi_timings.v_active)
         self.video = video.FramebufferPHY(
                 fb_base=fb_base, dvi_timings=dvi_timings, fb_size=fb_size,
-                bus_master=self.psram_periph.bus, sim=self.sim)
+                bus_master=self.psram_periph.bus)
         self.psram_periph.add_master(self.video.bus)
 
         # mobo i2c
@@ -244,6 +243,9 @@ class TiliquaSoc(Component):
 
         self.wb_to_csr = WishboneCSRBridge(self.csr_decoder.bus, data_width=32)
         self.wb_decoder.add(self.wb_to_csr.wb_bus, addr=self.csr_base, sparse=False, name="wb_to_csr")
+
+    def add_simulated_cores(self):
+        self.psram_periph.add_simulated_psram()
 
     def elaborate(self, platform):
 

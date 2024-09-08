@@ -15,7 +15,7 @@ from amaranth_soc.memory  import MemoryMap
 
 from vendor.psram         import HyperRAMDQSInterface, HyperRAMDQSPHY
 
-from tiliqua.sim          import FakeHyperRAMDQSInterface
+from tiliqua              import sim
 
 class Peripheral(wiring.Component):
 
@@ -29,7 +29,7 @@ class Peripheral(wiring.Component):
     as a memory region, in the future "psram" might also be acceptable.
     """
 
-    def __init__(self, *, size, data_width=32, granularity=8, name="psram", sim=False):
+    def __init__(self, *, size, data_width=32, granularity=8, name="psram"):
         if not isinstance(size, int) or size <= 0 or size & size-1:
             raise ValueError("Size must be an integer power of two, not {!r}"
                              .format(size))
@@ -38,7 +38,6 @@ class Peripheral(wiring.Component):
                              "of {} ({} / {})"
                               .format(size, data_width // granularity, data_width, granularity))
 
-        self.sim         = sim
         self.size        = size
         self.granularity = granularity
         self.name        = name
@@ -65,12 +64,11 @@ class Peripheral(wiring.Component):
         self._hram_arbiter.add(flipped(self.bus))
         self.shared_bus = self._hram_arbiter.bus
 
-        # phy and controller
-        self.psram_phy = None
-        self.psram     = FakeHyperRAMDQSInterface() if self.sim else None
-
     def add_master(self, bus):
         self._hram_arbiter.add(bus)
+
+    def add_simulated_psram(self):
+        self.psram = sim.FakeHyperRAMDQSInterface()
 
     def elaborate(self, platform):
         m = Module()
@@ -79,14 +77,14 @@ class Peripheral(wiring.Component):
         m.submodules.arbiter = self._hram_arbiter
 
         # phy and controller
-        if self.sim:
-            psram = self.psram
-            m.submodules += self.psram
-        else:
+        if sim.is_hw(platform):
             psram_bus = platform.request('ram', dir={'rwds':'-', 'dq':'-', 'cs':'-'})
             self.psram_phy = HyperRAMDQSPHY(bus=psram_bus)
             self.psram = psram = HyperRAMDQSInterface(phy=self.psram_phy.phy)
             m.submodules += [self.psram_phy, self.psram]
+        else:
+            # make sure you've executed 'add_simulated_psram' before elaboration!
+            m.submodules.psram = psram = self.psram
 
         m.d.comb += [
             psram.single_page     .eq(0),
