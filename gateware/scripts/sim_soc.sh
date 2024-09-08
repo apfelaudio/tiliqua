@@ -1,13 +1,4 @@
 #!/bin/bash
-#
-# build an SoC bitstream by:
-# - creating all the definitions required by the firmware (svd / memory map)
-# - compiling the firmware itself
-# - building the bitstream with firmware packaged inside it
-#
-# requirements:
-# - rustup with riscv32imac target installed
-# - cargo install svd2rust form
 
 set -e -o pipefail
 
@@ -28,4 +19,4 @@ cp build/memory.x $SOC/fw/memory.x
 (cd $SOC/fw && cargo objcopy --release -- -Obinary firmware.bin)
 
 # simulate final bitstream
-pdm run $SOC/top.py --sim
+pdm run $SOC/top.py --sim --trace-fst

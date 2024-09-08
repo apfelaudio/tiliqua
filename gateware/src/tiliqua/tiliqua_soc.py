@@ -292,22 +292,27 @@ class TiliquaSoc(Component):
         # timer1
         m.submodules += self.timer1
 
+        # i2c0
+        m.submodules += self.i2c0
         if not isinstance(platform, SimPlatform):
+            i2c0_provider = i2c.Provider()
+            m.submodules += i2c0_provider
+            wiring.connect(m, self.i2c0.pins, i2c0_provider.pins)
+
+        # encoder0
+        m.submodules += self.encoder0
+        if not isinstance(platform, SimPlatform):
+            encoder0_provider = encoder.Provider()
+            m.submodules += encoder0_provider
+            wiring.connect(m, self.encoder0.pins, encoder0_provider.pins)
+
+        if not isinstance(platform, SimPlatform):
+
             # psram
             m.submodules += self.psram_periph
 
             # video PHY
             m.submodules += self.video
-
-            # i2c0
-            i2c0_provider = i2c.Provider()
-            m.submodules += [i2c0_provider, self.i2c0]
-            wiring.connect(m, self.i2c0.pins, i2c0_provider.pins)
-
-            # encoder0
-            encoder0_provider = encoder.Provider()
-            m.submodules += [encoder0_provider, self.encoder0]
-            wiring.connect(m, self.encoder0.pins, encoder0_provider.pins)
 
             # pmod0
             # add a eurorack pmod instance without an audio stream for basic self-testing
@@ -332,6 +337,16 @@ class TiliquaSoc(Component):
 
             # Enable LED driver on motherboard
             m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
+
+            # HACK: encoder push override -- hold for 3sec will re-enter bootloader
+            REBOOT_SEC = 3
+            button_counter = Signal(unsigned(32))
+            with m.If(button_counter > REBOOT_SEC*self.clk_sync_hz):
+                m.d.comb += platform.request("self_program").o.eq(1)
+            with m.If(self.encoder0._button.f.button.r_data):
+                m.d.sync += button_counter.eq(button_counter + 1)
+            with m.Else():
+                m.d.sync += button_counter.eq(0)
 
         # wishbone csr bridge
         m.submodules += self.wb_to_csr
@@ -364,7 +379,7 @@ class TiliquaSoc(Component):
             f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
             f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
 
-def sim(fragment):
+def sim(fragment, tracing=False):
     import subprocess
     from amaranth.back import verilog
 
@@ -392,6 +407,8 @@ def sim(fragment):
         with open(os.path.join("build", file), "w") as f:
             f.write(sim_platform.files[file])
 
+    tracing_flags = ["--trace-fst", "--trace-structs"] if tracing else []
+
     verilator_dst = "build/obj_dir"
     print(f"verilate '{dst}' into C++ binary...")
     subprocess.check_call(["verilator",
@@ -403,8 +420,7 @@ def sim(fragment):
                            "-Wno-TIMESCALEMOD",
                            "-Wno-PINMISSING",
                            "-Wno-ASCRANGE",
-                           "-cc",
-                           "--trace-fst",
+                           "-cc"] + tracing_flags + [
                            "--exe",
                            "--Mdir", f"{verilator_dst}",
                            "--build",
@@ -447,6 +463,7 @@ def top_level_cli(fragment, *pos_args, **kwargs):
         help="If provided, artifacts needed to build Rust firmware are generated. Bitstream is not built")
 
     parser.add_argument('--sim', action='store_true')
+    parser.add_argument('--trace-fst', action='store_true')
     args = parser.parse_args()
 
     # If this isn't a fragment directly, interpret it as an object that will build one.
@@ -474,7 +491,7 @@ def top_level_cli(fragment, *pos_args, **kwargs):
         sys.exit(0)
 
     if args.sim:
-        sim(fragment)
+        sim(fragment, args.trace_fst)
         sys.exit(0)
 
     TiliquaPlatform().build(fragment)
