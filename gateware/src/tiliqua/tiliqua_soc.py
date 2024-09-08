@@ -111,10 +111,10 @@ class VideoPeripheral(wiring.Component):
 
 class SimPlatform():
     def __init__(self):
-        self.files = []
+        self.files = {}
         pass
     def add_file(self, file_name, contents):
-        self.files.append(file_name)
+        self.files[file_name] = contents
 
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
@@ -372,12 +372,25 @@ def sim(fragment):
     dst = f"{build_dst}/tiliqua_soc.v"
     print(f"write verilog implementation of 'tiliqua_soc' to '{dst}'...")
 
+    # Main purpose of using this custom platform instead of
+    # simply None is to track extra files added to the build.
     sim_platform = SimPlatform()
 
     os.makedirs(build_dst, exist_ok=True)
     with open(dst, "w") as f:
-        f.write(verilog.convert(fragment, platform=sim_platform, ports=[
+        f.write(verilog.convert(
+            fragment,
+            platform=sim_platform,
+            ports=[
+                fragment.uart0._tx_data.f.data.w_data,
+                fragment.uart0._tx_data.f.data.w_stb,
             ]))
+
+    # Write all additional files added with platform.add_file()
+    # to build/ directory, so verilator build can find them.
+    for file in sim_platform.files:
+        with open(os.path.join("build", file), "w") as f:
+            f.write(sim_platform.files[file])
 
     verilator_dst = "build/obj_dir"
     print(f"verilate '{dst}' into C++ binary...")

@@ -1,5 +1,5 @@
 // A (quite dirty) simulation harness that simulates the tiliqua_soc core
-// and uses it to generate some bitmap images and full FST traces for examination.
+// and uses it to generate some full FST traces for examination.
 
 #include <verilated_fst_c.h>
 
@@ -44,9 +44,12 @@ int main(int argc, char** argv) {
         if (timestamp_ns % (ns_in_sync_cycle/2) == 0) {
             top->clk = !top->clk;
             top->eval();
+            if (top->clk && top->w_stb) {
+                putchar(top->w_data);
+            }
         }
+
         contextp->timeInc(1000);
-        top->eval();
         tfp->dump(contextp->time());
     }
     tfp->close();
