@@ -62,7 +62,7 @@ pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
     for i in 0..PX_INTENSITY_MAX {
         for h in 0..PX_HUE_MAX {
             let rgb = palette::compute_color(i, h, p);
-            video.set_palette_rgb(i as u32, h as u32, rgb.r, rgb.g, rgb.b);
+            video.set_palette_rgb(i as u8, h as u8, rgb.r, rgb.g, rgb.b);
         }
     }
 }

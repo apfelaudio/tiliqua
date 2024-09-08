@@ -288,8 +288,10 @@ class FramebufferPHY(wiring.Component):
         # Color palette tweaking interface
         super().__init__({
             "palette_rgb": In(stream.Signature(data.StructLayout({
-                "p": unsigned(8),
-                "rgb": unsigned(24),
+                "position": unsigned(8),
+                "red":      unsigned(8),
+                "green":    unsigned(8),
+                "blue":     unsigned(8),
                 }))),
         })
 
@@ -497,16 +499,16 @@ class FramebufferPHY(wiring.Component):
                   palette_b.write_port()]
         # split rgb payload into one write for each rgb memory
         m.d.comb += [
-            wports[0].data.eq(self.palette_rgb.payload.rgb[16:24]),
-            wports[1].data.eq(self.palette_rgb.payload.rgb[8 :16]),
-            wports[2].data.eq(self.palette_rgb.payload.rgb[0 : 8]),
+            wports[0].data.eq(self.palette_rgb.payload.red),
+            wports[1].data.eq(self.palette_rgb.payload.green),
+            wports[2].data.eq(self.palette_rgb.payload.blue),
         ]
         m.d.comb += self.palette_rgb.ready.eq(1)
         # hook up position and stream valid -> write enable.
         for wport in wports:
             with m.If(self.palette_rgb.ready):
                 m.d.comb += [
-                    wport.addr.eq(self.palette_rgb.payload.p),
+                    wport.addr.eq(self.palette_rgb.payload.position),
                     wport.en.eq(self.palette_rgb.valid),
                 ]
 

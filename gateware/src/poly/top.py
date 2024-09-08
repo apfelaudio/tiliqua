@@ -318,18 +318,15 @@ class SynthPeripheral(wiring.Component):
     class Reso(csr.Register, access="w"):
         value: csr.Field(csr.action.W, unsigned(16))
 
-    class VoiceNote(csr.Register, access="r"):
-        note: csr.Field(csr.action.R, unsigned(8))
-
-    class VoiceCutoff(csr.Register, access="r"):
+    class Voice(csr.Register, access="r"):
+        note:   csr.Field(csr.action.R, unsigned(8))
         cutoff: csr.Field(csr.action.R, unsigned(8))
 
-    # Matrix coefficient write: 0xXYVVVVVV
-    # X = (outs, column), Y =(ins, row), V = coefficient value (24-bit fixed-point 2.16)
-    # Coefficient is written ASAP, matrix_busy will be set to 1 until it is complete.
-    # TODO: split into explicit fields
     class Matrix(csr.Register, access="w"):
-        matrix: csr.Field(csr.action.W, unsigned(32))
+        """Mixing matrix coefficient: commit on write strobe, MatrixBusy set until done."""
+        o_x:   csr.Field(csr.action.W, unsigned(4))
+        i_y:   csr.Field(csr.action.W, unsigned(4))
+        value: csr.Field(csr.action.W, signed(24))
 
     class MatrixBusy(csr.Register, access="r"):
         busy: csr.Field(csr.action.R, unsigned(1))
@@ -339,14 +336,14 @@ class SynthPeripheral(wiring.Component):
 
     def __init__(self, synth=None):
         self.synth = synth
-        regs = csr.Builder(addr_width=5, data_width=8)
-        self._drive = regs.add("drive", self.Drive())
-        self._reso = regs.add("reso", self.Reso())
-        self._voice_notes = [regs.add(f"voice_note{i}", self.VoiceNote()) for i in range(8)]
-        self._voice_cutoffs = [regs.add(f"voice_cutoff{i}", self.VoiceCutoff()) for i in range(8)]
-        self._matrix = regs.add("matrix", self.Matrix())
-        self._matrix_busy = regs.add("matrix_busy", self.MatrixBusy())
-        self._touch_control = regs.add("touch_control", self.TouchControl())
+        regs = csr.Builder(addr_width=6, data_width=8)
+        self._drive         = regs.add("drive",         self.Drive(),        offset=0x0)
+        self._reso          = regs.add("reso",          self.Reso(),         offset=0x4)
+        self._voices        = [regs.add(f"voices{i}",   self.Voice(),
+                               offset=0x8+i*4) for i in range(8)]
+        self._matrix        = regs.add("matrix",        self.Matrix(),       offset=0x28)
+        self._matrix_busy   = regs.add("matrix_busy",   self.MatrixBusy(),   offset=0x2C)
+        self._touch_control = regs.add("touch_control", self.TouchControl(), offset=0x30)
         self._bridge = csr.Bridge(regs.as_memory_map())
         super().__init__({
             "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
@@ -367,21 +364,21 @@ class SynthPeripheral(wiring.Component):
             m.d.sync += self.synth.i_touch_control.eq(self._touch_control.f.value.w_data)
 
         # voice tracking
-        for i, (voice_note, voice_cutoff) in enumerate(zip(self._voice_notes, self._voice_cutoffs)):
+        for i, voice in enumerate(self._voices):
             m.d.comb += [
-                voice_note.f.note.r_data.eq(self.synth.voice_states[i].note),
-                voice_cutoff.f.cutoff.r_data.eq(self.synth.voice_states[i].cutoff)
+                voice.f.note.r_data  .eq(self.synth.voice_states[i].note),
+                voice.f.cutoff.r_data.eq(self.synth.voice_states[i].cutoff)
             ]
 
         # matrix coefficient update logic
         matrix_busy = Signal()
         m.d.comb += self._matrix_busy.f.busy.r_data.eq(matrix_busy)
-        with m.If(self._matrix.f.matrix.w_stb & ~matrix_busy):
+        with m.If(self._matrix.element.w_stb & ~matrix_busy):
             m.d.sync += [
                 matrix_busy.eq(1),
-                self.synth.diffuser.matrix.c.payload.o_x         .eq(self._matrix.f.matrix.w_data[28:32]),
-                self.synth.diffuser.matrix.c.payload.i_y         .eq(self._matrix.f.matrix.w_data[24:28]),
-                self.synth.diffuser.matrix.c.payload.v.as_value().eq(self._matrix.f.matrix.w_data[ 0:24]),
+                self.synth.diffuser.matrix.c.payload.o_x         .eq(self._matrix.f.o_x.w_data),
+                self.synth.diffuser.matrix.c.payload.i_y         .eq(self._matrix.f.i_y.w_data),
+                self.synth.diffuser.matrix.c.payload.v.as_value().eq(self._matrix.f.value.w_data),
                 self.synth.diffuser.matrix.c.valid.eq(1),
             ]
         with m.If(matrix_busy & self.synth.diffuser.matrix.c.ready):
