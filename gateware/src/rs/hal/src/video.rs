@@ -16,10 +16,15 @@ macro_rules! impl_video {
             }
 
             impl $VIDEOX {
-                pub fn set_palette_rgb(&mut self, intensity: u32, hue: u32, r: u8, g: u8, b: u8)  {
-                    let reg: u32 = ((intensity & 0xF) << 28) | ((hue & 0xF) << 24) | ((r as u32) << 16) | ((g as u32) << 8) | b as u32;
-                    while self.registers.palette_busy().read().bits() == 1 { /* wait until last coeff written */ }
-                    self.registers.palette().write(|w| unsafe { w.palette().bits(reg) } );
+                pub fn set_palette_rgb(&mut self, intensity: u8, hue: u8, r: u8, g: u8, b: u8)  {
+                    /* wait until last coefficient written */ 
+                    while self.registers.palette_busy().read().bits() == 1 { }
+                    self.registers.palette().write(|w| unsafe {
+                        w.position().bits(((intensity&0xF) << 4) | (hue&0xF));
+                        w.red()     .bits(r);
+                        w.green()   .bits(g);
+                        w.blue()    .bits(b)
+                    } );
                 }
 
                 pub fn set_persist(&mut self, value: u16)  {
