@@ -125,7 +125,7 @@ class TiliquaSoc(Component):
         self.clock_sync_hz = TILIQUA_CLOCK_SYNC_HZ
 
         self.mainram_base         = 0x00000000
-        self.mainram_size         = 0x00010000  # 65536 bytes
+        self.mainram_size         = 0x00008000
         self.psram_base           = 0x20000000
         self.psram_size           = 16*1024*1024
         self.csr_base             = 0xf0000000

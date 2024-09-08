@@ -256,7 +256,7 @@ class FramebufferPHY(wiring.Component):
     """
 
     def __init__(self, *, dvi_timings: DVITimings, fb_base, bus_master,
-                 fb_size, fifo_depth=1024, sim=False, fb_bytes_per_pixel=1):
+                 fb_size, fifo_depth=256, sim=False, fb_bytes_per_pixel=1):
 
         self.sim = sim
         self.fifo_depth = fifo_depth

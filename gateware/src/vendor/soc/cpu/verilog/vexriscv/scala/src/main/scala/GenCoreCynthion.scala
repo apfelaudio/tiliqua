@@ -26,25 +26,13 @@ object GenCoreCynthion {
       // configure plugins
       val plugins = ArrayBuffer[Plugin[VexRiscv]]()
       plugins ++= List(
-        new IBusCachedPlugin(
+        new IBusSimplePlugin(
           resetVector = null,
-          relaxedPcCalculation = false,
           prediction = STATIC,
-          compressedGen = true, // compressed instruction support
-          memoryTranslatorPortConfig = null,
-          config = InstructionCacheConfig(
-            cacheSize = 2048,
-            bytePerLine = 32,
-            wayCount = 1,
-            addressWidth = 32,
-            cpuDataWidth = 32,
-            memDataWidth = 32,
-            catchIllegalAccess = true,
-            catchAccessFault = true,
-            asyncTagMemory = false,
-            twoCycleRam = false,
-            twoCycleCache = false // !compressedGen
-          )
+          cmdForkOnSecondStage = false,
+          cmdForkPersistence = false, //Not required as the wishbone bridge ensure it
+          compressedGen = true,
+          memoryTranslatorPortConfig = null
         ),
         new DBusCachedPlugin(
           dBusCmdMasterPipe = true,
@@ -52,7 +40,7 @@ object GenCoreCynthion {
           dBusRspSlavePipe = false,
           relaxedMemoryTranslationRegister = false,
           config = new DataCacheConfig(
-            cacheSize = 4096,
+            cacheSize = 1024,
             bytePerLine = 32,
             wayCount = 1,
             addressWidth = 32,
