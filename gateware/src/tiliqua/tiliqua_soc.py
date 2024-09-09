@@ -314,8 +314,12 @@ class TiliquaSoc(Component):
         # video PHY
         m.submodules += self.video
 
-        if not isinstance(platform, SimPlatform):
+        # video periph / persist
+        m.submodules += self.video_periph
 
+        if isinstance(platform, SimPlatform):
+            m.submodules.car = FakeTiliquaDomainGenerator()
+        else:
             # pmod0
             # add a eurorack pmod instance without an audio stream for basic self-testing
             # connect it to our test peripheral before instantiating SoC.
@@ -329,9 +333,6 @@ class TiliquaSoc(Component):
 
             # die temperature
             m.submodules += self.dtr0
-
-            # video periph / persist
-            m.submodules += self.video_periph
 
             # generate our domain clocks/resets
             m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
@@ -349,9 +350,6 @@ class TiliquaSoc(Component):
                 m.d.sync += button_counter.eq(button_counter + 1)
             with m.Else():
                 m.d.sync += button_counter.eq(0)
-
-        else:
-            m.submodules.car = FakeTiliquaDomainGenerator()
 
         # wishbone csr bridge
         m.submodules += self.wb_to_csr
@@ -413,6 +411,11 @@ def sim(fragment, tracing=False):
                 "write_data":     (fragment.psram_periph.psram.write_data,     None),
                 "read_ready":     (fragment.psram_periph.psram.read_ready,     None),
                 "write_ready":    (fragment.psram_periph.psram.write_ready,    None),
+                "dvi_x":          (fragment.video.dvi_tgen.x,                  None),
+                "dvi_y":          (fragment.video.dvi_tgen.y,                  None),
+                "dvi_r":          (fragment.video.phy_r,                       None),
+                "dvi_g":          (fragment.video.phy_g,                       None),
+                "dvi_b":          (fragment.video.phy_b,                       None),
             }))
 
     # Write all additional files added with platform.add_file()

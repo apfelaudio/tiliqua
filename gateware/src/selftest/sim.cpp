@@ -1,6 +1,8 @@
 // A (quite dirty) simulation harness that simulates the tiliqua_soc core
 // and uses it to generate some full FST traces for examination.
 
+#include <cmath>
+
 #if VM_TRACE_FST == 1
 #include <verilated_fst_c.h>
 #endif
@@ -8,7 +10,8 @@
 #include "Vtiliqua_soc.h"
 #include "verilated.h"
 
-#include <cmath>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 int main(int argc, char** argv) {
     VerilatedContext* contextp = new VerilatedContext;
@@ -52,15 +55,42 @@ int main(int argc, char** argv) {
     uint8_t *psram_data = (uint8_t*)malloc(psram_size_bytes);
     memset(psram_data, 0, psram_size_bytes);
 
+    uint32_t im_stride = 3;
+    uint8_t *image_data = (uint8_t*)malloc(DVI_H_ACTIVE*DVI_V_ACTIVE*im_stride);
+    memset(image_data, 0, DVI_H_ACTIVE*DVI_V_ACTIVE*im_stride);
+
+    uint32_t frames = 0;
+
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
 
         uint64_t timestamp_ns = contextp->time() / 1000;
 
+        // DVI clock domain (PHY output simulation to bitmap image)
+        if (timestamp_ns % (ns_in_dvi_cycle/2) == 0) {
+            top->clk_dvi = !top->clk_dvi;
+            if (top->clk_dvi) {
+                uint32_t x = top->dvi_x;
+                uint32_t y = top->dvi_y;
+                if (x < DVI_H_ACTIVE && y < DVI_V_ACTIVE) {
+                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 0] = top->dvi_r;
+                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 1] = top->dvi_g;
+                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 2] = top->dvi_b;
+                }
+                if (x == DVI_H_ACTIVE-1 && y == DVI_V_ACTIVE-1) {
+                    char name[64];
+                    sprintf(name, "frame%02d.bmp", frames);
+                    printf("out %s\n", name);
+                    stbi_write_bmp(name, DVI_H_ACTIVE, DVI_V_ACTIVE, 3, image_data);
+                    ++frames;
+                }
+            }
+        }
+
+        // Sync clock domain (PSRAM read/write simulation, UART printouts)
         if (timestamp_ns % (ns_in_sync_cycle/2) == 0) {
 
             top->clk_sync = !top->clk_sync;
 
-            // Sync clock domain (PSRAM read/write simulation)
             if (top->clk_sync) {
 
                 if (top->read_ready) {
