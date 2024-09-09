@@ -19,4 +19,4 @@ cp build/memory.x $SOC/fw/memory.x
 (cd $SOC/fw && cargo objcopy --release -- -Obinary firmware.bin)
 
 # simulate final bitstream
-pdm run $SOC/top.py --sim --trace-fst
+pdm run $SOC/top.py --sim

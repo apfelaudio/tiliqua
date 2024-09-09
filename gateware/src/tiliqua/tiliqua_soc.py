@@ -25,6 +25,7 @@ from vendor.soc                                  import readbin
 from vendor.soc.generate                         import GenerateSVD
 
 from tiliqua.tiliqua_platform                    import TiliquaPlatform
+from tiliqua.sim                                 import FakeEurorackPmod, FakeTiliquaDomainGenerator
 
 from tiliqua                                     import psram_peripheral, i2c, encoder, dtr, video, eurorack_pmod_peripheral
 from tiliqua                                     import eurorack_pmod
@@ -118,10 +119,11 @@ class SimPlatform():
 
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
-                 audio_out_peripheral=True, touch=False, finalize_csr_bridge=True):
+                 audio_out_peripheral=True, touch=False, finalize_csr_bridge=True, sim=True):
 
         super().__init__({})
 
+        self.sim = sim
         self.firmware_path = firmware_path
         self.touch = touch
         self.audio_192 = audio_192
@@ -199,7 +201,7 @@ class TiliquaSoc(Component):
         self.interrupt_controller.add(self.timer1, name="timer1", number=self.timer1_irq)
 
         # psram peripheral
-        self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size)
+        self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size, sim=self.sim)
         self.wb_decoder.add(self.psram_periph.bus, addr=self.psram_base, name="psram")
 
         # video PHY (DMAs from PSRAM starting at fb_base)
@@ -207,7 +209,7 @@ class TiliquaSoc(Component):
         fb_size = (dvi_timings.h_active, dvi_timings.v_active)
         self.video = video.FramebufferPHY(
                 fb_base=fb_base, dvi_timings=dvi_timings, fb_size=fb_size,
-                bus_master=self.psram_periph.bus, sim=False)
+                bus_master=self.psram_periph.bus, sim=self.sim)
         self.psram_periph.add_master(self.video.bus)
 
         # mobo i2c
@@ -306,13 +308,13 @@ class TiliquaSoc(Component):
             m.submodules += encoder0_provider
             wiring.connect(m, self.encoder0.pins, encoder0_provider.pins)
 
+        # psram
+        m.submodules += self.psram_periph
+
+        # video PHY
+        m.submodules += self.video
+
         if not isinstance(platform, SimPlatform):
-
-            # psram
-            m.submodules += self.psram_periph
-
-            # video PHY
-            m.submodules += self.video
 
             # pmod0
             # add a eurorack pmod instance without an audio stream for basic self-testing
@@ -347,6 +349,9 @@ class TiliquaSoc(Component):
                 m.d.sync += button_counter.eq(button_counter + 1)
             with m.Else():
                 m.d.sync += button_counter.eq(0)
+
+        else:
+            m.submodules.car = FakeTiliquaDomainGenerator()
 
         # wishbone csr bridge
         m.submodules += self.wb_to_csr
@@ -396,10 +401,19 @@ def sim(fragment, tracing=False):
         f.write(verilog.convert(
             fragment,
             platform=sim_platform,
-            ports=[
-                fragment.uart0._tx_data.f.data.w_data,
-                fragment.uart0._tx_data.f.data.w_stb,
-            ]))
+            ports={
+                "clk_sync":       (ClockSignal("sync"),                        None),
+                "rst_sync":       (ResetSignal("sync"),                        None),
+                "clk_dvi":        (ClockSignal("dvi"),                         None),
+                "rst_dvi":        (ResetSignal("dvi"),                         None),
+                "uart0_w_data":   (fragment.uart0._tx_data.f.data.w_data,      None),
+                "uart0_w_stb":    (fragment.uart0._tx_data.f.data.w_stb,       None),
+                "address_ptr":    (fragment.psram_periph.psram.address_ptr,    None),
+                "read_data_view": (fragment.psram_periph.psram.read_data_view, None),
+                "write_data":     (fragment.psram_periph.psram.write_data,     None),
+                "read_ready":     (fragment.psram_periph.psram.read_ready,     None),
+                "write_ready":    (fragment.psram_periph.psram.write_ready,    None),
+            }))
 
     # Write all additional files added with platform.add_file()
     # to build/ directory, so verilator build can find them.
@@ -408,6 +422,11 @@ def sim(fragment, tracing=False):
             f.write(sim_platform.files[file])
 
     tracing_flags = ["--trace-fst", "--trace-structs"] if tracing else []
+
+    # TODO: warn if this is far from the PLL output?
+    dvi_clk_hz = int(fragment.video.dvi_tgen.timings.pll.pixel_clk_mhz * 1e6)
+    dvi_h_active = fragment.video.dvi_tgen.timings.h_active
+    dvi_v_active = fragment.video.dvi_tgen.timings.v_active
 
     verilator_dst = "build/obj_dir"
     print(f"verilate '{dst}' into C++ binary...")
@@ -427,6 +446,9 @@ def sim(fragment, tracing=False):
                            "-j", "0",
                            "-Ibuild",
                            "-CFLAGS", f"-DSYNC_CLK_HZ={fragment.clock_sync_hz}",
+                           "-CFLAGS", f"-DDVI_H_ACTIVE={dvi_h_active}",
+                           "-CFLAGS", f"-DDVI_V_ACTIVE={dvi_v_active}",
+                           "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
                            "../../src/selftest/sim.cpp",
                            f"{dst}",
                            ] + [

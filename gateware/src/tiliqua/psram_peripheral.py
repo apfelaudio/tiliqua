@@ -36,6 +36,7 @@ class Peripheral(wiring.Component):
                              "of {} ({} / {})"
                               .format(size, data_width // granularity, data_width, granularity))
 
+        self.sim         = sim
         self.size        = size
         self.granularity = granularity
         self.name        = name
@@ -64,7 +65,7 @@ class Peripheral(wiring.Component):
 
         # phy and controller
         self.psram_phy = None
-        self.psram     = FakeHyperRAMDQSInterface() if sim else None
+        self.psram     = FakeHyperRAMDQSInterface() if self.sim else None
 
     def add_master(self, bus):
         self._hram_arbiter.add(bus)
@@ -76,7 +77,7 @@ class Peripheral(wiring.Component):
         m.submodules.arbiter = self._hram_arbiter
 
         # phy and controller
-        if platform is None:
+        if self.sim:
             psram = self.psram
             m.submodules += self.psram
         else:
