@@ -24,6 +24,7 @@ test = [
 test = { cmd = "pytest" }
 # bitstreams that include an SoC
 build_selftest = { shell = "./scripts/build_soc.sh selftest" }
+sim_selftest   = { shell = "./scripts/sim_soc.sh selftest" }
 build_boot     = { shell = "./scripts/build_soc.sh boot" }
 build_xbeam    = { shell = "./scripts/build_soc.sh xbeam" }
 build_poly     = { shell = "./scripts/build_soc.sh poly" }

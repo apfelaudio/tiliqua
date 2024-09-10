@@ -18,7 +18,9 @@ from amaranth.lib.memory   import Memory
 
 from amaranth_soc          import wishbone
 
-from dataclasses import dataclass
+from dataclasses           import dataclass
+
+from tiliqua               import sim
 
 @dataclass
 class DVIPLL:
@@ -256,9 +258,8 @@ class FramebufferPHY(wiring.Component):
     """
 
     def __init__(self, *, dvi_timings: DVITimings, fb_base, bus_master,
-                 fb_size, fifo_depth=256, sim=False, fb_bytes_per_pixel=1):
+                 fb_size, fifo_depth=256, fb_bytes_per_pixel=1):
 
-        self.sim = sim
         self.fifo_depth = fifo_depth
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
@@ -334,7 +335,7 @@ class FramebufferPHY(wiring.Component):
         m.submodules.vsync_ff = FFSynchronizer(
                 i=dvi_tgen.vsync, o=phy_vsync_sync, o_domain="sync")
 
-        if not self.sim:
+        if sim.is_hw(platform):
 
             # DVI PHY (not needed for simulation).
 

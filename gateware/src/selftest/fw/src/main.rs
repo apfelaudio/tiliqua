@@ -44,7 +44,7 @@ fn psram_memtest(timer: &mut Timer0) {
     // WARN: assume framebuffer is at the start of PSRAM - don't try memtesting that section.
 
     let psram_ptr = PSRAM_BASE as *mut u32;
-    let psram_sz_test = 1024*1024;
+    let psram_sz_test = 1024;
 
     timer.enable();
     timer.set_timeout_ticks(0xFFFFFFFF);
@@ -96,10 +96,10 @@ fn tusb322i_id_test(i2cdev: &mut I2c0) {
             info!("tusb322i_id{}: 0x{:x}", ix, byte);
             ix += 1;
         }
-        panic!("FAIL: TUSB322I ID");
+        error!("FAIL: TUSB322I ID");
+    } else {
+        info!("PASS: TUSB322I Device ID.");
     }
-
-    info!("PASS: TUSB322I Device ID.");
 }
 
 fn print_encoder_state<D>(d: &mut D, rotation: i16, button: bool)
