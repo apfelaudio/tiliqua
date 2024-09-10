@@ -50,17 +50,17 @@ int main(int argc, char** argv) {
     printf("GCD is: %i KHz (%i ns/cycle)\n", clk_gcd/1000, ns_in_gcd);
 
     contextp->timeInc(1);
-    top->rst = 1;
-    top->dvi_rst = 1;
-    top->audio_rst = 1;
+    top->rst_sync = 1;
+    top->rst_dvi = 1;
+    top->rst_audio = 1;
     top->eval();
 
     tfp->dump(contextp->time());
 
     contextp->timeInc(1);
-    top->rst = 0;
-    top->dvi_rst = 0;
-    top->audio_rst = 0;
+    top->rst_sync = 0;
+    top->rst_dvi = 0;
+    top->rst_audio = 0;
     top->eval();
 
     tfp->dump(contextp->time());
@@ -89,14 +89,14 @@ int main(int argc, char** argv) {
 
         // DVI clock domain (PHY output simulation to bitmap image)
         if (timestamp_ns % (ns_in_dvi_cycle/2) == 0) {
-            top->dvi_clk = !top->dvi_clk;
-            if (top->dvi_clk) {
-                uint32_t x = top->x;
-                uint32_t y = top->y;
+            top->clk_dvi = !top->clk_dvi;
+            if (top->clk_dvi) {
+                uint32_t x = top->dvi_x;
+                uint32_t y = top->dvi_y;
                 if (x < DVI_H_ACTIVE && y < DVI_V_ACTIVE) {
-                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 0] = top->phy_r;
-                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 1] = top->phy_g;
-                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 2] = top->phy_b;
+                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 0] = top->dvi_r;
+                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 1] = top->dvi_g;
+                    image_data[y*DVI_H_ACTIVE*3 + x*3 + 2] = top->dvi_b;
                 }
                 if (x == DVI_H_ACTIVE-1 && y == DVI_V_ACTIVE-1) {
                     char name[64];
@@ -110,8 +110,8 @@ int main(int argc, char** argv) {
 
         // Sync clock domain (PSRAM read/write simulation)
         if (timestamp_ns % (ns_in_sync_cycle/2) == 0) {
-            top->clk = !top->clk;
-            if (top->clk) {
+            top->clk_sync = !top->clk_sync;
+            if (top->clk_sync) {
 
                 // Probably incorrect ram r/w timing is causing the visual shift
                 // Switch these assignments to use internal comb do_read / do_write?
@@ -145,17 +145,17 @@ int main(int argc, char** argv) {
 
         // Audio clock domain (Audio stimulation)
         if (timestamp_ns % (ns_in_audio_cycle/2) == 0) {
-            top->audio_clk = !top->audio_clk;
-            if (top->audio_clk) {
+            top->clk_audio = !top->clk_audio;
+            if (top->clk_audio) {
                 // 256x I2S clock divider
                 if (mod_pmod % 256 == 0) {
                     ++pmod_clocks;
                     top->fs_strobe = 1;
                     // audio signals
-                    top->inject0 = (int16_t)20000.0*sin((float)pmod_clocks / 6000.0);
-                    top->inject1 = (int16_t)20000.0*cos((float)pmod_clocks /  300.0);
+                    top->fs_inject0 = (int16_t)20000.0*sin((float)pmod_clocks / 6000.0);
+                    top->fs_inject1 = (int16_t)20000.0*cos((float)pmod_clocks /  300.0);
                     // color
-                    top->inject3 = (int16_t)20000.0*cos((float)pmod_clocks /  600.0);
+                    top->fs_inject3 = (int16_t)20000.0*cos((float)pmod_clocks /  600.0);
                 } else {
                     if (top->fs_strobe) {
                         top->fs_strobe = 0;

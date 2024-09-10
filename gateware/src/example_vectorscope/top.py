@@ -21,6 +21,7 @@ $ pdm colors_vectorscope
 
 import os
 import math
+import shutil
 import subprocess
 
 from amaranth              import *
@@ -63,7 +64,7 @@ class VectorScopeTop(Elaboratable):
         self.sim = sim
 
         # One PSRAM with an internal arbiter to support multiple DMA masters.
-        self.hyperram = psram_peripheral.Peripheral(size=16*1024*1024, sim=sim)
+        self.psram_periph = psram_peripheral.Peripheral(size=16*1024*1024)
 
         fb_base = 0x0
         fb_size = (dvi_timings.h_active, dvi_timings.v_active)
@@ -71,15 +72,15 @@ class VectorScopeTop(Elaboratable):
         # All of our DMA masters
         self.video = FramebufferPHY(
                 fb_base=fb_base, dvi_timings=dvi_timings, fb_size=fb_size,
-                bus_master=self.hyperram.bus, sim=sim)
+                bus_master=self.psram_periph.bus)
         self.persist = Persistance(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size)
+                fb_base=fb_base, bus_master=self.psram_periph.bus, fb_size=fb_size)
         self.stroke = Stroke(
-                fb_base=fb_base, bus_master=self.hyperram.bus, fb_size=fb_size)
+                fb_base=fb_base, bus_master=self.psram_periph.bus, fb_size=fb_size)
 
-        self.hyperram.add_master(self.video.bus)
-        self.hyperram.add_master(self.persist.bus)
-        self.hyperram.add_master(self.stroke.bus)
+        self.psram_periph.add_master(self.video.bus)
+        self.psram_periph.add_master(self.persist.bus)
+        self.psram_periph.add_master(self.stroke.bus)
 
         if self.sim:
             self.pmod0 = FakeEurorackPmod()
@@ -116,7 +117,7 @@ class VectorScopeTop(Elaboratable):
         self.stroke.pmod0 = pmod0
 
         m.submodules.astream = astream = eurorack_pmod.AudioStream(self.pmod0)
-        m.submodules.hyperram = self.hyperram
+        m.submodules.psram_periph = self.psram_periph
         m.submodules.video = self.video
         m.submodules.persist = self.persist
         m.submodules.stroke = self.stroke
@@ -180,30 +181,30 @@ def sim():
 
     os.makedirs(build_dst, exist_ok=True)
     with open(dst, "w") as f:
-        f.write(verilog.convert(top, ports=[
-            ClockSignal("sync"),
-            ResetSignal("sync"),
-            #ClockSignal("dvi"), # why is this auto-added?
-            #ResetSignal("dvi"),
-            ClockSignal("audio"),
-            ResetSignal("audio"),
-            top.hyperram.psram.idle,
-            top.hyperram.psram.address_ptr,
-            top.hyperram.psram.read_data_view,
-            top.hyperram.psram.write_data,
-            top.hyperram.psram.read_ready,
-            top.hyperram.psram.write_ready,
-            top.video.dvi_tgen.x,
-            top.video.dvi_tgen.y,
-            top.video.phy_r,
-            top.video.phy_g,
-            top.video.phy_b,
-            top.pmod0.fs_strobe,
-            top.inject0,
-            top.inject1,
-            top.inject2,
-            top.inject3,
-            ]))
+        f.write(verilog.convert(top, ports={
+            "clk_sync":       (ClockSignal("sync"),                   None),
+            "rst_sync":       (ResetSignal("sync"),                   None),
+            "clk_dvi":        (ClockSignal("dvi"),                    None),
+            "rst_dvi":        (ResetSignal("dvi"),                    None),
+            "clk_audio":      (ClockSignal("audio"),                  None),
+            "rst_audio":      (ResetSignal("audio"),                  None),
+            "idle":           (top.psram_periph.simif.idle,           None),
+            "address_ptr":    (top.psram_periph.simif.address_ptr,    None),
+            "read_data_view": (top.psram_periph.simif.read_data_view, None),
+            "write_data":     (top.psram_periph.simif.write_data,     None),
+            "read_ready":     (top.psram_periph.simif.read_ready,     None),
+            "write_ready":    (top.psram_periph.simif.write_ready,    None),
+            "dvi_x":          (top.video.dvi_tgen.x,                  None),
+            "dvi_y":          (top.video.dvi_tgen.y,                  None),
+            "dvi_r":          (top.video.phy_r,                       None),
+            "dvi_g":          (top.video.phy_g,                       None),
+            "dvi_b":          (top.video.phy_b,                       None),
+            "fs_strobe":      (top.pmod0.fs_strobe,                   None),
+            "fs_inject0":     (top.inject0,                           None),
+            "fs_inject1":     (top.inject1,                           None),
+            "fs_inject2":     (top.inject2,                           None),
+            "fs_inject3":     (top.inject3,                           None),
+            }))
 
     # TODO: warn if this is far from the PLL output?
     dvi_clk_hz = int(top.video.dvi_tgen.timings.pll.pixel_clk_mhz * 1e6)
@@ -213,6 +214,7 @@ def sim():
     audio_clk_hz = 48000000
 
     verilator_dst = "build/obj_dir"
+    shutil.rmtree(verilator_dst)
     print(f"verilate '{dst}' into C++ binary...")
     subprocess.check_call(["verilator",
                            "-Wno-COMBDLY",

@@ -6,12 +6,14 @@
 """Utilities for simulating Tiliqua designs."""
 
 import os
+import shutil
 import subprocess
 
 from amaranth              import *
 from amaranth.back         import verilog
 from amaranth.build        import *
 from amaranth.lib          import wiring, data
+from amaranth.lib.wiring   import In, Out
 
 from tiliqua.eurorack_pmod import ASQ
 
@@ -49,10 +51,21 @@ class FakeTiliquaDomainGenerator(Elaboratable):
 
         return m
 
-class FakeHyperRAMDQSInterface(Elaboratable):
+class FakePSRAMSimulationInterface(wiring.Signature):
+    def __init__(self):
+        super().__init__({
+            "idle":           Out(unsigned(1)),
+            "read_ready":     Out(unsigned(1)),
+            "write_ready":    Out(unsigned(1)),
+            "address_ptr":    Out(unsigned(32)),
+            "read_data_view":  In(unsigned(32)),
+            "write_data":     Out(unsigned(32)),
+        })
+
+class FakePSRAM(wiring.Component):
 
     """
-    Fake HyperRAMDQSInterface used for simulation.
+    Fake PSRAM used for simulation.
 
     This is just HyperRAMDQSInterface with the dependency
     on the PHY removed and extra signals added for memory
@@ -61,6 +74,7 @@ class FakeHyperRAMDQSInterface(Elaboratable):
     """
 
     HIGH_LATENCY_CLOCKS = 5
+
 
     def __init__(self):
         self.reset            = Signal()
@@ -76,30 +90,39 @@ class FakeHyperRAMDQSInterface(Elaboratable):
         self.read_data        = Signal(32)
         self.write_data       = Signal(32)
         self.write_mask       = Signal(4) # TODO
-        # signals used for simulation interface
-        self.fsm              = Signal(8)
-        self.address_ptr      = Signal(32)
-        self.read_data_view   = Signal(32)
+
+        super().__init__({
+            "simif": In(FakePSRAMSimulationInterface())
+        })
 
     def elaborate(self, platform):
         m = Module()
+
         is_read         = Signal()
         is_register     = Signal()
         is_multipage    = Signal()
         extra_latency   = Signal()
         latency_clocks_remaining  = Signal(range(0, self.HIGH_LATENCY_CLOCKS + 1))
+
+        m.d.comb += [
+            self.simif.write_data .eq(self.write_data),
+            self.simif.read_ready .eq(self.read_ready),
+            self.simif.write_ready.eq(self.write_ready),
+            self.simif.idle       .eq(self.idle),
+        ]
+
         with m.FSM() as fsm:
             with m.State('IDLE'):
                 m.d.comb += self.idle        .eq(1)
                 with m.If(self.start_transfer):
                     m.next = 'LATCH_RWDS'
                     m.d.sync += [
-                        is_read             .eq(~self.perform_write),
-                        is_register         .eq(self.register_space),
-                        is_multipage        .eq(~self.single_page),
+                        is_read     .eq(~self.perform_write),
+                        is_register .eq(self.register_space),
+                        is_multipage.eq(~self.single_page),
                         # address is specified with 16-bit granularity.
                         # <<1 gets us to 8-bit for our fake uint8 storage.
-                        self.address_ptr    .eq(self.address<<1),
+                        self.simif.address_ptr.eq(self.address<<1),
                     ]
             with m.State("LATCH_RWDS"):
                 m.next="SHIFT_COMMAND0"
@@ -120,23 +143,22 @@ class FakeHyperRAMDQSInterface(Elaboratable):
                         m.next = 'WRITE_DATA'
             with m.State('READ_DATA'):
                 m.d.comb += [
-                    self.read_data     .eq(self.read_data_view),
-                    self.read_ready    .eq(1),
+                    self.read_data .eq(self.simif.read_data_view),
+                    self.read_ready.eq(1),
                 ]
-                m.d.sync += self.address_ptr.eq(self.address_ptr + 4)
+                m.d.sync += self.simif.address_ptr.eq(self.simif.address_ptr + 4)
                 with m.If(self.final_word):
                     m.next = 'RECOVERY'
             with m.State("WRITE_DATA"):
                 m.d.comb += self.write_ready.eq(1),
-                m.d.sync += self.address_ptr.eq(self.address_ptr + 4)
+                m.d.sync += self.simif.address_ptr.eq(self.simif.address_ptr + 4)
                 with m.If(is_register):
                     m.next = 'IDLE'
                 with m.Elif(self.final_word):
                     m.next = 'RECOVERY'
             with m.State('RECOVERY'):
-                m.d.sync += self.address_ptr.eq(0)
+                m.d.sync += self.simif.address_ptr.eq(0)
                 m.next = 'IDLE'
-        m.d.comb += self.fsm.eq(fsm.state)
         return m
 
 # Main purpose of using this custom platform instead of
@@ -156,8 +178,6 @@ def is_hw(platform):
 
 def simulate_soc(fragment, tracing=False):
 
-    fragment.add_simulated_cores()
-
     build_dst = "build"
     dst = f"{build_dst}/tiliqua_soc.v"
     print(f"write verilog implementation of 'tiliqua_soc' to '{dst}'...")
@@ -176,11 +196,11 @@ def simulate_soc(fragment, tracing=False):
                 "rst_dvi":        (ResetSignal("dvi"),                         None),
                 "uart0_w_data":   (fragment.uart0._tx_data.f.data.w_data,      None),
                 "uart0_w_stb":    (fragment.uart0._tx_data.f.data.w_stb,       None),
-                "address_ptr":    (fragment.psram_periph.psram.address_ptr,    None),
-                "read_data_view": (fragment.psram_periph.psram.read_data_view, None),
-                "write_data":     (fragment.psram_periph.psram.write_data,     None),
-                "read_ready":     (fragment.psram_periph.psram.read_ready,     None),
-                "write_ready":    (fragment.psram_periph.psram.write_ready,    None),
+                "address_ptr":    (fragment.psram_periph.simif.address_ptr,    None),
+                "read_data_view": (fragment.psram_periph.simif.read_data_view, None),
+                "write_data":     (fragment.psram_periph.simif.write_data,     None),
+                "read_ready":     (fragment.psram_periph.simif.read_ready,     None),
+                "write_ready":    (fragment.psram_periph.simif.write_ready,    None),
                 "dvi_x":          (fragment.video.dvi_tgen.x,                  None),
                 "dvi_y":          (fragment.video.dvi_tgen.y,                  None),
                 "dvi_r":          (fragment.video.phy_r,                       None),
@@ -202,6 +222,7 @@ def simulate_soc(fragment, tracing=False):
     dvi_v_active = fragment.video.dvi_tgen.timings.v_active
 
     verilator_dst = "build/obj_dir"
+    shutil.rmtree(verilator_dst)
     print(f"verilate '{dst}' into C++ binary...")
     subprocess.check_call(["verilator",
                            "-Wno-COMBDLY",

@@ -244,9 +244,6 @@ class TiliquaSoc(Component):
         self.wb_to_csr = WishboneCSRBridge(self.csr_decoder.bus, data_width=32)
         self.wb_decoder.add(self.wb_to_csr.wb_bus, addr=self.csr_base, sparse=False, name="wb_to_csr")
 
-    def add_simulated_cores(self):
-        self.psram_periph.add_simulated_psram()
-
     def elaborate(self, platform):
 
 
@@ -336,7 +333,7 @@ class TiliquaSoc(Component):
             # HACK: encoder push override -- hold for 3sec will re-enter bootloader
             REBOOT_SEC = 3
             button_counter = Signal(unsigned(32))
-            with m.If(button_counter > REBOOT_SEC*self.clk_sync_hz):
+            with m.If(button_counter > REBOOT_SEC*self.clock_sync_hz):
                 m.d.comb += platform.request("self_program").o.eq(1)
             with m.If(self.encoder0._button.f.button.r_data):
                 m.d.sync += button_counter.eq(button_counter + 1)

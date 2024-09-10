@@ -53,6 +53,9 @@ class Peripheral(wiring.Component):
                                          data_width=data_width,
                                          granularity=granularity,
                                          features={"cti", "bte"})),
+            # internal psram simulation interface
+            # should be optimized out in non-sim builds.
+            "simif": In(sim.FakePSRAMSimulationInterface())
         })
         self.bus.memory_map = memory_map
 
@@ -67,9 +70,6 @@ class Peripheral(wiring.Component):
     def add_master(self, bus):
         self._hram_arbiter.add(bus)
 
-    def add_simulated_psram(self):
-        self.psram = sim.FakeHyperRAMDQSInterface()
-
     def elaborate(self, platform):
         m = Module()
 
@@ -83,8 +83,8 @@ class Peripheral(wiring.Component):
             self.psram = psram = HyperRAMDQSInterface(phy=self.psram_phy.phy)
             m.submodules += [self.psram_phy, self.psram]
         else:
-            # make sure you've executed 'add_simulated_psram' before elaboration!
-            m.submodules.psram = psram = self.psram
+            m.submodules.psram = psram = sim.FakePSRAM()
+            wiring.connect(m, self.simif, flipped(psram.simif))
 
         m.d.comb += [
             psram.single_page     .eq(0),
