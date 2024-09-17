@@ -15,29 +15,28 @@ from amaranth.lib        import wiring
 from amaranth.lib.wiring import In, Out
 from amaranth.lib.cdc import FFSynchronizer
 
-class DDRBusSignature(wiring.Signature):
-    def __init__(self, *, n_io, n_e):
-        super().__init__({
-            "i":  In(unsigned(n_io)),
-            "o": Out(unsigned(n_io)),
-            "e": Out(unsigned(n_e)),
-        })
-
 class DQSPHYSignature(wiring.Signature):
     """ Signature representing a 32-bit HyperBus interface for use with a 4:1 PHY module. """
     def __init__(self):
+        class IOBusSignature(wiring.Signature):
+            def __init__(self, *, n_io, n_e):
+                super().__init__({
+                    "i":  In(unsigned(n_io)),
+                    "o": Out(unsigned(n_io)),
+                    "e": Out(unsigned(n_e)),
+                })
         super().__init__({
             "clk_en":         Out(unsigned(2)),
-            "dq":             Out(DDRBusSignature(n_io=32, n_e=4)),
-            "rwds":           Out(DDRBusSignature(n_io=4,  n_e=1)),
+            "dq":             Out(IOBusSignature(n_io=32, n_e=4)),
+            "rwds":           Out(IOBusSignature(n_io=4,  n_e=1)),
             "cs":             Out(unsigned(1)),
             "reset":          Out(unsigned(1)),
-            "read":            In(unsigned(2)),
-            "datavalid":      Out(unsigned(1)),
-            "burstdet":       Out(unsigned(1)),
+            "read":           Out(unsigned(2)),
+            "datavalid":       In(unsigned(1)),
+            "burstdet":        In(unsigned(1)),
         })
 
-class HyperRAMDQSInterface(Elaboratable):
+class HyperRAMDQSInterface(wiring.Component):
     """ Gateware interface to HyperRAM series self-refreshing DRAM chips.
 
     I/O port:
@@ -66,40 +65,25 @@ class HyperRAMDQSInterface(Elaboratable):
     LOW_LATENCY_CLOCKS  = 3
     HIGH_LATENCY_CLOCKS = 5
 
-    def __init__(self, *, phy):
-        """
-        Parmeters:
-            phy           -- The RAM record that should be connected to this RAM chip.
-        """
-
-        #
-        # I/O port.
-        #
-        self.phy              = phy
-        self.reset            = Signal()
-
-        # Control signals.
-        self.address          = Signal(32)
-        self.register_space   = Signal()
-        self.perform_write    = Signal()
-        self.single_page      = Signal()
-        self.start_transfer   = Signal()
-        self.final_word       = Signal()
-
-        # Status signals.
-        self.idle             = Signal()
-        self.read_ready       = Signal()
-        self.write_ready      = Signal()
-
-        # Data signals.
-        self.read_data        = Signal(32)
-        self.write_data       = Signal(32)
-        self.write_mask       = Signal(4)
-
-        self.clk = Signal()
-
-        self.fsm = Signal(8)
-
+    # Control.
+    address:         In(unsigned(32))
+    register_space:  In(unsigned(1))
+    perform_write:   In(unsigned(1))
+    single_page:     In(unsigned(1))
+    start_transfer:  In(unsigned(1))
+    final_word:      In(unsigned(1))
+    # Status.
+    idle:           Out(unsigned(1))
+    read_ready:     Out(unsigned(1))
+    write_ready:    Out(unsigned(1))
+    # Data.
+    read_data:      Out(unsigned(32))
+    write_data:      In(unsigned(32))
+    write_mask:      In(unsigned(4))
+    # Debug.
+    fsm:            Out(unsigned(8))
+    # Interface to actual RAM PHY.
+    phy:            Out(DQSPHYSignature())
 
     def elaborate(self, platform):
         m = Module()
@@ -293,14 +277,12 @@ class HyperRAMDQSPHY(wiring.Component):
         B: bus              -- The primary physical connection to the DRAM chip.
     """
 
-    def __init__(self, *, bus, in_skew=None, out_skew=None, clock_skew=None):
-        self.bus = bus
-        super().__init__({
-            "phy": In(DQSPHYSignature())
-        })
+    phy: In(DQSPHYSignature())
 
     def elaborate(self, platform):
         m = Module()
+
+        self.bus = platform.request('ram', dir={'rwds':'-', 'dq':'-', 'cs':'-'})
 
         # Handle initial DDRDLL lock & delay code update
         pause = Signal()
