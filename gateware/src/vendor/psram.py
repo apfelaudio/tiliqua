@@ -64,8 +64,10 @@ class HyperRAMDQSInterface(wiring.Component):
         O: write_ready      -- Strobe that indicates `write_data` has been latched and is ready for new data
     """
 
-    LOW_LATENCY_CLOCKS  = 3
-    HIGH_LATENCY_CLOCKS = 5
+    READ_LATENCY_CLOCKS  = 0
+    WRITE_LATENCY_CLOCKS = 1
+
+    CROSS_PAGE_CLOCKS    = 2
 
     # Control.
     address:         In(unsigned(32))
@@ -83,7 +85,8 @@ class HyperRAMDQSInterface(wiring.Component):
     write_data:      In(unsigned(32))
     write_mask:      In(unsigned(4))
     # Debug.
-    fsm:            Out(unsigned(8))
+    current_address: Out(unsigned(32))
+    fsm:             Out(unsigned(8))
     # Interface to actual RAM PHY.
     phy:            Out(DQSPHYSignature())
 
@@ -98,6 +101,8 @@ class HyperRAMDQSInterface(wiring.Component):
         current_address = Signal(32)
         is_multipage    = Signal()
 
+        m.d.comb += self.current_address.eq(current_address)
+
         #
         # FSM datapath signals.
         #
@@ -108,7 +113,7 @@ class HyperRAMDQSInterface(wiring.Component):
 
         # Tracks how many cycles of latency we have remaining between a command
         # and the relevant data stages.
-        latency_clocks_remaining  = Signal(range(0, self.HIGH_LATENCY_CLOCKS + 1))
+        latency_clocks_remaining = Signal(4)
 
         #
         # Core operation FSM.
@@ -120,6 +125,7 @@ class HyperRAMDQSInterface(wiring.Component):
             self.phy.cs         .eq(1),
             self.phy.rwds.e     .eq(0),
             self.phy.dq.e       .eq(0),
+            self.phy.dq.o       .eq(0),
             self.phy.read       .eq(0),
         ]
         m.d.comb += self.write_ready.eq(0),
@@ -138,15 +144,132 @@ class HyperRAMDQSInterface(wiring.Component):
         #   - 00000AAA  => address bits [ 0: 3]
         ca = Signal(48)
         m.d.comb += ca.eq(Cat(
-            current_address[0:3],
-            Const(0, 13),
-            current_address[3:32],
-            is_multipage,
-            is_register,
-            is_read
+            current_address[0:32],
+            Const(0x00, 4),
+            Const(0, 1),
+            Const(0, 1),
+            Const(0, 1),
+            ~is_read,
+            Const(0x00, 4),
+            Const(0, 1),
+            Const(0, 1),
+            Const(0, 1),
+            ~is_read,
         ))
 
+        reset_timer = Signal(16, reset=32768)
+        cross_page = Signal(8, reset=0)
+
         with m.FSM() as fsm:
+
+            with m.State('PREINIT'):
+                m.d.sync += reset_timer.eq(reset_timer - 1)
+                m.d.sync += self.phy.cs.eq(0)
+                with m.If(reset_timer == 0):
+                    m.d.sync += reset_timer.eq(32768)
+                    m.next='INIT'
+            with m.State('INIT'):
+                m.d.sync += self.phy.clk_en.eq(0b11)
+                m.d.sync += self.phy.cs.eq(0)
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xFFFFFFFF),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next="INIT_COMMAND0"
+            with m.State('INIT_COMMAND0'):
+                # Output the first 32 bits of our command.
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xFFFFFFFF),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'INIT_COMMAND1'
+            with m.State('INIT_COMMAND1'):
+                # Output the next 32 bits of our command.
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xFFFFFFFF),
+                    self.phy.dq.e.eq(1),
+                    self.phy.clk_en.eq(0)
+                ]
+                m.next = 'WAIT_RESET'
+            with m.State('WAIT_RESET'):
+                m.d.sync += reset_timer.eq(reset_timer - 1)
+                m.d.sync += self.phy.cs.eq(0)
+                with m.If(reset_timer == 0):
+                    m.d.sync += reset_timer.eq(32768)
+                    m.d.sync += self.phy.dq.o.eq(0),
+                    m.next = 'SET_READ_LATENCY0'
+            with m.State('SET_READ_LATENCY0'):
+                m.d.sync += self.phy.clk_en.eq(0b11)
+                m.next = 'SET_READ_LATENCY1'
+            with m.State('SET_READ_LATENCY1'):
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xc0c00000),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_READ_LATENCY2'
+            with m.State('SET_READ_LATENCY2'):
+                m.d.sync += [
+                    # read latency fixed 6 (12)
+                    #                    MRDA
+                    self.phy.dq.o.eq(0x00000c00),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_READ_LATENCY_WAIT'
+            with m.State('SET_READ_LATENCY_WAIT'):
+                m.d.sync += reset_timer.eq(reset_timer - 1)
+                m.d.sync += self.phy.cs.eq(0)
+                m.d.sync += self.phy.clk_en.eq(0)
+                with m.If(reset_timer == 0):
+                    m.d.sync += reset_timer.eq(32768)
+                    m.d.sync += self.phy.dq.o.eq(0),
+                    m.next = 'SET_WRITE_LATENCY0'
+            with m.State('SET_WRITE_LATENCY0'):
+                m.d.sync += self.phy.clk_en.eq(0b11)
+                m.next = 'SET_WRITE_LATENCY1'
+            with m.State('SET_WRITE_LATENCY1'):
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xc0c00000),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_WRITE_LATENCY2'
+            with m.State('SET_WRITE_LATENCY2'):
+                m.d.sync += [
+                    # write latency fixed 6
+                    #                    MRDA
+                    self.phy.dq.o.eq(0x0004c000),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_WRITE_LATENCY_WAIT'
+            with m.State('SET_WRITE_LATENCY_WAIT'):
+                m.d.sync += reset_timer.eq(reset_timer - 1)
+                m.d.sync += self.phy.cs.eq(0)
+                m.d.sync += self.phy.clk_en.eq(0)
+                with m.If(reset_timer == 0):
+                    m.d.sync += reset_timer.eq(32768)
+                    m.d.sync += self.phy.dq.o.eq(0),
+                    m.next = 'SET_BURST0'
+            with m.State('SET_BURST0'):
+                m.d.sync += self.phy.clk_en.eq(0b11)
+                m.next = 'SET_BURST1'
+            with m.State('SET_BURST1'):
+                m.d.sync += [
+                    self.phy.dq.o.eq(0xc0c00000),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_BURST2'
+            with m.State('SET_BURST2'):
+                m.d.sync += [
+                    #                    MRDA
+                    self.phy.dq.o.eq(0x00080f00),
+                    self.phy.dq.e.eq(1),
+                ]
+                m.next = 'SET_BURST_WAIT'
+            with m.State('SET_BURST_WAIT'):
+                m.d.sync += reset_timer.eq(reset_timer - 1)
+                m.d.sync += self.phy.cs.eq(0)
+                m.d.sync += self.phy.clk_en.eq(0)
+                with m.If(reset_timer == 0):
+                    m.next = 'IDLE'
 
             # IDLE state: waits for a transaction request
             with m.State('IDLE'):
@@ -156,7 +279,7 @@ class HyperRAMDQSInterface(wiring.Component):
                 # Once we have a transaction request, latch in our control
                 # signals, and assert our chip-select.
                 with m.If(self.start_transfer):
-                    m.next = 'LATCH_RWDS'
+                    m.next = 'START_CLK'
 
                     m.d.sync += [
                         is_read             .eq(~self.perform_write),
@@ -170,10 +293,9 @@ class HyperRAMDQSInterface(wiring.Component):
                     m.d.sync += self.phy.cs.eq(0)
 
 
-            # LATCH_RWDS -- latch in the value of the RWDS signal,
+            # START_CLK -- latch in the value of the RWDS signal,
             # which determines our read/write latency.
-            with m.State("LATCH_RWDS"):
-                m.d.sync += extra_latency.eq(self.phy.rwds.i),
+            with m.State("START_CLK"):
                 m.d.sync += self.phy.clk_en.eq(0b11)
                 m.next="SHIFT_COMMAND0"
 
@@ -204,13 +326,10 @@ class HyperRAMDQSInterface(wiring.Component):
                 # RWDS.
                 with m.Else():
                     m.next = "HANDLE_LATENCY"
-
-                    # FIXME: our HyperRAM part has a fixed latency, but we could need to detect 
-                    # different variants from the configuration register in the future.
-                    with m.If(extra_latency | 1):
-                        m.d.sync += latency_clocks_remaining.eq(self.HIGH_LATENCY_CLOCKS)
+                    with m.If(is_read):
+                        m.d.sync += latency_clocks_remaining.eq(self.READ_LATENCY_CLOCKS)
                     with m.Else():
-                        m.d.sync += latency_clocks_remaining.eq(self.LOW_LATENCY_CLOCKS)
+                        m.d.sync += latency_clocks_remaining.eq(self.WRITE_LATENCY_CLOCKS)
 
 
             # HANDLE_LATENCY -- applies clock cycles until our latency period is over.
@@ -223,27 +342,43 @@ class HyperRAMDQSInterface(wiring.Component):
                         m.d.sync += self.phy.rwds.o.eq(self.write_mask),
                         m.next = 'WRITE_DATA'
 
+            with m.State('CROSS_PAGE'):
+                m.d.sync += [
+                    cross_page.eq(cross_page-1),
+                ]
+                with m.If(cross_page == 0):
+                    m.d.sync += self.phy.dq.o.eq(0),
+                    m.d.sync += self.phy.clk_en.eq(0),
+                    m.next = 'START_CLK'
+                with m.Else():
+                    m.d.sync += self.phy.cs.eq(0)
 
             # READ_DATA -- reads words from the PSRAM
             with m.State('READ_DATA'):
                 m.d.sync += self.phy.read.eq(0b11)
-
                 datavalid_delay = Signal()
                 m.d.sync += datavalid_delay.eq(self.phy.datavalid)
-
                 with m.If(self.phy.datavalid):
                     m.d.comb += [
                         self.read_data     .eq(self.phy.dq.i),
                         self.read_ready    .eq(1),
                     ]
 
+                    m.d.sync += current_address.eq(current_address + 4)
+
                     # If our controller is done with the transaction, end it.
                     with m.If(self.final_word):
-                        m.d.sync += self.phy.clk_en.eq(0),
+                        m.d.sync += [
+                            cross_page.eq(self.CROSS_PAGE_CLOCKS),
+                            self.phy.clk_en.eq(0),
+                        ]
                         m.next = 'RECOVERY'
-
-                with m.If(~self.phy.ready):
-                    m.next = 'IDLE'
+                    with m.Elif((current_address & 0x7FF) == 0x7FC):
+                        m.d.sync += [
+                            cross_page.eq(self.CROSS_PAGE_CLOCKS),
+                            self.phy.clk_en.eq(0),
+                        ]
+                        m.next = 'CROSS_PAGE'
 
             # WRITE_DATA -- write a word to the PSRAM
             with m.State("WRITE_DATA"):
@@ -255,21 +390,35 @@ class HyperRAMDQSInterface(wiring.Component):
                 ]
                 m.d.comb += self.write_ready.eq(1),
 
+                m.d.sync += current_address.eq(current_address + 4)
+
                 # If we just finished a register write, we're done -- there's no need for recovery.
                 with m.If(is_register):
                     m.next = 'IDLE'
-
                 with m.Elif(self.final_word):
-                    m.d.sync += self.phy.clk_en .eq(0)
+                    m.d.sync += [
+                        cross_page.eq(self.CROSS_PAGE_CLOCKS),
+                        self.phy.clk_en.eq(0),
+                    ]
                     m.next = 'RECOVERY'
+                # we are about to cross a page boundary
+                with m.Elif((current_address & 0x7FF) == 0x7FC):
+                    m.d.sync += [
+                        cross_page.eq(self.CROSS_PAGE_CLOCKS),
+                        self.phy.clk_en.eq(0),
+                    ]
+                    m.next = 'CROSS_PAGE'
 
 
             # RECOVERY state: wait for the required period of time before a new transaction
             with m.State('RECOVERY'):
-                m.d.sync += self.phy.clk_en .eq(0)
-
-                # TODO: implement recovery
-                m.next = 'IDLE'
+                m.d.sync += [
+                    cross_page.eq(cross_page-1),
+                    self.phy.cs.eq(0),
+                    self.phy.clk_en.eq(0),
+                ]
+                with m.If(cross_page == 0):
+                    m.next = 'IDLE'
 
         m.d.comb += self.fsm.eq(fsm.state)
 

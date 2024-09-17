@@ -34,16 +34,16 @@ resources_soldiercrab = [
         data="N1 M2 M1 L2 L1 K2 K1 K3",
         clk="T3", clk_dir="o", dir="P2", nxt="P1",
         stp="R2", rst="T2", rst_invert=True,
-        attrs=Attrs(IO_TYPE="LVCMOS33")),
+        attrs=Attrs(IO_TYPE="LVCMOS18")),
 
     # oSPIRAM / HyperRAM
     Resource("ram", 0,
-        Subsignal("clk",   DiffPairs("C3", "D3", dir="o"), Attrs(IO_TYPE="LVCMOS33D")),
+        Subsignal("clk",   Pins("C3", dir="o")),
         Subsignal("dq",    Pins("F2 B1 C2 E1 E3 E2 F3 G4", dir="io")),
         Subsignal("rwds",  Pins( "D1", dir="io")),
         Subsignal("cs",    PinsN("B2", dir="o")),
         Subsignal("reset", PinsN("C1", dir="o")),
-        Attrs(IO_TYPE="LVCMOS33", SLEWRATE="FAST")
+        Attrs(IO_TYPE="LVCMOS18")
     ),
 
     # Configuration SPI flash
@@ -57,9 +57,9 @@ resources_soldiercrab = [
 ]
 
 class _TiliquaPlatform(LatticeECP5Platform):
-    device      = "LFE5U-45F"
+    device      = "LFE5U-25F"
     package     = "BG256"
-    speed       = "7"
+    speed       = "6"
     default_clk = "clk48"
     default_rst = "rst"
 
@@ -116,7 +116,7 @@ class _TiliquaPlatform(LatticeECP5Platform):
             Subsignal("bick",   Pins("D9",  dir="o")),
             Subsignal("mclk",   Pins("B11", dir="o")),
             Subsignal("pdn",    Pins("C11", dir="o")),
-            Subsignal("i2c_sda",    Pins("D13", dir="io")),
+            Subsignal("i2c_sda",    Pins("C12", dir="io")),
             Subsignal("i2c_scl",    Pins("C13", dir="io")),
         ),
 

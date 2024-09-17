@@ -97,7 +97,6 @@ class Peripheral(wiring.Component):
         m.d.comb += [
             psram.single_page            .eq(0),
             psram.register_space         .eq(0),
-            psram.perform_write          .eq(self.shared_bus.we),
             self.psram_phy.phy.readclksel.eq(readclksel),
         ]
 
@@ -105,7 +104,7 @@ class Peripheral(wiring.Component):
 
             # Training logic for readclksel
             with m.State("INIT"):
-                with m.If(self.psram_phy.phy.ready):
+                with m.If(self.psram_phy.phy.ready & self.psram.idle):
                     m.d.sync += [
                         timeout.eq(0),
                         read_counter.eq(3),
@@ -136,7 +135,8 @@ class Peripheral(wiring.Component):
                         psram.start_transfer          .eq(1),
                         psram.write_data              .eq(self.shared_bus.dat_w),
                         psram.write_mask              .eq(~self.shared_bus.sel),
-                        psram.address                 .eq(self.shared_bus.adr << 1),
+                        psram.address                 .eq(self.shared_bus.adr << 2),
+                        psram.perform_write           .eq(self.shared_bus.we),
                     ]
                     m.next = 'GO'
             with m.State('GO'):
