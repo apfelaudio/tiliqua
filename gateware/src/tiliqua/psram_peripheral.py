@@ -86,13 +86,50 @@ class Peripheral(wiring.Component):
             m.submodules.psram = psram = sim.FakePSRAM()
             wiring.connect(m, self.simif, flipped(psram.simif))
 
+
+        datavalid_delay = Signal()
+        m.d.sync += datavalid_delay.eq(psram.read_ready)
+        counter = Signal(range(128))
+        timeout = Signal(range(128))
+        readclksel = Signal(3, reset=0)
+        read_counter = Signal(range(32))
+
         m.d.comb += [
-            psram.single_page     .eq(0),
-            psram.register_space  .eq(0),
-            psram.perform_write   .eq(self.shared_bus.we),
+            psram.single_page            .eq(0),
+            psram.register_space         .eq(0),
+            psram.perform_write          .eq(self.shared_bus.we),
+            self.psram_phy.phy.readclksel.eq(readclksel),
         ]
 
         with m.FSM() as fsm:
+
+            # Training logic for readclksel
+            with m.State("INIT"):
+                with m.If(self.psram_phy.phy.ready):
+                    m.d.sync += [
+                        timeout.eq(0),
+                        read_counter.eq(3),
+                        psram.start_transfer.eq(1),
+                    ]
+                    m.next = "TRAIN"
+            with m.State("TRAIN"):
+                m.d.sync += psram.start_transfer.eq(0),
+                m.d.sync += timeout.eq(timeout + 1)
+                m.d.comb += psram.final_word.eq(read_counter == 1)
+                with m.If(psram.read_ready):
+                    m.d.sync += read_counter.eq(read_counter - 1)
+                with m.If(timeout == 127):
+                    m.next = "WAIT1"
+                    m.d.sync += counter.eq(counter + 1)
+                    with m.If(counter == 127):
+                        m.next = "IDLE"
+                    with m.If(~self.psram_phy.phy.burstdet):
+                        m.d.sync += readclksel.eq(readclksel + 1)
+                        m.d.sync += counter.eq(0)
+            with m.State("WAIT1"):
+                m.next = "INIT"
+
+            # Training complete, now we can accept wishbone transactions.
             with m.State('IDLE'):
                 with m.If(self.shared_bus.cyc & self.shared_bus.stb & psram.idle):
                     m.d.sync += [
