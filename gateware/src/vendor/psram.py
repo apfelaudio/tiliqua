@@ -34,6 +34,8 @@ class DQSPHYSignature(wiring.Signature):
             "read":           Out(unsigned(2)),
             "datavalid":       In(unsigned(1)),
             "burstdet":        In(unsigned(1)),
+            "readclksel":     Out(unsigned(3)),
+            "ready":           In(unsigned(1)),
         })
 
 class HyperRAMDQSInterface(wiring.Component):
@@ -240,6 +242,9 @@ class HyperRAMDQSInterface(wiring.Component):
                         m.d.sync += self.phy.clk_en.eq(0),
                         m.next = 'RECOVERY'
 
+                with m.If(~self.phy.ready):
+                    m.next = 'IDLE'
+
             # WRITE_DATA -- write a word to the PSRAM
             with m.State("WRITE_DATA"):
                 m.d.sync += [
@@ -290,7 +295,9 @@ class HyperRAMDQSPHY(wiring.Component):
         lock = Signal()
         uddcntln = Signal()
         counter = Signal(range(9))
+        readclksel = Signal.like(self.phy.readclksel, reset=2)
         m.d.sync += counter.eq(counter + 1)
+        m.d.comb += self.phy.ready.eq(0)
         with m.FSM() as fsm:
             with m.State('INIT'):
                 m.d.sync += [
@@ -324,14 +331,33 @@ class HyperRAMDQSPHY(wiring.Component):
 
             with m.State('UPDATED'):
                 with m.If(counter == 8):
-                    m.next = 'UNPAUSE'
+                    m.next = 'READY'
                     m.d.sync += [
                         pause.eq(0),
                         counter.eq(0),
                     ]
 
-            with m.State('UNPAUSE'):
-                pass
+            with m.State('READY'):
+                m.d.comb += self.phy.ready.eq(1)
+                with m.If(self.phy.readclksel != readclksel):
+                    m.d.sync += [
+                        counter.eq(0),
+                        pause.eq(1),
+                    ]
+                    m.next = 'PAUSE'
+
+            with m.State('PAUSE'):
+                with m.If(counter == 4):
+                    m.d.sync += [
+                        counter.eq(0),
+                        readclksel.eq(self.phy.readclksel),
+                    ]
+                    m.next = 'READCLKSEL'
+
+            with m.State('READCLKSEL'):
+                with m.If(counter == 4):
+                    m.d.sync += pause.eq(0)
+                    m.next = 'READY'
 
 
         # DQS (RWDS) input
@@ -379,10 +405,7 @@ class HyperRAMDQSPHY(wiring.Component):
                 i_PAUSE=pause,
                 i_READ0=self.phy.read[0],
                 i_READ1=self.phy.read[1],
-                # TODO: may need to tune at runtime by trying different values & checking for BURSTDET high
-                i_READCLKSEL0=0,
-                i_READCLKSEL1=1,
-                i_READCLKSEL2=0,
+                **{f"i_READCLKSEL{i}": readclksel[i] for i in range(len(readclksel))},
 
                 i_RDLOADN=0,
                 i_RDMOVE=0,
