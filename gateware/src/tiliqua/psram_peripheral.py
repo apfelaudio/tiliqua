@@ -78,9 +78,9 @@ class Peripheral(wiring.Component):
 
         # phy and controller
         if sim.is_hw(platform):
-            psram_bus = platform.request('ram', dir={'rwds':'-', 'dq':'-', 'cs':'-'})
-            self.psram_phy = HyperRAMDQSPHY(bus=psram_bus)
-            self.psram = psram = HyperRAMDQSInterface(phy=self.psram_phy.phy)
+            self.psram_phy = HyperRAMDQSPHY()
+            self.psram = psram = HyperRAMDQSInterface()
+            wiring.connect(m, psram.phy, self.psram_phy.phy)
             m.submodules += [self.psram_phy, self.psram]
         else:
             m.submodules.psram = psram = sim.FakePSRAM()
