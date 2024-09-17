@@ -15,6 +15,8 @@ from amaranth.lib        import wiring
 from amaranth.lib.wiring import In, Out
 from amaranth.lib.cdc import FFSynchronizer
 
+from tiliqua.sim import FakePSRAMSimulationInterface, is_hw
+
 class DQSPHYSignature(wiring.Signature):
     """ Signature representing a 32-bit HyperBus interface for use with a 4:1 PHY module. """
     def __init__(self):
@@ -93,6 +95,8 @@ class HyperRAMDQSInterface(wiring.Component):
     fsm:             Out(unsigned(8))
     # Interface to actual RAM PHY.
     phy:            Out(DQSPHYSignature())
+    # Simulation.
+    simif:           In(FakePSRAMSimulationInterface())
 
     def elaborate(self, platform):
         m = Module()
@@ -166,6 +170,15 @@ class HyperRAMDQSInterface(wiring.Component):
 
         reset_timer = Signal(16, reset=32768)
         cross_page = Signal(8, reset=0)
+
+        if not is_hw(platform):
+            m.d.comb += [
+                self.simif.write_data .eq(self.write_data),
+                self.simif.read_ready .eq(self.read_ready),
+                self.simif.write_ready.eq(self.write_ready),
+                self.simif.idle       .eq(self.idle),
+                self.simif.address_ptr.eq(current_address),
+            ]
 
         with m.FSM() as fsm:
 
@@ -249,10 +262,13 @@ class HyperRAMDQSInterface(wiring.Component):
                     self.phy.dq.e.eq(1),
                 ]
 
-                # If we have a register write, we don't need to handle
-                # any latency. Move directly to our SHIFT_DATA state.
+                # If we have a register write, we're done after the command.
                 with m.If(is_register & ~is_read):
-                    m.next = 'WRITE_DATA'
+                    m.d.sync += [
+                        cross_page.eq(self.CROSS_PAGE_CLOCKS),
+                        self.phy.clk_en.eq(0),
+                    ]
+                    m.next = 'RECOVERY'
 
                 # Otherwise, react with either a short period of latency
                 # or a longer one, depending on what the RAM requested via
@@ -292,10 +308,14 @@ class HyperRAMDQSInterface(wiring.Component):
                 datavalid_delay = Signal()
                 m.d.sync += datavalid_delay.eq(self.phy.datavalid)
                 with m.If(self.phy.datavalid):
+
                     m.d.comb += [
                         self.read_data     .eq(self.phy.dq.i),
                         self.read_ready    .eq(1),
                     ]
+
+                    if not is_hw(platform):
+                        m.d.comb += self.read_data.eq(self.simif.read_data_view),
 
                     m.d.sync += current_address.eq(current_address + 4)
 

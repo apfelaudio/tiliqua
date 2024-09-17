@@ -86,7 +86,12 @@ class Peripheral(wiring.Component):
             readclksel = Signal(3, reset=0)
             m.d.comb += self.psram_phy.phy.readclksel.eq(readclksel)
         else:
-            m.submodules.psram = psram = sim.FakePSRAM()
+            m.submodules.psram = psram = HyperRAMDQSInterface()
+            m.d.comb += [
+                psram.phy.ready.eq(1),
+                psram.phy.burstdet.eq(1),
+                psram.phy.datavalid.eq(1),
+            ]
             wiring.connect(m, self.simif, flipped(psram.simif))
 
         datavalid_delay = Signal()
