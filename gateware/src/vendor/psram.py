@@ -87,6 +87,7 @@ class HyperRAMDQSInterface(wiring.Component):
     read_data:      Out(unsigned(32))
     write_data:      In(unsigned(32))
     write_mask:      In(unsigned(4))
+    register_data:   In(unsigned(8))
     # Debug.
     current_address: Out(unsigned(32))
     fsm:             Out(unsigned(8))
@@ -103,6 +104,7 @@ class HyperRAMDQSInterface(wiring.Component):
         is_register     = Signal()
         current_address = Signal(32)
         is_multipage    = Signal()
+        register_data   = Signal(8)
 
         m.d.comb += self.current_address.eq(current_address)
 
@@ -145,18 +147,20 @@ class HyperRAMDQSInterface(wiring.Component):
         #   - AAAAAAAA  => address bits [ 3:16]
         #   - 00000000  => [reserved]
         #   - 00000AAA  => address bits [ 0: 3]
-        ca = Signal(48)
+        ca = Signal(64)
         m.d.comb += ca.eq(Cat(
+            Const(0, 8),
+            register_data,
             current_address[0:32],
             Const(0x00, 4),
             Const(0, 1),
             Const(0, 1),
-            Const(0, 1),
+            is_register,
             ~is_read,
             Const(0x00, 4),
             Const(0, 1),
             Const(0, 1),
-            Const(0, 1),
+            is_register,
             ~is_read,
         ))
 
@@ -168,7 +172,7 @@ class HyperRAMDQSInterface(wiring.Component):
             with m.State('PREINIT'):
                 m.d.sync += reset_timer.eq(reset_timer - 1)
                 m.d.sync += self.phy.cs.eq(0)
-                with m.If(reset_timer == 0):
+                with m.If(reset_timer == 0 & self.phy.ready):
                     m.d.sync += reset_timer.eq(32768)
                     m.next='INIT'
             with m.State('INIT'):
@@ -198,85 +202,11 @@ class HyperRAMDQSInterface(wiring.Component):
                 m.d.sync += reset_timer.eq(reset_timer - 1)
                 m.d.sync += self.phy.cs.eq(0)
                 with m.If(reset_timer == 0):
-                    m.d.sync += reset_timer.eq(32768)
                     m.d.sync += self.phy.dq.o.eq(0),
-                    m.next = 'SET_READ_LATENCY0'
-            with m.State('SET_READ_LATENCY0'):
-                m.d.sync += self.phy.clk_en.eq(0b11)
-                m.next = 'SET_READ_LATENCY1'
-            with m.State('SET_READ_LATENCY1'):
-                m.d.sync += [
-                    self.phy.dq.o.eq(0xc0c00000),
-                    self.phy.dq.e.eq(1),
-                ]
-                m.next = 'SET_READ_LATENCY2'
-            with m.State('SET_READ_LATENCY2'):
-                m.d.sync += [
-                    # read latency fixed 6 (12)
-                    #                    MRDA
-                    self.phy.dq.o.eq(0x00000c00),
-                    self.phy.dq.e.eq(1),
-                ]
-                m.next = 'SET_READ_LATENCY_WAIT'
-            with m.State('SET_READ_LATENCY_WAIT'):
-                m.d.sync += reset_timer.eq(reset_timer - 1)
-                m.d.sync += self.phy.cs.eq(0)
-                m.d.sync += self.phy.clk_en.eq(0)
-                with m.If(reset_timer == 0):
-                    m.d.sync += reset_timer.eq(32768)
-                    m.d.sync += self.phy.dq.o.eq(0),
-                    m.next = 'SET_WRITE_LATENCY0'
-            with m.State('SET_WRITE_LATENCY0'):
-                m.d.sync += self.phy.clk_en.eq(0b11)
-                m.next = 'SET_WRITE_LATENCY1'
-            with m.State('SET_WRITE_LATENCY1'):
-                m.d.sync += [
-                    self.phy.dq.o.eq(0xc0c00000),
-                    self.phy.dq.e.eq(1),
-                ]
-                m.next = 'SET_WRITE_LATENCY2'
-            with m.State('SET_WRITE_LATENCY2'):
-                m.d.sync += [
-                    # write latency fixed 6
-                    #                    MRDA
-                    self.phy.dq.o.eq(0x0004c000),
-                    self.phy.dq.e.eq(1),
-                ]
-                m.next = 'SET_WRITE_LATENCY_WAIT'
-            with m.State('SET_WRITE_LATENCY_WAIT'):
-                m.d.sync += reset_timer.eq(reset_timer - 1)
-                m.d.sync += self.phy.cs.eq(0)
-                m.d.sync += self.phy.clk_en.eq(0)
-                with m.If(reset_timer == 0):
-                    m.d.sync += reset_timer.eq(32768)
-                    m.d.sync += self.phy.dq.o.eq(0),
-                    m.next = 'SET_BURST0'
-            with m.State('SET_BURST0'):
-                m.d.sync += self.phy.clk_en.eq(0b11)
-                m.next = 'SET_BURST1'
-            with m.State('SET_BURST1'):
-                m.d.sync += [
-                    self.phy.dq.o.eq(0xc0c00000),
-                    self.phy.dq.e.eq(1),
-                ]
-                m.next = 'SET_BURST2'
-            with m.State('SET_BURST2'):
-                m.d.sync += [
-                    #                    MRDA
-                    self.phy.dq.o.eq(0x00080f00),
-                    self.phy.dq.e.eq(1),
-                ]
-                m.next = 'SET_BURST_WAIT'
-            with m.State('SET_BURST_WAIT'):
-                m.d.sync += reset_timer.eq(reset_timer - 1)
-                m.d.sync += self.phy.cs.eq(0)
-                m.d.sync += self.phy.clk_en.eq(0)
-                with m.If(reset_timer == 0):
                     m.next = 'IDLE'
-
             # IDLE state: waits for a transaction request
             with m.State('IDLE'):
-                m.d.comb += self.idle        .eq(1)
+                m.d.comb += self.idle        .eq(self.phy.ready)
                 m.d.sync += self.phy.clk_en  .eq(0)
 
                 # Once we have a transaction request, latch in our control
@@ -287,6 +217,7 @@ class HyperRAMDQSInterface(wiring.Component):
                     m.d.sync += [
                         is_read             .eq(~self.perform_write),
                         is_register         .eq(self.register_space),
+                        register_data       .eq(self.register_data),
                         is_multipage        .eq(~self.single_page),
                         current_address     .eq(self.address),
                         self.phy.dq.o       .eq(0),
@@ -294,7 +225,6 @@ class HyperRAMDQSInterface(wiring.Component):
 
                 with m.Else():
                     m.d.sync += self.phy.cs.eq(0)
-
 
             # START_CLK -- latch in the value of the RWDS signal,
             # which determines our read/write latency.
@@ -307,7 +237,7 @@ class HyperRAMDQSInterface(wiring.Component):
             with m.State('SHIFT_COMMAND0'):
                 # Output the first 32 bits of our command.
                 m.d.sync += [
-                    self.phy.dq.o.eq(Cat(ca[16:48])),
+                    self.phy.dq.o.eq(Cat(ca[32:64])),
                     self.phy.dq.e.eq(1),
                 ]
                 m.next = 'SHIFT_COMMAND1'
@@ -315,7 +245,7 @@ class HyperRAMDQSInterface(wiring.Component):
             with m.State('SHIFT_COMMAND1'):
                 # Output the remaining 32 bits of our command.
                 m.d.sync += [
-                    self.phy.dq.o.eq(Cat(Const(0, 16), ca[0:16])),
+                    self.phy.dq.o.eq(ca[0:32]),
                     self.phy.dq.e.eq(1),
                 ]
 
@@ -389,17 +319,14 @@ class HyperRAMDQSInterface(wiring.Component):
                 m.d.sync += [
                     self.phy.dq.o    .eq(self.write_data),
                     self.phy.dq.e    .eq(1),
-                    self.phy.rwds.e  .eq(~is_register),
+                    self.phy.rwds.e  .eq(1),
                     self.phy.rwds.o  .eq(self.write_mask),
                 ]
                 m.d.comb += self.write_ready.eq(1),
 
                 m.d.sync += current_address.eq(current_address + 4)
 
-                # If we just finished a register write, we're done -- there's no need for recovery.
-                with m.If(is_register):
-                    m.next = 'IDLE'
-                with m.Elif(self.final_word):
+                with m.If(self.final_word):
                     m.d.sync += [
                         cross_page.eq(self.CROSS_PAGE_CLOCKS),
                         self.phy.clk_en.eq(0),
