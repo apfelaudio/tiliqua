@@ -51,6 +51,8 @@ from tiliqua.video import DVI_TIMINGS, FramebufferPHY
 
 from tiliqua.raster import Persistance, Stroke
 
+from vendor.ila import AsyncSerialILA, AsyncSerialILAFrontend
+
 class VectorScopeTop(Elaboratable):
 
     """
@@ -58,10 +60,11 @@ class VectorScopeTop(Elaboratable):
     Can be instantiated with 'sim=True', which swaps out most things that touch hardware for mocks.
     """
 
-    def __init__(self, *, dvi_timings, sim=False):
+    def __init__(self, *, dvi_timings, sim=False, ila=False):
 
         self.dvi_timings = dvi_timings
         self.sim = sim
+        self.use_ila = ila
 
         # One PSRAM with an internal arbiter to support multiple DMA masters.
         self.psram_periph = psram_peripheral.Peripheral(size=16*1024*1024)
@@ -117,7 +120,6 @@ class VectorScopeTop(Elaboratable):
         self.stroke.pmod0 = pmod0
 
         m.submodules.astream = astream = eurorack_pmod.AudioStream(self.pmod0)
-        m.submodules.psram_periph = self.psram_periph
         m.submodules.video = self.video
         m.submodules.persist = self.persist
         m.submodules.stroke = self.stroke
@@ -133,11 +135,55 @@ class VectorScopeTop(Elaboratable):
             m.d.sync += self.persist.enable.eq(1)
             m.d.sync += self.stroke.enable.eq(1)
 
+        # Optional ILA, very useful for low-level PSRAM debugging...
+        if not self.use_ila:
+            m.submodules.psram_periph = self.psram_periph
+        else:
+            # HACK: eager elaboration so ILA has something to attach to
+            m.submodules.psram_periph = self.psram_periph.elaborate(platform)
+
+            test_signal = Signal(16, reset=0xFEED)
+            ila_signals = [
+                test_signal,
+                self.psram_periph.psram.idle,
+                self.psram_periph.psram.perform_write,
+                self.psram_periph.psram.start_transfer,
+                self.psram_periph.psram.final_word,
+                self.psram_periph.psram.read_ready,
+                self.psram_periph.psram.write_ready,
+                self.psram_periph.psram.fsm,
+                self.psram_periph.psram.phy.datavalid,
+                self.psram_periph.psram.phy.burstdet,
+                self.psram_periph.psram.phy.cs,
+                self.psram_periph.psram.phy.clk_en,
+                self.psram_periph.psram.phy.ready,
+                self.psram_periph.psram.phy.readclksel,
+            ]
+            self.ila = AsyncSerialILA(signals=ila_signals,
+                                      sample_depth=4096, divisor=521,
+                                      domain='sync', sample_rate=60e6) # ~115200 baud on USB clock
+            m.submodules += self.ila
+            m.d.comb += [
+                self.ila.trigger.eq(self.psram_periph.psram.start_transfer),
+                platform.request("uart").tx.o.eq(self.ila.tx), # needs FFSync?
+            ]
+
         return m
 
-def build():
+def build(ila=False):
     dvi_timings = set_environment_variables()
-    TiliquaPlatform().build(VectorScopeTop(dvi_timings=dvi_timings))
+    top = VectorScopeTop(dvi_timings=dvi_timings, ila=ila)
+    TiliquaPlatform().build(top)
+    if ila:
+        subprocess.check_call(["openFPGALoader",
+                               "-c", "dirtyJtag",
+                               "build/top.bit"],
+                              env=os.environ)
+        # TODO: make serial port selectable
+        frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
+        frontend.emit_vcd("out.vcd")
+
+
 
 def colors():
     """
