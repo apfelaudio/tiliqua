@@ -67,7 +67,10 @@ class HyperRAMDQSInterface(wiring.Component):
     READ_LATENCY_CLOCKS  = 0
     WRITE_LATENCY_CLOCKS = 1
 
+    # FSM cycles necessary to leave CS high when crossing pages.
     CROSS_PAGE_CLOCKS    = 2
+
+    PAGE_SIZE_BYTES      = 2048
 
     # Control.
     address:         In(unsigned(32))
@@ -373,7 +376,8 @@ class HyperRAMDQSInterface(wiring.Component):
                             self.phy.clk_en.eq(0),
                         ]
                         m.next = 'RECOVERY'
-                    with m.Elif((current_address & 0x7FF) == 0x7FC):
+                    # we are about to cross a page boundary
+                    with m.Elif((current_address & (self.PAGE_SIZE_BYTES-1)) == (self.PAGE_SIZE_BYTES-4)):
                         m.d.sync += [
                             cross_page.eq(self.CROSS_PAGE_CLOCKS),
                             self.phy.clk_en.eq(0),
@@ -402,7 +406,7 @@ class HyperRAMDQSInterface(wiring.Component):
                     ]
                     m.next = 'RECOVERY'
                 # we are about to cross a page boundary
-                with m.Elif((current_address & 0x7FF) == 0x7FC):
+                with m.Elif((current_address & (self.PAGE_SIZE_BYTES-1)) == (self.PAGE_SIZE_BYTES-4)):
                     m.d.sync += [
                         cross_page.eq(self.CROSS_PAGE_CLOCKS),
                         self.phy.clk_en.eq(0),
