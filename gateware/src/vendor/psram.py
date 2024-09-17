@@ -10,32 +10,32 @@
 
 import unittest
 
-from amaranth import Const, Signal, Module, Cat, Elaboratable, Record, ClockSignal, ResetSignal, Instance
-from amaranth.hdl.rec import DIR_FANIN, DIR_FANOUT
+from amaranth import *
+from amaranth.lib        import wiring
+from amaranth.lib.wiring import In, Out
 from amaranth.lib.cdc import FFSynchronizer
 
-class HyperBusPHY(Record):
-    """ Record representing a 32-bit HyperBus interface for use with a 4:1 PHY module. """
+class DDRBusSignature(wiring.Signature):
+    def __init__(self, *, n_io, n_e):
+        super().__init__({
+            "i":  In(unsigned(n_io)),
+            "o": Out(unsigned(n_io)),
+            "e": Out(unsigned(n_e)),
+        })
 
+class DQSPHYSignature(wiring.Signature):
+    """ Signature representing a 32-bit HyperBus interface for use with a 4:1 PHY module. """
     def __init__(self):
-        super().__init__([
-            ('clk_en', 2, DIR_FANOUT),
-            ('dq', [
-                ('i', 32, DIR_FANIN),
-                ('o', 32, DIR_FANOUT),
-                ('e', 1,  DIR_FANOUT),
-            ]),
-            ('rwds', [
-                ('i', 4,  DIR_FANIN),
-                ('o', 4,  DIR_FANOUT),
-                ('e', 1,  DIR_FANOUT),
-            ]),
-            ('cs',        1, DIR_FANOUT),
-            ('reset',     1, DIR_FANOUT),
-            ('read',      2, DIR_FANIN),
-            ('datavalid', 1, DIR_FANOUT),
-            ('burstdet',  1, DIR_FANOUT)
-        ])
+        super().__init__({
+            "clk_en":         Out(unsigned(2)),
+            "dq":             Out(DDRBusSignature(n_io=32, n_e=4)),
+            "rwds":           Out(DDRBusSignature(n_io=4,  n_e=1)),
+            "cs":             Out(unsigned(1)),
+            "reset":          Out(unsigned(1)),
+            "read":            In(unsigned(2)),
+            "datavalid":      Out(unsigned(1)),
+            "burstdet":       Out(unsigned(1)),
+        })
 
 class HyperRAMDQSInterface(Elaboratable):
     """ Gateware interface to HyperRAM series self-refreshing DRAM chips.
@@ -286,7 +286,7 @@ class HyperRAMDQSInterface(Elaboratable):
 
         return m
 
-class HyperRAMDQSPHY(Elaboratable):
+class HyperRAMDQSPHY(wiring.Component):
     """ Gateware interface to HyperRAM series self-refreshing DRAM chips.
 
     I/O port:
@@ -295,7 +295,9 @@ class HyperRAMDQSPHY(Elaboratable):
 
     def __init__(self, *, bus, in_skew=None, out_skew=None, clock_skew=None):
         self.bus = bus
-        self.phy = HyperBusPHY()
+        super().__init__({
+            "phy": In(DQSPHYSignature())
+        })
 
     def elaborate(self, platform):
         m = Module()
