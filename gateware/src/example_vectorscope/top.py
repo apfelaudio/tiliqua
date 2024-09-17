@@ -223,7 +223,8 @@ def sim():
     dst = f"{build_dst}/vectorscope.v"
     print(f"write verilog implementation of 'example_vectorscope' to '{dst}'...")
 
-    top = VectorScopeTop(dvi_timings=DVI_TIMINGS["1280x720p60"], sim=True)
+    dvi_timings = set_environment_variables()
+    top = VectorScopeTop(dvi_timings=dvi_timings, sim=True)
 
     os.makedirs(build_dst, exist_ok=True)
     with open(dst, "w") as f:
