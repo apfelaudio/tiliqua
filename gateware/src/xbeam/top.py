@@ -51,11 +51,11 @@ class VectorTracePeripheral(wiring.Component):
 
         regs = csr.Builder(addr_width=5, data_width=8)
 
-        self._en = regs.add("en", self.EnableReg())
-        self._hue = regs.add("hue", self.HueReg())
-        self._intensity = regs.add("intensity", self.IntensityReg())
-        self._xscale = regs.add("xscale", self.XScaleReg())
-        self._yscale = regs.add("yscale", self.YScaleReg())
+        self._en        = regs.add("en",        self.EnableReg(),    offset=0x0)
+        self._hue       = regs.add("hue",       self.HueReg(),       offset=0x4)
+        self._intensity = regs.add("intensity", self.IntensityReg(), offset=0x8)
+        self._xscale    = regs.add("xscale",    self.XScaleReg(),    offset=0xC)
+        self._yscale    = regs.add("yscale",    self.YScaleReg(),    offset=0x10)
 
         self._bridge = csr.Bridge(regs.as_memory_map())
 
@@ -136,16 +136,16 @@ class ScopeTracePeripheral(wiring.Component):
         self.trigger_lvl = Signal(shape=dsp.ASQ)
         self.trigger_always = Signal()
 
-        regs = csr.Builder(addr_width=5, data_width=8)
-        self._en = regs.add("en", self.Enable())
-        self._hue = regs.add("hue", self.Hue())
-        self._intensity = regs.add("intensity", self.Intensity())
-        self._timebase = regs.add("timebase", self.Timebase())
-        self._xscale = regs.add("xscale", self.XScale())
-        self._yscale = regs.add("yscale", self.YScale())
-        self._trigger_always = regs.add("trigger_always", self.TriggerAlways())
-        self._trigger_lvl = regs.add("trigger_lvl", self.TriggerLevel())
-        self._ypos = [regs.add(f"ypos{i}", self.YPosition()) for i in range(4)]
+        regs = csr.Builder(addr_width=6, data_width=8)
+        self._en             = regs.add("en",             self.Enable(),        offset=0x0)
+        self._hue            = regs.add("hue",            self.Hue(),           offset=0x4)
+        self._intensity      = regs.add("intensity",      self.Intensity(),     offset=0x8)
+        self._timebase       = regs.add("timebase",       self.Timebase(),      offset=0xC)
+        self._xscale         = regs.add("xscale",         self.XScale(),        offset=0x10)
+        self._yscale         = regs.add("yscale",         self.YScale(),        offset=0x14)
+        self._trigger_always = regs.add("trigger_always", self.TriggerAlways(), offset=0x18)
+        self._trigger_lvl    = regs.add("trigger_lvl",    self.TriggerLevel(),  offset=0x1C)
+        self._ypos           = [regs.add(f"ypos{i}",      self.YPosition(),     offset=(0x20+i*4)) for i in range(4)]
 
         self._bridge = csr.Bridge(regs.as_memory_map())
         super().__init__({
