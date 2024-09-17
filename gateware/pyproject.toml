@@ -34,6 +34,7 @@ build_usb_audio_ila = { call = "example_usb_audio.top:build(ila=True)" }
 build_dsp_core = { call = "example_dsp.top:build()" }
 sim_dsp_core = { call = "example_dsp.top:simulate()" }
 build_vectorscope = { call = "example_vectorscope.top:build()" }
+build_vectorscope_ila = { call = "example_vectorscope.top:build(ila=True)" }
 sim_vectorscope = { call = "example_vectorscope.top:sim()" }
 colors_vectorscope = { call = "example_vectorscope.top:colors()" }
 # bootloader stub bitstream compressed and flashed onto RP2040
