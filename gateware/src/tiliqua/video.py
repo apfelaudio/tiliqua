@@ -427,23 +427,22 @@ class FramebufferPHY(wiring.Component):
                     bus.cyc.eq(1),
                     bus.we.eq(0),
                     bus.sel.eq(2**(bus.data_width//8)-1),
-                    bus.adr.eq(self.fb_base + dma_addr), # FIXME
+                    bus.adr.eq(self.fb_base + dma_addr),
+                    self.fifo.w_en.eq(bus.ack),
                     self.fifo.w_data.eq(bus.dat_r),
+                    bus.cti.eq(
+                        wishbone.CycleType.INCR_BURST),
                 ]
-                with m.If(~self.fifo.w_rdy):
-                    # FIFO full, hold off for next burst.
+                with m.If(self.fifo.w_level >= (self.fifo_depth-1)):
                     m.d.comb += bus.cti.eq(
                             wishbone.CycleType.END_OF_BURST)
-                    m.next = 'WAIT'
-                with m.Else():
-                    m.d.comb += bus.cti.eq(
-                            wishbone.CycleType.INCR_BURST)
-                with m.If(bus.stb & bus.ack & self.fifo.w_rdy): # WARN: drops last word
-                    m.d.comb += self.fifo.w_en.eq(1)
+                with m.If(bus.stb & bus.ack & self.fifo.w_rdy):
                     with m.If(dma_addr < (fb_len_words-1)):
                         m.d.sync += dma_addr.eq(dma_addr + 1)
                     with m.Else():
                         m.d.sync += dma_addr.eq(0)
+                with m.Elif(~self.fifo.w_rdy):
+                    m.next = 'WAIT'
             with m.State('WAIT'):
                 with m.If(~phy_vsync_sync):
                     m.d.sync += drained.eq(0)
