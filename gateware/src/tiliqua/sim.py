@@ -80,6 +80,7 @@ class FakePSRAM(wiring.Component):
         self.reset            = Signal()
         self.address          = Signal(32)
         self.register_space   = Signal()
+        self.register_data    = Signal(8)
         self.perform_write    = Signal()
         self.single_page      = Signal()
         self.start_transfer   = Signal()

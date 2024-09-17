@@ -82,53 +82,83 @@ class Peripheral(wiring.Component):
             self.psram = psram = HyperRAMDQSInterface()
             wiring.connect(m, psram.phy, self.psram_phy.phy)
             m.submodules += [self.psram_phy, self.psram]
+            # connection used for training
+            readclksel = Signal(3, reset=0)
+            m.d.comb += self.psram_phy.phy.readclksel.eq(readclksel)
         else:
             m.submodules.psram = psram = sim.FakePSRAM()
             wiring.connect(m, self.simif, flipped(psram.simif))
 
-
         datavalid_delay = Signal()
-        m.d.sync += datavalid_delay.eq(psram.read_ready)
         counter = Signal(range(128))
         timeout = Signal(range(128))
-        readclksel = Signal(3, reset=0)
         read_counter = Signal(range(32))
 
         m.d.comb += [
             psram.single_page            .eq(0),
+        ]
+
+        m.d.sync += [
             psram.register_space         .eq(0),
-            self.psram_phy.phy.readclksel.eq(readclksel),
+            psram.start_transfer         .eq(0),
+            psram.perform_write          .eq(0),
+            datavalid_delay              .eq(psram.read_ready)
+        ]
+
+        init_registers = [
+            ("REG_MR0","REG_MR4",    0x00, 0x0c),
+            ("REG_MR4","REG_MR8",    0x04, 0xc0),
+            ("REG_MR8","TRAIN_INIT", 0x08, 0x0f),
         ]
 
         with m.FSM() as fsm:
 
-            # Training logic for readclksel
-            with m.State("INIT"):
-                with m.If(self.psram_phy.phy.ready & self.psram.idle):
-                    m.d.sync += [
-                        timeout.eq(0),
-                        read_counter.eq(3),
-                        psram.start_transfer.eq(1),
-                    ]
-                    m.next = "TRAIN"
-            with m.State("TRAIN"):
-                m.d.sync += psram.start_transfer.eq(0),
-                m.d.sync += timeout.eq(timeout + 1)
-                m.d.comb += psram.final_word.eq(read_counter == 1)
-                with m.If(psram.read_ready):
-                    m.d.sync += read_counter.eq(read_counter - 1)
-                with m.If(timeout == 127):
-                    m.next = "WAIT1"
-                    m.d.sync += counter.eq(counter + 1)
-                    with m.If(counter == 127):
-                        m.next = "IDLE"
-                    with m.If(~self.psram_phy.phy.burstdet):
-                        m.d.sync += readclksel.eq(readclksel + 1)
-                        m.d.sync += counter.eq(0)
-            with m.State("WAIT1"):
-                m.next = "INIT"
+            # Initialize memory registers (read/write timings) before
+            # we kick off memory training.
+            for state, state_next, reg_mr, reg_data in init_registers:
+                with m.State(state):
+                    with m.If(psram.idle & ~psram.start_transfer):
+                        m.d.sync += [
+                            psram.start_transfer.eq(1),
+                            psram.register_space.eq(1),
+                            psram.perform_write .eq(1),
+                            psram.address       .eq(reg_mr),
+                            psram.register_data .eq(reg_data),
+                        ]
+                        m.next = state_next
 
-            # Training complete, now we can accept wishbone transactions.
+            if sim.is_hw(platform):
+                # Memory read leveling (training to find good readclksel)
+                with m.State("TRAIN_INIT"):
+                    with m.If(psram.idle):
+                        m.d.sync += [
+                            timeout.eq(0),
+                            read_counter.eq(3),
+                            psram.start_transfer.eq(1),
+                        ]
+                        m.next = "TRAIN"
+                with m.State("TRAIN"):
+                    m.d.sync += psram.start_transfer.eq(0),
+                    m.d.sync += timeout.eq(timeout + 1)
+                    m.d.comb += psram.final_word.eq(read_counter == 1)
+                    with m.If(psram.read_ready):
+                        m.d.sync += read_counter.eq(read_counter - 1)
+                    with m.If(timeout == 127):
+                        m.next = "WAIT1"
+                        m.d.sync += counter.eq(counter + 1)
+                        with m.If(counter == 127):
+                            m.next = "IDLE"
+                        with m.If(~self.psram_phy.phy.burstdet):
+                            m.d.sync += readclksel.eq(readclksel + 1)
+                            m.d.sync += counter.eq(0)
+                with m.State("WAIT1"):
+                    m.next = "TRAIN_INIT"
+            else:
+                # Skip memory training in simulation for now.
+                with m.State("TRAIN_INIT"):
+                    m.next = "IDLE"
+
+            # Training complete, now we can accept transactions.
             with m.State('IDLE'):
                 with m.If(self.shared_bus.cyc & self.shared_bus.stb & psram.idle):
                     m.d.sync += [
@@ -140,7 +170,6 @@ class Peripheral(wiring.Component):
                     ]
                     m.next = 'GO'
             with m.State('GO'):
-                m.d.sync += psram.start_transfer      .eq(0),
                 with m.If(self.shared_bus.cti != wishbone.CycleType.INCR_BURST):
                     m.d.comb += psram.final_word      .eq(1)
                 with m.If(psram.read_ready | psram.write_ready):
