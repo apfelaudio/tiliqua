@@ -34,7 +34,7 @@ class AudioStream(wiring.Component):
     istream: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
     ostream: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def __init__(self, eurorack_pmod, stream_domain="sync", fifo_depth=8):
+    def __init__(self, eurorack_pmod, stream_domain="sync", fifo_depth=256):
 
         self.eurorack_pmod = eurorack_pmod
         self.stream_domain = stream_domain

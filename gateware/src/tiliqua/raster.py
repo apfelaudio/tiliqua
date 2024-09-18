@@ -193,7 +193,7 @@ class Stroke(wiring.Component):
     # x, y, intensity, color
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, fs=192000, n_upsample=4,
+    def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, fs=192000, n_upsample=8,
                  default_hue=10, default_x=0, default_y=0, video_rotate_90=False):
 
 
@@ -215,7 +215,7 @@ class Stroke(wiring.Component):
         self.sample_c = Signal(signed(16)) # color modulation DONE
 
         self.hue       = Signal(4, reset=default_hue);
-        self.intensity = Signal(4, reset=8);
+        self.intensity = Signal(4, reset=15);
         self.scale_x   = Signal(4, reset=6);
         self.scale_y   = Signal(4, reset=6);
         self.x_offset  = Signal(signed(16), reset=default_x)
