@@ -160,8 +160,8 @@ class VectorScopeTop(Elaboratable):
                 self.psram_periph.psram.phy.readclksel,
             ]
             self.ila = AsyncSerialILA(signals=ila_signals,
-                                      sample_depth=4096, divisor=521,
-                                      domain='sync', sample_rate=60e6) # ~115200 baud on USB clock
+                                      sample_depth=4096, divisor=868,
+                                      domain='sync', sample_rate=100e6) # ~115200 baud on sync clock
             m.submodules += self.ila
             m.d.comb += [
                 self.ila.trigger.eq(self.psram_periph.psram.start_transfer),
