@@ -182,5 +182,15 @@ class Peripheral(wiring.Component):
                     with m.If(self.shared_bus.cti != wishbone.CycleType.INCR_BURST):
                         m.d.comb += psram.final_word  .eq(1)
                         m.next = 'IDLE'
+                # FIXME: odd case --
+                # We have a page crossing during final word assertion, so psram doesn't
+                # pick it up, so we have to keep final_word asserted until psram is idle.
+                with m.If(~self.shared_bus.cyc & ~self.shared_bus.stb):
+                    m.d.comb += psram.final_word.eq(1)
+                    m.next = 'ABORT'
+            with m.State('ABORT'):
+                m.d.comb += psram.final_word.eq(1)
+                with m.If(psram.idle):
+                    m.next = 'IDLE'
 
         return m
