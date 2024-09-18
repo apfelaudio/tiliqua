@@ -183,6 +183,7 @@ class TiliquaDomainGenerator(Elaboratable):
                 o_CLKOP=feedback60,
                 o_CLKOS=ClockSignal("fast"),
                 o_CLKOS2=ClockSignal("audio"),
+                o_CLKOS3=ClockSignal("sync"),
 
                 # Status.
                 o_LOCK=locked60,
@@ -202,13 +203,16 @@ class TiliquaDomainGenerator(Elaboratable):
                 p_CLKOP_CPHASE=4,
                 p_CLKOP_FPHASE=0,
                 p_CLKOS_ENABLE="ENABLED",
-                p_CLKOS_DIV=5,
+                p_CLKOS_DIV=3,
                 p_CLKOS_CPHASE=4,
                 p_CLKOS_FPHASE=0,
                 p_CLKOS2_ENABLE="ENABLED",
                 p_CLKOS2_DIV=12 if self.audio_192 else 48, # 50.0MHz (~195kHz) or 12.0MHz (~47kHz)
                 p_CLKOS2_CPHASE=4,
                 p_CLKOS2_FPHASE=0,
+                p_CLKOS3_DIV=6,
+                p_CLKOS3_CPHASE=4,
+                p_CLKOS3_FPHASE=0,
                 p_FEEDBK_PATH="CLKOP",
                 p_CLKFB_DIV=5,
 
@@ -307,7 +311,6 @@ class TiliquaDomainGenerator(Elaboratable):
 
         # Derived clocks and resets
         m.d.comb += [
-            ClockSignal("sync")  .eq(feedback60),
             ClockSignal("usb")   .eq(feedback60),
 
             ResetSignal("sync")  .eq(~locked60),
