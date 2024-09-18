@@ -43,7 +43,7 @@ from tiliqua                  import psram_peripheral
 
 from amaranth_soc             import wishbone
 
-from amaranth.back import verilog
+from amaranth.back import cxxrtl
 
 from tiliqua.sim import FakeEurorackPmod, FakeTiliquaDomainGenerator
 
@@ -220,7 +220,7 @@ def sim():
     """
 
     build_dst = "build"
-    dst = f"{build_dst}/vectorscope.v"
+    dst = f"{build_dst}/vectorscope.cpp"
     print(f"write verilog implementation of 'example_vectorscope' to '{dst}'...")
 
     dvi_timings = set_environment_variables()
@@ -228,7 +228,7 @@ def sim():
 
     os.makedirs(build_dst, exist_ok=True)
     with open(dst, "w") as f:
-        f.write(verilog.convert(top, ports={
+        f.write(cxxrtl.convert(top, ports={
             "clk_sync":       (ClockSignal("sync"),                   None),
             "rst_sync":       (ResetSignal("sync"),                   None),
             "clk_dvi":        (ClockSignal("dvi"),                    None),
@@ -260,35 +260,33 @@ def sim():
     sync_clk_hz = 60000000
     audio_clk_hz = 48000000
 
-    verilator_dst = "build/obj_dir"
-    shutil.rmtree(verilator_dst)
-    print(f"verilate '{dst}' into C++ binary...")
-    subprocess.check_call(["verilator",
-                           "-Wno-COMBDLY",
-                           "-Wno-CASEINCOMPLETE",
-                           "-Wno-CASEOVERLAP",
-                           "-Wno-WIDTHEXPAND",
-                           "-Wno-WIDTHTRUNC",
-                           "-Wno-TIMESCALEMOD",
-                           "-Wno-PINMISSING",
-                           "-cc",
-                           "--trace-fst",
-                           "--exe",
-                           "--Mdir", f"{verilator_dst}",
-                           "--build",
-                           "-j", "0",
-                           "-CFLAGS", f"-DDVI_H_ACTIVE={dvi_h_active}",
-                           "-CFLAGS", f"-DDVI_V_ACTIVE={dvi_v_active}",
-                           "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
-                           "-CFLAGS", f"-DSYNC_CLK_HZ={sync_clk_hz}",
-                           "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
-                           "../../src/example_vectorscope/sim/sim.cpp",
-                           f"{dst}",
+
+    # TODO: fetch with:
+    # $(shell yosys-config --datdir)/include/backends/cxxrtl/runtime
+    YOSYS_INCLUDE = "/opt/oss-cad-suite/share/yosys/include/backends/cxxrtl/runtime"
+
+    cxxrtl_dst = "build/obj_dir"
+    shutil.rmtree(cxxrtl_dst, ignore_errors=True)
+    print(f"compile '{dst}' into C++ binary...")
+    subprocess.check_call(["clang++",
+                           "-g",
+                           "-O3",
+                           "-std=c++14",
+                           "-Wno-array-bounds",
+                           "-Wno-shift-count-overflow",
+                           f"-I{YOSYS_INCLUDE}",
+                           f"-DDVI_H_ACTIVE={dvi_h_active}",
+                           f"-DDVI_V_ACTIVE={dvi_v_active}",
+                           f"-DDVI_CLK_HZ={dvi_clk_hz}",
+                           f"-DSYNC_CLK_HZ={sync_clk_hz}",
+                           f"-DAUDIO_CLK_HZ={audio_clk_hz}",
+                           "sim.cpp",
+                           "-o", f"build/vectorscope",
                            ],
                           env=os.environ)
 
-    print(f"run verilated binary '{verilator_dst}/Vvectorscope'...")
-    subprocess.check_call([f"{verilator_dst}/Vvectorscope"],
+    print(f"run binary 'build/vectorscope'...")
+    subprocess.check_call([f"build/vectorscope"],
                           env=os.environ)
 
     print(f"done.")
