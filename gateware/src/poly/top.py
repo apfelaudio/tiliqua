@@ -8,7 +8,6 @@ import sys
 import math
 
 from amaranth                                    import *
-from amaranth.hdl.rec                            import Record
 from amaranth.lib                                import wiring, data, stream
 from amaranth.lib.wiring                         import In, Out, connect, flipped
 
@@ -18,7 +17,6 @@ from amaranth_future                             import fixed
 
 from tiliqua                                     import eurorack_pmod, dsp, midi
 from tiliqua.eurorack_pmod                       import ASQ
-from tiliqua.tiliqua_platform                    import set_environment_variables
 from tiliqua.tiliqua_soc                         import TiliquaSoc, top_level_cli
 
 from xbeam.top                                   import VectorTracePeripheral
@@ -391,11 +389,11 @@ class SynthPeripheral(wiring.Component):
         return m
 
 class PolySoc(TiliquaSoc):
-    def __init__(self, *, firmware_path, dvi_timings):
+    def __init__(self, *, firmware_path, dvi_timings, **kwargs):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.
         super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
-                         audio_out_peripheral=False, touch=True, finalize_csr_bridge=False)
+                         audio_out_peripheral=False, touch=True, finalize_csr_bridge=False, **kwargs)
 
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
 
@@ -408,7 +406,8 @@ class PolySoc(TiliquaSoc):
             fb_size=fb_size,
             bus_dma=self.psram_periph,
             fs=48000,
-            n_upsample=8)
+            n_upsample=8,
+            video_rotate_90=self.video_rotate_90)
         self.csr_decoder.add(self.vector_periph.bus, addr=self.vector_periph_base, name="vector_periph")
 
         # synth controls
@@ -466,8 +465,5 @@ class PolySoc(TiliquaSoc):
 
 
 if __name__ == "__main__":
-    dvi_timings = set_environment_variables()
-    this_directory = os.path.dirname(os.path.realpath(__file__))
-    design = PolySoc(firmware_path=os.path.join(this_directory, "fw/firmware.bin"),
-                     dvi_timings=dvi_timings)
-    top_level_cli(design)
+    this_path = os.path.dirname(os.path.realpath(__file__))
+    top_level_cli(PolySoc, path=this_path)

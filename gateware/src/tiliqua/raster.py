@@ -196,9 +196,7 @@ class Stroke(wiring.Component):
     def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, fs=192000, n_upsample=4,
                  default_hue=10, default_x=0, default_y=0, video_rotate_90=False):
 
-
-        # FIXME: move this further up chain, collapse env variables
-        self.rotate_90 = True if os.getenv("TILIQUA_VIDEO_ROTATE") == "1" else False
+        self.rotate_90 = video_rotate_90
 
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size

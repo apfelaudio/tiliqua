@@ -417,12 +417,3 @@ class TiliquaR2SC3Platform(SoldierCrabR3Platform, LUNAPlatform):
         *SoldierCrabR3Platform.connectors,
         *_TiliquaR2Mobo.connectors
     ]
-
-def set_environment_variables():
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
-    os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
-
-    video_timings = os.getenv("TILIQUA_RESOLUTION", "1280x720p60")
-    assert video_timings in DVI_TIMINGS, f"error: video resolution must be one of {DVI_TIMINGS.keys()}"
-    return DVI_TIMINGS[video_timings]

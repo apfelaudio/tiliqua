@@ -223,7 +223,7 @@ def simulate_soc(fragment, tracing=False):
     dvi_v_active = fragment.video.dvi_tgen.timings.v_active
 
     verilator_dst = "build/obj_dir"
-    shutil.rmtree(verilator_dst)
+    shutil.rmtree(verilator_dst, ignore_errors=True)
     print(f"verilate '{dst}' into C++ binary...")
     subprocess.check_call(["verilator",
                            "-Wno-COMBDLY",

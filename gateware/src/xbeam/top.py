@@ -20,7 +20,6 @@ from amaranth_soc                                import csr
 from amaranth_future                             import fixed
 
 from tiliqua                                     import eurorack_pmod, dsp
-from tiliqua.tiliqua_platform                    import set_environment_variables
 from tiliqua.tiliqua_soc                         import TiliquaSoc, top_level_cli
 
 from example_vectorscope.top                     import Stroke
@@ -119,8 +118,8 @@ class ScopeTracePeripheral(wiring.Component):
     class YPosition(csr.Register, access="w"):
         ypos: csr.Field(csr.action.W, unsigned(16))
 
-    def __init__(self, fb_base, fb_size, bus_dma):
-        self.strokes = [Stroke(fb_base=fb_base, bus_master=bus_dma.bus, fb_size=fb_size, n_upsample=None)
+    def __init__(self, fb_base, fb_size, bus_dma, **kwargs):
+        self.strokes = [Stroke(fb_base=fb_base, bus_master=bus_dma.bus, fb_size=fb_size, n_upsample=None, **kwargs)
                         for _ in range(4)]
 
         self.isplit4 = dsp.Split(4)
@@ -239,11 +238,11 @@ class ScopeTracePeripheral(wiring.Component):
         return m
 
 class XbeamSoc(TiliquaSoc):
-    def __init__(self, *, firmware_path, dvi_timings):
+    def __init__(self, *, firmware_path, dvi_timings, **kwargs):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.
         super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=True,
-                         audio_out_peripheral=False, finalize_csr_bridge=False)
+                         audio_out_peripheral=False, finalize_csr_bridge=False, **kwargs)
 
         # scope stroke bridge from audio stream
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
@@ -255,13 +254,15 @@ class XbeamSoc(TiliquaSoc):
         self.vector_periph = VectorTracePeripheral(
             fb_base=self.video.fb_base,
             fb_size=fb_size,
-            bus_dma=self.psram_periph)
+            bus_dma=self.psram_periph,
+            video_rotate_90=self.video_rotate_90)
         self.csr_decoder.add(self.vector_periph.bus, addr=self.vector_periph_base, name="vector_periph")
 
         self.scope_periph = ScopeTracePeripheral(
             fb_base=self.video.fb_base,
             fb_size=fb_size,
-            bus_dma=self.psram_periph)
+            bus_dma=self.psram_periph,
+            video_rotate_90=self.video_rotate_90)
         self.csr_decoder.add(self.scope_periph.bus, addr=self.scope_periph_base, name="scope_periph")
 
         # now we can freeze the memory map
@@ -302,8 +303,5 @@ class XbeamSoc(TiliquaSoc):
 
 
 if __name__ == "__main__":
-    dvi_timings = set_environment_variables()
-    this_directory = os.path.dirname(os.path.realpath(__file__))
-    design = XbeamSoc(firmware_path=os.path.join(this_directory, "fw/firmware.bin"),
-                      dvi_timings=dvi_timings)
-    top_level_cli(design)
+    this_path = os.path.dirname(os.path.realpath(__file__))
+    top_level_cli(XbeamSoc, path=this_path)

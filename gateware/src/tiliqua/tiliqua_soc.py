@@ -111,7 +111,8 @@ class VideoPeripheral(wiring.Component):
 
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
-                 audio_out_peripheral=True, touch=False, finalize_csr_bridge=True):
+                 audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
+                 video_rotate_90=False):
 
         super().__init__({})
 
@@ -119,8 +120,7 @@ class TiliquaSoc(Component):
         self.touch = touch
         self.audio_192 = audio_192
         self.dvi_timings = dvi_timings
-        # FIXME move somewhere more obvious
-        self.video_rotate_90 = True if os.getenv("TILIQUA_VIDEO_ROTATE") == "1" else False
+        self.video_rotate_90 = video_rotate_90
 
         self.clock_sync_hz = TILIQUA_CLOCK_SYNC_HZ
 
@@ -401,28 +401,41 @@ REGION_ALIAS("REGION_STACK", mainram);
 """
 
 
-def top_level_cli(fragment, *pos_args, **kwargs):
+def top_level_cli(fragment, *pos_args, path, **kwargs):
+
+    os.environ["AMARANTH_debug_verilog"] = "1"
+    os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
+    os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
 
     # Configure logging.
     logging.getLogger().setLevel(logging.DEBUG)
 
     # Parse arguments
     parser = argparse.ArgumentParser()
+    parser.add_argument('--resolution', type=str, default="1280x720p60",
+                        help="DVI resolution - (default: 1280x720p60)")
     parser.add_argument('--genrust', action='store_true',
         help="If provided, artifacts needed to build Rust firmware are generated. Bitstream is not built")
 
     parser.add_argument('--sim', action='store_true')
     parser.add_argument('--trace-fst', action='store_true')
     parser.add_argument('--sc3', action='store_true')
+    parser.add_argument('--rotate-90', action='store_true')
     args = parser.parse_args()
 
-    # If this isn't a fragment directly, interpret it as an object that will build one.
+    assert args.resolution in video.DVI_TIMINGS, f"error: video resolution must be one of {DVI_TIMINGS.keys()}"
+    dvi_timings = video.DVI_TIMINGS[args.resolution]
+
+    if args.rotate_90:
+        kwargs["video_rotate_90"] = True
+
     name = fragment.__name__ if callable(fragment) else fragment.__class__.__name__
     if callable(fragment):
-        fragment = fragment(*pos_args, **kwargs)
+        fragment = fragment(*pos_args, firmware_path=os.path.join(path, "fw/firmware.bin"),
+                            dvi_timings=dvi_timings, **kwargs)
 
     if args.genrust:
-        fragment.gensvd("build/top.svd")
+        fragment.gensvd("build/soc.svd")
         fragment.genmem("build/memory.x")
         fragment.genconst("src/rs/lib/src/generated_constants.rs")
         sys.exit(0)
