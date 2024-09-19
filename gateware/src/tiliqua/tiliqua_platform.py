@@ -16,126 +16,188 @@ from luna.gateware.platform.core import LUNAPlatform
 
 from tiliqua.video               import DVI_TIMINGS
 
-# Connections inside soldiercrab SoM.
-# TODO: move this to dedicated class and use Connector() construct for card edge.
-resources_soldiercrab = [
-    # 48MHz master
-    Resource("clk48", 0, Pins("A8", dir="i"), Clock(48e6), Attrs(IO_TYPE="LVCMOS33")),
+class _SoldierCrabPlatform(LatticeECP5Platform):
+    package      = "BG256"
+    default_clk  = "clk48"
+    default_rst  = "rst"
 
-    # PROGRAMN, triggers warm self-reconfiguration
-    Resource("self_program", 0, PinsN("T13", dir="o"), Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")),
+    # ULPI and PSRAM can both be populated with 3V3 or 1V8 parts -
+    # the IOTYPE of bank 6 and 7 must match. U4 and R16 determine
+    # which voltage these banks are supplied with.
 
-    # Indicator LEDs
-    Resource("led_a", 0, PinsN("T14", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
-    Resource("led_b", 0, PinsN("T15", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
+    def bank_6_7_iotype(self):
+        assert self.ulpi_psram_voltage in ["1V8", "3V3"]
+        return "LVCMOS18" if self.ulpi_psram_voltage == "1V8" else "LVCMOS33"
 
-    # USB2 PHY
-    ULPIResource("ulpi", 0,
-        data="N1 M2 M1 L2 L1 K2 K1 K3",
-        clk="T3", clk_dir="o", dir="P2", nxt="P1",
-        stp="R2", rst="T2", rst_invert=True,
-        attrs=Attrs(IO_TYPE="LVCMOS18")),
+    def bank_6_7_iotype_d(self):
+        # 1V8 doesn't support LVCMOS differential outputs.
+        # TODO(future): switch this to SSTL?
+        if "18" not in self.bank_6_7_iotype():
+            return self.bank_6_7_iotype() + "D"
+        return self.bank_6_7_iotype()
 
-    # oSPIRAM / HyperRAM
-    Resource("ram", 0,
-        Subsignal("clk",   Pins("C3", dir="o")),
-        Subsignal("dq",    Pins("F2 B1 C2 E1 E3 E2 F3 G4", dir="io")),
-        Subsignal("rwds",  Pins( "D1", dir="io")),
-        Subsignal("cs",    PinsN("B2", dir="o")),
-        Subsignal("reset", PinsN("C1", dir="o")),
-        Attrs(IO_TYPE="LVCMOS18")
-    ),
+    # Connections inside soldiercrab SoM.
 
-    # Configuration SPI flash
-    Resource("spi_flash", 0,
-        # Note: SCK needs to go through a USRMCLK instance.
-        Subsignal("sdi",  Pins("T8",  dir="o")),
-        Subsignal("sdo",  Pins("T7",  dir="i")),
-        Subsignal("cs",   PinsN("N8", dir="o")),
-        Attrs(IO_TYPE="LVCMOS33")
-    ),
-]
+    resources = [
+        # 48MHz master
+        Resource("clk48", 0, Pins("A8", dir="i"), Clock(48e6), Attrs(IO_TYPE="LVCMOS33")),
 
-class _TiliquaPlatform(LatticeECP5Platform):
-    device      = "LFE5U-25F"
-    package     = "BG256"
-    speed       = "6"
-    default_clk = "clk48"
-    default_rst = "rst"
+        # PROGRAMN, triggers warm self-reconfiguration
+        Resource("self_program", 0, PinsN("T13", dir="o"),
+                 Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")),
 
-    ram_timings = dict(clock_skew = 127)
+        # Indicator LEDs
+        Resource("led_a", 0, PinsN("T14", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("led_b", 0, PinsN("T15", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
 
-    resources   = resources_soldiercrab + [
+        # USB2 PHY
+        ULPIResource("ulpi", 0,
+            data="N1 M2 M1 L2 L1 K2 K1 K3",
+            clk="T3", clk_dir="o", dir="P2", nxt="P1",
+            stp="R2", rst="T2", rst_invert=True,
+            attrs=Attrs(IO_TYPE=bank_6_7_iotype)
+        ),
+
+        # oSPIRAM / HyperRAM
+        Resource("ram", 0,
+            Subsignal("clk",   DiffPairs("C3", "D3", dir="o"),
+                      Attrs(IO_TYPE=bank_6_7_iotype_d)),
+            Subsignal("dq",    Pins("F2 B1 C2 E1 E3 E2 F3 G4", dir="io")),
+            Subsignal("rwds",  Pins( "D1", dir="io")),
+            Subsignal("cs",    PinsN("B2", dir="o")),
+            Subsignal("reset", PinsN("C1", dir="o")),
+            Attrs(IO_TYPE=bank_6_7_iotype)
+        ),
+
+        # Configuration SPI flash
+        Resource("spi_flash", 0,
+            # Note: SCK needs to go through a USRMCLK instance.
+            Subsignal("sdi",  Pins("T8",  dir="o")),
+            Subsignal("sdo",  Pins("T7",  dir="i")),
+            Subsignal("cs",   PinsN("N8", dir="o")),
+            Attrs(IO_TYPE="LVCMOS33")
+        ),
+    ]
+
+class SoldierCrabR2Platform(_SoldierCrabPlatform):
+    device             = "LFE5U-45F"
+    speed              = "7"
+    ulpi_psram_voltage = "3V3"
+    psram_id           = "7KL1282GAHY02"
+
+    connectors  = [
+        Connector("m2", 0,
+            # 'E' side of slot (23 physical pins + 8 virtual pins)
+            # Pins  1 .. 20 (inclusive)
+            "-     -   -   -   -  C4  -  D5   - T10  A3   -  A2   -  B3   -  B4 R11  A4  E4 "
+            # Pins 21 .. 30
+            "T11  D4 M10   -   -   -  -   -   -   - "
+            # Other side of slot (45 physical pins)
+            # Pins 31 .. 50
+            "-    D6   -  C5  B5   - A5  C6   -  C7  B6  D7  A6  D8   -  C9  B7 C10   -  D9 "
+            # Pins 51 .. 70
+            "A7  B11  B8 C11  A9 D13 B9 C13 A10 B13 B10 A13 B15 A14 A15 B14 C15 C14 B16 D14 "
+            # Pins 71 .. 75
+            "C16   - D16   -  -" ),
+    ]
+
+class SoldierCrabR3Platform(_SoldierCrabPlatform):
+    device             = "LFE5U-25F"
+    speed              = "6"
+    ulpi_psram_voltage = "1V8"
+    psram_id           = "APS256XXN-OBR"
+
+    connectors  = [
+        Connector("m2", 0,
+            # 'E' side of slot (23 physical pins + 7 virtual pins)
+            # Pins  1 .. 20 (inclusive)
+            "-     -   -   -   -  C4  -  D5   - T10 A3 D11  A2 D13  B3   -  B4 R11  A4  E4 "
+            # Pins 21 .. 30
+            "T11  D4 M10   -   -   -  -   -   -   - "
+            # Other side of slot (45 physical pins)
+            # Pins 31 .. 50
+            "-    D6   -  C5 B5   - A5  C6   -  C7  B6  D7  A6  D8   -  C9  B7 C10   -  D9 "
+            # Pins 51 .. 70
+            "A7  B11  B8 C11 A9 C12 B9 C13 A10 B13 B10 A13 B15 A14 A15 B14 C15 C14 B16 D14 "
+            # Pins 71 .. 75
+            "C16   - D16   -  -" ),
+    ]
+
+class _TiliquaR2Mobo:
+    resources   = [
 
         # TODO: this pin is N/C, remove it
-        Resource("rst", 0, PinsN("C4", dir="i"), Attrs(IO_TYPE="LVCMOS33")),
+        Resource("rst", 0, PinsN("6", dir="i", conn=("m2", 0)), Attrs(IO_TYPE="LVCMOS33")),
 
         # Quadrature rotary encoder and switch. These are already debounced by an RC filter.
         Resource("encoder", 0,
-                 Subsignal("i", PinsN("D7", dir="i")),
-                 Subsignal("q", PinsN("C7", dir="i")),
-                 Subsignal("s", PinsN("A6", dir="i")),
+                 Subsignal("i", PinsN("42", dir="i", conn=("m2", 0))),
+                 Subsignal("q", PinsN("40", dir="i", conn=("m2", 0))),
+                 Subsignal("s", PinsN("43", dir="i", conn=("m2", 0))),
                  Attrs(IO_TYPE="LVCMOS33")),
 
         # USB: 5V supply OUT enable (only touch this if you're sure you are a USB host!)
-        Resource("usb_vbus_en", 0, PinsN("D6", dir="o"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("usb_vbus_en", 0, PinsN("32", dir="o", conn=("m2", 0)),
+                 Attrs(IO_TYPE="LVCMOS33")),
 
         # USB: Interrupt line from TUSB322I
-        Resource("usb_int", 0, PinsN("B7", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("usb_int", 0, PinsN("47", dir="i", conn=("m2", 0)),
+                 Attrs(IO_TYPE="LVCMOS33")),
 
         # Output enable for LEDs driven by PCA9635 on motherboard PCBA
-        Resource("mobo_leds_oe", 0, PinsN("A3", dir="o")),
+        Resource("mobo_leds_oe", 0, PinsN("11", dir="o", conn=("m2", 0))),
 
         # DVI: Hotplug Detect
-        Resource("dvi_hpd", 0, Pins("A5", dir="i"),  Attrs(IO_TYPE="LVCMOS33")),
+        Resource("dvi_hpd", 0, Pins("8", dir="i", conn=("m2", 0)),
+                 Attrs(IO_TYPE="LVCMOS33")),
 
         # TRS MIDI RX
-        Resource("midi", 0,
-                 Subsignal("rx", Pins("D5", dir="i"), Attrs(IO_TYPE="LVCMOS33"))),
+        Resource("midi", 0, Subsignal("rx", Pins("8", dir="i", conn=("m2", 0)),
+                                      Attrs(IO_TYPE="LVCMOS33"))),
 
         # Motherboard PCBA I2C bus. Includes:
         # - address 0x05: PCA9635 LED driver
         # - address 0x47: TUSB322I USB-C controller
         # - address 0x50: DVI EDID EEPROM (through 3V3 <-> 5V translator)
         Resource("i2c", 0,
-            Subsignal("sda",    Pins("A7", dir="io")),
-            Subsignal("scl",    Pins("B8", dir="io")),
+            Subsignal("sda", Pins("51", dir="io", conn=("m2", 0))),
+            Subsignal("scl", Pins("53", dir="io", conn=("m2", 0))),
         ),
 
         # RP2040 UART bridge
         UARTResource(0,
-            rx="A4", tx="B4",
+            rx="19", tx="17", conn=("m2", 0),
             attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
         ),
 
         # FFC connector to eurorack-pmod on the back.
         Resource("audio_ffc", 0,
-            Subsignal("sdin1",  Pins("D8",  dir="o")),
-            Subsignal("sdout1", Pins("C9",  dir="i")),
-            Subsignal("lrck",   Pins("C10", dir="o")),
-            Subsignal("bick",   Pins("D9",  dir="o")),
-            Subsignal("mclk",   Pins("B11", dir="o")),
-            Subsignal("pdn",    Pins("C11", dir="o")),
-            Subsignal("i2c_sda",    Pins("C12", dir="io")),
-            Subsignal("i2c_scl",    Pins("C13", dir="io")),
+            Subsignal("sdin1",   Pins("44", dir="o",  conn=("m2", 0))),
+            Subsignal("sdout1",  Pins("46", dir="i",  conn=("m2", 0))),
+            Subsignal("lrck",    Pins("48", dir="o",  conn=("m2", 0))),
+            Subsignal("bick",    Pins("50", dir="o",  conn=("m2", 0))),
+            Subsignal("mclk",    Pins("52", dir="o",  conn=("m2", 0))),
+            Subsignal("pdn",     Pins("54", dir="o",  conn=("m2", 0))),
+            Subsignal("i2c_sda", Pins("56", dir="io", conn=("m2", 0))),
+            Subsignal("i2c_scl", Pins("58", dir="io", conn=("m2", 0))),
         ),
 
         # DVI
         # Note: technically DVI outputs are supposed to be open-drain, but
         # compatibility with cheap AliExpress screens seems better with push/pull outputs.
         Resource("dvi", 0,
-            Subsignal("d0", Pins("A2", dir="o")),
-            Subsignal("d1", Pins("C5", dir="o")),
-            Subsignal("d2", Pins("E4", dir="o")),
-            Subsignal("ck", Pins("C6", dir="o")),
+            Subsignal("d0", Pins("13", dir="o", conn=("m2", 0))),
+            Subsignal("d1", Pins("34", dir="o", conn=("m2", 0))),
+            Subsignal("d2", Pins("20", dir="o", conn=("m2", 0))),
+            Subsignal("ck", Pins("38", dir="o", conn=("m2", 0))),
             Attrs(IO_TYPE="LVCMOS33D", DRIVE="8", SLEWRATE="FAST")
          ),
     ]
 
     # Expansion connectors ex0 and ex1
     connectors  = [
-        Connector("pmod", 0, "A9 A13 B14 C14 - - B9 B13 A14 D14 - -"),
-        Connector("pmod", 1, "A10 B15 C15 C16 - - B10 A15 B16 D16 - -"),
+        Connector("pmod", 0, "55 62 66 68 - - 57 60 64 70 - -", conn=("m2", 0)),
+        Connector("pmod", 1, "59 63 67 71 - - 61 65 69 73 - -", conn=("m2", 0)),
     ]
 
 class TiliquaDomainGenerator(Elaboratable):
@@ -324,17 +386,42 @@ class TiliquaDomainGenerator(Elaboratable):
 
         return m
 
-class TiliquaPlatform(_TiliquaPlatform, LUNAPlatform):
-    name                   = "Tiliqua (45F)"
+class TiliquaR2SC2Platform(SoldierCrabR2Platform, LUNAPlatform):
+    name                   = ("Tiliqua R2 / SoldierCrab R2 "
+                              f"({SoldierCrabR2Platform.device}/{SoldierCrabR2Platform.psram_id})")
     clock_domain_generator = TiliquaDomainGenerator
     default_usb_connection = "ulpi"
 
+    resources = [
+        *SoldierCrabR2Platform.resources,
+        *_TiliquaR2Mobo.resources
+    ]
+
+    connectors = [
+        *SoldierCrabR2Platform.connectors,
+        *_TiliquaR2Mobo.connectors
+    ]
+
+class TiliquaR2SC3Platform(SoldierCrabR3Platform, LUNAPlatform):
+    name                   = ("Tiliqua R2 / SoldierCrab R3 "
+                              f"({SoldierCrabR3Platform.device}/{SoldierCrabR3Platform.psram_id})")
+    clock_domain_generator = TiliquaDomainGenerator
+    default_usb_connection = "ulpi"
+
+    resources = [
+        *SoldierCrabR3Platform.resources,
+        *_TiliquaR2Mobo.resources
+    ]
+
+    connectors = [
+        *SoldierCrabR3Platform.connectors,
+        *_TiliquaR2Mobo.connectors
+    ]
+
 def set_environment_variables():
-    os.environ["AMARANTH_verbose"] = "1"
     os.environ["AMARANTH_debug_verilog"] = "1"
     os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
     os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
-    os.environ["LUNA_PLATFORM"] = "tiliqua.tiliqua_platform:TiliquaPlatform"
 
     video_timings = os.getenv("TILIQUA_RESOLUTION", "1280x720p60")
     assert video_timings in DVI_TIMINGS, f"error: video resolution must be one of {DVI_TIMINGS.keys()}"

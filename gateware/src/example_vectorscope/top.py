@@ -35,7 +35,7 @@ from amaranth.hdl.mem      import Memory
 
 from amaranth_future       import fixed
 
-from tiliqua.tiliqua_platform import TiliquaPlatform, TiliquaDomainGenerator, set_environment_variables
+from tiliqua.tiliqua_platform import *
 from tiliqua                  import eurorack_pmod, dsp
 from tiliqua.eurorack_pmod    import ASQ
 

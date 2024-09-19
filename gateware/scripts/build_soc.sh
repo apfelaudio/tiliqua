@@ -31,4 +31,4 @@ cp build/memory.x $SOC/fw/memory.x
 # if the firmware is not present, luna-soc silently fills it with zeroes
 
 # build final bitstream
-pdm run $SOC/top.py
+pdm run $SOC/top.py --sc3

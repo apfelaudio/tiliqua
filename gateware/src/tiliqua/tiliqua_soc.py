@@ -24,7 +24,7 @@ from vendor.soc.cpu                              import InterruptController, Vex
 from vendor.soc                                  import readbin
 from vendor.soc.generate                         import GenerateSVD
 
-from tiliqua.tiliqua_platform                    import TiliquaPlatform
+from tiliqua.tiliqua_platform                    import *
 
 from tiliqua                                     import psram_peripheral, i2c, encoder, dtr, video, eurorack_pmod_peripheral
 from tiliqua                                     import sim, eurorack_pmod
@@ -396,6 +396,7 @@ def top_level_cli(fragment, *pos_args, **kwargs):
 
     parser.add_argument('--sim', action='store_true')
     parser.add_argument('--trace-fst', action='store_true')
+    parser.add_argument('--sc3', action='store_true')
     args = parser.parse_args()
 
     # If this isn't a fragment directly, interpret it as an object that will build one.
@@ -426,6 +427,12 @@ def top_level_cli(fragment, *pos_args, **kwargs):
         sim.simulate_soc(fragment, args.trace_fst)
         sys.exit(0)
 
-    TiliquaPlatform().build(fragment)
+    if args.sc3:
+        platform = TiliquaR2SC3Platform()
+    else:
+        platform = TiliquaR2SC2Platform()
+
+    print("Building bitstream for", platform.name)
+    platform.build(fragment)
 
     return fragment
