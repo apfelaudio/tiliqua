@@ -358,9 +358,24 @@ class TiliquaSoc(Component):
 
         return m
 
-    def genrust_constants(self, dst):
-        # TODO: move these to SVD vendor section
-        print("writing", dst)
+    def gensvd(self, dst_svd):
+        """Generate top-level SVD."""
+        print("Generating SVD ...", dst_svd)
+        with open(dst_svd, "w") as f:
+            GenerateSVD(self).generate(file=f)
+
+    def genmem(self, dst_mem):
+        """Generate linker regions for Rust (memory.x)."""
+        dst_mem = "build/memory.x"
+        print("Generating (rust) memory.x ...", dst_mem)
+        with open(dst_mem, "w") as f:
+            f.write(MEMORY_X.format(mainram_base=hex(self.mainram_base),
+                                    mainram_size=hex(self.mainram.size)))
+
+    def genconst(self, dst):
+        """Generate some high-level constants used by application code."""
+        # TODO: better to move these to SVD vendor section?
+        print("Generating (rust) constants ...", dst)
         with open(dst, "w") as f:
             f.write(f"pub const CLOCK_SYNC_HZ: u32    = {self.clock_sync_hz};\n")
             f.write(f"pub const PSRAM_BASE: usize     = 0x{self.psram_base:x};\n")
@@ -373,7 +388,8 @@ class TiliquaSoc(Component):
             f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
             f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
 
-memory_x = """MEMORY {{
+
+MEMORY_X = """MEMORY {{
     mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}
 }}
 REGION_ALIAS("REGION_TEXT", mainram);
@@ -383,6 +399,7 @@ REGION_ALIAS("REGION_BSS", mainram);
 REGION_ALIAS("REGION_HEAP", mainram);
 REGION_ALIAS("REGION_STACK", mainram);
 """
+
 
 def top_level_cli(fragment, *pos_args, **kwargs):
 
@@ -405,22 +422,9 @@ def top_level_cli(fragment, *pos_args, **kwargs):
         fragment = fragment(*pos_args, **kwargs)
 
     if args.genrust:
-        # FIXME: put these in SVD?
-        fragment.genrust_constants("src/rs/lib/src/generated_constants.rs")
-
-        # Generate top-level SVD
-        dst_svd = "build/soc.svd"
-        print("generating", dst_svd)
-        with open(dst_svd, "w") as f:
-            GenerateSVD(fragment).generate(file=f)
-
-        # Generate linker regions
-        dst_mem = "build/memory.x"
-        print("generating", dst_mem)
-        with open(dst_mem, "w") as f:
-            f.write(memory_x.format(mainram_base=hex(fragment.mainram_base),
-                                    mainram_size=hex(fragment.mainram.size)))
-
+        fragment.gensvd("build/top.svd")
+        fragment.genmem("build/memory.x")
+        fragment.genconst("src/rs/lib/src/generated_constants.rs")
         sys.exit(0)
 
     if args.sim:
