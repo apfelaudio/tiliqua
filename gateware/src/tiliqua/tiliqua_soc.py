@@ -369,9 +369,20 @@ class TiliquaSoc(Component):
 
     def genmem(self, dst_mem):
         """Generate linker regions for Rust (memory.x)."""
+        memory_x = (
+            "MEMORY {{\n"
+            "    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}\n"
+            "}}\n"
+            "REGION_ALIAS(\"REGION_TEXT\", mainram);\n"
+            "REGION_ALIAS(\"REGION_RODATA\", mainram);\n"
+            "REGION_ALIAS(\"REGION_DATA\", mainram);\n"
+            "REGION_ALIAS(\"REGION_BSS\", mainram);\n"
+            "REGION_ALIAS(\"REGION_HEAP\", mainram);\n"
+            "REGION_ALIAS(\"REGION_STACK\", mainram);\n"
+        )
         print("Generating (rust) memory.x ...", dst_mem)
         with open(dst_mem, "w") as f:
-            f.write(MEMORY_X.format(mainram_base=hex(self.mainram_base),
+            f.write(memory_x.format(mainram_base=hex(self.mainram_base),
                                     mainram_size=hex(self.mainram.size)))
 
     def genconst(self, dst):
@@ -390,18 +401,56 @@ class TiliquaSoc(Component):
             f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
             f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
 
+    def regenerate_pac_from_svd(svd_path):
+        """
+        Generate Rust PAC from an SVD.
+        Currently all SoC reuse the same `pac_dir`, however this
+        should become local to each SoC at some point.
+        """
+        pac_dir = "src/rs/pac"
+        pac_build_dir = os.path.join(pac_dir, "build")
+        pac_gen_dir   = os.path.join(pac_dir, "src/generated")
+        src_genrs     = os.path.join(pac_dir, "src/generated.rs")
+        shutil.rmtree(pac_build_dir, ignore_errors=True)
+        shutil.rmtree(pac_gen_dir, ignore_errors=True)
+        os.makedirs(pac_build_dir)
+        if os.path.isfile(src_genrs):
+            os.remove(src_genrs)
 
-MEMORY_X = """MEMORY {{
-    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}
-}}
-REGION_ALIAS("REGION_TEXT", mainram);
-REGION_ALIAS("REGION_RODATA", mainram);
-REGION_ALIAS("REGION_DATA", mainram);
-REGION_ALIAS("REGION_BSS", mainram);
-REGION_ALIAS("REGION_HEAP", mainram);
-REGION_ALIAS("REGION_STACK", mainram);
-"""
+        subprocess.check_call([
+            "svd2rust",
+            "-i", svd_path,
+            "-o", pac_build_dir,
+            "--target", "riscv",
+            "--make_mod",
+            "--ident-formats-theme", "legacy"
+            ], env=os.environ)
 
+        shutil.move(os.path.join(pac_build_dir, "mod.rs"), src_genrs)
+        shutil.move(os.path.join(pac_build_dir, "device.x"),
+                    os.path.join(pac_dir,       "device.x"))
+
+        subprocess.check_call([
+            "form",
+            "-i", src_genrs,
+            "-o", pac_gen_dir,
+            ], env=os.environ)
+
+        shutil.move(os.path.join(pac_gen_dir, "lib.rs"), src_genrs)
+
+        subprocess.check_call([
+            "cargo", "fmt", "--", "--emit", "files"
+            ], env=os.environ, cwd=pac_dir)
+
+        print("Rust PAC updated at ...", pac_dir)
+
+    def compile_firmware(path):
+        subprocess.check_call([
+            "cargo", "build", "--release"
+            ], env=os.environ, cwd=os.path.join(path, "fw"))
+        subprocess.check_call([
+            "cargo", "objcopy", "--release", "--", "-Obinary", "firmware.bin"
+            ], env=os.environ, cwd=os.path.join(path, "fw"))
 
 def top_level_cli(fragment, *pos_args, path, **kwargs):
 
@@ -422,12 +471,13 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
                         help="Simulate the design with Verilator")
     parser.add_argument('--trace-fst', action='store_true',
                         help="Simulation: enable dumping of traces to FST file.")
-    parser.add_argument('--svd-only', action='store_true',
-                        help="SoC designs: stop after SVD generation")
-    parser.add_argument('--pac-only', action='store_true',
-                        help="SoC designs: stop after rust PAC generation")
-    parser.add_argument('--fw-only', action='store_true',
-                        help="SoC designs: stop after rust FW compilation")
+    if issubclass(fragment, TiliquaSoc):
+        parser.add_argument('--svd-only', action='store_true',
+                            help="SoC designs: stop after SVD generation")
+        parser.add_argument('--pac-only', action='store_true',
+                            help="SoC designs: stop after rust PAC generation")
+        parser.add_argument('--fw-only', action='store_true',
+                            help="SoC designs: stop after rust FW compilation")
     parser.add_argument('--sc3', action='store_true',
                         help="Assume Tiliqua R2 with a SoldierCrab R3 (default: R2)")
     args = parser.parse_args()
@@ -438,90 +488,33 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
     if args.rotate_90:
         kwargs["video_rotate_90"] = True
 
+    if issubclass(fragment, TiliquaSoc):
+        kwargs["firmware_path"] = os.path.join(path, "fw/firmware.bin")
+
     name = fragment.__name__ if callable(fragment) else fragment.__class__.__name__
-    if callable(fragment):
-        fragment = fragment(*pos_args, firmware_path=os.path.join(path, "fw/firmware.bin"),
-                            dvi_timings=dvi_timings, **kwargs)
+    assert callable(fragment)
+    fragment = fragment(*pos_args, dvi_timings=dvi_timings, **kwargs)
 
-    # build an SoC bitstream by:
-    # - creating all the definitions required by the firmware (svd / memory map)
-    # - compiling the firmware itself
-    # - building the bitstream with firmware packaged inside it
-    #
-    # requirements:
-    # - rustup with riscv32imac target installed
-    # - cargo install svd2rust form
+    if isinstance(fragment, TiliquaSoc):
 
-    # GENERATE SVD
+        # Generate SVD
+        svd_path = os.path.join(path, "fw/soc.svd")
+        fragment.gensvd(svd_path)
+        if args.svd_only:
+            sys.exit(0)
 
-    #if args.genrust:
-    svd_path = os.path.join(path, "fw/soc.svd")
-    mem_x_path = os.path.join(path, "fw/memory.x")
-    rs_const_path = "src/rs/lib/src/generated_constants.rs"
-    fragment.gensvd(svd_path)
+        # (re)-generate PAC (from SVD)
+        TiliquaSoc.regenerate_pac_from_svd(svd_path)
+        if args.pac_only:
+            sys.exit(0)
 
-    if args.svd_only:
-        sys.exit(0)
-
-    # BUILD PAC (from SVD)
-
-    pac_dir = "src/rs/pac"
-    pac_build_dir = os.path.join(pac_dir, "build")
-    pac_gen_dir   = os.path.join(pac_dir, "src/generated")
-    src_genrs     = os.path.join(pac_dir, "src/generated.rs")
-    shutil.rmtree(pac_build_dir, ignore_errors=True)
-    shutil.rmtree(pac_gen_dir, ignore_errors=True)
-    os.makedirs(pac_build_dir)
-    if os.path.isfile(src_genrs):
-        os.remove(src_genrs)
-
-    subprocess.check_call([
-        "svd2rust",
-        "-i", svd_path,
-        "-o", pac_build_dir,
-        "--target", "riscv",
-        "--make_mod",
-        "--ident-formats-theme", "legacy"
-        ], env=os.environ)
-
-    shutil.move(os.path.join(pac_build_dir, "mod.rs"), src_genrs)
-    shutil.move(os.path.join(pac_build_dir, "device.x"),
-                os.path.join(pac_dir,       "device.x"))
-
-    subprocess.check_call([
-        "form",
-        "-i", src_genrs,
-        "-o", pac_gen_dir,
-        ], env=os.environ)
-
-    shutil.move(os.path.join(pac_gen_dir, "lib.rs"), src_genrs)
-
-    subprocess.check_call([
-        "cargo", "fmt", "--", "--emit", "files"
-        ], env=os.environ, cwd=pac_dir)
-
-    print("Rust PAC updated at ...", pac_dir)
-
-    if args.pac_only:
-        sys.exit(0)
-
-    # BUILD FIRMWARE
-
-    # GENERATE memory.x and some extra constants
-
-    fragment.genmem(mem_x_path)
-    fragment.genconst(rs_const_path)
-
-    subprocess.check_call([
-        "cargo", "build", "--release"
-        ], env=os.environ, cwd=os.path.join(path, "fw"))
-
-    subprocess.check_call([
-        "cargo", "objcopy", "--release", "--", "-Obinary", "firmware.bin"
-        ], env=os.environ, cwd=os.path.join(path, "fw"))
-
-    if args.fw_only:
-        sys.exit(0)
+        # Generate memory.x and some extra constants
+        # Finally, build our stripped firmware image.
+        fragment.genmem(os.path.join(path, "fw/memory.x"))
+        fragment.genconst("src/rs/lib/src/generated_constants.rs")
+        TiliquaSoc.compile_firmware(path)
+        if args.fw_only:
+            sys.exit(0)
 
     if args.sim:
         sim.simulate_soc(fragment, args.trace_fst)
