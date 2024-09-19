@@ -31,7 +31,7 @@ from tiliqua.tiliqua_platform                    import *
 from tiliqua                                     import psram_peripheral, i2c, encoder, dtr, video, eurorack_pmod_peripheral
 from tiliqua                                     import sim, eurorack_pmod
 
-from example_vectorscope.top                     import Persistance
+from tiliqua.raster                              import Persistance
 
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
@@ -516,9 +516,17 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
         if args.fw_only:
             sys.exit(0)
 
-    if args.sim:
-        sim.simulate_soc(fragment, args.trace_fst)
-        sys.exit(0)
+        if args.sim:
+            ports = sim.soc_simulation_ports(fragment)
+            harness = os.path.join(path, "../selftest/sim.cpp")
+            sim.simulate(fragment, ports, harness, args.trace_fst)
+            sys.exit(0)
+    else:
+        if args.sim:
+            ports   = kwargs["simulation_ports"](fragment)
+            harness = kwargs["simulation_harness"]
+            sim.simulate(fragment, ports, harness, args.trace_fst)
+            sys.exit(0)
 
     if args.sc3:
         platform = TiliquaR2SC3Platform()

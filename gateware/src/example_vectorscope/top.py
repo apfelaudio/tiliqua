@@ -36,12 +36,14 @@ from amaranth.hdl.mem      import Memory
 from amaranth_future       import fixed
 
 from tiliqua.tiliqua_platform import *
-from tiliqua                  import eurorack_pmod, dsp
+from tiliqua                  import eurorack_pmod, dsp, sim
 from tiliqua.eurorack_pmod    import ASQ
 
 from tiliqua                  import psram_peripheral
 
 from amaranth_soc             import wishbone
+
+from tiliqua.tiliqua_soc      import top_level_cli
 
 from amaranth.back import verilog
 
@@ -60,10 +62,9 @@ class VectorScopeTop(Elaboratable):
     Can be instantiated with 'sim=True', which swaps out most things that touch hardware for mocks.
     """
 
-    def __init__(self, *, dvi_timings, sim=False, ila=False):
+    def __init__(self, *, dvi_timings, ila=False, **kwargs):
 
         self.dvi_timings = dvi_timings
-        self.sim = sim
         self.use_ila = ila
 
         # One PSRAM with an internal arbiter to support multiple DMA masters.
@@ -85,30 +86,32 @@ class VectorScopeTop(Elaboratable):
         self.psram_periph.add_master(self.persist.bus)
         self.psram_periph.add_master(self.stroke.bus)
 
-        if self.sim:
-            self.pmod0 = FakeEurorackPmod()
-            self.inject0 = Signal(signed(16))
-            self.inject1 = Signal(signed(16))
-            self.inject2 = Signal(signed(16))
-            self.inject3 = Signal(signed(16))
+        # Only used for simulation
+        self.fs_strobe = Signal()
+        self.inject0 = Signal(signed(16))
+        self.inject1 = Signal(signed(16))
+        self.inject2 = Signal(signed(16))
+        self.inject3 = Signal(signed(16))
 
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        if self.sim:
+        if not sim.is_hw(platform):
+            self.pmod0 = FakeEurorackPmod()
             m.submodules.car = FakeTiliquaDomainGenerator()
             m.d.comb += [
                 self.pmod0.sample_inject[0]._target.eq(self.inject0),
                 self.pmod0.sample_inject[1]._target.eq(self.inject1),
                 self.pmod0.sample_inject[2]._target.eq(self.inject2),
-                self.pmod0.sample_inject[3]._target.eq(self.inject3)
+                self.pmod0.sample_inject[3]._target.eq(self.inject3),
+                self.pmod0.fs_strobe.eq(self.fs_strobe),
             ]
         else:
             m.submodules.car = TiliquaDomainGenerator(audio_192=True, pixclk_pll=self.dvi_timings.pll)
 
-        if not self.sim:
+        if sim.is_hw(platform):
             self.pmod0 = eurorack_pmod.EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
@@ -170,21 +173,6 @@ class VectorScopeTop(Elaboratable):
 
         return m
 
-def build(ila=False):
-    dvi_timings = set_environment_variables()
-    top = VectorScopeTop(dvi_timings=dvi_timings, ila=ila)
-    TiliquaPlatform().build(top)
-    if ila:
-        subprocess.check_call(["openFPGALoader",
-                               "-c", "dirtyJtag",
-                               "build/top.bit"],
-                              env=os.environ)
-        # TODO: make serial port selectable
-        frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
-        frontend.emit_vcd("out.vcd")
-
-
-
 def colors():
     """
     Render image of intensity/color palette used internally by FramebufferPHY.
@@ -214,81 +202,44 @@ def colors():
     print(f'save palette render to {save_to}')
     plt.savefig(save_to)
 
-def sim():
+def simulation_ports(fragment):
+    return {
+        "clk_sync":       (ClockSignal("sync"),                        None),
+        "rst_sync":       (ResetSignal("sync"),                        None),
+        "clk_dvi":        (ClockSignal("dvi"),                         None),
+        "rst_dvi":        (ResetSignal("dvi"),                         None),
+        "clk_audio":      (ClockSignal("audio"),                       None),
+        "rst_audio":      (ResetSignal("audio"),                       None),
+        "idle":           (fragment.psram_periph.simif.idle,           None),
+        "address_ptr":    (fragment.psram_periph.simif.address_ptr,    None),
+        "read_data_view": (fragment.psram_periph.simif.read_data_view, None),
+        "write_data":     (fragment.psram_periph.simif.write_data,     None),
+        "read_ready":     (fragment.psram_periph.simif.read_ready,     None),
+        "write_ready":    (fragment.psram_periph.simif.write_ready,    None),
+        "dvi_x":          (fragment.video.dvi_tgen.x,                  None),
+        "dvi_y":          (fragment.video.dvi_tgen.y,                  None),
+        "dvi_r":          (fragment.video.phy_r,                       None),
+        "dvi_g":          (fragment.video.phy_g,                       None),
+        "dvi_b":          (fragment.video.phy_b,                       None),
+        "fs_strobe":      (fragment.fs_strobe,                         None),
+        "fs_inject0":     (fragment.inject0,                           None),
+        "fs_inject1":     (fragment.inject1,                           None),
+        "fs_inject2":     (fragment.inject2,                           None),
+        "fs_inject3":     (fragment.inject3,                           None),
+    }
+
+if __name__ == "__main__":
+    this_path = os.path.dirname(os.path.realpath(__file__))
+    top_level_cli(VectorScopeTop, path=this_path,
+                  simulation_ports=simulation_ports,
+                  simulation_harness="../../src/example_vectorscope/sim/sim.cpp")
     """
-    End-to-end simulation of all the gateware in this project.
+    if ila:
+        subprocess.check_call(["openFPGALoader",
+                               "-c", "dirtyJtag",
+                               "build/top.bit"],
+                              env=os.environ)
+        # TODO: make serial port selectable
+        frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
+        frontend.emit_vcd("out.vcd")
     """
-
-    build_dst = "build"
-    dst = f"{build_dst}/vectorscope.v"
-    print(f"write verilog implementation of 'example_vectorscope' to '{dst}'...")
-
-    dvi_timings = set_environment_variables()
-    top = VectorScopeTop(dvi_timings=dvi_timings, sim=True)
-
-    os.makedirs(build_dst, exist_ok=True)
-    with open(dst, "w") as f:
-        f.write(verilog.convert(top, ports={
-            "clk_sync":       (ClockSignal("sync"),                   None),
-            "rst_sync":       (ResetSignal("sync"),                   None),
-            "clk_dvi":        (ClockSignal("dvi"),                    None),
-            "rst_dvi":        (ResetSignal("dvi"),                    None),
-            "clk_audio":      (ClockSignal("audio"),                  None),
-            "rst_audio":      (ResetSignal("audio"),                  None),
-            "idle":           (top.psram_periph.simif.idle,           None),
-            "address_ptr":    (top.psram_periph.simif.address_ptr,    None),
-            "read_data_view": (top.psram_periph.simif.read_data_view, None),
-            "write_data":     (top.psram_periph.simif.write_data,     None),
-            "read_ready":     (top.psram_periph.simif.read_ready,     None),
-            "write_ready":    (top.psram_periph.simif.write_ready,    None),
-            "dvi_x":          (top.video.dvi_tgen.x,                  None),
-            "dvi_y":          (top.video.dvi_tgen.y,                  None),
-            "dvi_r":          (top.video.phy_r,                       None),
-            "dvi_g":          (top.video.phy_g,                       None),
-            "dvi_b":          (top.video.phy_b,                       None),
-            "fs_strobe":      (top.pmod0.fs_strobe,                   None),
-            "fs_inject0":     (top.inject0,                           None),
-            "fs_inject1":     (top.inject1,                           None),
-            "fs_inject2":     (top.inject2,                           None),
-            "fs_inject3":     (top.inject3,                           None),
-            }))
-
-    # TODO: warn if this is far from the PLL output?
-    dvi_clk_hz = int(top.video.dvi_tgen.timings.pll.pixel_clk_mhz * 1e6)
-    dvi_h_active = top.video.dvi_tgen.timings.h_active
-    dvi_v_active = top.video.dvi_tgen.timings.v_active
-    sync_clk_hz = 60000000
-    audio_clk_hz = 48000000
-
-    verilator_dst = "build/obj_dir"
-    shutil.rmtree(verilator_dst)
-    print(f"verilate '{dst}' into C++ binary...")
-    subprocess.check_call(["verilator",
-                           "-Wno-COMBDLY",
-                           "-Wno-CASEINCOMPLETE",
-                           "-Wno-CASEOVERLAP",
-                           "-Wno-WIDTHEXPAND",
-                           "-Wno-WIDTHTRUNC",
-                           "-Wno-TIMESCALEMOD",
-                           "-Wno-PINMISSING",
-                           "-cc",
-                           "--trace-fst",
-                           "--exe",
-                           "--Mdir", f"{verilator_dst}",
-                           "--build",
-                           "-j", "0",
-                           "-CFLAGS", f"-DDVI_H_ACTIVE={dvi_h_active}",
-                           "-CFLAGS", f"-DDVI_V_ACTIVE={dvi_v_active}",
-                           "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
-                           "-CFLAGS", f"-DSYNC_CLK_HZ={sync_clk_hz}",
-                           "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
-                           "../../src/example_vectorscope/sim/sim.cpp",
-                           f"{dst}",
-                           ],
-                          env=os.environ)
-
-    print(f"run verilated binary '{verilator_dst}/Vvectorscope'...")
-    subprocess.check_call([f"{verilator_dst}/Vvectorscope"],
-                          env=os.environ)
-
-    print(f"done.")

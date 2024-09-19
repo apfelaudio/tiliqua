@@ -3,7 +3,7 @@
 
 #include <verilated_fst_c.h>
 
-#include "Vvectorscope.h"
+#include "Vtiliqua_soc.h"
 #include "verilated.h"
 
 #include <cmath>
@@ -27,12 +27,14 @@ int gcd(int a, int b)
 int main(int argc, char** argv) {
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
-    Vvectorscope* top = new Vvectorscope{contextp};
+    Vtiliqua_soc* top = new Vtiliqua_soc{contextp};
 
+#if VM_TRACE_FST == 1
     Verilated::traceEverOn(true);
     VerilatedFstC* tfp = new VerilatedFstC;
     top->trace(tfp, 99);  // Trace 99 levels of hierarchy (or see below)
     tfp->open("simx.fst");
+#endif
 
     uint64_t sim_time =  75e9; // 75msec is ~ 4 frames
 
@@ -55,7 +57,9 @@ int main(int argc, char** argv) {
     top->rst_audio = 1;
     top->eval();
 
+#if VM_TRACE_FST == 1
     tfp->dump(contextp->time());
+#endif
 
     contextp->timeInc(1);
     top->rst_sync = 0;
@@ -63,7 +67,9 @@ int main(int argc, char** argv) {
     top->rst_audio = 0;
     top->eval();
 
+#if VM_TRACE_FST == 1
     tfp->dump(contextp->time());
+#endif
 
     uint32_t mod = 0;
     uint32_t mod_pmod;
@@ -174,12 +180,16 @@ int main(int argc, char** argv) {
 
         contextp->timeInc(1000);
         top->eval();
+#if VM_TRACE_FST == 1
         tfp->dump(contextp->time());
+#endif
         mod += 1;
     }
     printf("RAM bandwidth: idle: %i, !idle: %i, percent_used: %f\n", idle_hi, idle_lo,
             100.0f * (float)idle_lo / (float)(idle_hi + idle_lo));
 
+#if VM_TRACE_FST == 1
     tfp->close();
+#endif
     return 0;
 }
