@@ -8,6 +8,8 @@
 import argparse
 import logging
 import os
+import shutil
+import subprocess
 import sys
 
 from amaranth                                    import *
@@ -363,10 +365,10 @@ class TiliquaSoc(Component):
         print("Generating SVD ...", dst_svd)
         with open(dst_svd, "w") as f:
             GenerateSVD(self).generate(file=f)
+        print("Wrote SVD ...", dst_svd)
 
     def genmem(self, dst_mem):
         """Generate linker regions for Rust (memory.x)."""
-        dst_mem = "build/memory.x"
         print("Generating (rust) memory.x ...", dst_mem)
         with open(dst_mem, "w") as f:
             f.write(MEMORY_X.format(mainram_base=hex(self.mainram_base),
@@ -414,13 +416,20 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
     parser = argparse.ArgumentParser()
     parser.add_argument('--resolution', type=str, default="1280x720p60",
                         help="DVI resolution - (default: 1280x720p60)")
-    parser.add_argument('--genrust', action='store_true',
-        help="If provided, artifacts needed to build Rust firmware are generated. Bitstream is not built")
-
-    parser.add_argument('--sim', action='store_true')
-    parser.add_argument('--trace-fst', action='store_true')
-    parser.add_argument('--sc3', action='store_true')
-    parser.add_argument('--rotate-90', action='store_true')
+    parser.add_argument('--rotate-90', action='store_true',
+                        help="Rotate DVI out by 90 degrees")
+    parser.add_argument('--sim', action='store_true',
+                        help="Simulate the design with Verilator")
+    parser.add_argument('--trace-fst', action='store_true',
+                        help="Simulation: enable dumping of traces to FST file.")
+    parser.add_argument('--svd-only', action='store_true',
+                        help="SoC designs: stop after SVD generation")
+    parser.add_argument('--pac-only', action='store_true',
+                        help="SoC designs: stop after rust PAC generation")
+    parser.add_argument('--fw-only', action='store_true',
+                        help="SoC designs: stop after rust FW compilation")
+    parser.add_argument('--sc3', action='store_true',
+                        help="Assume Tiliqua R2 with a SoldierCrab R3 (default: R2)")
     args = parser.parse_args()
 
     assert args.resolution in video.DVI_TIMINGS, f"error: video resolution must be one of {DVI_TIMINGS.keys()}"
@@ -434,10 +443,84 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
         fragment = fragment(*pos_args, firmware_path=os.path.join(path, "fw/firmware.bin"),
                             dvi_timings=dvi_timings, **kwargs)
 
-    if args.genrust:
-        fragment.gensvd("build/soc.svd")
-        fragment.genmem("build/memory.x")
-        fragment.genconst("src/rs/lib/src/generated_constants.rs")
+    # build an SoC bitstream by:
+    # - creating all the definitions required by the firmware (svd / memory map)
+    # - compiling the firmware itself
+    # - building the bitstream with firmware packaged inside it
+    #
+    # requirements:
+    # - rustup with riscv32imac target installed
+    # - cargo install svd2rust form
+
+    # GENERATE SVD
+
+    #if args.genrust:
+    svd_path = os.path.join(path, "fw/soc.svd")
+    mem_x_path = os.path.join(path, "fw/memory.x")
+    rs_const_path = "src/rs/lib/src/generated_constants.rs"
+    fragment.gensvd(svd_path)
+
+    if args.svd_only:
+        sys.exit(0)
+
+    # BUILD PAC (from SVD)
+
+    pac_dir = "src/rs/pac"
+    pac_build_dir = os.path.join(pac_dir, "build")
+    pac_gen_dir   = os.path.join(pac_dir, "src/generated")
+    src_genrs     = os.path.join(pac_dir, "src/generated.rs")
+    shutil.rmtree(pac_build_dir, ignore_errors=True)
+    shutil.rmtree(pac_gen_dir, ignore_errors=True)
+    os.makedirs(pac_build_dir)
+    if os.path.isfile(src_genrs):
+        os.remove(src_genrs)
+
+    subprocess.check_call([
+        "svd2rust",
+        "-i", svd_path,
+        "-o", pac_build_dir,
+        "--target", "riscv",
+        "--make_mod",
+        "--ident-formats-theme", "legacy"
+        ], env=os.environ)
+
+    shutil.move(os.path.join(pac_build_dir, "mod.rs"), src_genrs)
+    shutil.move(os.path.join(pac_build_dir, "device.x"),
+                os.path.join(pac_dir,       "device.x"))
+
+    subprocess.check_call([
+        "form",
+        "-i", src_genrs,
+        "-o", pac_gen_dir,
+        ], env=os.environ)
+
+    shutil.move(os.path.join(pac_gen_dir, "lib.rs"), src_genrs)
+
+    subprocess.check_call([
+        "cargo", "fmt", "--", "--emit", "files"
+        ], env=os.environ, cwd=pac_dir)
+
+    print("Rust PAC updated at ...", pac_dir)
+
+    if args.pac_only:
+        sys.exit(0)
+
+    # BUILD FIRMWARE
+
+    # GENERATE memory.x and some extra constants
+
+    fragment.genmem(mem_x_path)
+    fragment.genconst(rs_const_path)
+
+    subprocess.check_call([
+        "cargo", "build", "--release"
+        ], env=os.environ, cwd=os.path.join(path, "fw"))
+
+    subprocess.check_call([
+        "cargo", "objcopy", "--release", "--", "-Obinary", "firmware.bin"
+        ], env=os.environ, cwd=os.path.join(path, "fw"))
+
+    if args.fw_only:
         sys.exit(0)
 
     if args.sim:
