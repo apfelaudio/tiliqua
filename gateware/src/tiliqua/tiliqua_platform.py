@@ -84,6 +84,7 @@ class SoldierCrabR2Platform(_SoldierCrabPlatform):
     speed              = "7"
     ulpi_psram_voltage = "3V3"
     psram_id           = "7KL1282GAHY02"
+    psram_registers    = []
 
     connectors  = [
         Connector("m2", 0,
@@ -106,6 +107,11 @@ class SoldierCrabR3Platform(_SoldierCrabPlatform):
     speed              = "6"
     ulpi_psram_voltage = "1V8"
     psram_id           = "APS256XXN-OBR"
+    psram_registers    = [
+        ("REG_MR0","REG_MR4",    0x00, 0x0c),
+        ("REG_MR4","REG_MR8",    0x04, 0xc0),
+        ("REG_MR8","TRAIN_INIT", 0x08, 0x0f),
+    ]
 
     connectors  = [
         Connector("m2", 0,

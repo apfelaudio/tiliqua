@@ -1,4 +1,4 @@
-# This file re-uses some of `interfaces/psram` from LUNA.
+# This file inherits a bit of `interfaces/psram` from LUNA, but is mostly new.
 #
 # Copyright (c) 2020 Great Scott Gadgets <info@greatscottgadgets.com>
 # Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
@@ -13,7 +13,8 @@ from amaranth.utils       import exact_log2
 from amaranth_soc         import wishbone
 from amaranth_soc.memory  import MemoryMap
 
-from vendor.psram         import HyperRAMDQSInterface, HyperRAMDQSPHY
+from vendor.psram_ospi    import OSPIPSRAM
+from vendor.dqs_phy       import DQSPHY
 
 from tiliqua              import sim
 
@@ -76,14 +77,16 @@ class Peripheral(wiring.Component):
         # arbiter
         m.submodules.arbiter = self._hram_arbiter
 
-        # phy and controller
         if sim.is_hw(platform):
-            self.psram_phy = HyperRAMDQSPHY()
-            self.psram = psram = HyperRAMDQSInterface()
+            # Real PHY and PSRAM controller
+            assert "APS256XXN" in platform.psram_id, "Only oSPI-PSRAM is currently supported"
+            self.psram = psram = OSPIPSRAM()
+            self.psram_phy = DQSPHY()
             wiring.connect(m, psram.phy, self.psram_phy.phy)
             m.submodules += [self.psram_phy, self.psram]
         else:
-            m.submodules.psram = psram = HyperRAMDQSInterface()
+            # PSRAM controller only, with fake PHY signals and simulation interface.
+            m.submodules.psram = psram = OSPIPSRAM()
             wiring.connect(m, self.simif, flipped(psram.simif))
             # Assert minimum PHY signals needed for psram to progress.
             m.d.comb += [
@@ -108,17 +111,11 @@ class Peripheral(wiring.Component):
             psram.perform_write          .eq(0),
         ]
 
-        init_registers = [
-            ("REG_MR0","REG_MR4",    0x00, 0x0c),
-            ("REG_MR4","REG_MR8",    0x04, 0xc0),
-            ("REG_MR8","TRAIN_INIT", 0x08, 0x0f),
-        ]
-
         with m.FSM() as fsm:
 
             # Initialize memory registers (read/write timings) before
             # we kick off memory training.
-            for state, state_next, reg_mr, reg_data in init_registers:
+            for state, state_next, reg_mr, reg_data in platform.psram_registers:
                 with m.State(state):
                     with m.If(psram.idle & ~psram.start_transfer):
                         m.d.sync += [
