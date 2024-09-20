@@ -31,9 +31,9 @@ from luna.gateware.stream.generator           import StreamSerializer
 from luna.gateware.stream                     import StreamInterface
 from luna.gateware.architecture.car           import PHYResetController
 
-from tiliqua.tiliqua_soc import top_level_cli
-from tiliqua.eurorack_pmod import EurorackPmod
-from vendor.ila import AsyncSerialILA
+from tiliqua.cli                              import top_level_cli
+from tiliqua.eurorack_pmod                    import EurorackPmod
+from vendor.ila                               import AsyncSerialILA
 
 from example_usb_audio.util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
 from example_usb_audio.usb_stream_to_channels import USBStreamToChannels
@@ -697,4 +697,4 @@ class UAC2RequestHandlers(USBRequestHandler):
 
 if __name__ == "__main__":
     this_path = os.path.dirname(os.path.realpath(__file__))
-    top_level_cli(USB2AudioInterface, path=this_path)
+    top_level_cli(USB2AudioInterface, path=this_path, ila_supported=True)

@@ -18,7 +18,7 @@ import subprocess
 
 from amaranth              import *
 from amaranth.build        import *
-from tiliqua.tiliqua_soc   import top_level_cli
+from tiliqua.cli           import top_level_cli
 
 class BootStubTop(Elaboratable):
     def elaborate(self, platform):

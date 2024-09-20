@@ -24,36 +24,29 @@ import math
 import shutil
 import subprocess
 
-from amaranth              import *
-from amaranth.build        import *
-from amaranth.lib          import wiring, data, stream
-from amaranth.lib.wiring   import In, Out
-from amaranth.lib.fifo     import AsyncFIFO, SyncFIFO
-from amaranth.lib.cdc      import FFSynchronizer
-from amaranth.utils        import log2_int
-from amaranth.hdl.mem      import Memory
+from amaranth                 import *
+from amaranth.build           import *
+from amaranth.lib             import wiring, data, stream
+from amaranth.lib.wiring      import In, Out
+from amaranth.lib.fifo        import AsyncFIFO, SyncFIFO
+from amaranth.lib.cdc         import FFSynchronizer
+from amaranth.utils           import log2_int
+from amaranth.hdl.mem         import Memory
+from amaranth.back            import verilog
 
-from amaranth_future       import fixed
+from amaranth_future          import fixed
+from amaranth_soc             import wishbone
 
 from tiliqua.tiliqua_platform import *
 from tiliqua                  import eurorack_pmod, dsp, sim
 from tiliqua.eurorack_pmod    import ASQ
-
 from tiliqua                  import psram_peripheral
+from tiliqua.cli              import top_level_cli
+from tiliqua.sim              import FakeEurorackPmod, FakeTiliquaDomainGenerator
+from tiliqua.video            import DVI_TIMINGS, FramebufferPHY
+from tiliqua.raster           import Persistance, Stroke
 
-from amaranth_soc             import wishbone
-
-from tiliqua.tiliqua_soc      import top_level_cli
-
-from amaranth.back import verilog
-
-from tiliqua.sim import FakeEurorackPmod, FakeTiliquaDomainGenerator
-
-from tiliqua.video import DVI_TIMINGS, FramebufferPHY
-
-from tiliqua.raster import Persistance, Stroke
-
-from vendor.ila import AsyncSerialILA
+from vendor.ila               import AsyncSerialILA
 
 class VectorScopeTop(Elaboratable):
 
@@ -230,5 +223,6 @@ def simulation_ports(fragment):
 if __name__ == "__main__":
     this_path = os.path.dirname(os.path.realpath(__file__))
     top_level_cli(VectorScopeTop, path=this_path,
+                  ila_supported=True,
                   simulation_ports=simulation_ports,
                   simulation_harness="../../src/example_vectorscope/sim/sim.cpp")

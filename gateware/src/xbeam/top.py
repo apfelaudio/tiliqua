@@ -20,7 +20,8 @@ from amaranth_soc                                import csr
 from amaranth_future                             import fixed
 
 from tiliqua                                     import eurorack_pmod, dsp
-from tiliqua.tiliqua_soc                         import TiliquaSoc, top_level_cli
+from tiliqua.tiliqua_soc                         import TiliquaSoc
+from tiliqua.cli                                 import top_level_cli
 
 from example_vectorscope.top                     import Stroke
 

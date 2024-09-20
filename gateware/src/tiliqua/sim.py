@@ -67,6 +67,7 @@ class FakePSRAMSimulationInterface(wiring.Signature):
 class VerilatorPlatform():
     def __init__(self, hw_platform):
         self.files = {}
+        self.ila = False
         self.psram_id = hw_platform.psram_id
         self.psram_registers = hw_platform.psram_registers
 
