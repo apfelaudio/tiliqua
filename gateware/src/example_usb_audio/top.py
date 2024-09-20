@@ -33,7 +33,7 @@ from luna.gateware.architecture.car           import PHYResetController
 
 from tiliqua.tiliqua_soc import top_level_cli
 from tiliqua.eurorack_pmod import EurorackPmod
-from vendor.ila import AsyncSerialILA, AsyncSerialILAFrontend
+from vendor.ila import AsyncSerialILA
 
 from example_usb_audio.util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
 from example_usb_audio.usb_stream_to_channels import USBStreamToChannels
@@ -47,8 +47,7 @@ class USB2AudioInterface(Elaboratable):
     MAX_PACKET_SIZE = int(224 // 8 * NR_CHANNELS)
     MAX_PACKET_SIZE_MIDI = 64
 
-    def __init__(self, use_ila=False, **kwargs):
-        self.use_ila = use_ila
+    def __init__(self, **kwargs):
         super().__init__()
 
     def create_descriptors(self):
@@ -546,11 +545,7 @@ class USB2AudioInterface(Elaboratable):
                         m.d.usb += touch_ch.eq(touch_ch + 1)
                         m.next = "B0"
 
-        if self.use_ila:
-
-            #######
-            # ILA #
-            #######
+        if platform.ila:
 
             test_signal = Signal(16, reset=0xFEED)
             pmod_sample_o0 = Signal(16)
@@ -703,10 +698,3 @@ class UAC2RequestHandlers(USBRequestHandler):
 if __name__ == "__main__":
     this_path = os.path.dirname(os.path.realpath(__file__))
     top_level_cli(USB2AudioInterface, path=this_path)
-    """
-    if ila:
-        # TODO: program bitstream with openFPGAloader before starting frontend
-        # TODO: make serial port selectable
-        frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
-        frontend.emit_vcd("out.vcd")
-    """

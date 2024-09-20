@@ -53,7 +53,7 @@ from tiliqua.video import DVI_TIMINGS, FramebufferPHY
 
 from tiliqua.raster import Persistance, Stroke
 
-from vendor.ila import AsyncSerialILA, AsyncSerialILAFrontend
+from vendor.ila import AsyncSerialILA
 
 class VectorScopeTop(Elaboratable):
 
@@ -62,10 +62,9 @@ class VectorScopeTop(Elaboratable):
     Can be instantiated with 'sim=True', which swaps out most things that touch hardware for mocks.
     """
 
-    def __init__(self, *, dvi_timings, ila=False, **kwargs):
+    def __init__(self, *, dvi_timings, **kwargs):
 
         self.dvi_timings = dvi_timings
-        self.use_ila = ila
 
         # One PSRAM with an internal arbiter to support multiple DMA masters.
         self.psram_periph = psram_peripheral.Peripheral(size=16*1024*1024)
@@ -139,7 +138,7 @@ class VectorScopeTop(Elaboratable):
             m.d.sync += self.stroke.enable.eq(1)
 
         # Optional ILA, very useful for low-level PSRAM debugging...
-        if not self.use_ila:
+        if not platform.ila:
             m.submodules.psram_periph = self.psram_periph
         else:
             # HACK: eager elaboration so ILA has something to attach to
@@ -233,13 +232,3 @@ if __name__ == "__main__":
     top_level_cli(VectorScopeTop, path=this_path,
                   simulation_ports=simulation_ports,
                   simulation_harness="../../src/example_vectorscope/sim/sim.cpp")
-    """
-    if ila:
-        subprocess.check_call(["openFPGALoader",
-                               "-c", "dirtyJtag",
-                               "build/top.bit"],
-                              env=os.environ)
-        # TODO: make serial port selectable
-        frontend = AsyncSerialILAFrontend("/dev/ttyACM0", baudrate=115200, ila=top.ila)
-        frontend.emit_vcd("out.vcd")
-    """

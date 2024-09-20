@@ -33,6 +33,8 @@ from tiliqua                                     import sim, eurorack_pmod
 
 from tiliqua.raster                              import Persistance
 
+from vendor.ila                                  import AsyncSerialILAFrontend
+
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
 class VideoPeripheral(wiring.Component):
@@ -482,6 +484,10 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
                         help="amaranth: enable verbose synthesis")
     parser.add_argument('--debug-verilog', action='store_true',
                         help="amaranth: emit debug verilog")
+    parser.add_argument('--ila', action='store_true',
+                        help="debug: add ila to design, program bitstream after build, poll UART for data.")
+    parser.add_argument('--ila-port', type=str, default="/dev/ttyACM0",
+                        help="debug: serial port on host that ila is connected to")
     args = parser.parse_args()
 
     if args.verbose:
@@ -544,7 +550,20 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
             sim.simulate(fragment, ports, harness, hw_platform, args.trace_fst)
             sys.exit(0)
 
+    if args.ila:
+        hw_platform.ila = True
+    else:
+        hw_platform.ila = False
+
     print("Building bitstream for", hw_platform.name)
     hw_platform.build(fragment)
+
+    if hw_platform.ila:
+        subprocess.check_call(["openFPGALoader",
+                               "-c", "dirtyJtag",
+                               "build/top.bit"],
+                              env=os.environ)
+        frontend = AsyncSerialILAFrontend(args.ila_port, baudrate=115200, ila=fragment.ila)
+        frontend.emit_vcd("out.vcd")
 
     return fragment
