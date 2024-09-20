@@ -65,8 +65,10 @@ class FakePSRAMSimulationInterface(wiring.Signature):
 # Main purpose of using this custom platform instead of
 # simply None is to track extra files added to the build.
 class VerilatorPlatform():
-    def __init__(self):
+    def __init__(self, hw_platform):
         self.files = {}
+        self.psram_id = hw_platform.psram_id
+        self.psram_registers = hw_platform.psram_registers
 
     def add_file(self, file_name, contents):
         self.files[file_name] = contents
@@ -97,13 +99,13 @@ def soc_simulation_ports(fragment):
         "dvi_b":          (fragment.video.phy_b,                       None),
     }
 
-def simulate(fragment, ports, harness, tracing=False):
+def simulate(fragment, ports, harness, hw_platform, tracing=False):
 
     build_dst = "build"
     dst = f"{build_dst}/tiliqua_soc.v"
     print(f"write verilog implementation of 'tiliqua_soc' to '{dst}'...")
 
-    sim_platform = VerilatorPlatform()
+    sim_platform = VerilatorPlatform(hw_platform)
 
     os.makedirs(build_dst, exist_ok=True)
     with open(dst, "w") as f:

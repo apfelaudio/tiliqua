@@ -495,6 +495,11 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
     assert callable(fragment)
     fragment = fragment(*pos_args, dvi_timings=dvi_timings, **kwargs)
 
+    if args.sc3:
+        hw_platform = TiliquaR2SC3Platform()
+    else:
+        hw_platform = TiliquaR2SC2Platform()
+
     if isinstance(fragment, TiliquaSoc):
 
         # Generate SVD
@@ -519,21 +524,16 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
         if args.sim:
             ports = sim.soc_simulation_ports(fragment)
             harness = os.path.join(path, "../selftest/sim.cpp")
-            sim.simulate(fragment, ports, harness, args.trace_fst)
+            sim.simulate(fragment, ports, harness, hw_platform, args.trace_fst)
             sys.exit(0)
     else:
         if args.sim:
             ports   = kwargs["simulation_ports"](fragment)
             harness = kwargs["simulation_harness"]
-            sim.simulate(fragment, ports, harness, args.trace_fst)
+            sim.simulate(fragment, ports, harness, hw_platform, args.trace_fst)
             sys.exit(0)
 
-    if args.sc3:
-        platform = TiliquaR2SC3Platform()
-    else:
-        platform = TiliquaR2SC2Platform()
-
-    print("Building bitstream for", platform.name)
-    platform.build(fragment)
+    print("Building bitstream for", hw_platform.name)
+    hw_platform.build(fragment)
 
     return fragment

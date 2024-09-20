@@ -186,6 +186,7 @@ class _TiliquaR2Mobo:
             Subsignal("pdn",     Pins("54", dir="o",  conn=("m2", 0))),
             Subsignal("i2c_sda", Pins("56", dir="io", conn=("m2", 0))),
             Subsignal("i2c_scl", Pins("58", dir="io", conn=("m2", 0))),
+            Attrs(IO_TYPE="LVCMOS33")
         ),
 
         # DVI

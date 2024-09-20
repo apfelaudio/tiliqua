@@ -14,6 +14,7 @@ from amaranth_soc         import wishbone
 from amaranth_soc.memory  import MemoryMap
 
 from vendor.psram_ospi    import OSPIPSRAM
+from vendor.psram_hyper   import HyperPSRAM
 from vendor.dqs_phy       import DQSPHY
 
 from tiliqua              import sim
@@ -77,16 +78,21 @@ class Peripheral(wiring.Component):
         # arbiter
         m.submodules.arbiter = self._hram_arbiter
 
+        if "APS256XXN" in platform.psram_id:
+            self.psram = psram = OSPIPSRAM()
+        elif "7KL1282GA" in platform.psram_id:
+            self.psram = psram = HyperPSRAM()
+        else:
+            assert False, f"Unsupported PSRAM: {platform.psram_id}"
+
         if sim.is_hw(platform):
             # Real PHY and PSRAM controller
-            assert "APS256XXN" in platform.psram_id, "Only oSPI-PSRAM is currently supported"
-            self.psram = psram = OSPIPSRAM()
             self.psram_phy = DQSPHY()
             wiring.connect(m, psram.phy, self.psram_phy.phy)
             m.submodules += [self.psram_phy, self.psram]
         else:
             # PSRAM controller only, with fake PHY signals and simulation interface.
-            m.submodules.psram = psram = OSPIPSRAM()
+            m.submodules.psram = psram
             wiring.connect(m, self.simif, flipped(psram.simif))
             # Assert minimum PHY signals needed for psram to progress.
             m.d.comb += [
