@@ -73,9 +73,9 @@ module dvi_generator (
         end
     end
 
-    ODDRX1F serialize_ch0 (.D0(tmds_ch0_shift[0]), .D1(tmds_ch0_shift[1]), .Q(tmds_ch0_serial), .SCLK(clk_pix_5x), .RST(0));
-    ODDRX1F serialize_ch1 (.D0(tmds_ch1_shift[0]), .D1(tmds_ch1_shift[1]), .Q(tmds_ch1_serial), .SCLK(clk_pix_5x), .RST(0));
-    ODDRX1F serialize_ch2 (.D0(tmds_ch2_shift[0]), .D1(tmds_ch2_shift[1]), .Q(tmds_ch2_serial), .SCLK(clk_pix_5x), .RST(0));
+    ODDRX1F serialize_ch0 (.D0(tmds_ch0_shift[0]), .D1(tmds_ch0_shift[1]), .Q(tmds_ch0_serial), .SCLK(clk_pix_5x), .RST(1'b0));
+    ODDRX1F serialize_ch1 (.D0(tmds_ch1_shift[0]), .D1(tmds_ch1_shift[1]), .Q(tmds_ch1_serial), .SCLK(clk_pix_5x), .RST(1'b0));
+    ODDRX1F serialize_ch2 (.D0(tmds_ch2_shift[0]), .D1(tmds_ch2_shift[1]), .Q(tmds_ch2_serial), .SCLK(clk_pix_5x), .RST(1'b0));
 
     always_comb tmds_clk_serial = clk_pix;  // clock isn't following same path as other channels
 endmodule

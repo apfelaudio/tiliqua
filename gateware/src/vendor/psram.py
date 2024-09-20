@@ -21,7 +21,7 @@ class DQSPHYSignature(wiring.Signature):
     """ Signature representing a 32-bit HyperBus interface for use with a 4:1 PHY module. """
     def __init__(self):
         class IOBusSignature(wiring.Signature):
-            def __init__(self, *, n_io, n_e):
+            def __init__(self, *, n_io, n_e=1):
                 super().__init__({
                     "i":  In(unsigned(n_io)),
                     "o": Out(unsigned(n_io)),
@@ -29,8 +29,8 @@ class DQSPHYSignature(wiring.Signature):
                 })
         super().__init__({
             "clk_en":         Out(unsigned(2)),
-            "dq":             Out(IOBusSignature(n_io=32, n_e=4)),
-            "rwds":           Out(IOBusSignature(n_io=4,  n_e=1)),
+            "dq":             Out(IOBusSignature(n_io=32)),
+            "rwds":           Out(IOBusSignature(n_io=4)),
             "cs":             Out(unsigned(1)),
             "reset":          Out(unsigned(1)),
             "read":           Out(unsigned(2)),
