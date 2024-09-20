@@ -454,10 +454,6 @@ class TiliquaSoc(Component):
 
 def top_level_cli(fragment, *pos_args, path, **kwargs):
 
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
-    os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
-
     # Configure logging.
     logging.getLogger().setLevel(logging.DEBUG)
 
@@ -480,7 +476,22 @@ def top_level_cli(fragment, *pos_args, path, **kwargs):
                             help="SoC designs: stop after rust FW compilation")
     parser.add_argument('--sc3', action='store_true',
                         help="Assume Tiliqua R2 with a SoldierCrab R3 (default: R2)")
+    parser.add_argument('--bootaddr', type=str, default="0x0",
+                        help="'bootaddr' argument of ecppack (default: 0x0).")
+    parser.add_argument('--verbose', action='store_true',
+                        help="amaranth: enable verbose synthesis")
+    parser.add_argument('--debug-verilog', action='store_true',
+                        help="amaranth: emit debug verilog")
     args = parser.parse_args()
+
+    if args.verbose:
+        os.environ["AMARANTH_verbose"] = "1"
+
+    if args.debug_verilog:
+        os.environ["AMARANTH_debug_verilog"] = "1"
+
+    os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
+    os.environ["AMARANTH_ecppack_opts"] = f"--freq 38.8 --compress --bootaddr {args.bootaddr}"
 
     assert args.resolution in video.DVI_TIMINGS, f"error: video resolution must be one of {DVI_TIMINGS.keys()}"
     dvi_timings = video.DVI_TIMINGS[args.resolution]

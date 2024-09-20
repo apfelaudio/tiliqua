@@ -22,20 +22,4 @@ test = [
 
 [tool.pdm.scripts]
 test = { cmd = "pytest" }
-# bitstreams that include an SoC
-build_selftest = { shell = "./scripts/build_soc.sh selftest" }
-sim_selftest   = { shell = "./scripts/sim_soc.sh selftest" }
-build_boot     = { shell = "./scripts/build_soc.sh boot" }
-build_xbeam    = { shell = "./scripts/build_soc.sh xbeam" }
-build_poly     = { shell = "./scripts/build_soc.sh poly" }
-# bitstreams that don't include an SoC
-build_usb_audio = { call = "example_usb_audio.top:build(ila=False)" }
-build_usb_audio_ila = { call = "example_usb_audio.top:build(ila=True)" }
-build_dsp_core = { call = "example_dsp.top:build()" }
-sim_dsp_core = { call = "example_dsp.top:simulate()" }
-build_vectorscope = { call = "example_vectorscope.top:build()" }
-build_vectorscope_ila = { call = "example_vectorscope.top:build(ila=True)" }
-sim_vectorscope = { call = "example_vectorscope.top:sim()" }
 colors_vectorscope = { call = "example_vectorscope.top:colors()" }
-# bootloader stub bitstream compressed and flashed onto RP2040
-build_boot_stub = { call = "boot_stub.top:build()" }

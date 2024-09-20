@@ -18,7 +18,7 @@ import subprocess
 
 from amaranth              import *
 from amaranth.build        import *
-from tiliqua.tiliqua_platform import TiliquaPlatform
+from tiliqua.tiliqua_soc   import top_level_cli
 
 class BootStubTop(Elaboratable):
     def elaborate(self, platform):
@@ -26,21 +26,6 @@ class BootStubTop(Elaboratable):
         m.d.comb += platform.request("self_program").o.eq(1)
         return m
 
-def build():
-    if len(sys.argv) < 3:
-        print("must supply: <address> <suffix> - for example:")
-        print("$ pdm build_boot_stub 0x100000 1 # produces 'build/bootstub1.bit'")
-        sys.exit(-1)
-    address = sys.argv[1]
-    suffix  = sys.argv[2]
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    os.environ["AMARANTH_ecppack_opts"] = f"--compress --bootaddr {address}"
-    top = BootStubTop()
-    TiliquaPlatform().build(top)
-
-    # copy the bitstream somewhere so it doesn't get overridden on the next bootstub build
-    src = "build/top.bit"
-    dst = f"build/bootstub{suffix}.bit"
-    print(f"copying {src} to {dst}")
-    shutil.copy(src, dst)
+if __name__ == "__main__":
+    this_path = os.path.dirname(os.path.realpath(__file__))
+    top_level_cli(BootStubTop, path=this_path)
