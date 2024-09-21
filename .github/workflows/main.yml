@@ -150,7 +150,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm run src/example_vectorscope/top.py
+          pdm vectorscope_no_soc
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -174,7 +174,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm run src/boot/top.py
+          pdm bootloader
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -192,7 +192,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm run src/boot_stub/top.py --bootaddr 0x100000
+          pdm bootstub --bootaddr 0x100000
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
