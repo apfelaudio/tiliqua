@@ -19,9 +19,9 @@ from amaranth.lib.wiring   import In, Out
 
 from amaranth_future       import fixed
 
-from tiliqua.tiliqua_platform import TiliquaPlatform
 from tiliqua                  import eurorack_pmod, dsp, midi
 from tiliqua.eurorack_pmod    import ASQ
+from tiliqua.cli              import top_level_cli
 
 # for sim
 from amaranth.back import verilog
@@ -512,43 +512,47 @@ class MidiCVTop(wiring.Component):
 
         return m
 
-class SimTop(Elaboratable):
-
-    def __init__(self, core):
-        self.pmod0 = sim.FakeEurorackPmod()
-        self.core = core()
-        super().__init__()
-
-    def elaborate(self, platform):
-        m = Module()
-        m.submodules.car = sim.FakeTiliquaDomainGenerator()
-        m.submodules.pmod0 = pmod0 = self.pmod0
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
-        m.submodules.core = self.core
-        wiring.connect(m, audio_stream.istream, self.core.i)
-        wiring.connect(m, self.core.o, audio_stream.ostream)
-        return m
-
 class CoreTop(Elaboratable):
 
-    def __init__(self, core, touch=False):
-        self.core = core()
-        self.touch = touch
+    def __init__(self, dsp_core, enable_touch):
+        self.core = dsp_core()
+        self.touch = enable_touch
+
+        # Only used for simulation
+        self.fs_strobe = Signal()
+        self.inject0 = Signal(signed(16))
+        self.inject1 = Signal(signed(16))
+        self.inject2 = Signal(signed(16))
+        self.inject3 = Signal(signed(16))
+
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
-        m.submodules.car = platform.clock_domain_generator()
-        m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
-                pmod_pins=platform.request("audio_ffc"),
-                hardware_r33=True,
-                touch_enabled=self.touch)
+
+        if sim.is_hw(platform):
+            m.submodules.car = platform.clock_domain_generator()
+            m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
+                    pmod_pins=platform.request("audio_ffc"),
+                    hardware_r33=True,
+                    touch_enabled=self.touch)
+        else:
+            m.submodules.car = sim.FakeTiliquaDomainGenerator()
+            m.submodules.pmod0 = pmod0 = sim.FakeEurorackPmod()
+            m.d.comb += [
+                pmod0.sample_inject[0]._target.eq(self.inject0),
+                pmod0.sample_inject[1]._target.eq(self.inject1),
+                pmod0.sample_inject[2]._target.eq(self.inject2),
+                pmod0.sample_inject[3]._target.eq(self.inject3),
+                pmod0.fs_strobe.eq(self.fs_strobe),
+            ]
+
         m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
         m.submodules.core = self.core
         wiring.connect(m, audio_stream.istream, self.core.i)
         wiring.connect(m, self.core.o, audio_stream.ostream)
 
-        if hasattr(self.core, "i_midi"):
+        if hasattr(self.core, "i_midi") and sim.is_hw(platform):
             # For now, if a core requests midi input, we connect it up
             # to the type-A serial MIDI RX input. In theory this bytestream
             # could also come from LUNA in host or device mode.
@@ -561,91 +565,56 @@ class CoreTop(Elaboratable):
 
         return m
 
-def get_core(name):
-    """Get top-level DSP core attributes by a short name."""
+# Different DSP cores that can be selected at top-level CLI.
+CORES = {
+    #             (touch, class name)
+    "mirror":     (False, Mirror),
+    "svf":        (False, ResonantFilter),
+    "vca":        (False, DualVCA),
+    "pitch":      (False, Pitch),
+    "matrix":     (False, Matrix),
+    "diffuser":   (False, Diffuser),
+    "touchmix":   (True,  TouchMixTop),
+    "waveshaper": (False, DualWaveshaper),
+    "nco":        (False, QuadNCO),
+    "midicv":     (False, MidiCVTop),
+}
 
-    cores = {
-        #             (touch, class name)
-        "mirror":     (False, Mirror),
-        "svf":        (False, ResonantFilter),
-        "vca":        (False, DualVCA),
-        "pitch":      (False, Pitch),
-        "matrix":     (False, Matrix),
-        "diffuser":   (False, Diffuser),
-        "touchmix":   (True,  TouchMixTop),
-        "waveshaper": (False, DualWaveshaper),
-        "nco":        (False, QuadNCO),
-        "midicv":     (False, MidiCVTop),
+def simulation_ports(fragment):
+    return {
+        "clk_audio":      (ClockSignal("audio"),                       None),
+        "rst_audio":      (ResetSignal("audio"),                       None),
+        "clk_sync":       (ClockSignal("sync"),                        None),
+        "rst_sync":       (ResetSignal("sync"),                        None),
+        "fs_strobe":      (fragment.fs_strobe,                         None),
+        "fs_inject0":     (fragment.inject0,                           None),
+        "fs_inject1":     (fragment.inject1,                           None),
+        "fs_inject2":     (fragment.inject2,                           None),
+        "fs_inject3":     (fragment.inject3,                           None),
     }
 
-    if name not in cores:
-        print(f"provided core '{name}' is not one of {list(cores)}")
+def argparse_callback(parser):
+    parser.add_argument('--dsp-core', type=str, default="mirror",
+                        help=f"One of {list(CORES)}")
+
+def argparse_fragment(args):
+    # Additional arguments to be provided to CoreTop
+    if args.dsp_core not in CORES:
+        print(f"provided '--dsp-core {args.dsp_core}' is not one of {list(CORES)}")
         sys.exit(-1)
 
-    return cores[name]
+    touch, cls_name = CORES[args.dsp_core]
+    return {
+        "dsp_core": cls_name,
+        "enable_touch": touch,
+    }
 
-def build():
-    """Build a bitstream for a top-level DSP core."""
-    core_name = '' if len(sys.argv) < 2 else sys.argv[1]
-    os.environ["AMARANTH_verbose"] = "1"
-    os.environ["AMARANTH_debug_verilog"] = "1"
-    os.environ["AMARANTH_ecppack_opts"] = "--freq 38.8 --compress"
-    touch, cls_core = get_core(core_name)
-    top = CoreTop(cls_core, touch=touch)
-    TiliquaPlatform().build(top)
-
-def simulate():
-    """Simulate a top-level DSP core using Verilator."""
-    core_name = '' if len(sys.argv) < 2 else sys.argv[1]
-    _, cls_core = get_core(core_name)
-    build_dst = "build"
-    dst = f"{build_dst}/core.v"
-    print(f"write verilog implementation of '{core_name}' to '{dst}'...")
-
-    top = SimTop(cls_core)
-
-    os.makedirs(build_dst, exist_ok=True)
-    with open(dst, "w") as f:
-        f.write(verilog.convert(top, ports=[
-            ClockSignal("audio"),
-            ResetSignal("audio"),
-            ClockSignal("sync"),
-            ResetSignal("sync"),
-            top.pmod0.fs_strobe,
-            top.pmod0.sample_inject[0]._target,
-            top.pmod0.sample_inject[1]._target,
-            top.pmod0.sample_inject[2]._target,
-            top.pmod0.sample_inject[3]._target,
-            top.pmod0.sample_extract[0]._target,
-            top.pmod0.sample_extract[1]._target,
-            top.pmod0.sample_extract[2]._target,
-            top.pmod0.sample_extract[3]._target,
-        ]))
-
-    verilator_dst = "build/obj_dir"
-
-    print(f"verilate '{dst}' into C++ binary...")
-    subprocess.check_call(["verilator",
-                           "-Wno-COMBDLY",
-                           "-Wno-CASEINCOMPLETE",
-                           "-Wno-CASEOVERLAP",
-                           "-Wno-WIDTHEXPAND",
-                           "-Wno-WIDTHTRUNC",
-                           "-Wno-TIMESCALEMOD",
-                           "-Wno-PINMISSING",
-                           "-Wno-ASCRANGE",
-                           "-cc",
-                           "--trace-fst",
-                           "--exe",
-                           "--Mdir", f"{verilator_dst}",
-                           "--build",
-                           "-j", "0",
-                           "../../src/example_dsp/sim_dsp_core.cpp",
-                           f"{dst}"],
-                          env=os.environ)
-
-    print(f"run verilated binary '{verilator_dst}/Vcore'...")
-    subprocess.check_call([f"{verilator_dst}/Vcore"],
-                          env=os.environ)
-
-    print(f"done.")
+if __name__ == "__main__":
+    top_level_cli(
+        CoreTop,
+        video_core=False,
+        sim_ports=simulation_ports,
+        sim_harness="../../src/example_dsp/sim_dsp_core.cpp",
+        argparse_callback=argparse_callback,
+        argparse_fragment=argparse_fragment,
+    )

@@ -696,5 +696,4 @@ class UAC2RequestHandlers(USBRequestHandler):
                 return m
 
 if __name__ == "__main__":
-    this_path = os.path.dirname(os.path.realpath(__file__))
-    top_level_cli(USB2AudioInterface, path=this_path, ila_supported=True)
+    top_level_cli(USB2AudioInterface, video_core=False, ila_supported=True)

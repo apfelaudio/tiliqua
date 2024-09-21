@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import sys
 
+from dataclasses                 import dataclass
+
 from tiliqua                     import sim, video
 from tiliqua.tiliqua_platform    import *
 from tiliqua.tiliqua_soc         import TiliquaSoc
@@ -61,21 +63,35 @@ def soc_compile_firmware(path):
         "cargo", "objcopy", "--release", "--", "-Obinary", "firmware.bin"
         ], env=os.environ, cwd=os.path.join(path, "fw"))
 
-def top_level_cli(fragment, path, ila_supported=False, **kwargs):
+def top_level_cli(
+    fragment,
+    video_core=True,
+    path=None,
+    ila_supported=False,
+    sim_ports=None,
+    sim_harness=None,
+    argparse_callback=None,
+    argparse_fragment=None
+    ):
 
     # Configure logging.
     logging.getLogger().setLevel(logging.DEBUG)
 
     # Parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--resolution', type=str, default="1280x720p60",
-                        help="DVI resolution - (default: 1280x720p60)")
-    parser.add_argument('--rotate-90', action='store_true',
-                        help="Rotate DVI out by 90 degrees")
-    parser.add_argument('--sim', action='store_true',
-                        help="Simulate the design with Verilator")
-    parser.add_argument('--trace-fst', action='store_true',
-                        help="Simulation: enable dumping of traces to FST file.")
+
+    if video_core:
+        parser.add_argument('--resolution', type=str, default="1280x720p60",
+                            help="DVI resolution - (default: 1280x720p60)")
+        parser.add_argument('--rotate-90', action='store_true',
+                            help="Rotate DVI out by 90 degrees")
+
+    if sim_ports or issubclass(fragment, TiliquaSoc):
+        parser.add_argument('--sim', action='store_true',
+                            help="Simulate the design with Verilator")
+        parser.add_argument('--trace-fst', action='store_true',
+                            help="Simulation: enable dumping of traces to FST file.")
+
     if issubclass(fragment, TiliquaSoc):
         parser.add_argument('--svd-only', action='store_true',
                             help="SoC designs: stop after SVD generation")
@@ -83,6 +99,7 @@ def top_level_cli(fragment, path, ila_supported=False, **kwargs):
                             help="SoC designs: stop after rust PAC generation")
         parser.add_argument('--fw-only', action='store_true',
                             help="SoC designs: stop after rust FW compilation")
+
     parser.add_argument('--sc3', action='store_true',
                         help="Assume Tiliqua R2 with a SoldierCrab R3 (default: R2)")
     parser.add_argument('--bootaddr', type=str, default="0x0",
@@ -97,6 +114,9 @@ def top_level_cli(fragment, path, ila_supported=False, **kwargs):
         parser.add_argument('--ila-port', type=str, default="/dev/ttyACM0",
                             help="debug: serial port on host that ila is connected to")
 
+    if argparse_callback:
+        argparse_callback(parser)
+
     args = parser.parse_args()
 
     if args.verbose:
@@ -108,18 +128,25 @@ def top_level_cli(fragment, path, ila_supported=False, **kwargs):
     os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
     os.environ["AMARANTH_ecppack_opts"] = f"--freq 38.8 --compress --bootaddr {args.bootaddr}"
 
-    assert args.resolution in video.DVI_TIMINGS, f"error: video resolution must be one of {DVI_TIMINGS.keys()}"
-    dvi_timings = video.DVI_TIMINGS[args.resolution]
 
-    if args.rotate_90:
-        kwargs["video_rotate_90"] = True
+    kwargs = {}
+
+    if video_core:
+        assert args.resolution in video.DVI_TIMINGS, f"error: video resolution must be one of {DVI_TIMINGS.keys()}"
+        dvi_timings = video.DVI_TIMINGS[args.resolution]
+        kwargs["dvi_timings"] = dvi_timings
+        if args.rotate_90:
+            kwargs["video_rotate_90"] = True
 
     if issubclass(fragment, TiliquaSoc):
         kwargs["firmware_path"] = os.path.join(path, "fw/firmware.bin")
 
+    if argparse_fragment:
+        kwargs = kwargs | argparse_fragment(args)
+
     name = fragment.__name__ if callable(fragment) else fragment.__class__.__name__
     assert callable(fragment)
-    fragment = fragment(dvi_timings=dvi_timings, **kwargs)
+    fragment = fragment(**kwargs)
 
     if args.sc3:
         # Tiliqua R2 with SoldierCrab R3
@@ -149,18 +176,16 @@ def top_level_cli(fragment, path, ila_supported=False, **kwargs):
         if args.fw_only:
             sys.exit(0)
 
-        if args.sim:
-            ports = sim.soc_simulation_ports(fragment)
-            # TODO: special harness for each SoC?
-            harness = os.path.join(path, "../selftest/sim.cpp")
-            sim.simulate(fragment, ports, harness, hw_platform, args.trace_fst)
-            sys.exit(0)
-    else:
-        if args.sim:
-            ports   = kwargs["simulation_ports"](fragment)
-            harness = kwargs["simulation_harness"]
-            sim.simulate(fragment, ports, harness, hw_platform, args.trace_fst)
-            sys.exit(0)
+        # Simulation configuration
+        # By default, SoC examples share the same simulation harness.
+        if sim_ports is None:
+            sim_ports = sim.soc_simulation_ports
+            sim_harness = os.path.join(path, "../selftest/sim.cpp")
+
+    if sim_ports and args.sim:
+        sim.simulate(fragment, sim_ports(fragment), sim_harness,
+                     hw_platform, args.trace_fst)
+        sys.exit(0)
 
     if ila_supported and args.ila:
         hw_platform.ila = True

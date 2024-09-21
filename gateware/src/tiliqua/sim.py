@@ -124,10 +124,18 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
 
     tracing_flags = ["--trace-fst", "--trace-structs"] if tracing else []
 
-    # TODO: warn if this is far from the PLL output?
-    dvi_clk_hz = int(fragment.video.dvi_tgen.timings.pll.pixel_clk_mhz * 1e6)
-    dvi_h_active = fragment.video.dvi_tgen.timings.h_active
-    dvi_v_active = fragment.video.dvi_tgen.timings.v_active
+    if hasattr(fragment, "video"):
+        # TODO: warn if this is far from the PLL output?
+        dvi_clk_hz = int(fragment.video.dvi_tgen.timings.pll.pixel_clk_mhz * 1e6)
+        dvi_h_active = fragment.video.dvi_tgen.timings.h_active
+        dvi_v_active = fragment.video.dvi_tgen.timings.v_active
+        video_cflags = [
+           "-CFLAGS", f"-DDVI_H_ACTIVE={dvi_h_active}",
+           "-CFLAGS", f"-DDVI_V_ACTIVE={dvi_v_active}",
+           "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
+        ]
+    else:
+        video_cflags = []
 
     clock_sync_hz = 60000000
     audio_clk_hz = 48000000
@@ -151,16 +159,14 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
                            "-j", "0",
                            "-Ibuild",
                            "-CFLAGS", f"-DSYNC_CLK_HZ={clock_sync_hz}",
-                           "-CFLAGS", f"-DDVI_H_ACTIVE={dvi_h_active}",
-                           "-CFLAGS", f"-DDVI_V_ACTIVE={dvi_v_active}",
-                           "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
                            "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
+                          ] + video_cflags + [
                            harness,
                            f"{dst}",
-                           ] + [
+                          ] + [
                                f for f in sim_platform.files
                                if f.endswith(".svh") or f.endswith(".sv") or f.endswith(".v")
-                           ],
+                          ],
                           env=os.environ)
 
     print(f"run verilated binary '{verilator_dst}/Vtiliqua_soc'...")

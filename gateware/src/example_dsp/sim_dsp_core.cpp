@@ -9,7 +9,7 @@
 #include <verilated_fst_c.h>
 #endif
 
-#include "Vcore.h"
+#include "Vtiliqua_soc.h"
 #include "verilated.h"
 
 #include <cmath>
@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
 
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
-    Vcore* top = new Vcore{contextp};
+    Vtiliqua_soc* top = new Vtiliqua_soc{contextp};
 
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
     Verilated::traceEverOn(true);
@@ -29,8 +29,8 @@ int main(int argc, char** argv) {
     uint64_t sim_time =  100000000000;
 
     contextp->timeInc(1);
-    top->rst = 1;
-    top->audio_rst = 1;
+    top->rst_sync = 1;
+    top->rst_audio = 1;
     top->eval();
 
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
@@ -38,8 +38,8 @@ int main(int argc, char** argv) {
 #endif
 
     contextp->timeInc(1);
-    top->rst = 0;
-    top->audio_rst = 0;
+    top->rst_sync = 0;
+    top->rst_audio = 0;
     top->eval();
 
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
@@ -52,11 +52,11 @@ int main(int argc, char** argv) {
 
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
         // clk_sync  ~= 60MHz
-        top->clk = !top->clk;
+        top->clk_sync = !top->clk_sync;
         // clk_audio ~= 12MHz
         if (clkdiv % 5 == 0) {
-            top->audio_clk = !top->audio_clk;
-            if (top->audio_clk) {
+            top->clk_audio = !top->clk_audio;
+            if (top->clk_audio) {
                 if (n_clk_audio % 256 == 0) {
                     top->fs_strobe = 1;
                     /*
@@ -64,8 +64,8 @@ int main(int argc, char** argv) {
                     top->pmod0_sample_i1 = (int16_t)20000.0*cos((float)pmod_clocks /   50.0);
                     */
                     //top->__024signal = 1000;
-                    top->__024signal = (int16_t)10000.0*sin((float)n_samples / 50.0);
-                    top->__024signal__0246 = (int16_t)10000.0*cos((float)n_samples / 10.0);
+                    top->fs_inject0 = (int16_t)10000.0*sin((float)n_samples / 50.0);
+                    top->fs_inject1 = (int16_t)10000.0*cos((float)n_samples / 10.0);
                     ++n_samples;
                 } else {
                     if (top->fs_strobe) {

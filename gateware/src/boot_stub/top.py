@@ -27,5 +27,4 @@ class BootStubTop(Elaboratable):
         return m
 
 if __name__ == "__main__":
-    this_path = os.path.dirname(os.path.realpath(__file__))
-    top_level_cli(BootStubTop, path=this_path)
+    top_level_cli(BootStubTop, video_core=False)

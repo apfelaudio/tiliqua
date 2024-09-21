@@ -4,18 +4,15 @@
 
 """
 CRT / Vectorscope simulator.
-Simple gateware-only version, see 'xbeam' for SoC version with a menu system.
 Rasterizes X/Y (audio channel 0, 1) and color (audio channel 3) to a simulated
 CRT display, with intensity gradient and afterglow effects.
 
-Default 1280x720p60 seems to work with all the monitors I have, but other screens might
-need timing + PLL adjustments.
+Simple gateware-only version, this is mostly useful for debugging the
+memory and video subsystems with an ILA or simulation, as it's smaller.
 
-There are top-level scripts for building/simulating e.g.
+See 'xbeam' for SoC version of the scope with a menu system.
 
-$ pdm build_vectorscope
-$ pdm sim_vectorscope
-# for visualizing the palette
+# for visualizing the color palette
 $ pdm colors_vectorscope
 """
 
@@ -52,7 +49,6 @@ class VectorScopeTop(Elaboratable):
 
     """
     Top-level Vectorscope design.
-    Can be instantiated with 'sim=True', which swaps out most things that touch hardware for mocks.
     """
 
     def __init__(self, *, dvi_timings, **kwargs):
@@ -222,7 +218,7 @@ def simulation_ports(fragment):
 
 if __name__ == "__main__":
     this_path = os.path.dirname(os.path.realpath(__file__))
-    top_level_cli(VectorScopeTop, path=this_path,
+    top_level_cli(VectorScopeTop,
                   ila_supported=True,
-                  simulation_ports=simulation_ports,
-                  simulation_harness="../../src/example_vectorscope/sim/sim.cpp")
+                  sim_ports=simulation_ports,
+                  sim_harness="../../src/example_vectorscope/sim/sim.cpp")
