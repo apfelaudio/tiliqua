@@ -27,7 +27,6 @@ class InterruptController(wiring.Component):
         m = Module()
 
         for number, (name, peripheral) in self.interrupts.items():
-            print(f"Connecting {number}:{name} => {peripheral}")
             m.d.comb += self.pending[number].eq(peripheral.irq)
 
         return m

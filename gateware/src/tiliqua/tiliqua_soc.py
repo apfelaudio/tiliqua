@@ -5,10 +5,7 @@
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 
-import argparse
-import logging
 import os
-import sys
 
 from amaranth                                    import *
 from amaranth.build                              import Attrs, Pins, PinsN, Platform, Resource, Subsignal
@@ -24,12 +21,13 @@ from vendor.soc.cpu                              import InterruptController, Vex
 from vendor.soc                                  import readbin
 from vendor.soc.generate                         import GenerateSVD
 
-from tiliqua.tiliqua_platform                    import TiliquaPlatform
+from tiliqua.tiliqua_platform                    import *
 
 from tiliqua                                     import psram_peripheral, i2c, encoder, dtr, video, eurorack_pmod_peripheral
 from tiliqua                                     import sim, eurorack_pmod
 
-from example_vectorscope.top                     import Persistance
+from tiliqua.raster                              import Persistance
+
 
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
@@ -111,7 +109,8 @@ class VideoPeripheral(wiring.Component):
 
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
-                 audio_out_peripheral=True, touch=False, finalize_csr_bridge=True):
+                 audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
+                 video_rotate_90=False):
 
         super().__init__({})
 
@@ -119,8 +118,7 @@ class TiliquaSoc(Component):
         self.touch = touch
         self.audio_192 = audio_192
         self.dvi_timings = dvi_timings
-        # FIXME move somewhere more obvious
-        self.video_rotate_90 = True if os.getenv("TILIQUA_VIDEO_ROTATE") == "1" else False
+        self.video_rotate_90 = video_rotate_90
 
         self.clock_sync_hz = TILIQUA_CLOCK_SYNC_HZ
 
@@ -358,9 +356,35 @@ class TiliquaSoc(Component):
 
         return m
 
-    def genrust_constants(self, dst):
-        # TODO: move these to SVD vendor section
-        print("writing", dst)
+    def gensvd(self, dst_svd):
+        """Generate top-level SVD."""
+        print("Generating SVD ...", dst_svd)
+        with open(dst_svd, "w") as f:
+            GenerateSVD(self).generate(file=f)
+        print("Wrote SVD ...", dst_svd)
+
+    def genmem(self, dst_mem):
+        """Generate linker regions for Rust (memory.x)."""
+        memory_x = (
+            "MEMORY {{\n"
+            "    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}\n"
+            "}}\n"
+            "REGION_ALIAS(\"REGION_TEXT\", mainram);\n"
+            "REGION_ALIAS(\"REGION_RODATA\", mainram);\n"
+            "REGION_ALIAS(\"REGION_DATA\", mainram);\n"
+            "REGION_ALIAS(\"REGION_BSS\", mainram);\n"
+            "REGION_ALIAS(\"REGION_HEAP\", mainram);\n"
+            "REGION_ALIAS(\"REGION_STACK\", mainram);\n"
+        )
+        print("Generating (rust) memory.x ...", dst_mem)
+        with open(dst_mem, "w") as f:
+            f.write(memory_x.format(mainram_base=hex(self.mainram_base),
+                                    mainram_size=hex(self.mainram.size)))
+
+    def genconst(self, dst):
+        """Generate some high-level constants used by application code."""
+        # TODO: better to move these to SVD vendor section?
+        print("Generating (rust) constants ...", dst)
         with open(dst, "w") as f:
             f.write(f"pub const CLOCK_SYNC_HZ: u32    = {self.clock_sync_hz};\n")
             f.write(f"pub const PSRAM_BASE: usize     = 0x{self.psram_base:x};\n")
@@ -372,60 +396,3 @@ class TiliquaSoc(Component):
             f.write(f"pub const PSRAM_FB_BASE: usize  = 0x{self.video.fb_base:x};\n")
             f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
             f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
-
-memory_x = """MEMORY {{
-    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}
-}}
-REGION_ALIAS("REGION_TEXT", mainram);
-REGION_ALIAS("REGION_RODATA", mainram);
-REGION_ALIAS("REGION_DATA", mainram);
-REGION_ALIAS("REGION_BSS", mainram);
-REGION_ALIAS("REGION_HEAP", mainram);
-REGION_ALIAS("REGION_STACK", mainram);
-"""
-
-def top_level_cli(fragment, *pos_args, **kwargs):
-
-    # Configure logging.
-    logging.getLogger().setLevel(logging.DEBUG)
-
-    # Parse arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--genrust', action='store_true',
-        help="If provided, artifacts needed to build Rust firmware are generated. Bitstream is not built")
-
-    parser.add_argument('--sim', action='store_true')
-    parser.add_argument('--trace-fst', action='store_true')
-    args = parser.parse_args()
-
-    # If this isn't a fragment directly, interpret it as an object that will build one.
-    name = fragment.__name__ if callable(fragment) else fragment.__class__.__name__
-    if callable(fragment):
-        fragment = fragment(*pos_args, **kwargs)
-
-    if args.genrust:
-        # FIXME: put these in SVD?
-        fragment.genrust_constants("src/rs/lib/src/generated_constants.rs")
-
-        # Generate top-level SVD
-        dst_svd = "build/soc.svd"
-        print("generating", dst_svd)
-        with open(dst_svd, "w") as f:
-            GenerateSVD(fragment).generate(file=f)
-
-        # Generate linker regions
-        dst_mem = "build/memory.x"
-        print("generating", dst_mem)
-        with open(dst_mem, "w") as f:
-            f.write(memory_x.format(mainram_base=hex(fragment.mainram_base),
-                                    mainram_size=hex(fragment.mainram.size)))
-
-        sys.exit(0)
-
-    if args.sim:
-        sim.simulate_soc(fragment, args.trace_fst)
-        sys.exit(0)
-
-    TiliquaPlatform().build(fragment)
-
-    return fragment

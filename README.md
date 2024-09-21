@@ -8,7 +8,7 @@ For updates, subscribe to the [Crowd Supply page](https://www.crowdsupply.com/ap
 
 <img src="doc/img/tiliqua-front-left.jpg" width="500">
 
-## Technical
+## Hardware
 
 #### Audio Interface
 - 8 (4 in + 4 out) DC-coupled audio channels, 192 KHz / 24-bit sampling supported
@@ -38,9 +38,22 @@ Tiliqua will launch on [Crowd Supply](https://www.crowdsupply.com/apfelaudio/til
 
 <img src="doc/img/tiliqua-rear-left.jpg" width="700">
 
-# Getting Started
+# Getting Started (hardware beta R2)
 
-## Building example projects
+## Connecting
+
+Tiliqua uses an ordinary 10-pin power cable for +/- 12V ingress. You will notice however, that there are 2 such connectors on the module. *Only ONE of these should be connected*:
+
+- Use the 10-pin power ingress on the Tiliqua Motherboard, not the Audio Interface Board. Technically both will work, but only the former is fused (on beta R2 units).
+- Both connectors on the audio interface board (`eurorack-pmod`) should remain unconnected.
+
+For flashing bitstreams, usually you want to be connected to the `dbg` USB port. This is directly connected to the on-board RP2040 which is flashed with `dirtyJtag`, such that you can flash bitstreams using `openFPGALoader`.
+
+Particularly for bitstreams with touch sensing, ensure all jacks are disconnected when the tiliqua is powered on. This is because the capacitive sensing is calibrated when the system boots. In the future I'll change this to happen every time something is dis/re-connected.
+
+# Getting Started (gateware/firmware)
+
+## Prerequisites
 
 On an Ubuntu system, the following are the main dependencies:
 - The build system: install [pdm](https://github.com/pdm-project/pdm)
@@ -54,28 +67,40 @@ On an Ubuntu system, the following are the main dependencies:
 To set up the environment:
 ```bash
 cd gateware
-# fetch eurorack-pmod verilog sources
 git submodule update --init --recursive
-# install all python requirements to a local .venv
 pdm install
 ```
 
-To build some examples:
+## Building example projects
+
+Each top-level bitstream has a command-line interface. You can see the options by running (for example):
+
 ```bash
-# for the LUNA-based 4in + 4out USB soundcard example
-pdm build_usb_audio
-# for a 4-channel waveshaping oscillator
-pdm build_dsp_core nco
-# for a diffusion delay effect
-pdm build_dsp_core diffuser
+# from `gateware` directory
+pdm dsp
+```
+
+The available options change depending on the top-level project. For example, many projects have video output, and from the CLI you can select the video resolution.
+
+A few examples of building top-level bitstreams:
+```bash
+# from `gateware` directory
+
+# for the selftest bitstream (prints diagnostics out DVI and serial)
+pdm selftest --build
+# for a vectorscope / oscilloscope
+pdm xbeam --build
 # for a polyphonic MIDI synth
-pdm build_dsp_core midipoly
-# for the vectorscope / DVI example
-pdm build_vectorscope
-# for an SoC example (selftest with RISCV softcore)
-pdm build_selftest
-# (WIP) vectorscope + SoC + menu system
-pdm build_xbeam
+pdm polysyn --build
+# for the LUNA-based 4in + 4out USB soundcard example
+# note: LUNA USB port presents itself on the second USB port (not dbg)!
+pdm usb_audio --build
+# for a 4-channel waveshaping oscillator
+pdm dsp --build --dsp-core nco
+# for a diffusion delay effect
+pdm dsp --build --dsp-core diffuser
+# simplified vectorscope (no SoC / menu system)
+pdm vectorscope_no_soc --build
 ```
 
 Generally, bitstreams are also built in CI - check `.github/workflows` if you need more gruesome details on how systems are built.
@@ -96,18 +121,65 @@ sudo picocom -b 115200 /dev/ttyACM0
 
 ## Simulating DSP cores
 
-The easiest way to debug the internals of a DSP project is to simulate it. This project provides some shortcuts to enable simulating designs end-to-end with Verilator, which is much faster at crunching numerically heavy designs than Amaranth's built-in simulator.
+The easiest way to debug the internals of a DSP project is to simulate it. This project provides some shortcuts to enable simulating designs end-to-end with Verilator (at some point these will be migrated to Amaranths CXXRTL simulation backend, once it lands).
 
 For example, to simulate the waveshaping oscillator example:
 
 ```bash
-pdm sim_dsp_core nco
+# from `gateware` directory
+pdm dsp --sim --dsp-core nco
 ```
 
-A lot happens under the hood! In short this command:
+In short this command:
 - Elaborates your Amaranth HDL and convert it to Verilog
-- Verilates your verilog into a C++ implementation, compiling it against `sim_dsp_core.cpp` provided in `gateware/example_dsp` that excites the audio inputs (you can modify this).
+- Verilates your verilog into a C++ implementation, compiling it against `sim_dsp_core.cpp` provided in `gateware/top/dsp` that excites the audio inputs (you can modify this).
 - Runs the verilated binary itself and spits out a trace you can view with `gtkwave` to see exactly what every net in the whole design is doing.
+
+## Simulating SoC cores
+
+A subset of SoC-based top-level projects also support end-to-end simulation (i.e including firmware co-simulation). For example, for the selftest SoC:
+
+```bash
+# from `gateware` directory
+pdm selftest --sim
+
+# ...
+
+run verilated binary 'build/obj_dir/Vtiliqua_soc'...
+sync domain is: 60000 KHz (16 ns/cycle)
+pixel clock is: 74250 KHz (13 ns/cycle)
+[INFO] Hello from Tiliqua selftest!
+[INFO] PSRAM memtest (this will be slow if video is also active)...
+[INFO] write speed 1687 KByte/seout frame00.bmp
+c
+[INFO] read speed 1885 KByte/sec
+[INFO] PASS: PSRAM memtest
+```
+
+UART traffic from the firmware is printed to the terminal, and each video frame is emitted as a bitmap. This kind of simulation is useful for debugging the integration of top-level SoC components.
+
+## Simulating vectorscope core
+
+There is a top-level `vectorscope_no_soc` provided which is also useful for debugging integration issues between the video and memory controller cores. This can be simulated end-to-end as follows (`--trace-fst` is also useful for saving waveform traces):
+
+```bash
+# from `gateware` directory
+pdm vectorscope_no_soc --sim --trace-fst
+```
+
+## Using the ILA
+
+Some cores support using a built-in ILA (integrated logic analyzer), to collect waveform traces on the hardware into on-FPGA block RAM, which is sampled at the system clock and dumped out the serial port.
+
+For example:
+```bash
+# from `gateware` directory
+pdm vectorscope_no_soc --build --ila --ila-port /dev/ttyACM0
+```
+
+This will build the bitstream containing the ILA, flash the bitstream, then open the provided serial port waiting for an ILA dump from the Tiliqua to arrive. Once recieved, the dump will be saved to a waveform trace file.
+
+Note: you may have to play with permissions for flashing to work correctly - make sure `openFPGALoader` can run locally under your user without `sudo`.
 
 ## Builds on the following (awesome) open-hardware projects
 - Audio interface and gateware from my existing [eurorack-pmod](https://github.com/apfelaudio/eurorack-pmod) project.

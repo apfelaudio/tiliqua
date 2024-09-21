@@ -333,8 +333,6 @@ class WaveShaper(wiring.Component):
             fx = lut_function(x)
             self.lut.append(fixed.Const(fx, shape=ASQ)._value)
 
-        print(self.lut)
-
         super().__init__()
 
     def elaborate(self, platform):

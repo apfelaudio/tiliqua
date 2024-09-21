@@ -10,7 +10,6 @@ dependencies = [
     "amaranth-soc @ git+https://github.com/amaranth-lang/amaranth-soc@main",
     "amaranth-stdio @ git+https://github.com/amaranth-lang/amaranth-stdio@main",
     "luna-usb @ git+https://github.com/schnommus/luna@seb/iso-amaranth5",
-    #"luna-soc @ git+https://github.com/greatscottgadgets/luna-soc@main",
     "scipy>=1.9.3",
     "matplotlib>=3.9.0",
 ]
@@ -21,20 +20,15 @@ test = [
 ]
 
 [tool.pdm.scripts]
-test = { cmd = "pytest" }
-# bitstreams that include an SoC
-build_selftest = { shell = "./scripts/build_soc.sh selftest" }
-sim_selftest   = { shell = "./scripts/sim_soc.sh selftest" }
-build_boot     = { shell = "./scripts/build_soc.sh boot" }
-build_xbeam    = { shell = "./scripts/build_soc.sh xbeam" }
-build_poly     = { shell = "./scripts/build_soc.sh poly" }
-# bitstreams that don't include an SoC
-build_usb_audio = { call = "example_usb_audio.top:build(ila=False)" }
-build_usb_audio_ila = { call = "example_usb_audio.top:build(ila=True)" }
-build_dsp_core = { call = "example_dsp.top:build()" }
-sim_dsp_core = { call = "example_dsp.top:simulate()" }
-build_vectorscope = { call = "example_vectorscope.top:build()" }
-sim_vectorscope = { call = "example_vectorscope.top:sim()" }
+# Top-level bitstreams
+bootloader         = "src/top/bootloader/top.py"
+dsp                = "src/top/dsp/top.py"
+selftest           = "src/top/selftest/top.py"
+vectorscope_no_soc = "src/top/vectorscope_no_soc/top.py"
+bootstub           = "src/top/bootstub/top.py"
+polysyn            = "src/top/polysyn/top.py"
+usb_audio          = "src/top/usb_audio/top.py"
+xbeam              = "src/top/xbeam/top.py"
+# Additional utilities
+test               = { cmd = "pytest" }
 colors_vectorscope = { call = "example_vectorscope.top:colors()" }
-# bootloader stub bitstream compressed and flashed onto RP2040
-build_boot_stub = { call = "boot_stub.top:build()" }

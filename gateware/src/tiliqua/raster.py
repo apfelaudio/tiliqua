@@ -91,21 +91,21 @@ class Persistance(Elaboratable):
                     bus.we.eq(0),
                     bus.sel.eq(2**(bus.data_width//8)-1),
                     bus.adr.eq(self.fb_base + dma_addr_in),
+                    self.fifo.w_en.eq(bus.ack),
+                    self.fifo.w_data.eq(bus.dat_r),
+                    bus.cti.eq(
+                        wishbone.CycleType.INCR_BURST),
                 ]
-                with m.If(~self.fifo.w_rdy):
+                with m.If(self.fifo.w_level >= (self.fifo_depth-1)):
                     m.d.comb += bus.cti.eq(
                             wishbone.CycleType.END_OF_BURST)
-                    m.next = 'WAIT1'
-                with m.Else():
-                    m.d.comb += bus.cti.eq(
-                            wishbone.CycleType.INCR_BURST)
                 with m.If(bus.stb & bus.ack & self.fifo.w_rdy): # WARN: drops last word
-                    m.d.comb += self.fifo.w_en.eq(1)
-                    m.d.comb += self.fifo.w_data.eq(bus.dat_r),
                     with m.If(dma_addr_in < (fb_len_words-1)):
                         m.d.sync += dma_addr_in.eq(dma_addr_in + 1)
                     with m.Else():
                         m.d.sync += dma_addr_in.eq(0)
+                with m.Elif(~self.fifo.w_rdy):
+                    m.next = 'WAIT1'
 
             with m.State('WAIT1'):
                 m.d.sync += holdoff_count.eq(holdoff_count + 1)
@@ -145,15 +145,9 @@ class Persistance(Elaboratable):
                     bus.dat_w.eq(pixb),
                     bus.adr.eq(self.fb_base + dma_addr_out),
                     wr_source.eq(pnext),
+                    bus.cti.eq(
+                        wishbone.CycleType.INCR_BURST)
                 ]
-
-                with m.If(~self.fifo.r_rdy):
-                    m.d.comb += bus.cti.eq(
-                            wishbone.CycleType.END_OF_BURST)
-                    m.next = 'WAIT2'
-                with m.Else():
-                    m.d.comb += bus.cti.eq(
-                            wishbone.CycleType.INCR_BURST)
                 with m.If(bus.stb & bus.ack):
                     m.d.comb += self.fifo.r_en.eq(1)
                     m.d.comb += wr_source.eq(self.fifo.r_data),
@@ -163,6 +157,10 @@ class Persistance(Elaboratable):
                     with m.Else():
                         m.d.sync += dma_addr_out.eq(0)
                         m.d.comb += bus.adr.eq(self.fb_base + 0),
+                with m.If(~self.fifo.r_rdy):
+                    m.d.comb += bus.cti.eq(
+                            wishbone.CycleType.END_OF_BURST)
+                    m.next = 'WAIT2'
 
             with m.State('WAIT2'):
                 m.d.sync += holdoff_count.eq(holdoff_count + 1)
@@ -198,9 +196,7 @@ class Stroke(wiring.Component):
     def __init__(self, *, fb_base, bus_master, fb_size, fb_bytes_per_pixel=1, fs=192000, n_upsample=4,
                  default_hue=10, default_x=0, default_y=0, video_rotate_90=False):
 
-
-        # FIXME: move this further up chain, collapse env variables
-        self.rotate_90 = True if os.getenv("TILIQUA_VIDEO_ROTATE") == "1" else False
+        self.rotate_90 = video_rotate_90
 
         self.fb_base = fb_base
         self.fb_hsize, self.fb_vsize = fb_size
