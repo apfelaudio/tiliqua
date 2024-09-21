@@ -20,5 +20,15 @@ test = [
 ]
 
 [tool.pdm.scripts]
-test = { cmd = "pytest" }
+# Top-level bitstreams
+bootloader         = "src/top/bootloader/top.py"
+dsp                = "src/top/dsp/top.py"
+selftest           = "src/top/selftest/top.py"
+vectorscope_no_soc = "src/top/vectorscope_no_soc/top.py"
+bootstub           = "src/top/bootstub/top.py"
+polysyn            = "src/top/polysyn/top.py"
+usb_audio          = "src/top/usb_audio/top.py"
+xbeam              = "src/top/xbeam/top.py"
+# Additional utilities
+test               = { cmd = "pytest" }
 colors_vectorscope = { call = "example_vectorscope.top:colors()" }

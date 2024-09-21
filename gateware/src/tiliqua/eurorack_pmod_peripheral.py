@@ -18,8 +18,6 @@ from amaranth_soc               import csr
 
 from amaranth_future            import fixed
 
-from example_usb_audio.util     import EdgeToPulse
-
 class Peripheral(wiring.Component):
 
     class ISampleReg(csr.Register, access="r"):

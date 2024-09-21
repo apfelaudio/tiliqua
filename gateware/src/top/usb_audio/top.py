@@ -35,10 +35,10 @@ from tiliqua.cli                              import top_level_cli
 from tiliqua.eurorack_pmod                    import EurorackPmod
 from vendor.ila                               import AsyncSerialILA
 
-from example_usb_audio.util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
-from example_usb_audio.usb_stream_to_channels import USBStreamToChannels
-from example_usb_audio.channels_to_usb_stream import ChannelsToUSBStream
-from example_usb_audio.audio_to_channels      import AudioToChannels
+from util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
+from usb_stream_to_channels import USBStreamToChannels
+from channels_to_usb_stream import ChannelsToUSBStream
+from audio_to_channels      import AudioToChannels
 
 
 class USB2AudioInterface(Elaboratable):

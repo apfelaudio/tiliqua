@@ -221,4 +221,4 @@ if __name__ == "__main__":
     top_level_cli(VectorScopeTop,
                   ila_supported=True,
                   sim_ports=simulation_ports,
-                  sim_harness="../../src/example_vectorscope/sim/sim.cpp")
+                  sim_harness="../../src/top/vectorscope_no_soc/sim/sim.cpp")

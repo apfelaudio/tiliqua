@@ -7,20 +7,18 @@ import os
 import sys
 import math
 
-from amaranth                                    import *
-from amaranth.lib                                import wiring, data, stream
-from amaranth.lib.wiring                         import In, Out, connect, flipped
+from amaranth                  import *
+from amaranth.lib              import wiring, data, stream
+from amaranth.lib.wiring       import In, Out, connect, flipped
 
-from amaranth_soc                                import csr
+from amaranth_soc              import csr
 
-from amaranth_future                             import fixed
+from amaranth_future           import fixed
 
-from tiliqua                                     import eurorack_pmod, dsp, midi
-from tiliqua.eurorack_pmod                       import ASQ
-from tiliqua.tiliqua_soc                         import TiliquaSoc
-from tiliqua.cli                                 import top_level_cli
-
-from xbeam.top                                   import VectorTracePeripheral
+from tiliqua                   import eurorack_pmod, dsp, midi, scope
+from tiliqua.eurorack_pmod     import ASQ
+from tiliqua.tiliqua_soc       import TiliquaSoc
+from tiliqua.cli               import top_level_cli
 
 # TODO: reconcile this with Diffuser in tiliqua.dsp
 # it's almost the same, just some coefficients tweaked so it doesn't
@@ -402,7 +400,7 @@ class PolySoc(TiliquaSoc):
         self.vector_periph_base = 0x00001000
         self.synth_periph_base  = 0x00001100
 
-        self.vector_periph = VectorTracePeripheral(
+        self.vector_periph = scope.VectorTracePeripheral(
             fb_base=self.video.fb_base,
             fb_size=fb_size,
             bus_dma=self.psram_periph,

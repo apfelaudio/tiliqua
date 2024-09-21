@@ -614,7 +614,7 @@ if __name__ == "__main__":
         CoreTop,
         video_core=False,
         sim_ports=simulation_ports,
-        sim_harness="../../src/example_dsp/sim_dsp_core.cpp",
+        sim_harness="../../src/top/dsp/sim_dsp_core.cpp",
         argparse_callback=argparse_callback,
         argparse_fragment=argparse_fragment,
     )
