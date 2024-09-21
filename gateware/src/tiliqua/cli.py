@@ -80,6 +80,9 @@ def top_level_cli(
     # Parse arguments
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--build', action='store_true',
+                        help="Build a bitstream from the design.")
+
     if video_core:
         parser.add_argument('--resolution', type=str, default="1280x720p60",
                             help="DVI resolution - (default: 1280x720p60)")
@@ -117,7 +120,8 @@ def top_level_cli(
     if argparse_callback:
         argparse_callback(parser)
 
-    args = parser.parse_args()
+    # Print help if no arguments are passed.
+    args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
 
     if args.verbose:
         os.environ["AMARANTH_verbose"] = "1"
@@ -192,17 +196,20 @@ def top_level_cli(
     else:
         hw_platform.ila = False
 
-    print("Building bitstream for", hw_platform.name)
-    hw_platform.build(fragment)
+    if args.build:
+        print("Building bitstream for", hw_platform.name)
+        hw_platform.build(fragment)
 
-    if hw_platform.ila:
-        subprocess.check_call(["openFPGALoader",
-                               "-c", "dirtyJtag",
-                               "build/top.bit"],
-                              env=os.environ)
-        vcd_dst = "out.vcd"
-        print(f"{AsyncSerialILAFrontend.__name__} listen on {args.ila_port} - destination {vcd_dst} ...")
-        frontend = AsyncSerialILAFrontend(args.ila_port, baudrate=115200, ila=fragment.ila)
-        frontend.emit_vcd(vcd_dst)
+        if hw_platform.ila:
+            subprocess.check_call(["openFPGALoader",
+                                   "-c", "dirtyJtag",
+                                   "build/top.bit"],
+                                  env=os.environ)
+            vcd_dst = "out.vcd"
+            print(f"{AsyncSerialILAFrontend.__name__} listen on {args.ila_port} - destination {vcd_dst} ...")
+            frontend = AsyncSerialILAFrontend(args.ila_port, baudrate=115200, ila=fragment.ila)
+            frontend.emit_vcd(vcd_dst)
+    else:
+        print("Warn: no action specified ('--build', '--sim' or similar)")
 
     return fragment

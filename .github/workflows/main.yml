@@ -13,7 +13,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm usb_audio
+          pdm usb_audio --build
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -30,7 +30,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm dsp --dsp-core nco
+          pdm dsp --build --dsp-core nco
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -60,7 +60,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm dsp --dsp-core midicv
+          pdm dsp --build --dsp-core midicv
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -84,7 +84,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm xbeam
+          pdm xbeam --build
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -108,7 +108,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm selftest
+          pdm selftest --build
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -133,7 +133,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm polysyn
+          pdm polysyn --build
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -150,7 +150,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm vectorscope_no_soc
+          pdm vectorscope_no_soc --build
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -174,7 +174,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm bootloader
+          pdm bootloader --build
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
@@ -192,7 +192,7 @@ jobs:
       - run: yosys --version
       - run: |
           pdm install
-          pdm bootstub --bootaddr 0x100000
+          pdm bootstub --build --bootaddr 0x100000
         working-directory: gateware
       - uses: actions/upload-artifact@v4
         with:
