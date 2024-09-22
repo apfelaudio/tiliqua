@@ -1,67 +1,13 @@
 import argparse
 import logging
 import os
-import shutil
 import subprocess
 import sys
-
-from dataclasses                 import dataclass
 
 from tiliqua                     import sim, video
 from tiliqua.tiliqua_platform    import *
 from tiliqua.tiliqua_soc         import TiliquaSoc
 from vendor.ila                  import AsyncSerialILAFrontend
-
-def soc_regenerate_pac_from_svd(svd_path):
-    """
-    Generate Rust PAC from an SVD.
-    Currently all SoC reuse the same `pac_dir`, however this
-    should become local to each SoC at some point.
-    """
-    pac_dir = "src/rs/pac"
-    pac_build_dir = os.path.join(pac_dir, "build")
-    pac_gen_dir   = os.path.join(pac_dir, "src/generated")
-    src_genrs     = os.path.join(pac_dir, "src/generated.rs")
-    shutil.rmtree(pac_build_dir, ignore_errors=True)
-    shutil.rmtree(pac_gen_dir, ignore_errors=True)
-    os.makedirs(pac_build_dir)
-    if os.path.isfile(src_genrs):
-        os.remove(src_genrs)
-
-    subprocess.check_call([
-        "svd2rust",
-        "-i", svd_path,
-        "-o", pac_build_dir,
-        "--target", "riscv",
-        "--make_mod",
-        "--ident-formats-theme", "legacy"
-        ], env=os.environ)
-
-    shutil.move(os.path.join(pac_build_dir, "mod.rs"), src_genrs)
-    shutil.move(os.path.join(pac_build_dir, "device.x"),
-                os.path.join(pac_dir,       "device.x"))
-
-    subprocess.check_call([
-        "form",
-        "-i", src_genrs,
-        "-o", pac_gen_dir,
-        ], env=os.environ)
-
-    shutil.move(os.path.join(pac_gen_dir, "lib.rs"), src_genrs)
-
-    subprocess.check_call([
-        "cargo", "fmt", "--", "--emit", "files"
-        ], env=os.environ, cwd=pac_dir)
-
-    print("Rust PAC updated at ...", pac_dir)
-
-def soc_compile_firmware(path):
-    subprocess.check_call([
-        "cargo", "build", "--release"
-        ], env=os.environ, cwd=os.path.join(path, "fw"))
-    subprocess.check_call([
-        "cargo", "objcopy", "--release", "--", "-Obinary", "firmware.bin"
-        ], env=os.environ, cwd=os.path.join(path, "fw"))
 
 def top_level_cli(
     fragment,
@@ -132,7 +78,6 @@ def top_level_cli(
     os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
     os.environ["AMARANTH_ecppack_opts"] = f"--freq 38.8 --compress --bootaddr {args.bootaddr}"
 
-
     kwargs = {}
 
     if video_core:
@@ -143,7 +88,10 @@ def top_level_cli(
             kwargs["video_rotate_90"] = True
 
     if issubclass(fragment, TiliquaSoc):
-        kwargs["firmware_path"] = os.path.join(path, "fw/firmware.bin")
+        # Used during elaboration of the SoC to load the firmware binary into block RAM
+        rust_fw_bin  = "firmware.bin"
+        rust_fw_root = os.path.join(path, "fw")
+        kwargs["firmware_bin_path"] = os.path.join(rust_fw_root, rust_fw_bin)
 
     if argparse_fragment:
         kwargs = kwargs | argparse_fragment(args)
@@ -162,21 +110,21 @@ def top_level_cli(
     if isinstance(fragment, TiliquaSoc):
 
         # Generate SVD
-        svd_path = os.path.join(path, "fw/soc.svd")
+        svd_path = os.path.join(rust_fw_root, "soc.svd")
         fragment.gensvd(svd_path)
         if args.svd_only:
             sys.exit(0)
 
         # (re)-generate PAC (from SVD)
-        soc_regenerate_pac_from_svd(svd_path)
+        TiliquaSoc.regenerate_pac_from_svd(svd_path)
         if args.pac_only:
             sys.exit(0)
 
         # Generate memory.x and some extra constants
         # Finally, build our stripped firmware image.
-        fragment.genmem(os.path.join(path, "fw/memory.x"))
+        fragment.genmem(os.path.join(rust_fw_root, "memory.x"))
         fragment.genconst("src/rs/lib/src/generated_constants.rs")
-        soc_compile_firmware(path)
+        TiliquaSoc.compile_firmware(rust_fw_root, rust_fw_bin)
         if args.fw_only:
             sys.exit(0)
 
