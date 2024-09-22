@@ -1,4 +1,13 @@
+# Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
+#
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+
+"""
+Top-level CLI for Tiliqua projects, whether they include an SoC or not.
+The set of available commands depends on the specific project.
+"""
 import argparse
+import enum
 import logging
 import os
 import subprocess
@@ -8,6 +17,10 @@ from tiliqua                     import sim, video
 from tiliqua.tiliqua_platform    import *
 from tiliqua.tiliqua_soc         import TiliquaSoc
 from vendor.ila                  import AsyncSerialILAFrontend
+
+class CliAction(str, enum.Enum):
+    Build    = "build"
+    Simulate = "sim"
 
 def top_level_cli(
     fragment,
@@ -26,9 +39,6 @@ def top_level_cli(
     # Parse arguments
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--build', action='store_true',
-                        help="Build a bitstream from the design.")
-
     if video_core:
         parser.add_argument('--resolution', type=str, default="1280x720p60",
                             help="DVI resolution - (default: 1280x720p60)")
@@ -36,10 +46,11 @@ def top_level_cli(
                             help="Rotate DVI out by 90 degrees")
 
     if sim_ports or issubclass(fragment, TiliquaSoc):
-        parser.add_argument('--sim', action='store_true',
-                            help="Simulate the design with Verilator")
+        simulation_supported = True
         parser.add_argument('--trace-fst', action='store_true',
                             help="Simulation: enable dumping of traces to FST file.")
+    else:
+        simulation_supported = False
 
     if issubclass(fragment, TiliquaSoc):
         parser.add_argument('--svd-only', action='store_true',
@@ -62,6 +73,11 @@ def top_level_cli(
                             help="debug: add ila to design, program bitstream after build, poll UART for data.")
         parser.add_argument('--ila-port', type=str, default="/dev/ttyACM0",
                             help="debug: serial port on host that ila is connected to")
+
+    sim_action = [CliAction.Simulate.value] if simulation_supported else []
+    parser.add_argument("action", type=CliAction,
+                        choices=[CliAction.Build.value] + sim_action)
+
 
     if argparse_callback:
         argparse_callback(parser)
@@ -134,17 +150,17 @@ def top_level_cli(
             sim_ports = sim.soc_simulation_ports
             sim_harness = os.path.join(path, "../selftest/sim.cpp")
 
-    if sim_ports and args.sim:
+    if args.action == CliAction.Simulate:
         sim.simulate(fragment, sim_ports(fragment), sim_harness,
                      hw_platform, args.trace_fst)
         sys.exit(0)
 
-    if ila_supported and args.ila:
+    if args.ila:
         hw_platform.ila = True
     else:
         hw_platform.ila = False
 
-    if args.build:
+    if args.action == CliAction.Build:
         print("Building bitstream for", hw_platform.name)
         hw_platform.build(fragment)
 
@@ -157,7 +173,5 @@ def top_level_cli(
             print(f"{AsyncSerialILAFrontend.__name__} listen on {args.ila_port} - destination {vcd_dst} ...")
             frontend = AsyncSerialILAFrontend(args.ila_port, baudrate=115200, ila=fragment.ila)
             frontend.emit_vcd(vcd_dst)
-    else:
-        print("Warn: no action specified ('--build', '--sim' or similar)")
 
     return fragment
