@@ -22,15 +22,17 @@ class CliAction(str, enum.Enum):
     Build    = "build"
     Simulate = "sim"
 
+# TODO: these arguments would likely be cleaner encapsulated in a dataclass that
+# has an instance per-project, that may also contain some bootloader metadata.
 def top_level_cli(
-    fragment,
-    video_core=True,
-    path=None,
-    ila_supported=False,
-    sim_ports=None,
-    sim_harness=None,
-    argparse_callback=None,
-    argparse_fragment=None
+    fragment,               # callable elaboratable class (to instantiate)
+    video_core=True,        # project requires the video core (framebuffer, DVI output gen)
+    path=None,              # project is located here (usually used for finding firmware)
+    ila_supported=False,    # project supports compiling with internal ILA
+    sim_ports=None,         # project has a list of simulation port names
+    sim_harness=None,       # project has a .cpp simulation harness at this path
+    argparse_callback=None, # project needs extra CLI flags before argparse.parse()
+    argparse_fragment=None  # project needs to check args.<custom_flag> after argparse.parse()
     ):
 
     # Configure logging.
