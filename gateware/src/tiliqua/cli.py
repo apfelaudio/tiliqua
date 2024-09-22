@@ -87,7 +87,8 @@ def top_level_cli(
     # Print help if no arguments are passed.
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
 
-    assert args.flash == (args.action == CliAction.Build), "--flash requires 'build'"
+    if args.action != CliAction.Build:
+        assert args.flash == False, "--flash requires 'build' action"
 
     kwargs = {}
 
