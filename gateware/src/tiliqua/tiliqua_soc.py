@@ -5,6 +5,8 @@
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 
+import shutil
+import subprocess
 import os
 
 from amaranth                                    import *
@@ -108,13 +110,13 @@ class VideoPeripheral(wiring.Component):
         return m
 
 class TiliquaSoc(Component):
-    def __init__(self, *, firmware_path, dvi_timings, audio_192=False,
+    def __init__(self, *, firmware_bin_path, dvi_timings, audio_192=False,
                  audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
                  video_rotate_90=False):
 
         super().__init__({})
 
-        self.firmware_path = firmware_path
+        self.firmware_bin_path = firmware_bin_path
         self.touch = touch
         self.audio_192 = audio_192
         self.dvi_timings = dvi_timings
@@ -247,7 +249,7 @@ class TiliquaSoc(Component):
 
         m = Module()
 
-        self.mainram.init = readbin.get_mem_data(self.firmware_path, data_width=32, endianness="little")
+        self.mainram.init = readbin.get_mem_data(self.firmware_bin_path, data_width=32, endianness="little")
         assert self.mainram.init
 
         # bus
@@ -339,6 +341,7 @@ class TiliquaSoc(Component):
                 m.d.sync += button_counter.eq(0)
         else:
             m.submodules.car = sim.FakeTiliquaDomainGenerator()
+            self.pmod0_periph.pmod = sim.FakeEurorackPmod()
 
         # wishbone csr bridge
         m.submodules += self.wb_to_csr
@@ -396,3 +399,54 @@ class TiliquaSoc(Component):
             f.write(f"pub const PSRAM_FB_BASE: usize  = 0x{self.video.fb_base:x};\n")
             f.write(f"pub const PX_HUE_MAX: i32       = 16;\n")
             f.write(f"pub const PX_INTENSITY_MAX: i32 = 16;\n")
+
+    def regenerate_pac_from_svd(svd_path):
+        """
+        Generate Rust PAC from an SVD.
+        Currently all SoC reuse the same `pac_dir`, however this
+        should become local to each SoC at some point.
+        """
+        pac_dir = "src/rs/pac"
+        pac_build_dir = os.path.join(pac_dir, "build")
+        pac_gen_dir   = os.path.join(pac_dir, "src/generated")
+        src_genrs     = os.path.join(pac_dir, "src/generated.rs")
+        shutil.rmtree(pac_build_dir, ignore_errors=True)
+        shutil.rmtree(pac_gen_dir, ignore_errors=True)
+        os.makedirs(pac_build_dir)
+        if os.path.isfile(src_genrs):
+            os.remove(src_genrs)
+
+        subprocess.check_call([
+            "svd2rust",
+            "-i", svd_path,
+            "-o", pac_build_dir,
+            "--target", "riscv",
+            "--make_mod",
+            "--ident-formats-theme", "legacy"
+            ], env=os.environ)
+
+        shutil.move(os.path.join(pac_build_dir, "mod.rs"), src_genrs)
+        shutil.move(os.path.join(pac_build_dir, "device.x"),
+                    os.path.join(pac_dir,       "device.x"))
+
+        subprocess.check_call([
+            "form",
+            "-i", src_genrs,
+            "-o", pac_gen_dir,
+            ], env=os.environ)
+
+        shutil.move(os.path.join(pac_gen_dir, "lib.rs"), src_genrs)
+
+        subprocess.check_call([
+            "cargo", "fmt", "--", "--emit", "files"
+            ], env=os.environ, cwd=pac_dir)
+
+        print("Rust PAC updated at ...", pac_dir)
+
+    def compile_firmware(rust_fw_root, rust_fw_bin):
+        subprocess.check_call([
+            "cargo", "build", "--release"
+            ], env=os.environ, cwd=rust_fw_root)
+        subprocess.check_call([
+            "cargo", "objcopy", "--release", "--", "-Obinary", rust_fw_bin
+            ], env=os.environ, cwd=rust_fw_root)

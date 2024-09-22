@@ -1,77 +1,38 @@
+# Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
+#
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+
+"""
+Top-level CLI for Tiliqua projects, whether they include an SoC or not.
+The set of available commands depends on the specific project.
+"""
 import argparse
+import enum
 import logging
 import os
-import shutil
 import subprocess
 import sys
-
-from dataclasses                 import dataclass
 
 from tiliqua                     import sim, video
 from tiliqua.tiliqua_platform    import *
 from tiliqua.tiliqua_soc         import TiliquaSoc
 from vendor.ila                  import AsyncSerialILAFrontend
 
-def soc_regenerate_pac_from_svd(svd_path):
-    """
-    Generate Rust PAC from an SVD.
-    Currently all SoC reuse the same `pac_dir`, however this
-    should become local to each SoC at some point.
-    """
-    pac_dir = "src/rs/pac"
-    pac_build_dir = os.path.join(pac_dir, "build")
-    pac_gen_dir   = os.path.join(pac_dir, "src/generated")
-    src_genrs     = os.path.join(pac_dir, "src/generated.rs")
-    shutil.rmtree(pac_build_dir, ignore_errors=True)
-    shutil.rmtree(pac_gen_dir, ignore_errors=True)
-    os.makedirs(pac_build_dir)
-    if os.path.isfile(src_genrs):
-        os.remove(src_genrs)
+class CliAction(str, enum.Enum):
+    Build    = "build"
+    Simulate = "sim"
 
-    subprocess.check_call([
-        "svd2rust",
-        "-i", svd_path,
-        "-o", pac_build_dir,
-        "--target", "riscv",
-        "--make_mod",
-        "--ident-formats-theme", "legacy"
-        ], env=os.environ)
-
-    shutil.move(os.path.join(pac_build_dir, "mod.rs"), src_genrs)
-    shutil.move(os.path.join(pac_build_dir, "device.x"),
-                os.path.join(pac_dir,       "device.x"))
-
-    subprocess.check_call([
-        "form",
-        "-i", src_genrs,
-        "-o", pac_gen_dir,
-        ], env=os.environ)
-
-    shutil.move(os.path.join(pac_gen_dir, "lib.rs"), src_genrs)
-
-    subprocess.check_call([
-        "cargo", "fmt", "--", "--emit", "files"
-        ], env=os.environ, cwd=pac_dir)
-
-    print("Rust PAC updated at ...", pac_dir)
-
-def soc_compile_firmware(path):
-    subprocess.check_call([
-        "cargo", "build", "--release"
-        ], env=os.environ, cwd=os.path.join(path, "fw"))
-    subprocess.check_call([
-        "cargo", "objcopy", "--release", "--", "-Obinary", "firmware.bin"
-        ], env=os.environ, cwd=os.path.join(path, "fw"))
-
+# TODO: these arguments would likely be cleaner encapsulated in a dataclass that
+# has an instance per-project, that may also contain some bootloader metadata.
 def top_level_cli(
-    fragment,
-    video_core=True,
-    path=None,
-    ila_supported=False,
-    sim_ports=None,
-    sim_harness=None,
-    argparse_callback=None,
-    argparse_fragment=None
+    fragment,               # callable elaboratable class (to instantiate)
+    video_core=True,        # project requires the video core (framebuffer, DVI output gen)
+    path=None,              # project is located here (usually used for finding firmware)
+    ila_supported=False,    # project supports compiling with internal ILA
+    sim_ports=None,         # project has a list of simulation port names
+    sim_harness=None,       # project has a .cpp simulation harness at this path
+    argparse_callback=None, # project needs extra CLI flags before argparse.parse()
+    argparse_fragment=None  # project needs to check args.<custom_flag> after argparse.parse()
     ):
 
     # Configure logging.
@@ -80,8 +41,8 @@ def top_level_cli(
     # Parse arguments
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--build', action='store_true',
-                        help="Build a bitstream from the design.")
+    parser.add_argument('--flash', action='store_true',
+                        help="Flash bitstream after building it.")
 
     if video_core:
         parser.add_argument('--resolution', type=str, default="1280x720p60",
@@ -90,10 +51,11 @@ def top_level_cli(
                             help="Rotate DVI out by 90 degrees")
 
     if sim_ports or issubclass(fragment, TiliquaSoc):
-        parser.add_argument('--sim', action='store_true',
-                            help="Simulate the design with Verilator")
+        simulation_supported = True
         parser.add_argument('--trace-fst', action='store_true',
                             help="Simulation: enable dumping of traces to FST file.")
+    else:
+        simulation_supported = False
 
     if issubclass(fragment, TiliquaSoc):
         parser.add_argument('--svd-only', action='store_true',
@@ -117,21 +79,18 @@ def top_level_cli(
         parser.add_argument('--ila-port', type=str, default="/dev/ttyACM0",
                             help="debug: serial port on host that ila is connected to")
 
+    sim_action = [CliAction.Simulate.value] if simulation_supported else []
+    parser.add_argument("action", type=CliAction,
+                        choices=[CliAction.Build.value] + sim_action)
+
     if argparse_callback:
         argparse_callback(parser)
 
     # Print help if no arguments are passed.
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
 
-    if args.verbose:
-        os.environ["AMARANTH_verbose"] = "1"
-
-    if args.debug_verilog:
-        os.environ["AMARANTH_debug_verilog"] = "1"
-
-    os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
-    os.environ["AMARANTH_ecppack_opts"] = f"--freq 38.8 --compress --bootaddr {args.bootaddr}"
-
+    if args.action != CliAction.Build:
+        assert args.flash == False, "--flash requires 'build' action"
 
     kwargs = {}
 
@@ -143,7 +102,10 @@ def top_level_cli(
             kwargs["video_rotate_90"] = True
 
     if issubclass(fragment, TiliquaSoc):
-        kwargs["firmware_path"] = os.path.join(path, "fw/firmware.bin")
+        # Used during elaboration of the SoC to load the firmware binary into block RAM
+        rust_fw_bin  = "firmware.bin"
+        rust_fw_root = os.path.join(path, "fw")
+        kwargs["firmware_bin_path"] = os.path.join(rust_fw_root, rust_fw_bin)
 
     if argparse_fragment:
         kwargs = kwargs | argparse_fragment(args)
@@ -162,21 +124,21 @@ def top_level_cli(
     if isinstance(fragment, TiliquaSoc):
 
         # Generate SVD
-        svd_path = os.path.join(path, "fw/soc.svd")
+        svd_path = os.path.join(rust_fw_root, "soc.svd")
         fragment.gensvd(svd_path)
         if args.svd_only:
             sys.exit(0)
 
         # (re)-generate PAC (from SVD)
-        soc_regenerate_pac_from_svd(svd_path)
+        TiliquaSoc.regenerate_pac_from_svd(svd_path)
         if args.pac_only:
             sys.exit(0)
 
         # Generate memory.x and some extra constants
         # Finally, build our stripped firmware image.
-        fragment.genmem(os.path.join(path, "fw/memory.x"))
+        fragment.genmem(os.path.join(rust_fw_root, "memory.x"))
         fragment.genconst("src/rs/lib/src/generated_constants.rs")
-        soc_compile_firmware(path)
+        TiliquaSoc.compile_firmware(rust_fw_root, rust_fw_bin)
         if args.fw_only:
             sys.exit(0)
 
@@ -186,7 +148,7 @@ def top_level_cli(
             sim_ports = sim.soc_simulation_ports
             sim_harness = os.path.join(path, "../selftest/sim.cpp")
 
-    if sim_ports and args.sim:
+    if args.action == CliAction.Simulate:
         sim.simulate(fragment, sim_ports(fragment), sim_harness,
                      hw_platform, args.trace_fst)
         sys.exit(0)
@@ -196,20 +158,31 @@ def top_level_cli(
     else:
         hw_platform.ila = False
 
-    if args.build:
-        print("Building bitstream for", hw_platform.name)
-        hw_platform.build(fragment)
+    if args.action == CliAction.Build:
 
-        if hw_platform.ila:
+        build_flags = {
+            "verbose": args.verbose,
+            "debug_verilog": args.debug_verilog,
+            "nextpnr_opts": "--timing-allow-fail",
+            "ecppack_opts": f"--freq 38.8 --compress --bootaddr {args.bootaddr}"
+        }
+
+        print("Building bitstream for", hw_platform.name)
+
+        hw_platform.build(fragment, **build_flags)
+
+        if args.flash or hw_platform.ila:
+            # ILA situation always requires flashing, as we want to make sure
+            # we aren't getting data from an old bitstream before starting the
+            # ILA frontend.
             subprocess.check_call(["openFPGALoader",
                                    "-c", "dirtyJtag",
                                    "build/top.bit"],
                                   env=os.environ)
+        if hw_platform.ila:
             vcd_dst = "out.vcd"
             print(f"{AsyncSerialILAFrontend.__name__} listen on {args.ila_port} - destination {vcd_dst} ...")
             frontend = AsyncSerialILAFrontend(args.ila_port, baudrate=115200, ila=fragment.ila)
             frontend.emit_vcd(vcd_dst)
-    else:
-        print("Warn: no action specified ('--build', '--sim' or similar)")
 
     return fragment

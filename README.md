@@ -87,20 +87,20 @@ A few examples of building top-level bitstreams:
 # from `gateware` directory
 
 # for the selftest bitstream (prints diagnostics out DVI and serial)
-pdm selftest --build
+pdm selftest build
 # for a vectorscope / oscilloscope
-pdm xbeam --build
+pdm xbeam build
 # for a polyphonic MIDI synth
-pdm polysyn --build
+pdm polysyn build
 # for the LUNA-based 4in + 4out USB soundcard example
 # note: LUNA USB port presents itself on the second USB port (not dbg)!
-pdm usb_audio --build
+pdm usb_audio build
 # for a 4-channel waveshaping oscillator
-pdm dsp --build --dsp-core nco
+pdm dsp build --dsp-core nco
 # for a diffusion delay effect
-pdm dsp --build --dsp-core diffuser
+pdm dsp build --dsp-core diffuser
 # simplified vectorscope (no SoC / menu system)
-pdm vectorscope_no_soc --build
+pdm vectorscope_no_soc build
 ```
 
 Generally, bitstreams are also built in CI - check `.github/workflows` if you need more gruesome details on how systems are built.
@@ -127,7 +127,7 @@ For example, to simulate the waveshaping oscillator example:
 
 ```bash
 # from `gateware` directory
-pdm dsp --sim --dsp-core nco
+pdm dsp sim --dsp-core nco
 ```
 
 In short this command:
@@ -141,7 +141,7 @@ A subset of SoC-based top-level projects also support end-to-end simulation (i.e
 
 ```bash
 # from `gateware` directory
-pdm selftest --sim
+pdm selftest sim
 
 # ...
 
@@ -164,7 +164,7 @@ There is a top-level `vectorscope_no_soc` provided which is also useful for debu
 
 ```bash
 # from `gateware` directory
-pdm vectorscope_no_soc --sim --trace-fst
+pdm vectorscope_no_soc sim --trace-fst
 ```
 
 ## Using the ILA
@@ -174,7 +174,7 @@ Some cores support using a built-in ILA (integrated logic analyzer), to collect 
 For example:
 ```bash
 # from `gateware` directory
-pdm vectorscope_no_soc --build --ila --ila-port /dev/ttyACM0
+pdm vectorscope_no_soc build --ila --ila-port /dev/ttyACM0
 ```
 
 This will build the bitstream containing the ILA, flash the bitstream, then open the provided serial port waiting for an ILA dump from the Tiliqua to arrive. Once recieved, the dump will be saved to a waveform trace file.
