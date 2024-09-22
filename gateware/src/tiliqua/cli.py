@@ -39,6 +39,9 @@ def top_level_cli(
     # Parse arguments
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--flash', action='store_true',
+                        help="Flash bitstream after building it.")
+
     if video_core:
         parser.add_argument('--resolution', type=str, default="1280x720p60",
                             help="DVI resolution - (default: 1280x720p60)")
@@ -78,21 +81,13 @@ def top_level_cli(
     parser.add_argument("action", type=CliAction,
                         choices=[CliAction.Build.value] + sim_action)
 
-
     if argparse_callback:
         argparse_callback(parser)
 
     # Print help if no arguments are passed.
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
 
-    if args.verbose:
-        os.environ["AMARANTH_verbose"] = "1"
-
-    if args.debug_verilog:
-        os.environ["AMARANTH_debug_verilog"] = "1"
-
-    os.environ["AMARANTH_nextpnr_opts"] = "--timing-allow-fail"
-    os.environ["AMARANTH_ecppack_opts"] = f"--freq 38.8 --compress --bootaddr {args.bootaddr}"
+    assert args.flash == (args.action == CliAction.Build), "--flash requires 'build'"
 
     kwargs = {}
 
@@ -155,20 +150,33 @@ def top_level_cli(
                      hw_platform, args.trace_fst)
         sys.exit(0)
 
-    if args.ila:
+    if ila_supported and args.ila:
         hw_platform.ila = True
     else:
         hw_platform.ila = False
 
     if args.action == CliAction.Build:
-        print("Building bitstream for", hw_platform.name)
-        hw_platform.build(fragment)
 
-        if hw_platform.ila:
+        build_flags = {
+            "verbose": args.verbose,
+            "debug_verilog": args.debug_verilog,
+            "nextpnr_opts": "--timing-allow-fail",
+            "ecppack_opts": f"--freq 38.8 --compress --bootaddr {args.bootaddr}"
+        }
+
+        print("Building bitstream for", hw_platform.name)
+
+        hw_platform.build(fragment, **build_flags)
+
+        if args.flash or hw_platform.ila:
+            # ILA situation always requires flashing, as we want to make sure
+            # we aren't getting data from an old bitstream before starting the
+            # ILA frontend.
             subprocess.check_call(["openFPGALoader",
                                    "-c", "dirtyJtag",
                                    "build/top.bit"],
                                   env=os.environ)
+        if hw_platform.ila:
             vcd_dst = "out.vcd"
             print(f"{AsyncSerialILAFrontend.__name__} listen on {args.ila_port} - destination {vcd_dst} ...")
             frontend = AsyncSerialILAFrontend(args.ila_port, baudrate=115200, ila=fragment.ila)
