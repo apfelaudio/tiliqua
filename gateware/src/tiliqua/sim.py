@@ -17,15 +17,18 @@ from amaranth.lib.wiring   import In, Out
 
 from tiliqua.eurorack_pmod import ASQ
 
-class FakeEurorackPmod(Elaboratable):
+class FakeEurorackPmod(wiring.Component):
     """ Fake EurorackPmod. """
 
-    def __init__(self):
-        self.sample_i = Signal(data.ArrayLayout(ASQ, 4))
-        self.sample_o = Signal(data.ArrayLayout(ASQ, 4))
-        self.sample_inject  = [Signal(ASQ) for _ in range(4)]
-        self.sample_extract = [Signal(ASQ) for _ in range(4)]
-        self.fs_strobe = Signal()
+    fs_strobe: Out(1)
+    sample_i:  Out(data.ArrayLayout(ASQ, 4))
+    sample_o:   In(data.ArrayLayout(ASQ, 4))
+    touch:     Out(8).array(8)
+    jack:      Out(8)
+
+    # simulation interface
+    sample_inject:   In(ASQ).array(4)
+    sample_extract: Out(ASQ).array(4)
 
     def elaborate(self, platform) -> Module:
         m = Module()

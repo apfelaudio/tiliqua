@@ -24,11 +24,11 @@ from tiliqua.tiliqua_soc                         import TiliquaSoc
 from tiliqua.cli                                 import top_level_cli
 
 class XbeamSoc(TiliquaSoc):
-    def __init__(self, *, firmware_path, dvi_timings, **kwargs):
+    def __init__(self, **kwargs):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.
-        super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=True,
-                         audio_out_peripheral=False, finalize_csr_bridge=False, **kwargs)
+        super().__init__(audio_192=True, audio_out_peripheral=False,
+                         finalize_csr_bridge=False, **kwargs)
 
         # scope stroke bridge from audio stream
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)

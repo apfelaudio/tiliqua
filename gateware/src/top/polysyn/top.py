@@ -15,7 +15,7 @@ from amaranth_soc              import csr
 
 from amaranth_future           import fixed
 
-from tiliqua                   import eurorack_pmod, dsp, midi, scope
+from tiliqua                   import eurorack_pmod, dsp, midi, scope, sim
 from tiliqua.eurorack_pmod     import ASQ
 from tiliqua.tiliqua_soc       import TiliquaSoc
 from tiliqua.cli               import top_level_cli
@@ -388,11 +388,11 @@ class SynthPeripheral(wiring.Component):
         return m
 
 class PolySoc(TiliquaSoc):
-    def __init__(self, *, firmware_path, dvi_timings, **kwargs):
+    def __init__(self, **kwargs):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.
-        super().__init__(firmware_path=firmware_path, dvi_timings=dvi_timings, audio_192=False,
-                         audio_out_peripheral=False, touch=True, finalize_csr_bridge=False, **kwargs)
+        super().__init__(audio_192=False, audio_out_peripheral=False,
+                         touch=True, finalize_csr_bridge=False, **kwargs)
 
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
 
@@ -433,13 +433,14 @@ class PolySoc(TiliquaSoc):
 
         m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0)
 
-        # polysynth midi
-        midi_pins = platform.request("midi")
-        m.submodules.serialrx = serialrx = midi.SerialRx(
-                system_clk_hz=60e6, pins=midi_pins)
-        m.submodules.midi_decode = midi_decode = midi.MidiDecode()
-        wiring.connect(m, serialrx.o, midi_decode.i)
-        wiring.connect(m, midi_decode.o, polysynth.i_midi)
+        if sim.is_hw(platform):
+            # polysynth midi
+            midi_pins = platform.request("midi")
+            m.submodules.serialrx = serialrx = midi.SerialRx(
+                    system_clk_hz=60e6, pins=midi_pins)
+            m.submodules.midi_decode = midi_decode = midi.MidiDecode()
+            wiring.connect(m, serialrx.o, midi_decode.i)
+            wiring.connect(m, midi_decode.o, polysynth.i_midi)
 
         # hook up touch + jack
         m.d.comb += polysynth.i_jack.eq(pmod0.jack)

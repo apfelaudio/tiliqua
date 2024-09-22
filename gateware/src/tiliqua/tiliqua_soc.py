@@ -341,6 +341,7 @@ class TiliquaSoc(Component):
                 m.d.sync += button_counter.eq(0)
         else:
             m.submodules.car = sim.FakeTiliquaDomainGenerator()
+            self.pmod0_periph.pmod = sim.FakeEurorackPmod()
 
         # wishbone csr bridge
         m.submodules += self.wb_to_csr
