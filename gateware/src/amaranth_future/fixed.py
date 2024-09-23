@@ -36,6 +36,11 @@ class Shape(hdl.ShapeCastable):
             value = 0
         return Const(value, self)._target
 
+    def from_bits(self, raw):
+        c = Const(0, self)
+        c._value = raw
+        return c
+
     def max(self):
         c = Const(0, self)
         c._value = c._max_value()
@@ -233,10 +238,27 @@ class Value(hdl.ValueCastable):
         return Value.cast(self.round(f_width).raw() >> other, f_width)
 
     def __lt__(self, other):
-        return self.__sub__(other).raw() < 0
+        if isinstance(other, hdl.Value):
+            other = Value.cast(other)
+        elif isinstance(other, int):
+            other = Const(other)
+        elif not isinstance(other, Value):
+            raise TypeError(f"Object {other!r} cannot be converted to a fixed.Value")
+        f_width = max(self.f_width, other.f_width)
+        return self.round(f_width).raw() < other.round(f_width).raw()
 
     def __ge__(self, other):
         return ~self.__lt__(other)
+
+    def __eq__(self, other):
+        if isinstance(other, hdl.Value):
+            other = Value.cast(other)
+        elif isinstance(other, int):
+            other = Const(other)
+        elif not isinstance(other, Value):
+            raise TypeError(f"Object {other!r} cannot be converted to a fixed.Value")
+        f_width = max(self.f_width, other.f_width)
+        return self.round(f_width).raw() == other.round(f_width).raw()
 
     def __repr__(self):
         return f"(fixedpoint {'SQ' if self.signed else 'UQ'}{self.i_width}.{self.f_width} {self._target!r})"
@@ -247,7 +269,11 @@ class Const(Value):
 
         if isinstance(value, float) or isinstance(value, int):
             num, den = value.as_integer_ratio()
-
+        elif isinstance(value, Const):
+            # FIXME: Memory inits seem to construct a fixed.Const with fixed.Const
+            self._shape = value._shape
+            self._value = value._value
+            return
         else:
             raise TypeError(f"Object {value!r} cannot be converted to a fixed.Const")
 
