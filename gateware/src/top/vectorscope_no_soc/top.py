@@ -28,7 +28,6 @@ from amaranth.lib.wiring      import In, Out
 from amaranth.lib.fifo        import AsyncFIFO, SyncFIFO
 from amaranth.lib.cdc         import FFSynchronizer
 from amaranth.utils           import log2_int
-from amaranth.hdl.mem         import Memory
 from amaranth.back            import verilog
 
 from amaranth_future          import fixed

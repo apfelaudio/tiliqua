@@ -1057,3 +1057,26 @@ class Boxcar(wiring.Component):
         ]
 
         return m
+
+def named_submodules(m_submodules, elaboratables, override_name=None):
+    """
+    Normally, using constructs like:
+
+        m.submodules += delaylines
+
+    You get generated code with names like U$14 ... as Amaranth's
+    namer doesn't give such modules a readable name.
+
+    Instead, you can do:
+
+        named_submodules(m.submodules, delaylines)
+
+    And this helper will give each instance a name.
+
+    TODO: is there an idiomatic way of doing this?
+    """
+    if override_name is None:
+        [setattr(m_submodules, f"{type(e).__name__.lower()}{i}", e) for i, e in enumerate(elaboratables)]
+    else:
+        [setattr(m_submodules, f"{override_name}{i}", e) for i, e in enumerate(elaboratables)]
+
