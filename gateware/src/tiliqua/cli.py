@@ -163,6 +163,7 @@ def top_level_cli(
         build_flags = {
             "verbose": args.verbose,
             "debug_verilog": args.debug_verilog,
+            "synth_opts": "-noflatten",
             "nextpnr_opts": "--timing-allow-fail",
             "ecppack_opts": f"--freq 38.8 --compress --bootaddr {args.bootaddr}"
         }
