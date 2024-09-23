@@ -12,7 +12,7 @@ from amaranth.lib                import wiring
 from amaranth.lib.wiring         import Component, In, Out, flipped, connect
 from amaranth.lib.fifo           import SyncFIFO
 from amaranth_soc                import csr, gpio
-from luna.gateware.interface.i2c import I2CInitiator
+from vendor.i2c                  import I2CInitiator
 
 class PinSignature(wiring.Signature):
     def __init__(self):
