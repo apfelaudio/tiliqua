@@ -306,10 +306,10 @@ class Stroke(wiring.Component):
                 # Fired on every audio sample fs_strobe
                 with m.If(point_stream.valid):
                     m.d.sync += [
-                        sample_x.eq((point_stream.payload[0].sas_value()>>self.scale_x) + self.x_offset),
-                        sample_y.eq((point_stream.payload[1].sas_value()>>self.scale_y) + self.y_offset),
-                        sample_p.eq(point_stream.payload[2].sas_value()),
-                        sample_c.eq(point_stream.payload[3].sas_value()),
+                        sample_x.eq((point_stream.payload[0].raw()>>self.scale_x) + self.x_offset),
+                        sample_y.eq((point_stream.payload[1].raw()>>self.scale_y) + self.y_offset),
+                        sample_p.eq(point_stream.payload[2].raw()),
+                        sample_c.eq(point_stream.payload[3].raw()),
                         sample_intensity.eq(self.intensity),
                     ]
                     m.next = 'LATCH1'
