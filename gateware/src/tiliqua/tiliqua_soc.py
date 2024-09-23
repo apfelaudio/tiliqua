@@ -74,7 +74,7 @@ class VideoPeripheral(wiring.Component):
     def elaborate(self, platform):
         m = Module()
         m.submodules.bridge = self._bridge
-        m.submodules += self.persist
+        m.submodules.persist = self.persist
 
         connect(m, flipped(self.bus), self._bridge.bus)
 
@@ -253,60 +253,61 @@ class TiliquaSoc(Component):
         assert self.mainram.init
 
         # bus
-        m.submodules += [self.wb_arbiter, self.wb_decoder]
+        m.submodules.wb_arbiter = self.wb_arbiter
+        m.submodules.wb_decoder = self.wb_decoder
         wiring.connect(m, self.wb_arbiter.bus, self.wb_decoder.bus)
 
         # cpu
-        m.submodules += self.cpu
+        m.submodules.cpu = self.cpu
         self.wb_arbiter.add(self.cpu.ibus)
         self.wb_arbiter.add(self.cpu.dbus)
 
         # interrupt controller
-        m.submodules += self.interrupt_controller
+        m.submodules.interrupt_controller = self.interrupt_controller
         # TODO wiring.connect(m, self.cpu.irq_external, self.irqs.pending)
         m.d.comb += self.cpu.irq_external.eq(self.interrupt_controller.pending)
 
         # mainram
-        m.submodules += self.mainram
+        m.submodules.mainram = self.mainram
 
         # csr decoder
-        m.submodules += self.csr_decoder
+        m.submodules.csr_decoder = self.csr_decoder
 
         # uart0
-        m.submodules += self.uart0
+        m.submodules.uart0 = self.uart0
         if sim.is_hw(platform):
             uart0_provider = uart.Provider(0)
-            m.submodules += uart0_provider
+            m.submodules.uart0_provider = uart0_provider
             wiring.connect(m, self.uart0.pins, uart0_provider.pins)
 
         # timer0
-        m.submodules += self.timer0
+        m.submodules.timer0 = self.timer0
 
         # timer1
-        m.submodules += self.timer1
+        m.submodules.timer1 = self.timer1
 
         # i2c0
-        m.submodules += self.i2c0
+        m.submodules.i2c0 = self.i2c0
         if sim.is_hw(platform):
             i2c0_provider = i2c.Provider()
-            m.submodules += i2c0_provider
+            m.submodules.i2c0_provider = i2c0_provider
             wiring.connect(m, self.i2c0.pins, i2c0_provider.pins)
 
         # encoder0
-        m.submodules += self.encoder0
+        m.submodules.encoder0 = self.encoder0
         if sim.is_hw(platform):
             encoder0_provider = encoder.Provider()
-            m.submodules += encoder0_provider
+            m.submodules.encoder0_provider = encoder0_provider
             wiring.connect(m, self.encoder0.pins, encoder0_provider.pins)
 
         # psram
-        m.submodules += self.psram_periph
+        m.submodules.psram_periph = self.psram_periph
 
         # video PHY
-        m.submodules += self.video
+        m.submodules.video = self.video
 
         # video periph / persist
-        m.submodules += self.video_periph
+        m.submodules.video_periph = self.video_periph
 
         if sim.is_hw(platform):
             # pmod0
@@ -318,10 +319,10 @@ class TiliquaSoc(Component):
                     touch_enabled=self.touch,
                     audio_192=self.audio_192)
             self.pmod0_periph.pmod = pmod0
-            m.submodules += self.pmod0_periph
+            m.submodules.pmod0_periph = self.pmod0_periph
 
             # die temperature
-            m.submodules += self.dtr0
+            m.submodules.dtr0 = self.dtr0
 
             # generate our domain clocks/resets
             m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
@@ -344,7 +345,7 @@ class TiliquaSoc(Component):
             self.pmod0_periph.pmod = sim.FakeEurorackPmod()
 
         # wishbone csr bridge
-        m.submodules += self.wb_to_csr
+        m.submodules.wb_to_csr = self.wb_to_csr
 
         # Memory controller hangs if we start making requests to it straight away.
         on_delay = Signal(32)

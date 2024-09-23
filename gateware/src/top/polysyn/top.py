@@ -61,7 +61,8 @@ class Diffuser(wiring.Component):
             dsp.DelayLine(max_delay=8192),
             dsp.DelayLine(max_delay=8192),
         ]
-        m.submodules += delay_lines
+
+        dsp.named_submodules(m.submodules, delay_lines)
 
         m.d.comb += [delay_lines[n].da.valid.eq(1) for n in range(4)]
         m.d.comb += [
@@ -138,16 +139,19 @@ class PolySynth(wiring.Component):
         mems = [Memory(width=ASQ.as_shape().width, depth=len(lut), init=lut)
                 for _ in range(n_voices)]
         rports = [mems[n].read_port(transparent=True) for n in range(n_voices)]
-        m.submodules += mems
+        dsp.named_submodules(m.submodules, mems)
 
-        voice_tracker = midi.MidiVoiceTracker(max_voices=n_voices)
+        m.submodules.voice_tracker = voice_tracker = midi.MidiVoiceTracker(max_voices=n_voices)
         # 1 smoother per oscillator for filter cutoff, to prevent pops.
         boxcars = [dsp.Boxcar(n=16) for _ in range(n_voices)]
         # 1 oscillator and filter per oscillator
         ncos = [dsp.SawNCO(shift=0) for _ in range(n_voices)]
         svfs = [dsp.SVF() for _ in range(n_voices)]
-        merge = dsp.Merge(n_channels=n_voices)
-        m.submodules += [voice_tracker, boxcars, ncos, svfs, merge]
+        m.submodules.merge = merge = dsp.Merge(n_channels=n_voices)
+
+        dsp.named_submodules(m.submodules, boxcars)
+        dsp.named_submodules(m.submodules, ncos)
+        dsp.named_submodules(m.submodules, svfs)
 
         # Connect MIDI stream -> voice tracker
         wiring.connect(m, wiring.flipped(self.i_midi), voice_tracker.i)
@@ -245,7 +249,7 @@ class PolySynth(wiring.Component):
         # Route to audio output channels 2 & 3
 
         output_hpfs = [dsp.SVF() for _ in range(o_channels)]
-        m.submodules += output_hpfs
+        dsp.named_submodules(m.submodules, output_hpfs, override_name="output_hpf")
 
         m.submodules.hpf_split2 = hpf_split2 = dsp.Split(n_channels=2, source=matrix_mix.o)
         m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=diffuser.i)
@@ -279,7 +283,9 @@ class PolySynth(wiring.Component):
             vca = dsp.GainVCA()
             waveshaper = dsp.WaveShaper(lut_function=scaled_tanh)
             vca_merge2 = dsp.Merge(n_channels=2)
-            m.submodules += [vca, waveshaper, vca_merge2]
+            setattr(m.submodules, f"out_gainvca_{lr}", vca)
+            setattr(m.submodules, f"out_waveshaper_{lr}", waveshaper)
+            setattr(m.submodules, f"out_vca_merge2_{lr}", vca_merge2)
 
             wiring.connect(m, diffuser_split4.o[2+lr], vca_merge2.i[0])
             wiring.connect(m, cv_gain_split2.o[lr],    vca_merge2.i[1])
@@ -420,12 +426,12 @@ class PolySoc(TiliquaSoc):
 
         m = Module()
 
-        m.submodules += self.vector_periph
-
-        m.submodules += self.synth_periph
+        m.submodules.vector_periph = self.vector_periph
 
         m.submodules.polysynth = polysynth = PolySynth()
         self.synth_periph.synth = polysynth
+
+        m.submodules.synth_periph = self.synth_periph
 
         m.submodules += super().elaborate(platform)
 
