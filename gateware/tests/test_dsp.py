@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 import math
@@ -16,18 +17,17 @@ class DSPTests(unittest.TestCase):
 
         delay_line = dsp.DelayLine()
 
-        async def testbench(ctx):
-            await ctx.tick()
-            await ctx.tick()
-            for n in range(0, 50):
-                x = fixed.Const(0.8*math.sin(n*0.2), shape=ASQ)
+        async def stimulus(ctx):
+            for n in range(0, sys.maxsize):
                 ctx.set(delay_line.sw.valid, 1)
-                ctx.set(delay_line.sw.payload, x)
+                ctx.set(delay_line.sw.payload,
+                        fixed.Const(0.8*math.sin(n*0.2), shape=ASQ))
                 await ctx.tick()
                 ctx.set(delay_line.sw.valid, 0)
                 await ctx.tick()
-                await ctx.tick()
-            await ctx.tick()
+
+        async def testbench(ctx):
+            await ctx.tick().repeat(200)
             for n in range(0, 10):
                 ctx.set(delay_line.da.payload, n)
                 ctx.set(delay_line.ds.ready, 1)
@@ -38,6 +38,7 @@ class DSPTests(unittest.TestCase):
 
         sim = Simulator(delay_line)
         sim.add_clock(1e-6)
+        sim.add_process(stimulus)
         sim.add_testbench(testbench)
         with sim.write_vcd(vcd_file=open("test_delayline.vcd", "w")):
             sim.run()
