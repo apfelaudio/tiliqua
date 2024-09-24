@@ -1,3 +1,7 @@
+# Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
+#
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+
 import unittest
 
 from amaranth              import *

@@ -42,8 +42,8 @@ class Persistance(Elaboratable):
         self.fb_bytes_per_pixel = fb_bytes_per_pixel
 
         # Tweakables
-        self.holdoff = Signal(16, reset=holdoff_default)
-        self.decay   = Signal(4, reset=1)
+        self.holdoff = Signal(16, init=holdoff_default)
+        self.decay   = Signal(4, init=1)
 
         # We are a DMA master
         self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
@@ -53,11 +53,11 @@ class Persistance(Elaboratable):
         self.fifo = SyncFIFO(width=32, depth=fifo_depth)
 
         # Current addresses in the framebuffer (read and write sides)
-        self.dma_addr_in = Signal(32, reset=0)
+        self.dma_addr_in = Signal(32, init=0)
         self.dma_addr_out = Signal(32)
 
         # Kick to start this core.
-        self.enable = Signal(1, reset=0)
+        self.enable = Signal(1, init=0)
 
     def elaborate(self, platform) -> Module:
         m = Module()
@@ -212,18 +212,18 @@ class Stroke(wiring.Component):
         self.sample_p = Signal(signed(16)) # intensity modulation TODO
         self.sample_c = Signal(signed(16)) # color modulation DONE
 
-        self.hue       = Signal(4, reset=default_hue);
-        self.intensity = Signal(4, reset=8);
-        self.scale_x   = Signal(4, reset=6);
-        self.scale_y   = Signal(4, reset=6);
-        self.x_offset  = Signal(signed(16), reset=default_x)
-        self.y_offset  = Signal(signed(16), reset=default_y)
+        self.hue       = Signal(4, init=default_hue);
+        self.intensity = Signal(4, init=8);
+        self.scale_x   = Signal(4, init=6);
+        self.scale_y   = Signal(4, init=6);
+        self.x_offset  = Signal(signed(16), init=default_x)
+        self.y_offset  = Signal(signed(16), init=default_y)
 
         self.px_read = Signal(32)
         self.px_sum = Signal(16)
 
         # Kick this to start the core
-        self.enable = Signal(1, reset=0)
+        self.enable = Signal(1, init=0)
 
         super().__init__()
 

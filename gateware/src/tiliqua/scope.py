@@ -1,6 +1,9 @@
 # Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
+"""
+Multi-channel oscilloscope and vectorscope SoC peripherals.
+"""
 
 from amaranth                                    import *
 from amaranth.lib                                import wiring, data, stream
