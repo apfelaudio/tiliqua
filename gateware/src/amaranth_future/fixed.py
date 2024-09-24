@@ -320,6 +320,10 @@ class Const(Value):
         return self._value, 2**self.f_width
 
     def as_float(self):
-        return self._value / 2**self.f_width
+        if self._value > self._max_value():
+            v = self._min_value() + self._value - self._max_value()
+        else:
+            v = self._value
+        return v / 2**self.f_width
 
     # TODO: Operators
