@@ -3,6 +3,17 @@ name: build & test
 on: [push]
 
 jobs:
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pdm-project/setup-pdm@v4
+      - run: |
+          pdm install
+          pdm test
+        working-directory: gateware
+
   ubuntu-usb-audio:
     runs-on: ubuntu-latest
     steps:

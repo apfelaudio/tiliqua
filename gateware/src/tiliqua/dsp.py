@@ -365,7 +365,7 @@ class WaveShaper(wiring.Component):
                 if self.continuous:
                     m.d.comb += rport.addr.eq(x.truncate()+1)
                 else:
-                    with m.If((x.truncate()).sas_value() ==
+                    with m.If((x.truncate()).raw() ==
                               2**(self.lut_addr_width-1)-1):
                         m.d.comb += trunc.eq(1)
                         m.d.comb += rport.addr.eq(x.truncate())
@@ -1032,7 +1032,7 @@ class Boxcar(wiring.Component):
 
         # accumulator maintenance
         m.d.sync += fifo_r_en_l.eq(fifo.r_en)
-        m.d.comb += fifo_r_asq.sas_value().eq(fifo.r_data) # raw -> ASQ
+        m.d.comb += fifo_r_asq.raw().eq(fifo.r_data) # raw -> ASQ
         with m.If(self.i.valid & self.i.ready):
             with m.If(fifo_r_en_l):
                 # sample in + out simultaneously (normal case)

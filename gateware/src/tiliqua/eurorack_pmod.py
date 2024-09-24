@@ -137,7 +137,7 @@ class EurorackPmod(wiring.Component):
     eeprom_serial: Out(32)
 
     # Bitwise manual LED overrides. 1 == audio passthrough, 0 == manual set.
-    led_mode: In(8, reset=0xff)
+    led_mode: In(8, init=0xff)
     # If an LED is in manual, this is signed i8 from -green to +red
     led: In(8).array(8)
 

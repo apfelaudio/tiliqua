@@ -199,7 +199,7 @@ class ScopeTracePeripheral(wiring.Component):
                 m.d.sync += s.intensity.eq(self._intensity.f.intensity.w_data)
 
         with m.If(self._timebase.f.timebase.w_stb):
-            m.d.sync += self.timebase.sas_value().eq(self._timebase.f.timebase.w_data)
+            m.d.sync += self.timebase.raw().eq(self._timebase.f.timebase.w_data)
 
         with m.If(self._xscale.f.xscale.w_stb):
             for s in self.strokes:
@@ -210,7 +210,7 @@ class ScopeTracePeripheral(wiring.Component):
                 m.d.sync += s.scale_y.eq(self._yscale.f.yscale.w_data)
 
         with m.If(self._trigger_lvl.f.trigger_level.w_stb):
-            m.d.sync += self.trigger_lvl.sas_value().eq(self._trigger_lvl.f.trigger_level.w_data)
+            m.d.sync += self.trigger_lvl.raw().eq(self._trigger_lvl.f.trigger_level.w_data)
 
         for i, ypos_reg in enumerate(self._ypos):
             with m.If(ypos_reg.f.ypos.w_stb):

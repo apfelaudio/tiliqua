@@ -178,9 +178,9 @@ class PolySynth(wiring.Component):
                 # Filter cutoff on all channels is min(mod wheel, note velocity)
                 # Cutoff itself is smoothed by boxcars before being sent to SVF cutoff.
                 with m.If(last_cc1 < voice_tracker.o[n].payload.velocity):
-                    m.d.comb += boxcars[n].i.payload.sas_value().eq(last_cc1 << 4)
+                    m.d.comb += boxcars[n].i.payload.raw().eq(last_cc1 << 4)
                 with m.Else():
-                    m.d.comb += boxcars[n].i.payload.sas_value().eq(
+                    m.d.comb += boxcars[n].i.payload.raw().eq(
                             voice_tracker.o[n].payload.velocity << 4)
                 # Connect MIDI voice.note -> note to frequency LUT
                 m.d.comb += [
@@ -191,7 +191,7 @@ class PolySynth(wiring.Component):
                 # only first 6 channels touch sensitive
                 if n < 6:
                     with m.If(self.i_jack[n] == 0):
-                        m.d.comb += boxcars[n].i.payload.sas_value().eq(self.i_touch[n] << 3)
+                        m.d.comb += boxcars[n].i.payload.raw().eq(self.i_touch[n] << 3)
                     with m.Else():
                         m.d.comb += boxcars[n].i.payload.eq(0)
                 # Connect notes from fixed scale for touchsynth
@@ -212,7 +212,7 @@ class PolySynth(wiring.Component):
             # Connect voice.vel and NCO.o -> SVF.i
             dsp.connect_remap(m, ncos[n].o, svfs[n].i, lambda o, i : [
                 i.payload.x                    .eq(o.payload >> 1),
-                i.payload.resonance.sas_value().eq(self.reso),
+                i.payload.resonance.raw()      .eq(self.reso),
                 i.payload.cutoff               .eq(boxcars[n].o.payload) # hack
             ])
 
@@ -254,8 +254,8 @@ class PolySynth(wiring.Component):
         for lr in [0, 1]:
             dsp.connect_remap(m, hpf_split2.o[lr], output_hpfs[lr].i, lambda o, i : [
                 i.payload.x                     .eq(o.payload),
-                i.payload.cutoff.sas_value()    .eq(200),
-                i.payload.resonance.sas_value() .eq(20000),
+                i.payload.cutoff.raw()          .eq(200),
+                i.payload.resonance.raw()       .eq(20000),
             ])
 
             dsp.connect_remap(m, output_hpfs[lr].o, hpf_merge4.i[2+lr], lambda o, i : [
