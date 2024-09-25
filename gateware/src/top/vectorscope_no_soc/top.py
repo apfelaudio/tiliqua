@@ -35,7 +35,7 @@ from amaranth_future          import fixed
 from amaranth_soc             import wishbone
 
 from tiliqua.tiliqua_platform import *
-from tiliqua                  import eurorack_pmod, dsp, sim
+from tiliqua                  import eurorack_pmod, dsp, sim, cache
 from tiliqua.eurorack_pmod    import ASQ
 from tiliqua                  import psram_peripheral
 from tiliqua.cli              import top_level_cli
@@ -51,9 +51,10 @@ class VectorScopeTop(Elaboratable):
     Top-level Vectorscope design.
     """
 
-    def __init__(self, *, dvi_timings, **kwargs):
+    def __init__(self, *, dvi_timings, wishbone_l2_cache, **kwargs):
 
         self.dvi_timings = dvi_timings
+        self.wishbone_l2_cache = wishbone_l2_cache
 
         # One PSRAM with an internal arbiter to support multiple DMA masters.
         self.psram_periph = psram_peripheral.Peripheral(size=16*1024*1024)
@@ -72,7 +73,12 @@ class VectorScopeTop(Elaboratable):
 
         self.psram_periph.add_master(self.video.bus)
         self.psram_periph.add_master(self.persist.bus)
-        self.psram_periph.add_master(self.stroke.bus)
+
+        if self.wishbone_l2_cache:
+            self.cache = cache.WishboneL2Cache(addr_width=self.psram_periph.bus.addr_width)
+            self.psram_periph.add_master(self.cache.slave)
+        else:
+            self.psram_periph.add_master(self.stroke.bus)
 
         # Only used for simulation
         self.fs_strobe = Signal()
@@ -114,6 +120,10 @@ class VectorScopeTop(Elaboratable):
         m.submodules.video = self.video
         m.submodules.persist = self.persist
         m.submodules.stroke = self.stroke
+
+        if self.wishbone_l2_cache:
+            m.submodules.cache = self.cache
+            wiring.connect(m, self.stroke.bus, self.cache.master)
 
         wiring.connect(m, astream.istream, self.stroke.i)
 
@@ -216,9 +226,22 @@ def simulation_ports(fragment):
         "fs_inject3":     (fragment.inject3,                           None),
     }
 
+def argparse_callback(parser):
+    parser.add_argument('--cache', action='store_true',
+                        help="Add L2 wishbone cache to stroke-raster converter.")
+
+def argparse_fragment(args):
+    return {
+        "wishbone_l2_cache": args.cache
+    }
+
 if __name__ == "__main__":
     this_path = os.path.dirname(os.path.realpath(__file__))
-    top_level_cli(VectorScopeTop,
-                  ila_supported=True,
-                  sim_ports=simulation_ports,
-                  sim_harness="../../src/top/vectorscope_no_soc/sim/sim.cpp")
+    top_level_cli(
+        VectorScopeTop,
+        ila_supported=True,
+        sim_ports=simulation_ports,
+        sim_harness="../../src/top/vectorscope_no_soc/sim/sim.cpp",
+        argparse_callback=argparse_callback,
+        argparse_fragment=argparse_fragment
+    )
