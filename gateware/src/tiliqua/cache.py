@@ -20,7 +20,7 @@ class WishboneL2Cache(wiring.Component):
     """
 
     def __init__(self, cachesize_words=512,
-                 addr_width=30, data_width=32, granularity=8):
+                 addr_width=22, data_width=32, granularity=8):
 
         self.cachesize_words = cachesize_words
         self.data_width      = data_width
@@ -142,6 +142,7 @@ class WishboneL2Cache(wiring.Component):
                 with m.If(slave.ack):
                     # Write the tag first to set the slave address
                     m.d.comb += [
+                        tag_di.valid.eq(1),
                         tag_wr_port.en.eq(1),
                     ]
                     m.next = "REFILL"
