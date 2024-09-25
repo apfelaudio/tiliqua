@@ -35,7 +35,7 @@ from amaranth_future          import fixed
 from amaranth_soc             import wishbone
 
 from tiliqua.tiliqua_platform import *
-from tiliqua                  import eurorack_pmod, dsp, sim
+from tiliqua                  import eurorack_pmod, dsp, sim, cache
 from tiliqua.eurorack_pmod    import ASQ
 from tiliqua                  import psram_peripheral
 from tiliqua.cli              import top_level_cli
@@ -70,9 +70,11 @@ class VectorScopeTop(Elaboratable):
         self.stroke = Stroke(
                 fb_base=fb_base, bus_master=self.psram_periph.bus, fb_size=fb_size)
 
+        self.cache = cache.WishboneL2Cache(addr_width=22)
+
         self.psram_periph.add_master(self.video.bus)
         self.psram_periph.add_master(self.persist.bus)
-        self.psram_periph.add_master(self.stroke.bus)
+        self.psram_periph.add_master(self.cache.slave)
 
         # Only used for simulation
         self.fs_strobe = Signal()
@@ -114,6 +116,9 @@ class VectorScopeTop(Elaboratable):
         m.submodules.video = self.video
         m.submodules.persist = self.persist
         m.submodules.stroke = self.stroke
+
+        m.submodules.cache = self.cache
+        wiring.connect(m, self.stroke.bus, self.cache.master)
 
         wiring.connect(m, astream.istream, self.stroke.i)
 
