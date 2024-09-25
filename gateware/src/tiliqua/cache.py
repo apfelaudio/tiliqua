@@ -118,6 +118,7 @@ class WishboneL2Cache(wiring.Component):
                     m.d.comb += master.ack.eq(1)
                     with m.If(master.we):
                         m.d.comb += [
+                            tag_di.valid.eq(1),
                             tag_di.dirty.eq(1),
                             tag_wr_port.en.eq(1)
                         ]

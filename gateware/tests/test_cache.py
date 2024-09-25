@@ -56,6 +56,7 @@ class CacheTests(unittest.TestCase):
                 ctx.set(dut.master.we,    1)
                 ctx.set(dut.master.sel,   0b1111)
                 ctx.set(dut.master.dat_w, 0xfeed0000 | adr)
+                print(f"write_assume_present(adr={adr}) master writes {hex(0xfeed0000 | adr)}")
                 while not ctx.get(dut.master.ack):
                     await ctx.tick()
                 await ctx.tick()
@@ -85,8 +86,8 @@ class CacheTests(unittest.TestCase):
             for adr in range(0, 5):
                 await write_assume_present(adr)
 
-            #for adr in range(0, 5):
-            #    await read_assume_present(adr)
+            for adr in range(0, 5):
+                await read_assume_present(adr)
 
             for adr in range(512, 517):
                 await read_fill(adr, with_writeback=True)
