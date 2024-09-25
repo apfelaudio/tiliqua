@@ -73,6 +73,8 @@ def top_level_cli(
                         help="amaranth: enable verbose synthesis")
     parser.add_argument('--debug-verilog', action='store_true',
                         help="amaranth: emit debug verilog")
+    parser.add_argument('--noflatten', action='store_true',
+                        help="yosys: don't flatten heirarchy (useful for checking area usage).")
     if ila_supported:
         parser.add_argument('--ila', action='store_true',
                             help="debug: add ila to design, program bitstream after build, poll UART for data.")
@@ -160,13 +162,21 @@ def top_level_cli(
 
     if args.action == CliAction.Build:
 
+
         build_flags = {
             "verbose": args.verbose,
             "debug_verilog": args.debug_verilog,
-            "synth_opts": "-noflatten",
             "nextpnr_opts": "--timing-allow-fail",
             "ecppack_opts": f"--freq 38.8 --compress --bootaddr {args.bootaddr}"
         }
+
+        if args.noflatten:
+            # workaround for https://github.com/YosysHQ/yosys/issues/4349
+            build_flags |= {
+                "synth_opts": "-noflatten -run :coarse",
+                "script_after_synth":
+                    "proc; opt_clean -purge; synth_ecp5 -noflatten -top top -run coarse:",
+            }
 
         print("Building bitstream for", hw_platform.name)
 
