@@ -1,6 +1,10 @@
+# Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
+#
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+
 """
-Cache utilities, takes a lot of inspirate from LiteX, e.g:
-https://github.com/enjoy-digital/litex/blob/master/litex/soc/interconnect/wishbone.py#L641
+Cache utilities, largely inspired by equivalent LiteX components i.e:
+https://github.com/enjoy-digital/litex/blob/master/litex/soc/interconnect/wishbone.py
 """
 
 from amaranth                    import *
@@ -14,12 +18,17 @@ from amaranth_soc                import wishbone
 class WishboneL2Cache(wiring.Component):
 
     """
-    This module is a write-back wishbone cache that can be used as a L2 cache.
+    Write-back wishbone cache, may be used as a L2 cache.
     Cachesize (in 32-bit words) is the size of the data store and must be
     a power of 2.
+
+    Key differences to LiteX implementation:
+    - Tags now include a 'valid' bit, so every cache line must be refilled
+      after reset before it can be used.
+    - Translation of bus data widths is removed (for simplicity).
     """
 
-    def __init__(self, cachesize_words=512,
+    def __init__(self, cachesize_words=256,
                  addr_width=22, data_width=32, granularity=8):
 
         self.cachesize_words = cachesize_words
@@ -46,12 +55,12 @@ class WishboneL2Cache(wiring.Component):
 
         # Address Split.
         # --------------
-        # TAG | LINE NUMBER | LINE OFFSET.
-        addressbits                   = len(slave.adr)
-        linebits                      = exact_log2(self.cachesize_words)
-        tagbits                       = addressbits - linebits
-        adr_line                      = master.adr.bit_select(0, linebits)
-        adr_tag                       = master.adr.bit_select(linebits+1, tagbits)
+        # TAG | LINE NUMBER.
+        addressbits = len(slave.adr)
+        linebits    = exact_log2(self.cachesize_words)
+        tagbits     = addressbits - linebits
+        adr_line    = master.adr.bit_select(0, linebits)
+        adr_tag     = master.adr.bit_select(linebits, tagbits)
 
         # Data Memory.
         # ------------
@@ -105,8 +114,6 @@ class WishboneL2Cache(wiring.Component):
 
         m.d.comb += slave.adr.eq(Cat(adr_line, tag_do.tag))
 
-        # FSM.
-        # ----
         with m.FSM() as fsm:
 
             with m.State("IDLE"):
