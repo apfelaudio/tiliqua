@@ -243,25 +243,33 @@ class Stroke(wiring.Component):
         point_stream = None
         if self.n_upsample is not None and self.n_upsample != 1:
             # If interpolation is enabled, insert an FIR upsampling stage.
-            m.submodules.split = split = dsp.Split(n_channels=4)
+            m.submodules.split = split = dsp.Split(n_channels=4, source=wiring.flipped(self.i))
             m.submodules.merge = merge = dsp.Merge(n_channels=4)
 
             m.submodules.resample0 = resample0 = dsp.BoxcarUpsample(n_up=self.n_upsample)
             m.submodules.resample1 = resample1 = dsp.BoxcarUpsample(n_up=self.n_upsample)
-            m.submodules.resample2 = resample2 = dsp.BoxcarUpsample(n_up=self.n_upsample)
-            m.submodules.resample3 = resample3 = dsp.BoxcarUpsample(n_up=self.n_upsample)
-
-            wiring.connect(m, wiring.flipped(self.i), split.i)
+            #m.submodules.resample2 = resample2 = dsp.BoxcarUpsample(n_up=self.n_upsample)
+            #m.submodules.resample3 = resample3 = dsp.BoxcarUpsample(n_up=self.n_upsample)
 
             wiring.connect(m, split.o[0], resample0.i)
             wiring.connect(m, split.o[1], resample1.i)
-            wiring.connect(m, split.o[2], resample2.i)
-            wiring.connect(m, split.o[3], resample3.i)
+            #wiring.connect(m, split.o[2], resample2.i)
+            #wiring.connect(m, split.o[3], resample3.i)
 
             wiring.connect(m, resample0.o, merge.i[0])
             wiring.connect(m, resample1.o, merge.i[1])
-            wiring.connect(m, resample2.o, merge.i[2])
-            wiring.connect(m, resample3.o, merge.i[3])
+            #wiring.connect(m, resample2.o, merge.i[2])
+            #wiring.connect(m, resample3.o, merge.i[3])
+
+            # sample + hold on color, no upsampling
+            m.d.comb += [
+                merge.i[2].valid.eq(1),
+                merge.i[3].valid.eq(1),
+                split.o[2].ready.eq(1),
+                split.o[3].ready.eq(1),
+            ]
+            with m.If(split.o[3].valid):
+                m.d.sync += merge.i[3].payload.eq(split.o[3].payload)
 
             point_stream=merge.o
         else:
