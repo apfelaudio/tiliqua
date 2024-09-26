@@ -67,7 +67,7 @@ class WishboneL2Cache(wiring.Component):
         m.submodules.data_mem = data_mem = Memory(
             shape=unsigned(dw_to), depth=2**linebits, init=[])
         wr_port = data_mem.write_port(granularity=8)
-        rd_port = data_mem.read_port(domain='comb')
+        rd_port = data_mem.read_port(transparent_for=(wr_port,))
 
         write_from_slave = Signal()
 
@@ -98,7 +98,7 @@ class WishboneL2Cache(wiring.Component):
         })
         m.submodules.tag_mem = tag_mem= Memory(shape=tag_layout, depth=2**linebits, init=[])
         tag_wr_port = tag_mem.write_port()
-        tag_rd_port = tag_mem.read_port(domain='comb')
+        tag_rd_port = tag_mem.read_port()
         tag_do = Signal(shape=tag_layout)
         tag_di = Signal(shape=tag_layout)
         m.d.comb += [
