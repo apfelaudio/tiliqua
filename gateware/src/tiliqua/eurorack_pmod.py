@@ -11,7 +11,7 @@ from amaranth                   import *
 from amaranth.build             import *
 from amaranth.lib               import wiring, data, stream
 from amaranth.lib.wiring        import In, Out
-from amaranth.lib.fifo          import AsyncFIFO
+from amaranth.lib.fifo          import AsyncFIFOBuffered
 from amaranth.lib.cdc           import FFSynchronizer
 
 from amaranth_future            import fixed
@@ -44,10 +44,10 @@ class AudioStream(wiring.Component):
 
         m = Module()
 
-        m.submodules.adc_fifo = adc_fifo = AsyncFIFO(
+        m.submodules.adc_fifo = adc_fifo = AsyncFIFOBuffered(
                 width=self.eurorack_pmod.sample_i.shape().size, depth=self.fifo_depth,
                 w_domain="audio", r_domain=self.stream_domain)
-        m.submodules.dac_fifo = dac_fifo = AsyncFIFO(
+        m.submodules.dac_fifo = dac_fifo = AsyncFIFOBuffered(
                 width=self.eurorack_pmod.sample_o.shape().size, depth=self.fifo_depth,
                 w_domain=self.stream_domain, r_domain="audio")
 

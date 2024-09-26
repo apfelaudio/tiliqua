@@ -10,7 +10,7 @@
 from amaranth                    import *
 from amaranth.lib                import wiring
 from amaranth.lib.wiring         import Component, In, Out, flipped, connect
-from amaranth.lib.fifo           import SyncFIFO
+from amaranth.lib.fifo           import SyncFIFOBuffered
 from amaranth_soc                import csr, gpio
 from vendor.i2c                  import I2CInitiator
 
@@ -131,8 +131,8 @@ class Peripheral(wiring.Component):
         self.addr_width = 7
         self.transaction_width = self.data_width + 1
 
-        self._transactions = SyncFIFO(width=self.transaction_width, depth=transaction_depth)
-        self._rx_fifo = SyncFIFO(width=self.data_width, depth=rx_depth)
+        self._transactions = SyncFIFOBuffered(width=self.transaction_width, depth=transaction_depth)
+        self._rx_fifo = SyncFIFOBuffered(width=self.data_width, depth=rx_depth)
 
         regs = csr.Builder(addr_width=5, data_width=8)
 

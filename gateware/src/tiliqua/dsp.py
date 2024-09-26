@@ -8,7 +8,7 @@
 from amaranth              import *
 from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
-from amaranth.lib.fifo     import SyncFIFO
+from amaranth.lib.fifo     import SyncFIFOBuffered
 from amaranth.lib.memory   import Memory
 from amaranth.utils        import exact_log2
 
@@ -944,7 +944,7 @@ class Resample(wiring.Component):
             filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
             prescale=self.n_up)
 
-        m.submodules.down_fifo = down_fifo = SyncFIFO(
+        m.submodules.down_fifo = down_fifo = SyncFIFOBuffered(
             width=ASQ.as_shape().width, depth=self.n_up)
 
         upsampled_signal  = Signal(ASQ)
@@ -1024,7 +1024,7 @@ class Boxcar(wiring.Component):
         fifo_r_en_l = Signal()
 
         # delay element
-        fifo = m.submodules.fifo = fifo = SyncFIFO(
+        fifo = m.submodules.fifo = fifo = SyncFIFOBuffered(
             width=ASQ.as_shape().width, depth=self.n)
 
         # route input -> fifo

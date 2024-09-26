@@ -11,7 +11,7 @@ from amaranth              import *
 from amaranth.build        import *
 from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
-from amaranth.lib.fifo     import AsyncFIFO, SyncFIFO
+from amaranth.lib.fifo     import SyncFIFOBuffered
 from amaranth.lib.cdc      import FFSynchronizer
 
 from amaranth_future       import fixed
@@ -50,7 +50,7 @@ class Persistance(Elaboratable):
                                       features={"cti", "bte"})
 
         # FIFO to cache pixels from PSRAM.
-        self.fifo = SyncFIFO(width=32, depth=fifo_depth)
+        self.fifo = SyncFIFOBuffered(width=32, depth=fifo_depth)
 
         # Current addresses in the framebuffer (read and write sides)
         self.dma_addr_in = Signal(32, init=0)

@@ -11,7 +11,7 @@ from amaranth              import *
 from amaranth.build        import *
 from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
-from amaranth.lib.fifo     import AsyncFIFO, SyncFIFO
+from amaranth.lib.fifo     import AsyncFIFOBuffered
 from amaranth.lib.cdc      import FFSynchronizer
 from amaranth.utils        import exact_log2
 from amaranth.lib.memory   import Memory
@@ -270,7 +270,7 @@ class FramebufferPHY(wiring.Component):
                                       features={"cti", "bte"})
 
         # FIFO to cache pixels from PSRAM.
-        self.fifo = AsyncFIFO(width=32, depth=fifo_depth, r_domain='dvi', w_domain='sync')
+        self.fifo = AsyncFIFOBuffered(width=32, depth=fifo_depth, r_domain='dvi', w_domain='sync')
 
         # Kick this to start the core
         self.enable = Signal(1, reset=0)
