@@ -902,6 +902,49 @@ class FIR(wiring.Component):
 
         return m
 
+class BoxcarUpsample(wiring.Component):
+
+    i: In(stream.Signature(ASQ))
+    o: Out(stream.Signature(ASQ))
+
+    def __init__(self, n_up: int):
+        self.n_up   = n_up
+        super().__init__()
+
+    def elaborate(self, platform):
+
+        m = Module()
+
+        m.submodules.filt = filt = Boxcar(n=512)
+
+        upsampled_signal  = Signal(ASQ)
+        upsample_counter  = Signal(range(self.n_up))
+
+        m.d.comb += [
+            self.i.ready.eq((upsample_counter == 0) & filt.i.ready),
+        ]
+
+        with m.If(filt.i.ready):
+            with m.If(self.i.valid & self.i.ready):
+                m.d.comb += [
+                    filt.i.payload.eq(self.i.payload),
+                    filt.i.valid.eq(1),
+                ]
+                m.d.sync += upsample_counter.eq(self.n_up - 1)
+            with m.Elif(upsample_counter > 0):
+                m.d.comb += [
+                    filt.i.payload.eq(0),
+                    filt.i.valid.eq(1),
+                ]
+                m.d.sync += upsample_counter.eq(upsample_counter - 1)
+
+        wiring.connect(m, filt.o, wiring.flipped(self.o))
+        m.d.comb += [
+            self.o.payload.eq(filt.o.payload << exact_log2(self.n_up))
+        ]
+
+        return m
+
 class Resample(wiring.Component):
 
     """

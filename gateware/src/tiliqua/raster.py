@@ -246,10 +246,10 @@ class Stroke(wiring.Component):
             m.submodules.split = split = dsp.Split(n_channels=4)
             m.submodules.merge = merge = dsp.Merge(n_channels=4)
 
-            m.submodules.resample0 = resample0 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
-            m.submodules.resample1 = resample1 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
-            m.submodules.resample2 = resample2 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
-            m.submodules.resample3 = resample3 = dsp.Resample(fs_in=self.fs, n_up=self.n_upsample, m_down=1)
+            m.submodules.resample0 = resample0 = dsp.BoxcarUpsample(n_up=self.n_upsample)
+            m.submodules.resample1 = resample1 = dsp.BoxcarUpsample(n_up=self.n_upsample)
+            m.submodules.resample2 = resample2 = dsp.BoxcarUpsample(n_up=self.n_upsample)
+            m.submodules.resample3 = resample3 = dsp.BoxcarUpsample(n_up=self.n_upsample)
 
             wiring.connect(m, wiring.flipped(self.i), split.i)
 
