@@ -11,7 +11,6 @@ from amaranth                   import *
 from amaranth.build             import *
 from amaranth.lib               import wiring, data, stream
 from amaranth.lib.wiring        import In, Out, flipped, connect
-from amaranth.lib.fifo          import AsyncFIFO
 from amaranth.lib.cdc           import FFSynchronizer
 
 from amaranth_soc               import csr
