@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 
 """
-Cache utilities, largely inspired by equivalent LiteX components i.e:
-https://github.com/enjoy-digital/litex/blob/master/litex/soc/interconnect/wishbone.py
+Cache components, for accelerating memory accesses to a backing store.
 """
 
 from amaranth                    import *
@@ -18,9 +17,21 @@ from amaranth_soc                import wishbone
 class WishboneL2Cache(wiring.Component):
 
     """
-    Write-back wishbone cache, may be used as a L2 cache.
-    Cachesize (in 32-bit words) is the size of the data store and must be
+    Wishbone cache, designed to go between a wishbone master and backing store.
+
+    This cache is direct-mapped and write-back.
+    - 'direct-mapped': https://en.wikipedia.org/wiki/Cache_placement_policies
+    - 'write-back': https://en.wikipedia.org/wiki/Cache_(computing)#Writing_policies
+
+    The 'master' bus is for the wishbone master that uses the cache.
+    The 'slave' bus is for the backing store. The cache acts as a master on
+    this bus in order to fill / evict cache lines.
+
+    `cachesize_words` (in 32-bit words) is the size of the data store and must be
     a power of 2.
+
+    This cache is a partial rewrite of the equivalent LiteX component:
+    https://github.com/enjoy-digital/litex/blob/master/litex/soc/interconnect/wishbone.py
 
     Key differences to LiteX implementation:
     - Tags now include a 'valid' bit, so every cache line must be refilled
