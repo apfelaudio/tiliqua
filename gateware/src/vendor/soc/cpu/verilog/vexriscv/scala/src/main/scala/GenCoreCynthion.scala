@@ -71,7 +71,7 @@ object GenCoreCynthion {
           separatedAddSub = false,
           executeInsertion = true
         ),
-        new FullBarrelShifterPlugin,
+        new LightShifterPlugin,
         new HazardSimplePlugin(
           bypassExecute = true,
           bypassMemory = true,
@@ -89,8 +89,7 @@ object GenCoreCynthion {
           CsrPluginConfig.all(mtvecInit = null).copy(ebreakGen = true, xtvecModeGen = false)
         ),
         new YamlPlugin(outputFile + ".yaml"),
-        new MulPlugin,
-        new DivPlugin,
+        new MulDivIterativePlugin,
         new ExternalInterruptArrayPlugin(
           machineMaskCsrId = 0xbc0,
           machinePendingsCsrId = 0xfc0,
