@@ -1,4 +1,4 @@
-// A (quite dirty) simulation harness that simulates the tiliqua_soc core
+// A (quite dirty) simulation harness that simulates the top core
 // and uses it to generate some full FST traces for examination.
 
 #include <cmath>
@@ -7,7 +7,7 @@
 #include <verilated_fst_c.h>
 #endif
 
-#include "Vtiliqua_soc.h"
+#include "Vtop.h"
 #include "verilated.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -16,7 +16,7 @@
 int main(int argc, char** argv) {
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
-    Vtiliqua_soc* top = new Vtiliqua_soc{contextp};
+    Vtop* top = new Vtop{contextp};
 
 #if VM_TRACE_FST == 1
     Verilated::traceEverOn(true);

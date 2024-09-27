@@ -18,10 +18,9 @@ from amaranth.lib.wiring                         import Component, In, Out, flip
 from amaranth_soc                                import csr, gpio, wishbone
 from amaranth_soc.csr.wishbone                   import WishboneCSRBridge
 
-from sentinel.top import Top
-
 from vendor.soc.cores                            import sram, timer, uart
 from vendor.soc                                  import readbin
+from vendor.soc.cpu                              import picorv32
 from vendor.soc.generate                         import GenerateSVD
 
 from tiliqua.tiliqua_platform                    import *
@@ -142,7 +141,7 @@ class TiliquaSoc(Component):
         self.video_periph_base    = 0x00000900
 
         # cpu
-        self.cpu = Top()
+        self.cpu = picorv32.Picorv32()
 
         # bus
         self.wb_decoder  = wishbone.Decoder(
@@ -322,8 +321,7 @@ class TiliquaSoc(Component):
         # Memory controller hangs if we start making requests to it straight away.
         on_delay = Signal(32)
         with m.If(on_delay < 0xFF):
-            # m.d.comb += self.cpu.ext_reset.eq(1)
-            pass
+            m.d.comb += self.cpu.ext_reset.eq(1)
         with m.If(on_delay < 0xFFFF):
             m.d.sync += on_delay.eq(on_delay+1)
         with m.Else():

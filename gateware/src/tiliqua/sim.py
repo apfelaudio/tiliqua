@@ -159,6 +159,7 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
                            "--exe",
                            "--Mdir", f"{verilator_dst}",
                            "--build",
+                           "--top-module", "top",
                            "-j", "0",
                            "-Ibuild",
                            "-CFLAGS", f"-DSYNC_CLK_HZ={clock_sync_hz}",
@@ -172,8 +173,8 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
                           ],
                           env=os.environ)
 
-    print(f"run verilated binary '{verilator_dst}/Vtiliqua_soc'...")
-    subprocess.check_call([f"{verilator_dst}/Vtiliqua_soc"],
+    print(f"run verilated binary '{verilator_dst}/Vtop'...")
+    subprocess.check_call([f"{verilator_dst}/Vtop"],
                           env=os.environ)
 
     print(f"done.")
