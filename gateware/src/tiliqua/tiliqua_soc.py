@@ -18,8 +18,9 @@ from amaranth.lib.wiring                         import Component, In, Out, flip
 from amaranth_soc                                import csr, gpio, wishbone
 from amaranth_soc.csr.wishbone                   import WishboneCSRBridge
 
+from sentinel.top import Top
+
 from vendor.soc.cores                            import sram, timer, uart
-from vendor.soc.cpu                              import InterruptController, VexRiscv
 from vendor.soc                                  import readbin
 from vendor.soc.generate                         import GenerateSVD
 
@@ -125,7 +126,7 @@ class TiliquaSoc(Component):
         self.clock_sync_hz = TILIQUA_CLOCK_SYNC_HZ
 
         self.mainram_base         = 0x00000000
-        self.mainram_size         = 0x00008000
+        self.mainram_size         = 0x00010000
         self.psram_base           = 0x20000000
         self.psram_size           = 16*1024*1024
         self.csr_base             = 0xf0000000
@@ -133,8 +134,7 @@ class TiliquaSoc(Component):
         self.uart0_base           = 0x00000200
         self.timer0_base          = 0x00000300
         self.timer0_irq           = 0
-        self.timer1_base          = 0x00000400
-        self.timer1_irq           = 1
+        # (gap) was timer1
         self.i2c0_base            = 0x00000500
         self.encoder0_base        = 0x00000600
         self.pmod0_periph_base    = 0x00000700
@@ -142,27 +142,15 @@ class TiliquaSoc(Component):
         self.video_periph_base    = 0x00000900
 
         # cpu
-        self.cpu = VexRiscv(
-            variant="cynthion",
-            reset_addr=self.mainram_base
-        )
-
-        # interrupt controller
-        self.interrupt_controller = InterruptController(width=len(self.cpu.irq_external))
+        self.cpu = Top()
 
         # bus
-        self.wb_arbiter  = wishbone.Arbiter(
-            addr_width=30,
-            data_width=32,
-            granularity=8,
-            features={"cti", "bte", "err"}
-        )
         self.wb_decoder  = wishbone.Decoder(
             addr_width=30,
             data_width=32,
             granularity=8,
             alignment=0,
-            features={"cti", "bte", "err"}
+            features={}
         )
 
         # mainram
@@ -178,18 +166,9 @@ class TiliquaSoc(Component):
         self.uart0 = uart.Peripheral(divisor=divisor)
         self.csr_decoder.add(self.uart0.bus, addr=self.uart0_base, name="uart0")
 
-        # FIXME: timer events / isrs currently not implemented, adding the event
-        # bus to the csr decoder segfaults yosys somehow ...
-
         # timer0
         self.timer0 = timer.Peripheral(width=32)
         self.csr_decoder.add(self.timer0.bus, addr=self.timer0_base, name="timer0")
-        self.interrupt_controller.add(self.timer0, number=self.timer0_irq, name="timer0")
-
-        # timer1
-        self.timer1 = timer.Peripheral(width=32)
-        self.csr_decoder.add(self.timer1.bus, addr=self.timer1_base, name="timer1")
-        self.interrupt_controller.add(self.timer1, name="timer1", number=self.timer1_irq)
 
         # psram peripheral
         self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size)
@@ -253,19 +232,9 @@ class TiliquaSoc(Component):
         assert self.mainram.init
 
         # bus
-        m.submodules.wb_arbiter = self.wb_arbiter
-        m.submodules.wb_decoder = self.wb_decoder
-        wiring.connect(m, self.wb_arbiter.bus, self.wb_decoder.bus)
-
-        # cpu
         m.submodules.cpu = self.cpu
-        self.wb_arbiter.add(self.cpu.ibus)
-        self.wb_arbiter.add(self.cpu.dbus)
-
-        # interrupt controller
-        m.submodules.interrupt_controller = self.interrupt_controller
-        # TODO wiring.connect(m, self.cpu.irq_external, self.irqs.pending)
-        m.d.comb += self.cpu.irq_external.eq(self.interrupt_controller.pending)
+        m.submodules.wb_decoder = self.wb_decoder
+        wiring.connect(m, self.cpu.bus, self.wb_decoder.bus)
 
         # mainram
         m.submodules.mainram = self.mainram
@@ -282,9 +251,6 @@ class TiliquaSoc(Component):
 
         # timer0
         m.submodules.timer0 = self.timer0
-
-        # timer1
-        m.submodules.timer1 = self.timer1
 
         # i2c0
         m.submodules.i2c0 = self.i2c0
@@ -350,7 +316,8 @@ class TiliquaSoc(Component):
         # Memory controller hangs if we start making requests to it straight away.
         on_delay = Signal(32)
         with m.If(on_delay < 0xFF):
-            m.d.comb += self.cpu.ext_reset.eq(1)
+            # m.d.comb += self.cpu.ext_reset.eq(1)
+            pass
         with m.If(on_delay < 0xFFFF):
             m.d.sync += on_delay.eq(on_delay+1)
         with m.Else():

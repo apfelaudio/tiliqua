@@ -19,7 +19,7 @@ class Introspect():
     """Gather information about a design for sdk generation"""
 
     def __init__(self, design, access="w"):
-        self.interrupts            = design.interrupt_controller.interrupts
+        self.interrupts            = {} # design.interrupt_controller.interrupts
         self.memory_map: MemoryMap = design.wb_decoder.bus.memory_map
 
     def csr_base(self):

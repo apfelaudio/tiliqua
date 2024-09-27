@@ -29,11 +29,13 @@ static LOGGER: WriteLogger<Serial0> = WriteLogger {
 
 pub fn logger_init(writer: Serial0) {
     LOGGER.writer.replace(Some(writer));
-    match log::set_logger(&LOGGER).map(|()| log::set_max_level(LevelFilter::Trace)) {
+    unsafe {
+    match log::set_logger_racy(&LOGGER).map(|()| log::set_max_level_racy(LevelFilter::Trace)) {
         Ok(()) => (),
         Err(_e) => {
             panic!("Failed to set logger");
         }
+    }
     }
 }
 
