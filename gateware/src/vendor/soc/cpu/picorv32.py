@@ -38,7 +38,10 @@ class Picorv32(Component):
             # parameters
             # HACK: 'riscv-rt' (rust) assumes some CSRs assume during
             # boot that are not implemented by picorv32.
+            p_ENABLE_COUNTERS=0,
+            p_ENABLE_COUNTERS64=0,
             p_CATCH_ILLINSN=0,
+            p_CATCH_MISALIGN=0,
             # clock and reset
             i_wb_rst_i = ResetSignal("sync") | self.ext_reset,
             i_wb_clk_i = ClockSignal("sync"),
