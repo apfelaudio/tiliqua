@@ -31,15 +31,21 @@ class Picorv32(Component):
 
         platform.add_file(self._source_file, self._source_verilog)
         wbm_adr = Signal(32)
+        wbm_sel = Signal(4)
+
         self._cpu = Instance(
             "picorv32_wb",
+            # parameters
+            # HACK: 'riscv-rt' (rust) assumes some CSRs assume during
+            # boot that are not implemented by picorv32.
+            p_CATCH_ILLINSN=0,
             # clock and reset
             i_wb_rst_i = ResetSignal("sync") | self.ext_reset,
             i_wb_clk_i = ClockSignal("sync"),
             # master wishbone bus
             o_wbm_adr_o  = wbm_adr,
             o_wbm_dat_o  = self.bus.dat_w,
-            o_wbm_sel_o  = self.bus.sel,
+            o_wbm_sel_o  = wbm_sel,
             o_wbm_cyc_o  = self.bus.cyc,
             o_wbm_stb_o  = self.bus.stb,
             o_wbm_we_o   = self.bus.we,
@@ -50,6 +56,13 @@ class Picorv32(Component):
         m.d.comb += [
             self.bus.adr.eq(wbm_adr>>2)
         ]
+
+        # amaranth-soc CSR bridge needs wishbone
+        # select line 0xf for all reads.
+        with m.If(self.bus.we):
+            m.d.comb += self.bus.sel.eq(wbm_sel)
+        with m.Else():
+            m.d.comb += self.bus.sel.eq(0b1111)
 
         m.submodules.picorv32 = self._cpu
 

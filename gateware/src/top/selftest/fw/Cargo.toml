@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 tiliqua-hal = { path="../../../rs/hal", default-features = false }
 tiliqua-lib = { path = "../../../rs/lib" }
-tiliqua-pac = { path="../../../rs/pac", default-features = false, features = ["critical-section", "vexriscv"] }
+tiliqua-pac = { path="../../../rs/pac", default-features = false, features = ["critical-section"] }
 
 log = "0.4.17"
 embedded-hal = "=1.0.0"
