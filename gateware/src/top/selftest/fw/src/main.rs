@@ -261,9 +261,9 @@ fn main() -> ! {
     // FIXME: use proper atomic bus sharing!!
     let i2cdev2 = I2c0::new(unsafe { pac::I2C0::steal() } );
 
-    psram_memtest(&mut timer);
+    //psram_memtest(&mut timer);
 
-    tusb322i_id_test(&mut i2cdev);
+    //tusb322i_id_test(&mut i2cdev);
 
     let mut pca9635 = Pca9635Driver::new(i2cdev2);
 
