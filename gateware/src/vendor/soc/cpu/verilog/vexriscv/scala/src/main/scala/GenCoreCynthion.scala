@@ -40,7 +40,7 @@ object GenCoreCynthion {
           dBusRspSlavePipe = false,
           relaxedMemoryTranslationRegister = false,
           config = new DataCacheConfig(
-            cacheSize = 1024,
+            cacheSize = 256,
             bytePerLine = 32,
             wayCount = 1,
             addressWidth = 32,

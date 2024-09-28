@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.10.2a    git head : a348a60b7e8b6a455c72e1536ec3d74a2ea16935
 // Component : VexRiscv
-// Git hash  : c299ca7aff555dfdaacfcaa948194e241b0699e2
+// Git hash  : 360791da67ad894a6a4dc29d0f2d1cd770cc8705
 
 `timescale 1ns/1ps
 
@@ -86,7 +86,7 @@ module VexRiscv (
   wire       [3:0]    dataCache_1_io_cpu_writeBack_fence_FM;
   wire                dataCache_1_io_cpu_flush_valid;
   wire                dataCache_1_io_cpu_flush_payload_singleLine;
-  wire       [4:0]    dataCache_1_io_cpu_flush_payload_lineId;
+  wire       [2:0]    dataCache_1_io_cpu_flush_payload_lineId;
   reg        [31:0]   RegFilePlugin_regFile_spinal_port0;
   reg        [31:0]   RegFilePlugin_regFile_spinal_port1;
   wire                IBusSimplePlugin_rspJoin_rspBuffer_c_io_push_ready;
@@ -1779,7 +1779,7 @@ module VexRiscv (
     .io_cpu_flush_valid                     (dataCache_1_io_cpu_flush_valid                   ), //i
     .io_cpu_flush_ready                     (dataCache_1_io_cpu_flush_ready                   ), //o
     .io_cpu_flush_payload_singleLine        (dataCache_1_io_cpu_flush_payload_singleLine      ), //i
-    .io_cpu_flush_payload_lineId            (dataCache_1_io_cpu_flush_payload_lineId[4:0]     ), //i
+    .io_cpu_flush_payload_lineId            (dataCache_1_io_cpu_flush_payload_lineId[2:0]     ), //i
     .io_cpu_writesPending                   (dataCache_1_io_cpu_writesPending                 ), //o
     .io_mem_cmd_valid                       (dataCache_1_io_mem_cmd_valid                     ), //o
     .io_mem_cmd_ready                       (toplevel_dataCache_1_io_mem_cmd_rValidN          ), //i
@@ -3462,7 +3462,7 @@ module VexRiscv (
 
   assign dataCache_1_io_cpu_flush_valid = (execute_arbitration_isValid && execute_MEMORY_MANAGMENT);
   assign dataCache_1_io_cpu_flush_payload_singleLine = (execute_INSTRUCTION[19 : 15] != 5'h0);
-  assign dataCache_1_io_cpu_flush_payload_lineId = _zz_io_cpu_flush_payload_lineId[4:0];
+  assign dataCache_1_io_cpu_flush_payload_lineId = _zz_io_cpu_flush_payload_lineId[2:0];
   assign toplevel_dataCache_1_io_cpu_flush_isStall = (dataCache_1_io_cpu_flush_valid && (! dataCache_1_io_cpu_flush_ready));
   assign when_DBusCachedPlugin_l395 = (toplevel_dataCache_1_io_cpu_flush_isStall || dataCache_1_io_cpu_execute_haltIt);
   always @(*) begin
@@ -4579,7 +4579,7 @@ module VexRiscv (
   always @(*) begin
     _zz_CsrPlugin_csrMapping_readDataInit_1 = 32'h0;
     if(execute_CsrPlugin_csr_3264) begin
-      _zz_CsrPlugin_csrMapping_readDataInit_1[10 : 0] = 11'h400;
+      _zz_CsrPlugin_csrMapping_readDataInit_1[8 : 0] = 9'h100;
       _zz_CsrPlugin_csrMapping_readDataInit_1[25 : 20] = 6'h20;
     end
   end
@@ -5573,7 +5573,7 @@ module DataCache (
   input  wire          io_cpu_flush_valid,
   output wire          io_cpu_flush_ready,
   input  wire          io_cpu_flush_payload_singleLine,
-  input  wire [4:0]    io_cpu_flush_payload_lineId,
+  input  wire [2:0]    io_cpu_flush_payload_lineId,
   output wire          io_cpu_writesPending,
   output reg           io_mem_cmd_valid,
   input  wire          io_mem_cmd_ready,
@@ -5592,9 +5592,9 @@ module DataCache (
   input  wire          reset
 );
 
-  reg        [23:0]   ways_0_tags_spinal_port0;
+  reg        [25:0]   ways_0_tags_spinal_port0;
   reg        [31:0]   ways_0_data_spinal_port0;
-  wire       [23:0]   _zz_ways_0_tags_port;
+  wire       [25:0]   _zz_ways_0_tags_port;
   wire       [31:0]   _zz_stageB_amo_addSub;
   wire       [31:0]   _zz_stageB_amo_addSub_1;
   wire       [31:0]   _zz_stageB_amo_addSub_2;
@@ -5609,31 +5609,31 @@ module DataCache (
   reg                 _zz_2;
   wire                haltCpu;
   reg                 tagsReadCmd_valid;
-  reg        [4:0]    tagsReadCmd_payload;
+  reg        [2:0]    tagsReadCmd_payload;
   reg                 tagsWriteCmd_valid;
   reg        [0:0]    tagsWriteCmd_payload_way;
-  reg        [4:0]    tagsWriteCmd_payload_address;
+  reg        [2:0]    tagsWriteCmd_payload_address;
   reg                 tagsWriteCmd_payload_data_valid;
   reg                 tagsWriteCmd_payload_data_error;
-  reg        [21:0]   tagsWriteCmd_payload_data_address;
+  reg        [23:0]   tagsWriteCmd_payload_data_address;
   reg                 tagsWriteLastCmd_valid;
   reg        [0:0]    tagsWriteLastCmd_payload_way;
-  reg        [4:0]    tagsWriteLastCmd_payload_address;
+  reg        [2:0]    tagsWriteLastCmd_payload_address;
   reg                 tagsWriteLastCmd_payload_data_valid;
   reg                 tagsWriteLastCmd_payload_data_error;
-  reg        [21:0]   tagsWriteLastCmd_payload_data_address;
+  reg        [23:0]   tagsWriteLastCmd_payload_data_address;
   reg                 dataReadCmd_valid;
-  reg        [7:0]    dataReadCmd_payload;
+  reg        [5:0]    dataReadCmd_payload;
   reg                 dataWriteCmd_valid;
   reg        [0:0]    dataWriteCmd_payload_way;
-  reg        [7:0]    dataWriteCmd_payload_address;
+  reg        [5:0]    dataWriteCmd_payload_address;
   reg        [31:0]   dataWriteCmd_payload_data;
   reg        [3:0]    dataWriteCmd_payload_mask;
   wire                _zz_ways_0_tagsReadRsp_valid;
   wire                ways_0_tagsReadRsp_valid;
   wire                ways_0_tagsReadRsp_error;
-  wire       [21:0]   ways_0_tagsReadRsp_address;
-  wire       [23:0]   _zz_ways_0_tagsReadRsp_valid_1;
+  wire       [23:0]   ways_0_tagsReadRsp_address;
+  wire       [25:0]   _zz_ways_0_tagsReadRsp_valid_1;
   wire                _zz_ways_0_dataReadRspMem;
   wire       [31:0]   ways_0_dataReadRspMem;
   wire       [31:0]   ways_0_dataReadRsp;
@@ -5688,7 +5688,7 @@ module DataCache (
   wire                when_DataCache_l826;
   reg                 stageB_tagsReadRsp_0_valid;
   reg                 stageB_tagsReadRsp_0_error;
-  reg        [21:0]   stageB_tagsReadRsp_0_address;
+  reg        [23:0]   stageB_tagsReadRsp_0_address;
   wire                when_DataCache_l826_1;
   reg        [31:0]   stageB_dataReadRsp_0;
   wire                when_DataCache_l825;
@@ -5709,7 +5709,7 @@ module DataCache (
   wire       [31:0]   stageB_ioMemRspMuxed;
   reg                 stageB_flusher_waitDone;
   wire                stageB_flusher_hold;
-  reg        [5:0]    stageB_flusher_counter;
+  reg        [3:0]    stageB_flusher_counter;
   wire                when_DataCache_l855;
   wire                when_DataCache_l861;
   wire                when_DataCache_l863;
@@ -5762,11 +5762,11 @@ module DataCache (
   reg                 loader_valid_regNext;
   wire                when_DataCache_l1129;
   wire                when_DataCache_l1132;
-  reg [23:0] ways_0_tags [0:31];
-  reg [7:0] ways_0_data_symbol0 [0:255];
-  reg [7:0] ways_0_data_symbol1 [0:255];
-  reg [7:0] ways_0_data_symbol2 [0:255];
-  reg [7:0] ways_0_data_symbol3 [0:255];
+  reg [25:0] ways_0_tags [0:7];
+  reg [7:0] ways_0_data_symbol0 [0:63];
+  reg [7:0] ways_0_data_symbol1 [0:63];
+  reg [7:0] ways_0_data_symbol2 [0:63];
+  reg [7:0] ways_0_data_symbol3 [0:63];
   reg [7:0] _zz_ways_0_datasymbol_read;
   reg [7:0] _zz_ways_0_datasymbol_read_1;
   reg [7:0] _zz_ways_0_datasymbol_read_2;
@@ -5841,7 +5841,7 @@ module DataCache (
   assign _zz_ways_0_tagsReadRsp_valid_1 = ways_0_tags_spinal_port0;
   assign ways_0_tagsReadRsp_valid = _zz_ways_0_tagsReadRsp_valid_1[0];
   assign ways_0_tagsReadRsp_error = _zz_ways_0_tagsReadRsp_valid_1[1];
-  assign ways_0_tagsReadRsp_address = _zz_ways_0_tagsReadRsp_valid_1[23 : 2];
+  assign ways_0_tagsReadRsp_address = _zz_ways_0_tagsReadRsp_valid_1[25 : 2];
   assign _zz_ways_0_dataReadRspMem = (dataReadCmd_valid && (! io_cpu_memory_isStuck));
   assign ways_0_dataReadRspMem = ways_0_data_spinal_port0;
   assign ways_0_dataReadRsp = ways_0_dataReadRspMem[31 : 0];
@@ -5855,9 +5855,9 @@ module DataCache (
   end
 
   always @(*) begin
-    tagsReadCmd_payload = 5'bxxxxx;
+    tagsReadCmd_payload = 3'bxxx;
     if(when_DataCache_l667) begin
-      tagsReadCmd_payload = io_cpu_execute_address[9 : 5];
+      tagsReadCmd_payload = io_cpu_execute_address[7 : 5];
     end
   end
 
@@ -5869,9 +5869,9 @@ module DataCache (
   end
 
   always @(*) begin
-    dataReadCmd_payload = 8'bxxxxxxxx;
+    dataReadCmd_payload = 6'bxxxxxx;
     if(when_DataCache_l667) begin
-      dataReadCmd_payload = io_cpu_execute_address[9 : 2];
+      dataReadCmd_payload = io_cpu_execute_address[7 : 2];
     end
   end
 
@@ -5901,12 +5901,12 @@ module DataCache (
   end
 
   always @(*) begin
-    tagsWriteCmd_payload_address = 5'bxxxxx;
+    tagsWriteCmd_payload_address = 3'bxxx;
     if(when_DataCache_l855) begin
-      tagsWriteCmd_payload_address = stageB_flusher_counter[4:0];
+      tagsWriteCmd_payload_address = stageB_flusher_counter[2:0];
     end
     if(loader_done) begin
-      tagsWriteCmd_payload_address = stageB_mmuRsp_physicalAddress[9 : 5];
+      tagsWriteCmd_payload_address = stageB_mmuRsp_physicalAddress[7 : 5];
     end
   end
 
@@ -5928,9 +5928,9 @@ module DataCache (
   end
 
   always @(*) begin
-    tagsWriteCmd_payload_data_address = 22'bxxxxxxxxxxxxxxxxxxxxxx;
+    tagsWriteCmd_payload_data_address = 24'bxxxxxxxxxxxxxxxxxxxxxxxx;
     if(loader_done) begin
-      tagsWriteCmd_payload_data_address = stageB_mmuRsp_physicalAddress[31 : 10];
+      tagsWriteCmd_payload_data_address = stageB_mmuRsp_physicalAddress[31 : 8];
     end
   end
 
@@ -5978,12 +5978,12 @@ module DataCache (
   end
 
   always @(*) begin
-    dataWriteCmd_payload_address = 8'bxxxxxxxx;
+    dataWriteCmd_payload_address = 6'bxxxxxx;
     if(stageB_cpuWriteToCache) begin
-      dataWriteCmd_payload_address = stageB_mmuRsp_physicalAddress[9 : 2];
+      dataWriteCmd_payload_address = stageB_mmuRsp_physicalAddress[7 : 2];
     end
     if(when_DataCache_l1097) begin
-      dataWriteCmd_payload_address = {stageB_mmuRsp_physicalAddress[9 : 5],loader_counter_value};
+      dataWriteCmd_payload_address = {stageB_mmuRsp_physicalAddress[7 : 5],loader_counter_value};
     end
   end
 
@@ -6040,15 +6040,15 @@ module DataCache (
   end
 
   assign stage0_mask = (_zz_stage0_mask <<< io_cpu_execute_address[1 : 0]);
-  assign stage0_dataColisions[0] = (((dataWriteCmd_valid && dataWriteCmd_payload_way[0]) && (dataWriteCmd_payload_address == io_cpu_execute_address[9 : 2])) && ((stage0_mask & dataWriteCmd_payload_mask[3 : 0]) != 4'b0000));
+  assign stage0_dataColisions[0] = (((dataWriteCmd_valid && dataWriteCmd_payload_way[0]) && (dataWriteCmd_payload_address == io_cpu_execute_address[7 : 2])) && ((stage0_mask & dataWriteCmd_payload_mask[3 : 0]) != 4'b0000));
   assign stage0_wayInvalidate = 1'b0;
   assign when_DataCache_l776 = (! io_cpu_memory_isStuck);
   assign when_DataCache_l776_1 = (! io_cpu_memory_isStuck);
   assign io_cpu_memory_isWrite = stageA_request_wr;
-  assign stageA_wayHits = ((io_cpu_memory_mmuRsp_physicalAddress[31 : 10] == ways_0_tagsReadRsp_address) && ways_0_tagsReadRsp_valid);
+  assign stageA_wayHits = ((io_cpu_memory_mmuRsp_physicalAddress[31 : 8] == ways_0_tagsReadRsp_address) && ways_0_tagsReadRsp_valid);
   assign when_DataCache_l776_2 = (! io_cpu_memory_isStuck);
   assign when_DataCache_l776_3 = (! io_cpu_memory_isStuck);
-  assign _zz_stageA_dataColisions[0] = (((dataWriteCmd_valid && dataWriteCmd_payload_way[0]) && (dataWriteCmd_payload_address == io_cpu_memory_address[9 : 2])) && ((stageA_mask & dataWriteCmd_payload_mask[3 : 0]) != 4'b0000));
+  assign _zz_stageA_dataColisions[0] = (((dataWriteCmd_valid && dataWriteCmd_payload_way[0]) && (dataWriteCmd_payload_address == io_cpu_memory_address[7 : 2])) && ((stageA_mask & dataWriteCmd_payload_mask[3 : 0]) != 4'b0000));
   assign stageA_dataColisions = (stage0_dataColisions_regNextWhen | _zz_stageA_dataColisions);
   assign when_DataCache_l827 = (! io_cpu_writeBack_isStuck);
   always @(*) begin
@@ -6127,10 +6127,10 @@ module DataCache (
   end
 
   assign stageB_flusher_hold = 1'b0;
-  assign when_DataCache_l855 = (! stageB_flusher_counter[5]);
+  assign when_DataCache_l855 = (! stageB_flusher_counter[3]);
   assign when_DataCache_l861 = (! stageB_flusher_hold);
   assign when_DataCache_l863 = (io_cpu_flush_valid && io_cpu_flush_payload_singleLine);
-  assign io_cpu_flush_ready = (stageB_flusher_waitDone && stageB_flusher_counter[5]);
+  assign io_cpu_flush_ready = (stageB_flusher_waitDone && stageB_flusher_counter[3]);
   assign when_DataCache_l877 = (io_cpu_flush_valid && io_cpu_flush_payload_singleLine);
   assign when_DataCache_l885 = (io_cpu_writeBack_isValid && io_cpu_writeBack_isFiring);
   assign stageB_isExternalLsrc = 1'b0;
@@ -6425,7 +6425,7 @@ module DataCache (
     if(reset) begin
       memCmdSent <= 1'b0;
       stageB_flusher_waitDone <= 1'b0;
-      stageB_flusher_counter <= 6'h0;
+      stageB_flusher_counter <= 4'b0000;
       stageB_flusher_start <= 1'b1;
       stageB_lrSc_reserved <= 1'b0;
       loader_valid <= 1'b0;
@@ -6445,16 +6445,16 @@ module DataCache (
       end
       if(when_DataCache_l855) begin
         if(when_DataCache_l861) begin
-          stageB_flusher_counter <= (stageB_flusher_counter + 6'h01);
+          stageB_flusher_counter <= (stageB_flusher_counter + 4'b0001);
           if(when_DataCache_l863) begin
-            stageB_flusher_counter[5] <= 1'b1;
+            stageB_flusher_counter[3] <= 1'b1;
           end
         end
       end
       stageB_flusher_start <= (((((((! stageB_flusher_waitDone) && (! stageB_flusher_start)) && io_cpu_flush_valid) && (! io_cpu_execute_isValid)) && (! io_cpu_memory_isValid)) && (! io_cpu_writeBack_isValid)) && (! io_cpu_redo));
       if(stageB_flusher_start) begin
         stageB_flusher_waitDone <= 1'b1;
-        stageB_flusher_counter <= 6'h0;
+        stageB_flusher_counter <= 4'b0000;
         if(when_DataCache_l877) begin
           stageB_flusher_counter <= {1'b0,io_cpu_flush_payload_lineId};
         end
