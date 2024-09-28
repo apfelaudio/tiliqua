@@ -26,7 +26,7 @@ from vendor.soc.generate                         import GenerateSVD
 from tiliqua.tiliqua_platform                    import *
 
 from tiliqua                                     import psram_peripheral, i2c, encoder, dtr, video, eurorack_pmod_peripheral
-from tiliqua                                     import sim, eurorack_pmod
+from tiliqua                                     import sim, eurorack_pmod, cache
 
 from tiliqua.raster                              import Persistance
 
@@ -126,7 +126,7 @@ class TiliquaSoc(Component):
 
         self.mainram_base         = 0x00000000
         self.mainram_size         = 0x00008000
-        self.psram_base           = 0x20000000
+        self.psram_base           = 0xA0000000
         self.psram_size           = 16*1024*1024
         self.csr_base             = 0xf0000000
         # (gap) leds/gpio0
@@ -187,7 +187,13 @@ class TiliquaSoc(Component):
 
         # psram peripheral
         self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size)
-        self.wb_decoder.add(self.psram_periph.bus, addr=self.psram_base, name="psram")
+
+        # psram cache
+        self.cache = cache.WishboneL2Cache(addr_width=self.psram_periph.bus.addr_width,
+                                           cachesize_words=64)
+        self.cache.master.memory_map = self.psram_periph.bus.memory_map
+        self.wb_decoder.add(self.cache.master, addr=self.psram_base, name="psram")
+        self.psram_periph.add_master(self.cache.slave)
 
         # video PHY (DMAs from PSRAM starting at fb_base)
         fb_base = self.psram_base
@@ -293,6 +299,7 @@ class TiliquaSoc(Component):
 
         # psram
         m.submodules.psram_periph = self.psram_periph
+        m.submodules.cache        = self.cache
 
         # video PHY
         m.submodules.video = self.video
