@@ -158,8 +158,7 @@ class TiliquaSoc(Component):
         self.uart0_base           = 0x00000200
         self.timer0_base          = 0x00000300
         self.timer0_irq           = 0
-        self.timer1_base          = 0x00000400
-        self.timer1_irq           = 1
+        # (gap) timer1
         self.i2c0_base            = 0x00000500
         self.encoder0_base        = 0x00000600
         self.pmod0_periph_base    = 0x00000700
@@ -210,11 +209,6 @@ class TiliquaSoc(Component):
         self.timer0 = timer.Peripheral(width=32)
         self.csr_decoder.add(self.timer0.bus, addr=self.timer0_base, name="timer0")
         self.interrupt_controller.add(self.timer0, number=self.timer0_irq, name="timer0")
-
-        # timer1
-        self.timer1 = timer.Peripheral(width=32)
-        self.csr_decoder.add(self.timer1.bus, addr=self.timer1_base, name="timer1")
-        self.interrupt_controller.add(self.timer1, name="timer1", number=self.timer1_irq)
 
         # psram peripheral
         self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size)
@@ -307,9 +301,6 @@ class TiliquaSoc(Component):
 
         # timer0
         m.submodules.timer0 = self.timer0
-
-        # timer1
-        m.submodules.timer1 = self.timer1
 
         # i2c0
         m.submodules.i2c0 = self.i2c0
