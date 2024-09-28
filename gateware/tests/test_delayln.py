@@ -36,7 +36,7 @@ class WishboneAdapter(wiring.Component):
 
         m.d.comb += [
             self.i.ack.eq(self.o.ack),
-            self.o.adr.eq(self.base + (self.i.adr>>1)),
+            self.o.adr.eq((self.base<<2) + (self.i.adr>>1)),
             self.o.we.eq(self.i.we),
             self.o.cyc.eq(self.i.cyc),
             self.o.stb.eq(self.i.stb),
@@ -61,9 +61,6 @@ class DelayLineTests(unittest.TestCase):
 
     def test_persist(self):
 
-        class FakeBusMaster:
-            addr_width = 30
-
         m = Module()
 
         l2c = cache.WishboneL2Cache(cachesize_words=4)
@@ -80,10 +77,9 @@ class DelayLineTests(unittest.TestCase):
                                   base=0x0)
 
         wiring.connect(m, dut.bus, adapter.i)
-        #wiring.connect(m, adapter.o, l2c.master)
+        wiring.connect(m, adapter.o, l2c.master)
 
-        #m.submodules += [l2c, dut, adapter]
-        m.submodules += [dut, adapter]
+        m.submodules += [l2c, dut, adapter]
 
         async def stimulus_wr(ctx):
             for n in range(0, sys.maxsize):
@@ -115,26 +111,29 @@ class DelayLineTests(unittest.TestCase):
         async def testbench(ctx):
             # Simulate some acks
             mem = [0] * 16
+            membus = l2c.slave
             for _ in range(200):
-                while not ctx.get(adapter.o.stb):
+                while not ctx.get(membus.stb):
                     await ctx.tick()
                 # Simulate acks delayed from stb
                 await ctx.tick().repeat(2)
-                ctx.set(adapter.o.ack, 1)
-                adr = ctx.get(adapter.o.adr)
-                if ctx.get(adapter.o.we):
-                    if ctx.get(adapter.o.sel == 0b11):
+                ctx.set(membus.ack, 1)
+                adr = ctx.get(membus.adr)
+                if ctx.get(membus.we):
+                    if ctx.get(membus.sel == 0b0011):
                         mem[adr] = mem[adr] & 0xFFFF0000
-                        mem[adr] |= ctx.get(adapter.o.dat_w & 0xFFFF)
-                    else:
+                        mem[adr] |= ctx.get(membus.dat_w & 0xFFFF)
+                    elif ctx.get(membus.sel == 0b1100):
                         mem[adr] = mem[adr] & 0x0000FFFF
-                        mem[adr] |= ctx.get(adapter.o.dat_w & 0xFFFF0000)
+                        mem[adr] |= ctx.get(membus.dat_w & 0xFFFF0000)
+                    else:
+                        mem[adr] = ctx.get(membus.dat_w)
                     print("write", hex(mem[adr]), "@", adr)
                 else:
                     print("read", hex(mem[adr]), "@", adr)
-                    ctx.set(adapter.o.dat_r, mem[ctx.get(adapter.o.adr)])
+                    ctx.set(membus.dat_r, mem[ctx.get(membus.adr)])
                 await ctx.tick()
-                ctx.set(adapter.o.ack, 0)
+                ctx.set(membus.ack, 0)
                 await ctx.tick()
 
         sim = Simulator(m)
