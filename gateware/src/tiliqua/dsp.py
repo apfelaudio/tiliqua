@@ -16,6 +16,8 @@ from scipy import signal
 
 from amaranth_future       import fixed
 
+from amaranth_soc         import wishbone
+
 from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
 
 # dummy values used to hook up to unused stream in/out ports, so they don't block forever
@@ -496,6 +498,121 @@ class SVF(wiring.Component):
 
         return m
 
+class DelayLineWriter(wiring.Component):
+    def __init__(self, max_delay=512, data_width=16, granularity=16):
+        self.max_delay = max_delay
+        self.address_width = exact_log2(max_delay)
+        super().__init__({
+            "wrpointer": Out(unsigned(self.address_width)),
+            "sw":  In(stream.Signature(ASQ)),
+            "bus": Out(wishbone.Signature(addr_width=self.address_width,
+                                          data_width=data_width,
+                                          granularity=granularity)),
+            "wbus": Out(wishbone.Signature(addr_width=self.address_width,
+                                          data_width=data_width,
+                                          granularity=granularity)),
+        })
+
+        self._arbiter = wishbone.Arbiter(addr_width=self.address_width,
+                                         data_width=data_width,
+                                         granularity=granularity)
+        self._arbiter.add(self.wbus)
+
+        self.taps = []
+
+    def add_tap(self):
+        tap = DelayLineTap(max_delay=self.max_delay)
+        self.taps.append(tap)
+        self._arbiter.add(tap.bus)
+        return tap
+
+    def elaborate(self, platform):
+        m = Module()
+
+        for tap in self.taps:
+            m.d.comb += tap.wrpointer.eq(self.wrpointer)
+
+        m.submodules += self.taps
+
+        # bus exposed to outside is the bus TDM'd by the arbiter
+        m.submodules.arbiter = self._arbiter
+        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
+
+        wrpointer = self.wrpointer
+
+        # bus which sits before the arbiter
+        bus = self.wbus
+
+        with m.FSM() as fsm:
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.sw.ready.eq(1)
+                with m.If(self.sw.valid):
+                    m.d.sync += [
+                        bus.adr  .eq(self.wrpointer),
+                        bus.dat_w.eq(self.sw.payload),
+                        bus.sel  .eq(0b1111),
+                    ]
+                    m.next = 'WRITE'
+            with m.State('WRITE'):
+                m.d.comb += [
+                    bus.stb.eq(1),
+                    bus.cyc.eq(1),
+                    bus.we.eq(1),
+                ]
+                with m.If(bus.ack):
+                    with m.If(wrpointer != (self.max_delay - 1)):
+                        m.d.sync += wrpointer.eq(wrpointer + 1)
+                    with m.Else():
+                        m.d.sync += wrpointer.eq(0)
+                    m.next = 'WAIT-VALID'
+
+        return m
+
+class DelayLineTap(wiring.Component):
+    def __init__(self, max_delay=512, data_width=16, granularity=16):
+        self.max_delay = max_delay
+        self.address_width = exact_log2(max_delay)
+        super().__init__({
+            "wrpointer": In(unsigned(self.address_width)),
+            "i":         In(stream.Signature(unsigned(self.address_width))),
+            "o":         Out(stream.Signature(ASQ)),
+            "bus":       Out(wishbone.Signature(addr_width=self.address_width,
+                                                data_width=data_width,
+                                                granularity=granularity)),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        bus = self.bus
+
+        with m.FSM() as fsm:
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.i.ready.eq(1)
+                with m.If(self.i.valid):
+                    rdpointer = Signal(self.address_width)
+                    m.d.comb += rdpointer.eq(self.wrpointer - self.i.payload)
+                    m.d.sync += bus.adr.eq(rdpointer)
+                    m.next = 'READ'
+            with m.State('READ'):
+                m.d.comb += [
+                    bus.stb.eq(1),
+                    bus.cyc.eq(1),
+                    bus.we.eq(0),
+                    bus.sel.eq(0b1111),
+                ]
+                with m.If(bus.ack):
+                    m.d.sync += self.o.payload.eq(bus.dat_r)
+                    m.next = 'WAIT-READY'
+            with m.State('WAIT-READY'):
+                m.d.comb += self.o.valid.eq(1)
+                with m.If(self.o.ready):
+                    m.next = 'WAIT-VALID'
+
+        return m
+
+
+'''
 class DelayLine(wiring.Component):
 
     """
@@ -576,6 +693,7 @@ class DelayLine(wiring.Component):
                 m.d.sync += wrpointer.eq(0)
 
         return m
+'''
 
 class PitchShift(wiring.Component):
 
