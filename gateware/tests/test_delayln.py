@@ -9,13 +9,53 @@ import unittest
 from amaranth              import *
 from amaranth.sim          import *
 from amaranth.lib          import wiring
-from tiliqua               import dsp, eurorack_pmod
+from amaranth.lib.wiring   import In, Out
+from tiliqua               import dsp, eurorack_pmod, cache
 from tiliqua.eurorack_pmod import ASQ
 
 from amaranth_soc          import csr
-from amaranth_soc.csr      import wishbone
+from amaranth_soc          import wishbone
 
 from amaranth_future       import fixed
+
+class WishboneAdapter(wiring.Component):
+    def __init__(self, addr_width_i, addr_width_o, base):
+        self.base = base
+        super().__init__({
+            "i": In(wishbone.Signature(addr_width=addr_width_i,
+                                       data_width=16,
+                                       granularity=8)),
+            "o": Out(wishbone.Signature(addr_width=addr_width_o,
+                                        data_width=32,
+                                        granularity=8,
+                                        features={'bte', 'cti'})),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [
+            self.i.ack.eq(self.o.ack),
+            self.o.adr.eq(self.base + (self.i.adr>>1)),
+            self.o.we.eq(self.i.we),
+            self.o.cyc.eq(self.i.cyc),
+            self.o.stb.eq(self.i.stb),
+        ]
+
+        with m.If(self.i.adr[0]):
+            m.d.comb += [
+                self.i.dat_r.eq(self.o.dat_r>>16),
+                self.o.sel  .eq(self.i.sel<<2),
+                self.o.dat_w.eq(self.i.dat_w<<16),
+            ]
+        with m.Else():
+            m.d.comb += [
+                self.i.dat_r.eq(self.o.dat_r),
+                self.o.sel  .eq(self.i.sel),
+                self.o.dat_w.eq(self.i.dat_w),
+            ]
+
+        return m
 
 class DelayLineTests(unittest.TestCase):
 
@@ -24,12 +64,26 @@ class DelayLineTests(unittest.TestCase):
         class FakeBusMaster:
             addr_width = 30
 
+        m = Module()
+
+        l2c = cache.WishboneL2Cache(cachesize_words=4)
+
         dut = dsp.DelayLineWriter(
             max_delay=16
         )
 
         tap1 = dut.add_tap()
         tap2 = dut.add_tap()
+
+        adapter = WishboneAdapter(addr_width_i=dut.bus.addr_width,
+                                  addr_width_o=l2c.master.addr_width,
+                                  base=0x0)
+
+        wiring.connect(m, dut.bus, adapter.i)
+        #wiring.connect(m, adapter.o, l2c.master)
+
+        #m.submodules += [l2c, dut, adapter]
+        m.submodules += [dut, adapter]
 
         async def stimulus_wr(ctx):
             for n in range(0, sys.maxsize):
@@ -38,7 +92,7 @@ class DelayLineTests(unittest.TestCase):
                         fixed.Const(0.8*math.sin(n*0.2), shape=ASQ))
                 await ctx.tick()
                 ctx.set(dut.sw.valid, 0)
-                await ctx.tick().repeat(10)
+                await ctx.tick().repeat(30)
 
         async def stimulus_rd1(ctx):
             ctx.set(tap1.o.ready, 1)
@@ -47,7 +101,7 @@ class DelayLineTests(unittest.TestCase):
                 ctx.set(tap1.i.payload, 4)
                 await ctx.tick()
                 ctx.set(tap1.i.valid, 0)
-                await ctx.tick().repeat(10)
+                await ctx.tick().repeat(30)
 
         async def stimulus_rd2(ctx):
             ctx.set(tap2.o.ready, 1)
@@ -56,29 +110,34 @@ class DelayLineTests(unittest.TestCase):
                 ctx.set(tap2.i.payload, 10)
                 await ctx.tick()
                 ctx.set(tap2.i.valid, 0)
-                await ctx.tick().repeat(10)
+                await ctx.tick().repeat(30)
 
         async def testbench(ctx):
             # Simulate some acks
             mem = [0] * 16
             for _ in range(200):
-                while not ctx.get(dut.bus.stb):
+                while not ctx.get(adapter.o.stb):
                     await ctx.tick()
                 # Simulate acks delayed from stb
-                await ctx.tick()
-                ctx.set(dut.bus.ack, 1)
-                adr = ctx.get(dut.bus.adr)
-                if ctx.get(dut.bus.we):
-                    mem[adr] = ctx.get(dut.bus.dat_w)
-                    print("write", mem[adr], "@", adr)
+                await ctx.tick().repeat(2)
+                ctx.set(adapter.o.ack, 1)
+                adr = ctx.get(adapter.o.adr)
+                if ctx.get(adapter.o.we):
+                    if ctx.get(adapter.o.sel == 0b11):
+                        mem[adr] = mem[adr] & 0xFFFF0000
+                        mem[adr] |= ctx.get(adapter.o.dat_w & 0xFFFF)
+                    else:
+                        mem[adr] = mem[adr] & 0x0000FFFF
+                        mem[adr] |= ctx.get(adapter.o.dat_w & 0xFFFF0000)
+                    print("write", hex(mem[adr]), "@", adr)
                 else:
-                    print("read", mem[adr], "@", adr)
-                    ctx.set(dut.bus.dat_r, mem[ctx.get(dut.bus.adr)])
+                    print("read", hex(mem[adr]), "@", adr)
+                    ctx.set(adapter.o.dat_r, mem[ctx.get(adapter.o.adr)])
                 await ctx.tick()
-                ctx.set(dut.bus.ack, 0)
+                ctx.set(adapter.o.ack, 0)
                 await ctx.tick()
 
-        sim = Simulator(dut)
+        sim = Simulator(m)
         sim.add_clock(1e-6)
         sim.add_testbench(testbench)
         sim.add_process(stimulus_wr)

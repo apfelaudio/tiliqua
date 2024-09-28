@@ -499,7 +499,7 @@ class SVF(wiring.Component):
         return m
 
 class DelayLineWriter(wiring.Component):
-    def __init__(self, max_delay=512, data_width=16, granularity=16):
+    def __init__(self, max_delay=512, data_width=16, granularity=8):
         self.max_delay = max_delay
         self.address_width = exact_log2(max_delay)
         super().__init__({
@@ -550,7 +550,7 @@ class DelayLineWriter(wiring.Component):
                     m.d.sync += [
                         bus.adr  .eq(self.wrpointer),
                         bus.dat_w.eq(self.sw.payload),
-                        bus.sel  .eq(0b1111),
+                        bus.sel  .eq(0b11),
                     ]
                     m.next = 'WRITE'
             with m.State('WRITE'):
@@ -569,7 +569,7 @@ class DelayLineWriter(wiring.Component):
         return m
 
 class DelayLineTap(wiring.Component):
-    def __init__(self, max_delay=512, data_width=16, granularity=16):
+    def __init__(self, max_delay=512, data_width=16, granularity=8):
         self.max_delay = max_delay
         self.address_width = exact_log2(max_delay)
         super().__init__({
@@ -599,7 +599,7 @@ class DelayLineTap(wiring.Component):
                     bus.stb.eq(1),
                     bus.cyc.eq(1),
                     bus.we.eq(0),
-                    bus.sel.eq(0b1111),
+                    bus.sel.eq(0b11),
                 ]
                 with m.If(bus.ack):
                     m.d.sync += self.o.payload.eq(bus.dat_r)
