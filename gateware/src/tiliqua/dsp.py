@@ -538,8 +538,6 @@ class DelayLineWriter(wiring.Component):
         m.submodules.arbiter = self._arbiter
         wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
 
-        wrpointer = self.wrpointer
-
         # bus which sits before the arbiter
         bus = self.wbus
 
@@ -560,10 +558,10 @@ class DelayLineWriter(wiring.Component):
                     bus.we.eq(1),
                 ]
                 with m.If(bus.ack):
-                    with m.If(wrpointer != (self.max_delay - 1)):
-                        m.d.sync += wrpointer.eq(wrpointer + 1)
+                    with m.If(self.wrpointer != (self.max_delay - 1)):
+                        m.d.sync += self.wrpointer.eq(self.wrpointer + 1)
                     with m.Else():
-                        m.d.sync += wrpointer.eq(0)
+                        m.d.sync += self.wrpointer.eq(0)
                     m.next = 'WAIT-VALID'
 
         return m
@@ -590,9 +588,7 @@ class DelayLineTap(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1)
                 with m.If(self.i.valid):
-                    rdpointer = Signal(self.address_width)
-                    m.d.comb += rdpointer.eq(self.wrpointer - self.i.payload)
-                    m.d.sync += bus.adr.eq(rdpointer)
+                    m.d.sync += bus.adr.eq(self.wrpointer - self.i.payload)
                     m.next = 'READ'
             with m.State('READ'):
                 m.d.comb += [

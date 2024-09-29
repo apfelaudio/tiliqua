@@ -16,10 +16,12 @@ from amaranth.build        import *
 from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 
-
 from amaranth_future       import fixed
 
-from tiliqua                  import eurorack_pmod, dsp, midi
+from amaranth_soc             import wishbone
+
+from tiliqua                  import eurorack_pmod, dsp, midi, psram_peripheral
+from tiliqua.cache            import WishboneL2Cache
 from tiliqua.eurorack_pmod    import ASQ
 from tiliqua.cli              import top_level_cli
 
@@ -511,6 +513,104 @@ class MidiCVTop(wiring.Component):
 
         return m
 
+class WishboneAdapter(wiring.Component):
+    def __init__(self, addr_width_i, addr_width_o, base):
+        self.base = base
+        super().__init__({
+            "i": In(wishbone.Signature(addr_width=addr_width_i,
+                                       data_width=16,
+                                       granularity=8)),
+            "o": Out(wishbone.Signature(addr_width=addr_width_o,
+                                        data_width=32,
+                                        granularity=8,
+                                        features={'bte', 'cti'})),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [
+            self.i.ack.eq(self.o.ack),
+            self.o.adr.eq((self.base<<2) + (self.i.adr>>1)),
+            self.o.we.eq(self.i.we),
+            self.o.cyc.eq(self.i.cyc),
+            self.o.stb.eq(self.i.stb),
+        ]
+
+        with m.If(self.i.adr[0]):
+            m.d.comb += [
+                self.i.dat_r.eq(self.o.dat_r>>16),
+                self.o.sel  .eq(self.i.sel<<2),
+                self.o.dat_w.eq(self.i.dat_w<<16),
+            ]
+        with m.Else():
+            m.d.comb += [
+                self.i.dat_r.eq(self.o.dat_r),
+                self.o.sel  .eq(self.i.sel),
+                self.o.dat_w.eq(self.i.dat_w),
+            ]
+
+        return m
+
+class DelayTop(wiring.Component):
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    bus: Out(wishbone.Signature(addr_width=22,
+                                data_width=32,
+                                granularity=8,
+                                features={'bte', 'cti'}))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.cache = cache = WishboneL2Cache(
+            addr_width=self.bus.addr_width,
+            cachesize_words=64
+        )
+        wiring.connect(m, cache.slave, wiring.flipped(self.bus))
+
+        writer = dsp.DelayLineWriter(
+            max_delay=64*1024
+        )
+
+        m.submodules.adapter = adapter = WishboneAdapter(
+            addr_width_i=writer.bus.addr_width,
+            addr_width_o=cache.master.addr_width,
+            base=0x0
+        )
+
+        tap1 = writer.add_tap()
+        tap2 = writer.add_tap()
+
+        wiring.connect(m, writer.bus, adapter.i)
+        wiring.connect(m, adapter.o, cache.master)
+
+        m.submodules.split4 = split4 = dsp.Split(n_channels=4, source=wiring.flipped(self.i))
+        split4.wire_ready(m, [1, 2, 3])
+
+        m.submodules.split3 = split3 = dsp.Split(n_channels=3, replicate=True, source=split4.o[0])
+
+        wiring.connect(m, split3.o[0], writer.sw)
+
+        dsp.connect_remap(m, split3.o[1], tap1.i, lambda o, i : [
+            i.payload.eq(30000)
+        ])
+
+        dsp.connect_remap(m, split3.o[2], tap2.i, lambda o, i : [
+            i.payload.eq(60000)
+        ])
+
+        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
+        merge4.wire_valid(m, [2, 3])
+
+        wiring.connect(m, tap1.o, merge4.i[0])
+        wiring.connect(m, tap2.o, merge4.i[1])
+
+        m.submodules.writer = writer
+
+        return m
+
 class CoreTop(Elaboratable):
 
     def __init__(self, dsp_core, enable_touch):
@@ -523,6 +623,8 @@ class CoreTop(Elaboratable):
         self.inject1 = Signal(signed(16))
         self.inject2 = Signal(signed(16))
         self.inject3 = Signal(signed(16))
+
+        self.psram_periph = psram_peripheral.Peripheral(size=16*1024*1024)
 
         super().__init__()
 
@@ -562,6 +664,10 @@ class CoreTop(Elaboratable):
             wiring.connect(m, serialrx.o, midi_decode.i)
             wiring.connect(m, midi_decode.o, self.core.i_midi)
 
+        if hasattr(self.core, "bus"):
+            m.submodules.psram_periph = self.psram_periph
+            wiring.connect(m, self.core.bus, self.psram_periph.bus)
+
         return m
 
 # Different DSP cores that can be selected at top-level CLI.
@@ -577,6 +683,7 @@ CORES = {
     "waveshaper": (False, DualWaveshaper),
     "nco":        (False, QuadNCO),
     "midicv":     (False, MidiCVTop),
+    "delay":      (False, DelayTop),
 }
 
 def simulation_ports(fragment):
@@ -590,6 +697,12 @@ def simulation_ports(fragment):
         "fs_inject1":     (fragment.inject1,                           None),
         "fs_inject2":     (fragment.inject2,                           None),
         "fs_inject3":     (fragment.inject3,                           None),
+        "idle":           (fragment.psram_periph.simif.idle,           None),
+        "address_ptr":    (fragment.psram_periph.simif.address_ptr,    None),
+        "read_data_view": (fragment.psram_periph.simif.read_data_view, None),
+        "write_data":     (fragment.psram_periph.simif.write_data,     None),
+        "read_ready":     (fragment.psram_periph.simif.read_ready,     None),
+        "write_ready":    (fragment.psram_periph.simif.write_ready,    None),
     }
 
 def argparse_callback(parser):
