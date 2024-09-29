@@ -69,12 +69,13 @@ class _SoldierCrabPlatform(LatticeECP5Platform):
             Attrs(IO_TYPE=bank_6_7_iotype)
         ),
 
-        # Configuration SPI flash
-        Resource("spi_flash", 0,
-            # Note: SCK needs to go through a USRMCLK instance.
-            Subsignal("sdi",  Pins("T8",  dir="o")),
-            Subsignal("sdo",  Pins("T7",  dir="i")),
-            Subsignal("cs",   PinsN("N8", dir="o")),
+        # Connection to our SPI flash but using quad mode (QSPI)
+        Resource("qspi_flash", 0,
+            # SCK is on pin 9; but doesn't have a traditional I/O buffer.
+            # Instead, we'll need to drive a clock into a USRMCLK instance.
+            # See interfaces/flash.py for more information.
+            Subsignal("dq",  Pins("T8 T7 M7 N7",  dir="io")),
+            Subsignal("cs",  PinsN("N8", dir="o")),
             Attrs(IO_TYPE="LVCMOS33")
         ),
     ]

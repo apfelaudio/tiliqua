@@ -265,6 +265,16 @@ fn main() -> ! {
 
     psram_memtest(&mut timer);
 
+    const SPIFLASH_BASE: u32 = 0xB0000000;
+    let spiflash_ptr = SPIFLASH_BASE as *mut u32;
+
+    unsafe {
+        for i in 0..32 {
+            let value = spiflash_ptr.offset(i as isize).read_volatile();
+            info!("SPIFLASH selftest @ {:#x} is {:#x}", i, value);
+        }
+    }
+
     tusb322i_id_test(&mut i2cdev);
 
     let mut pca9635 = Pca9635Driver::new(i2cdev2);

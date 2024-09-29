@@ -23,6 +23,8 @@ from vendor.soc.cpu                              import InterruptController, Vex
 from vendor.soc                                  import readbin
 from vendor.soc.generate                         import GenerateSVD
 
+from vendor                                      import spiflash
+
 from tiliqua.tiliqua_platform                    import *
 
 from tiliqua                                     import psram_peripheral, i2c, encoder, dtr, video, eurorack_pmod_peripheral
@@ -128,6 +130,8 @@ class TiliquaSoc(Component):
         self.mainram_size         = 0x00008000
         self.psram_base           = 0x20000000
         self.psram_size           = 16*1024*1024
+        self.spiflash_base        = 0xB0000000
+        self.spiflash_size        = 16*1024*1024
         self.csr_base             = 0xf0000000
         # (gap) leds/gpio0
         self.uart0_base           = 0x00000200
@@ -194,6 +198,13 @@ class TiliquaSoc(Component):
         # psram peripheral
         self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size)
         self.wb_decoder.add(self.psram_periph.bus, addr=self.psram_base, name="psram")
+
+        # spiflash peripheral
+        self.spi0_bus        = spiflash.ECP5ConfigurationFlashInterface()
+        self.spi0_phy        = spiflash.SPIPHYController(provider=self.spi0_bus, domain="sync", divisor=0)
+        self.spiflash_periph = spiflash.SPIFlashPeripheral(phy=self.spi0_phy, mmap_size=self.spiflash_size,
+                                                           mmap_name="spiflash")
+        self.wb_decoder.add(self.spiflash_periph.bus, addr=self.spiflash_base, name="spiflash")
 
         # video PHY (DMAs from PSRAM starting at fb_base)
         fb_base = self.psram_base
@@ -302,6 +313,11 @@ class TiliquaSoc(Component):
 
         # psram
         m.submodules.psram_periph = self.psram_periph
+
+        # spiflash
+        m.submodules.spi0_bus = self.spi0_bus
+        m.submodules.spi0_phy = self.spi0_phy
+        m.submodules.spiflash_periph = self.spiflash_periph
 
         # video PHY
         m.submodules.video = self.video
