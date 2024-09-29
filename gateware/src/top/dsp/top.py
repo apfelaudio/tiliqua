@@ -513,45 +513,6 @@ class MidiCVTop(wiring.Component):
 
         return m
 
-class WishboneAdapter(wiring.Component):
-    def __init__(self, addr_width_i, addr_width_o, base):
-        self.base = base
-        super().__init__({
-            "i": In(wishbone.Signature(addr_width=addr_width_i,
-                                       data_width=16,
-                                       granularity=8)),
-            "o": Out(wishbone.Signature(addr_width=addr_width_o,
-                                        data_width=32,
-                                        granularity=8,
-                                        features={'bte', 'cti'})),
-        })
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += [
-            self.i.ack.eq(self.o.ack),
-            self.o.adr.eq((self.base<<2) + (self.i.adr>>1)),
-            self.o.we.eq(self.i.we),
-            self.o.cyc.eq(self.i.cyc),
-            self.o.stb.eq(self.i.stb),
-        ]
-
-        with m.If(self.i.adr[0]):
-            m.d.comb += [
-                self.i.dat_r.eq(self.o.dat_r>>16),
-                self.o.sel  .eq(self.i.sel<<2),
-                self.o.dat_w.eq(self.i.dat_w<<16),
-            ]
-        with m.Else():
-            m.d.comb += [
-                self.i.dat_r.eq(self.o.dat_r),
-                self.o.sel  .eq(self.i.sel),
-                self.o.dat_w.eq(self.i.dat_w),
-            ]
-
-        return m
-
 class DelayTop(wiring.Component):
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -564,27 +525,16 @@ class DelayTop(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.cache = cache = WishboneL2Cache(
-            addr_width=self.bus.addr_width,
-            cachesize_words=64
-        )
-        wiring.connect(m, cache.slave, wiring.flipped(self.bus))
-
-        writer = dsp.DelayLineWriter(
-            max_delay=64*1024
+        m.submodules.writer = writer = dsp.DelayLine(
+            max_delay=64*1024,
+            addr_width_o=self.bus.addr_width,
+            base=0x10000
         )
 
-        m.submodules.adapter = adapter = WishboneAdapter(
-            addr_width_i=writer.bus.addr_width,
-            addr_width_o=cache.master.addr_width,
-            base=0x0
-        )
+        wiring.connect(m, writer.bus, wiring.flipped(self.bus))
 
         tap1 = writer.add_tap()
         tap2 = writer.add_tap()
-
-        wiring.connect(m, writer.bus, adapter.i)
-        wiring.connect(m, adapter.o, cache.master)
 
         m.submodules.split4 = split4 = dsp.Split(n_channels=4, source=wiring.flipped(self.i))
         split4.wire_ready(m, [1, 2, 3])
@@ -606,8 +556,6 @@ class DelayTop(wiring.Component):
 
         wiring.connect(m, tap1.o, merge4.i[0])
         wiring.connect(m, tap2.o, merge4.i[1])
-
-        m.submodules.writer = writer
 
         return m
 

@@ -20,6 +20,8 @@ from amaranth_soc         import wishbone
 
 from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
 
+from tiliqua.cache         import WishboneL2Cache
+
 # dummy values used to hook up to unused stream in/out ports, so they don't block forever
 ASQ_READY = stream.Signature(ASQ, always_ready=True).flip().create()
 ASQ_VALID = stream.Signature(ASQ, always_valid=True).create()
@@ -498,25 +500,82 @@ class SVF(wiring.Component):
 
         return m
 
-class DelayLineWriter(wiring.Component):
-    def __init__(self, max_delay=512, data_width=16, granularity=8):
+class WishboneAdapter(wiring.Component):
+    def __init__(self, addr_width_i, addr_width_o, base):
+        self.base = base
+        super().__init__({
+            "i": In(wishbone.Signature(addr_width=addr_width_i,
+                                       data_width=16,
+                                       granularity=8)),
+            "o": Out(wishbone.Signature(addr_width=addr_width_o,
+                                        data_width=32,
+                                        granularity=8,
+                                        features={'bte', 'cti'})),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [
+            self.i.ack.eq(self.o.ack),
+            self.o.adr.eq((self.base<<2) + (self.i.adr>>1)),
+            self.o.we.eq(self.i.we),
+            self.o.cyc.eq(self.i.cyc),
+            self.o.stb.eq(self.i.stb),
+        ]
+
+        with m.If(self.i.adr[0]):
+            m.d.comb += [
+                self.i.dat_r.eq(self.o.dat_r>>16),
+                self.o.sel  .eq(self.i.sel<<2),
+                self.o.dat_w.eq(self.i.dat_w<<16),
+            ]
+        with m.Else():
+            m.d.comb += [
+                self.i.dat_r.eq(self.o.dat_r),
+                self.o.sel  .eq(self.i.sel),
+                self.o.dat_w.eq(self.i.dat_w),
+            ]
+
+        return m
+
+
+class DelayLine(wiring.Component):
+    def __init__(self, max_delay, addr_width_o, base, data_width=16, granularity=8):
+
         self.max_delay = max_delay
         self.address_width = exact_log2(max_delay)
+
         super().__init__({
             "wrpointer": Out(unsigned(self.address_width)),
             "sw":  In(stream.Signature(ASQ)),
-            "bus": Out(wishbone.Signature(addr_width=self.address_width,
-                                          data_width=data_width,
-                                          granularity=granularity)),
-            "wbus": Out(wishbone.Signature(addr_width=self.address_width,
-                                          data_width=data_width,
-                                          granularity=granularity)),
+            "bus": Out(wishbone.Signature(addr_width=addr_width_o,
+                                          data_width=32,
+                                          granularity=8,
+                                          features={'bte', 'cti'})),
         })
+
+        self.internal_writer_bus = wishbone.Signature(
+            addr_width=self.address_width,
+            data_width=data_width,
+            granularity=granularity
+        ).create()
 
         self._arbiter = wishbone.Arbiter(addr_width=self.address_width,
                                          data_width=data_width,
                                          granularity=granularity)
-        self._arbiter.add(self.wbus)
+        self._arbiter.add(self.internal_writer_bus)
+
+        self._adapter = WishboneAdapter(
+            addr_width_i=data_width,
+            addr_width_o=addr_width_o,
+            base=base
+        )
+
+        self._cache = WishboneL2Cache(
+            addr_width=addr_width_o,
+            cachesize_words=64
+        )
 
         self.taps = []
 
@@ -534,12 +593,17 @@ class DelayLineWriter(wiring.Component):
 
         m.submodules += self.taps
 
-        # bus exposed to outside is the bus TDM'd by the arbiter
+        # adapt small internal 16-bit shared bus to external 32-bit shared bus
+        # through a small L2 cache so reads + writes burst the memory accesses.
         m.submodules.arbiter = self._arbiter
-        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
+        m.submodules.adapter = self._adapter
+        m.submodules.cache   = self._cache
+        wiring.connect(m, self._arbiter.bus, self._adapter.i)
+        wiring.connect(m, self._adapter.o, self._cache.master)
+        wiring.connect(m, self._cache.slave, wiring.flipped(self.bus))
 
         # bus which sits before the arbiter
-        bus = self.wbus
+        bus = self.internal_writer_bus
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
