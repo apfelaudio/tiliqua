@@ -525,37 +525,72 @@ class DelayTop(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.writer = writer = dsp.DelayLine(
-            max_delay=64*1024,
+        m.submodules.writer1 = writer1 = dsp.DelayLine(
+            max_delay=0x10000,
+            addr_width_o=self.bus.addr_width,
+            base=0x00000
+        )
+
+        m.submodules.writer2 = writer2 = dsp.DelayLine(
+            max_delay=0x10000,
             addr_width_o=self.bus.addr_width,
             base=0x10000
         )
 
-        wiring.connect(m, writer.bus, wiring.flipped(self.bus))
+        self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
+                                         data_width=self.bus.data_width,
+                                         granularity=self.bus.granularity,
+                                         features=self.bus.features)
+        self._arbiter.add(writer1.bus)
+        self._arbiter.add(writer2.bus)
 
-        tap1 = writer.add_tap()
-        tap2 = writer.add_tap()
+        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
+
+        m.submodules.arbiter = self._arbiter
+
+        tap1 = writer1.add_tap()
+        tap2 = writer2.add_tap()
 
         m.submodules.split4 = split4 = dsp.Split(n_channels=4, source=wiring.flipped(self.i))
-        split4.wire_ready(m, [1, 2, 3])
+        split4.wire_ready(m, [2, 3])
 
-        m.submodules.split3 = split3 = dsp.Split(n_channels=3, replicate=True, source=split4.o[0])
+        m.submodules.split2a = split2a = dsp.Split(n_channels=2, replicate=True, source=split4.o[0])
+        m.submodules.split2b = split2b = dsp.Split(n_channels=2, replicate=True, source=split4.o[1])
 
-        wiring.connect(m, split3.o[0], writer.sw)
+        m.submodules.tap2a = tap2a = dsp.Split(n_channels=2, replicate=True, source=tap1.o)
+        m.submodules.tap2b = tap2b = dsp.Split(n_channels=2, replicate=True, source=tap2.o)
 
-        dsp.connect_remap(m, split3.o[1], tap1.i, lambda o, i : [
+        m.submodules.merge2a = merge2a = dsp.Merge(n_channels=2)
+        m.submodules.merge2b = merge2b = dsp.Merge(n_channels=2)
+
+        wiring.connect(m, split2a.o[0], merge2a.i[0])
+        wiring.connect(m,   tap2a.o[0], merge2a.i[1])
+
+        wiring.connect(m, split2b.o[0], merge2b.i[0])
+        wiring.connect(m,   tap2b.o[0], merge2b.i[1])
+
+        dsp.connect_remap(m, merge2a.o, writer2.sw, lambda o, i : [
+            i.payload.eq((o.payload[0]>>1) + (o.payload[1]>>1))
+        ])
+
+        dsp.connect_remap(m, merge2b.o, writer1.sw, lambda o, i : [
+            i.payload.eq((o.payload[0]>>1) + (o.payload[1]>>1))
+        ])
+
+        dsp.connect_remap(m, split2a.o[1], tap1.i, lambda o, i : [
             i.payload.eq(30000)
         ])
 
-        dsp.connect_remap(m, split3.o[2], tap2.i, lambda o, i : [
-            i.payload.eq(60000)
+        dsp.connect_remap(m, split2b.o[1], tap2.i, lambda o, i : [
+            i.payload.eq(30000)
         ])
 
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
         merge4.wire_valid(m, [2, 3])
 
-        wiring.connect(m, tap1.o, merge4.i[0])
-        wiring.connect(m, tap2.o, merge4.i[1])
+
+        wiring.connect(m, tap2a.o[1], merge4.i[0])
+        wiring.connect(m, tap2b.o[1], merge4.i[1])
 
         return m
 
