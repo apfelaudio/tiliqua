@@ -548,7 +548,7 @@ class DelayLine(wiring.Component):
 
         super().__init__({
             "wrpointer": Out(unsigned(self.address_width)),
-            "sw":  In(stream.Signature(ASQ)),
+            "i":   In(stream.Signature(ASQ)),
             "bus": Out(wishbone.Signature(addr_width=addr_width_o,
                                           data_width=32,
                                           granularity=8,
@@ -579,8 +579,8 @@ class DelayLine(wiring.Component):
 
         self.taps = []
 
-    def add_tap(self):
-        tap = DelayLineTap(max_delay=self.max_delay)
+    def add_tap(self, write_triggers_read=False):
+        tap = DelayLineTap(max_delay=self.max_delay, write_triggers_read=write_triggers_read)
         self.taps.append(tap)
         self._arbiter.add(tap.bus)
         return tap
@@ -590,6 +590,13 @@ class DelayLine(wiring.Component):
 
         for tap in self.taps:
             m.d.comb += tap.wrpointer.eq(self.wrpointer)
+            # Every write sample propagates to a read sample without needing
+            # to hook up the 'i' stream on delay taps.
+            if tap.write_triggers_read:
+                with m.If(self.i.valid & self.i.ready):
+                    m.d.sync += tap.i.valid.eq(1)
+                with m.Elif(tap.i.ready):
+                    m.d.sync += tap.i.valid.eq(0)
 
         m.submodules += self.taps
 
@@ -607,11 +614,11 @@ class DelayLine(wiring.Component):
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
-                m.d.comb += self.sw.ready.eq(1)
-                with m.If(self.sw.valid):
+                m.d.comb += self.i.ready.eq(1)
+                with m.If(self.i.valid):
                     m.d.sync += [
                         bus.adr  .eq(self.wrpointer),
-                        bus.dat_w.eq(self.sw.payload),
+                        bus.dat_w.eq(self.i.payload),
                         bus.sel  .eq(0b11),
                     ]
                     m.next = 'WRITE'
@@ -631,9 +638,10 @@ class DelayLine(wiring.Component):
         return m
 
 class DelayLineTap(wiring.Component):
-    def __init__(self, max_delay=512, data_width=16, granularity=8):
+    def __init__(self, max_delay=512, write_triggers_read=False, data_width=16, granularity=8):
         self.max_delay = max_delay
         self.address_width = exact_log2(max_delay)
+        self.write_triggers_read = write_triggers_read
         super().__init__({
             "wrpointer": In(unsigned(self.address_width)),
             "i":         In(stream.Signature(unsigned(self.address_width))),

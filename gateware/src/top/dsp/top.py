@@ -525,72 +525,83 @@ class DelayTop(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.writer1 = writer1 = dsp.DelayLine(
+        # 2 delay lines, backed by 2 different slices of PSRAM address space.
+
+        m.submodules.delayln1 = delayln1 = dsp.DelayLine(
             max_delay=0x10000,
             addr_width_o=self.bus.addr_width,
             base=0x00000
         )
 
-        m.submodules.writer2 = writer2 = dsp.DelayLine(
+        m.submodules.delayln2 = delayln2 = dsp.DelayLine(
             max_delay=0x10000,
             addr_width_o=self.bus.addr_width,
             base=0x10000
         )
 
+        # Both delay lines share our top-level bus for all operations.
+
         self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
                                          data_width=self.bus.data_width,
                                          granularity=self.bus.granularity,
                                          features=self.bus.features)
-        self._arbiter.add(writer1.bus)
-        self._arbiter.add(writer2.bus)
+        self._arbiter.add(delayln1.bus)
+        self._arbiter.add(delayln2.bus)
 
         wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
 
         m.submodules.arbiter = self._arbiter
 
-        tap1 = writer1.add_tap()
-        tap2 = writer2.add_tap()
+        # Each delay has a single read tap.
 
-        m.submodules.split4 = split4 = dsp.Split(n_channels=4, source=wiring.flipped(self.i))
-        split4.wire_ready(m, [2, 3])
+        tap1 = delayln1.add_tap(write_triggers_read=True)
+        tap2 = delayln2.add_tap(write_triggers_read=True)
 
-        m.submodules.split2a = split2a = dsp.Split(n_channels=2, replicate=True, source=split4.o[0])
-        m.submodules.split2b = split2b = dsp.Split(n_channels=2, replicate=True, source=split4.o[1])
+        # Set tap delays directly, `write_triggers_read` above ensure the stream
+        # is already connected such that it emits a sample stream synchronized
+        # with writes, rather than us needing to connect up tapX.i. (this is
+        # only needed if you want multiple delayline reads per write per tap).
+        m.d.comb += [
+            tap1.i.payload.eq(300),
+            tap2.i.payload.eq(300),
+        ]
 
-        m.submodules.tap2a = tap2a = dsp.Split(n_channels=2, replicate=True, source=tap1.o)
-        m.submodules.tap2b = tap2b = dsp.Split(n_channels=2, replicate=True, source=tap2.o)
+        # Only use the first 2 of 4 input jacks, as 2 separate streams.
+        m.submodules.isplit2 = isplit2 = dsp.Split(n_channels=4, source=wiring.flipped(self.i))
+        isplit2.wire_ready(m, [2, 3])
 
-        m.submodules.merge2a = merge2a = dsp.Merge(n_channels=2)
-        m.submodules.merge2b = merge2b = dsp.Merge(n_channels=2)
+        # Only use the first 2 of 4 output jacks, as 2 separate streams.
+        m.submodules.omerge2 = omerge2 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
+        omerge2.wire_valid(m, [2, 3])
 
-        wiring.connect(m, split2a.o[0], merge2a.i[0])
-        wiring.connect(m,   tap2a.o[0], merge2a.i[1])
+        # Feedback network of ping-ping delay. Each tap is fed back into the input of the
+        # opposite tap, mixed 50% with the audio input.
 
-        wiring.connect(m, split2b.o[0], merge2b.i[0])
-        wiring.connect(m,   tap2b.o[0], merge2b.i[1])
+        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
+            i_channels=4, o_channels=4,
+            coefficients=[[0.0, 0.0, 0.5, 0.0],  # in0
+                          [0.0, 0.0, 0.0, 0.5],  # in1
+                          [1.0, 0.0, 0.0, 0.5],  # tap1.o
+                          [0.0, 1.0, 0.5, 0.0]]) # tap2.o
+                        # out0 out1 tap1.i tap2.i
 
-        dsp.connect_remap(m, merge2a.o, writer2.sw, lambda o, i : [
-            i.payload.eq((o.payload[0]>>1) + (o.payload[1]>>1))
-        ])
+        # Split matrix input / output into independent streams
 
-        dsp.connect_remap(m, merge2b.o, writer1.sw, lambda o, i : [
-            i.payload.eq((o.payload[0]>>1) + (o.payload[1]>>1))
-        ])
+        m.submodules.imix4 = imix4 = dsp.Merge(n_channels=4, sink=matrix_mix.i)
+        m.submodules.omix4 = omix4 = dsp.Split(n_channels=4, source=matrix_mix.o)
 
-        dsp.connect_remap(m, split2a.o[1], tap1.i, lambda o, i : [
-            i.payload.eq(30000)
-        ])
+        # Connect up delayln writes, read tap, audio in / out as described above
+        # to the matrix feedback network.
 
-        dsp.connect_remap(m, split2b.o[1], tap2.i, lambda o, i : [
-            i.payload.eq(30000)
-        ])
+        wiring.connect(m, isplit2.o[0], imix4.i[0])
+        wiring.connect(m, isplit2.o[1], imix4.i[1])
+        wiring.connect(m,       tap1.o, imix4.i[2])
+        wiring.connect(m,       tap2.o, imix4.i[3])
 
-        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
-        merge4.wire_valid(m, [2, 3])
-
-
-        wiring.connect(m, tap2a.o[1], merge4.i[0])
-        wiring.connect(m, tap2b.o[1], merge4.i[1])
+        wiring.connect(m, omix4.o[0],  omerge2.i[0])
+        wiring.connect(m, omix4.o[1],  omerge2.i[1])
+        wiring.connect(m, omix4.o[2],  delayln1.i)
+        wiring.connect(m, omix4.o[3],  delayln2.i)
 
         return m
 
