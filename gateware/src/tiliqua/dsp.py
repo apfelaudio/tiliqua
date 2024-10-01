@@ -582,6 +582,9 @@ class DelayLine(wiring.Component):
         self.taps = []
 
     def add_tap(self, fixed_delay=None):
+        if self.write_triggers_read:
+            assert fixed_delay is not None
+            assert fixed_delay < self.max_delay
         tap = DelayLineTap(max_delay=self.max_delay, fixed_delay=fixed_delay)
         self.taps.append(tap)
         self._arbiter.add(tap.bus)
@@ -603,7 +606,6 @@ class DelayLine(wiring.Component):
                 # Every write sample propagates to a read sample without needing
                 # to hook up the 'i' stream on delay taps.
                 wiring.connect(m, isplit.o[1+n], tap.i)
-                assert tap.fixed_delay is not None
                 m.d.comb += tap.i.payload.eq(tap.fixed_delay)
 
         m.submodules += self.taps
@@ -646,7 +648,7 @@ class DelayLine(wiring.Component):
         return m
 
 class DelayLineTap(wiring.Component):
-    def __init__(self, max_delay=512, fixed_delay=None, data_width=16, granularity=8):
+    def __init__(self, max_delay=None, fixed_delay=None, data_width=16, granularity=8):
         self.max_delay = max_delay
         self.address_width = exact_log2(max_delay)
         self.fixed_delay = fixed_delay

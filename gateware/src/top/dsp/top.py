@@ -189,9 +189,67 @@ class Diffuser(wiring.Component):
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    bus: Out(wishbone.Signature(addr_width=22,
+                                data_width=32,
+                                granularity=8,
+                                features={'bte', 'cti'}))
 
     def elaborate(self, platform):
         m = Module()
+
+        # 4 delay lines, backed by 4 different slices of PSRAM address space.
+
+        delay_lines = [
+            dsp.DelayLine(
+                max_delay=0x10000,
+                addr_width_o=self.bus.addr_width,
+                base=0x00000,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=0x10000,
+                addr_width_o=self.bus.addr_width,
+                base=0x10000,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=0x10000,
+                addr_width_o=self.bus.addr_width,
+                base=0x20000,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=0x10000,
+                addr_width_o=self.bus.addr_width,
+                base=0x30000,
+                write_triggers_read=True,
+            ),
+        ]
+
+        dsp.named_submodules(m.submodules, delay_lines)
+
+        # Both delay lines share our top-level bus for all operations.
+
+        self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
+                                         data_width=self.bus.data_width,
+                                         granularity=self.bus.granularity,
+                                         features=self.bus.features)
+        for delayln in delay_lines:
+            self._arbiter.add(delayln.bus)
+
+        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
+
+        m.submodules.arbiter = self._arbiter
+
+        # Each delay has a single read tap. `write_triggers_read` above ensures
+        # stream is connected such that it emits a sample stream synchronized
+        # with writes, rather than us needing to connect up tapX.i. (this is
+        # only needed if you want multiple delayline reads per write per tap).
+
+        taps = []
+        delays = [2000, 3000, 5000, 7000]
+        for delay, delayln in zip(delays, delay_lines):
+            taps.append(delayln.add_tap(fixed_delay=delay))
 
         # quadrants in the below matrix are:
         #
@@ -211,22 +269,6 @@ class Diffuser(wiring.Component):
                           [0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4, 0.4]])# ds3
                           # out0 ------- out3  sw0 ---------- sw3
 
-        delay_lines = [
-            dsp.DelayLine(max_delay=2048),
-            dsp.DelayLine(max_delay=4096),
-            dsp.DelayLine(max_delay=8192),
-            dsp.DelayLine(max_delay=8192),
-        ]
-        m.submodules += delay_lines
-
-        m.d.comb += [delay_lines[n].da.valid.eq(1) for n in range(4)]
-        m.d.comb += [
-            delay_lines[0].da.payload.eq(2000),
-            delay_lines[1].da.payload.eq(3000),
-            delay_lines[2].da.payload.eq(5000),
-            delay_lines[3].da.payload.eq(7000),
-        ]
-
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
@@ -243,13 +285,13 @@ class Diffuser(wiring.Component):
             # audio -> matrix [0-3]
             wiring.connect(m, split4.o[n], merge8.i[n])
             # delay -> matrix [4-7]
-            wiring.connect(m, delay_lines[n].ds, merge8.i[4+n])
+            wiring.connect(m, taps[n].o, merge8.i[4+n])
 
         for n in range(4):
             # matrix -> audio [0-3]
             wiring.connect(m, split8.o[n], merge4.i[n])
             # matrix -> delay [4-7]
-            wiring.connect(m, split8.o[4+n], delay_lines[n].sw)
+            wiring.connect(m, split8.o[4+n], delay_lines[n].i)
 
         wiring.connect(m, merge4.o, wiring.flipped(self.o))
 
