@@ -608,7 +608,7 @@ class DelayLine(wiring.Component):
                 wiring.connect(m, isplit.o[1+n], tap.i)
                 m.d.comb += tap.i.payload.eq(tap.fixed_delay)
 
-        m.submodules += self.taps
+        named_submodules(m.submodules, self.taps)
 
         # adapt small internal 16-bit shared bus to external 32-bit shared bus
         # through a small L2 cache so reads + writes burst the memory accesses.
