@@ -530,13 +530,15 @@ class DelayTop(wiring.Component):
         m.submodules.delayln1 = delayln1 = dsp.DelayLine(
             max_delay=0x10000,
             addr_width_o=self.bus.addr_width,
-            base=0x00000
+            base=0x00000,
+            write_triggers_read=True,
         )
 
         m.submodules.delayln2 = delayln2 = dsp.DelayLine(
             max_delay=0x10000,
             addr_width_o=self.bus.addr_width,
-            base=0x10000
+            base=0x10000,
+            write_triggers_read=True,
         )
 
         # Both delay lines share our top-level bus for all operations.
@@ -552,25 +554,21 @@ class DelayTop(wiring.Component):
 
         m.submodules.arbiter = self._arbiter
 
-        # Each delay has a single read tap.
-
-        tap1 = delayln1.add_tap(write_triggers_read=True)
-        tap2 = delayln2.add_tap(write_triggers_read=True)
-
-        # Set tap delays directly, `write_triggers_read` above ensure the stream
-        # is already connected such that it emits a sample stream synchronized
+        # Each delay has a single read tap. `write_triggers_read` above ensures
+        # stream is connected such that it emits a sample stream synchronized
         # with writes, rather than us needing to connect up tapX.i. (this is
         # only needed if you want multiple delayline reads per write per tap).
-        m.d.comb += [
-            tap1.i.payload.eq(300),
-            tap2.i.payload.eq(300),
-        ]
+
+        tap1 = delayln1.add_tap(fixed_delay=30000)
+        tap2 = delayln2.add_tap(fixed_delay=30000)
 
         # Only use the first 2 of 4 input jacks, as 2 separate streams.
+
         m.submodules.isplit2 = isplit2 = dsp.Split(n_channels=4, source=wiring.flipped(self.i))
         isplit2.wire_ready(m, [2, 3])
 
         # Only use the first 2 of 4 output jacks, as 2 separate streams.
+
         m.submodules.omerge2 = omerge2 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
         omerge2.wire_valid(m, [2, 3])
 
