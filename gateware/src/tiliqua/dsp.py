@@ -16,11 +16,13 @@ from scipy import signal
 
 from amaranth_future       import fixed
 
-from amaranth_soc         import wishbone
+from amaranth_soc          import wishbone
 
 from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
 
 from tiliqua.cache         import WishboneL2Cache
+
+from vendor.soc.cores      import sram
 
 # dummy values used to hook up to unused stream in/out ports, so they don't block forever
 ASQ_READY = stream.Signature(ASQ, always_ready=True).flip().create()
@@ -541,67 +543,99 @@ class WishboneAdapter(wiring.Component):
 
 
 class DelayLine(wiring.Component):
-    def __init__(self, max_delay, addr_width_o, base, write_triggers_read=False,
-                 data_width=16, granularity=8):
+
+    INTERNAL_BUS_DATA_WIDTH  = 16
+    INTERNAL_BUS_GRANULARITY = 8
+
+    def __init__(self, max_delay, psram_backed=True, addr_width_o=None, base=None,
+                 write_triggers_read=False):
+
+        if psram_backed:
+            assert base is not None
+            assert addr_width_o is not None
+        else:
+            assert base is None
+            assert addr_width_o is None
 
         self.max_delay = max_delay
         self.address_width = exact_log2(max_delay)
         self.write_triggers_read = write_triggers_read
+        self.psram_backed = psram_backed
 
-        super().__init__({
-            "wrpointer": Out(unsigned(self.address_width)),
-            "i":   In(stream.Signature(ASQ)),
-            "bus": Out(wishbone.Signature(addr_width=addr_width_o,
-                                          data_width=32,
-                                          granularity=8,
-                                          features={'bte', 'cti'})),
-        })
+        # reader taps that may read from this delay line
+        self.taps = []
 
+        # internal bus is lower footprint than the SoC bus.
+        data_width  = self.INTERNAL_BUS_DATA_WIDTH
+        granularity = self.INTERNAL_BUS_GRANULARITY
+
+        # bus that this delayline writes samples to
         self.internal_writer_bus = wishbone.Signature(
             addr_width=self.address_width,
             data_width=data_width,
             granularity=granularity
         ).create()
 
+        # arbiter to round-robin between write transactions (from this
+        # DelayLine) and read transactions (from children DelayLineTap)
         self._arbiter = wishbone.Arbiter(addr_width=self.address_width,
                                          data_width=data_width,
                                          granularity=granularity)
         self._arbiter.add(self.internal_writer_bus)
 
-        self._adapter = WishboneAdapter(
-            addr_width_i=self.address_width,
-            addr_width_o=addr_width_o,
-            base=base
-        )
+        # internal signal between DelayLine and DelayLineTap
+        self._wrpointer = Signal(unsigned(self.address_width))
 
-        self._cache = WishboneL2Cache(
-            addr_width=addr_width_o,
-            cachesize_words=64
-        )
+        # ports exposed to the outside world
+        ports = {
+            "i":   In(stream.Signature(ASQ)),
+        }
 
-        self.taps = []
+        if psram_backed:
+
+            ports |= {
+                "bus": Out(wishbone.Signature(addr_width=addr_width_o,
+                                              data_width=32,
+                                              granularity=8,
+                                              features={'bte', 'cti'})),
+            }
+
+            self._adapter = WishboneAdapter(
+                addr_width_i=self.address_width,
+                addr_width_o=addr_width_o,
+                base=base
+            )
+
+            self._cache = WishboneL2Cache(
+                addr_width=addr_width_o,
+                cachesize_words=64
+            )
+
+        super().__init__(ports)
 
     def add_tap(self, fixed_delay=None):
         if self.write_triggers_read:
             assert fixed_delay is not None
             assert fixed_delay < self.max_delay
-        tap = DelayLineTap(max_delay=self.max_delay, fixed_delay=fixed_delay)
+        tap = DelayLineTap(parent_bus=self._arbiter.bus, fixed_delay=fixed_delay)
         self.taps.append(tap)
-        self._arbiter.add(tap.bus)
+        self._arbiter.add(tap._bus)
         return tap
 
     def elaborate(self, platform):
         m = Module()
 
         if self.write_triggers_read:
+            # split the write strobe up into identical streams to be used by read taps.
             m.submodules.isplit = isplit = Split(n_channels=1+len(self.taps), replicate=True,
                                                  source=wiring.flipped(self.i))
             istream = isplit.o[0]
         else:
+            # otherwise, the user wants to handle read tap synchronization themselves.
             istream = wiring.flipped(self.i)
 
         for n, tap in enumerate(self.taps):
-            m.d.comb += tap.wrpointer.eq(self.wrpointer)
+            m.d.comb += tap._wrpointer.eq(self._wrpointer)
             if self.write_triggers_read:
                 # Every write sample propagates to a read sample without needing
                 # to hook up the 'i' stream on delay taps.
@@ -614,16 +648,27 @@ class DelayLine(wiring.Component):
 
         named_submodules(m.submodules, self.taps)
 
-        # adapt small internal 16-bit shared bus to external 32-bit shared bus
-        # through a small L2 cache so reads + writes burst the memory accesses.
         m.submodules.arbiter = self._arbiter
-        m.submodules.adapter = self._adapter
-        m.submodules.cache   = self._cache
-        wiring.connect(m, self._arbiter.bus, self._adapter.i)
-        wiring.connect(m, self._adapter.o, self._cache.master)
-        wiring.connect(m, self._cache.slave, wiring.flipped(self.bus))
 
-        # bus which sits before the arbiter
+        if self.psram_backed:
+            # adapt small internal 16-bit shared bus to external 32-bit shared bus
+            # through a small L2 cache so reads + writes burst the memory accesses.
+            m.submodules.adapter = self._adapter
+            m.submodules.cache   = self._cache
+            wiring.connect(m, self._arbiter.bus, self._adapter.i)
+            wiring.connect(m, self._adapter.o, self._cache.master)
+            wiring.connect(m, self._cache.slave, wiring.flipped(self.bus))
+        else:
+            # Local SRAM-backed delay line. No need for adapters or caches.
+            sram_size = self.max_delay * (self._arbiter.bus.data_width //
+                                          self._arbiter.bus.granularity)
+            m.submodules.sram = sram_peripheral = sram.Peripheral(
+                size=sram_size, data_width=self._arbiter.bus.data_width,
+                granularity=self._arbiter.bus.granularity
+            )
+            wiring.connect(m, self._arbiter.bus, sram_peripheral.bus)
+
+        # bus for sample writes which sits before the arbiter
         bus = self.internal_writer_bus
 
         with m.FSM() as fsm:
@@ -631,7 +676,7 @@ class DelayLine(wiring.Component):
                 m.d.comb += istream.ready.eq(1)
                 with m.If(istream.valid):
                     m.d.sync += [
-                        bus.adr  .eq(self.wrpointer),
+                        bus.adr  .eq(self._wrpointer),
                         bus.dat_w.eq(istream.payload),
                         bus.sel  .eq(0b11),
                     ]
@@ -643,38 +688,40 @@ class DelayLine(wiring.Component):
                     bus.we.eq(1),
                 ]
                 with m.If(bus.ack):
-                    with m.If(self.wrpointer != (self.max_delay - 1)):
-                        m.d.sync += self.wrpointer.eq(self.wrpointer + 1)
+                    with m.If(self._wrpointer != (self.max_delay - 1)):
+                        m.d.sync += self._wrpointer.eq(self._wrpointer + 1)
                     with m.Else():
-                        m.d.sync += self.wrpointer.eq(0)
+                        m.d.sync += self._wrpointer.eq(0)
                     m.next = 'WAIT-VALID'
 
         return m
 
 class DelayLineTap(wiring.Component):
-    def __init__(self, max_delay=None, fixed_delay=None, data_width=16, granularity=8):
-        self.max_delay = max_delay
-        self.address_width = exact_log2(max_delay)
+    def __init__(self, parent_bus, fixed_delay=None):
+
         self.fixed_delay = fixed_delay
+
+        # internal signals between parent DelayLine and child DelayLineTap
+        self._wrpointer = Signal(unsigned(parent_bus.addr_width))
+        self._bus = wishbone.Signature(addr_width=parent_bus.addr_width,
+                                       data_width=parent_bus.data_width,
+                                       granularity=parent_bus.granularity).create()
+
         super().__init__({
-            "wrpointer": In(unsigned(self.address_width)),
-            "i":         In(stream.Signature(unsigned(self.address_width))),
+            "i":         In(stream.Signature(unsigned(parent_bus.addr_width))),
             "o":         Out(stream.Signature(ASQ)),
-            "bus":       Out(wishbone.Signature(addr_width=self.address_width,
-                                                data_width=data_width,
-                                                granularity=granularity)),
         })
 
     def elaborate(self, platform):
         m = Module()
 
-        bus = self.bus
+        bus = self._bus
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1)
                 with m.If(self.i.valid):
-                    m.d.sync += bus.adr.eq(self.wrpointer - self.i.payload)
+                    m.d.sync += bus.adr.eq(self._wrpointer - self.i.payload)
                     m.next = 'READ'
             with m.State('READ'):
                 m.d.comb += [
@@ -717,89 +764,6 @@ class KickFeedback(Elaboratable):
 def connect_feedback_kick(m, o, i):
     m.submodules += KickFeedback(o, i)
 
-'''
-class DelayLine(wiring.Component):
-
-    """
-    Delay line with variable delay length. This can also be
-    used as a fixed delay line or a wavetable / grain storage.
-
-    - 'sw': sample write, each one written to an incrementing
-    index in a local circular buffer.
-    - 'da': delay address, each strobe (later) emits a 'ds' (sample),
-    the value of the audio sample 'da' elements later than the
-    last sample write 'sw' to occur up to 'max_delay'.
-
-    Other uses:
-    - If 'da' is a constant, this becomes a fixed delay line.
-    - If 'sw' stop sending samples, this is like a frozen wavetable.
-
-    """
-
-    def __init__(self, max_delay=512):
-        self.max_delay = max_delay
-        self.address_width = exact_log2(max_delay)
-        super().__init__({
-            "sw": In(stream.Signature(ASQ)),
-            "da": In(stream.Signature(unsigned(self.address_width))),
-            "ds": Out(stream.Signature(ASQ)),
-        })
-
-    def elaborate(self, platform):
-        m = Module()
-
-        # TODO (amaranth 0.5+): use native ASQ shape in LUT memory
-        m.submodules.mem = mem = Memory(
-            shape=signed(ASQ.as_shape().width), depth=self.max_delay, init=[])
-        wport = mem.write_port()
-        rport = mem.read_port(transparent_for=(wport,))
-
-        wrpointer = Signal(self.address_width)
-        rdpointer = Signal(self.address_width)
-
-        #
-        # read side (da -> ds)
-        #
-
-        m.d.comb += [
-            rport.addr.eq(rdpointer),
-            self.ds.payload.eq(rport.data),
-            self.da.ready.eq(1),
-        ]
-
-        # Set read pointer on valid delay address
-        with m.If(self.da.valid):
-            m.d.comb += [
-                # Read pointer must be wrapped to max delay
-                # Should wrap correctly as long as max delay is POW2
-                rdpointer.eq(wrpointer - self.da.payload),
-                rport.en.eq(1),
-            ]
-            m.d.sync += self.ds.valid.eq(1),
-        # FIXME: don't go here unless ds is ready!
-        with m.Else():
-            m.d.sync += self.ds.valid.eq(0),
-
-        #
-        # write side (sw -> circular buffer)
-        #
-
-        m.d.comb += [
-            self.sw.ready.eq(1),
-            wport.addr.eq(wrpointer),
-            wport.en.eq(self.sw.valid),
-            wport.data.eq(self.sw.payload),
-        ]
-
-        with m.If(wport.en):
-            with m.If(wrpointer != (self.max_delay - 1)):
-                m.d.sync += wrpointer.eq(wrpointer + 1)
-            with m.Else():
-                m.d.sync += wrpointer.eq(0)
-
-        return m
-'''
-
 class PitchShift(wiring.Component):
 
     """
@@ -807,30 +771,29 @@ class PitchShift(wiring.Component):
     tracked taps on a delay line. As a result, maximum grain
     size is the delay line 'max_delay' // 2.
 
-    The delay line itself must be hooked up to the input audio
+    The delay line tap itself must be hooked up to the input
     source from outside this component (this allows multiple
     shifters to share a single delay line).
     """
 
-    def __init__(self, delayln, xfade=256):
-        assert(xfade <= delayln.max_delay/4)
-        self.delayln    = delayln
+    def __init__(self, tap, xfade=256):
+        assert(xfade <= tap.max_delay/4)
+        self.tap        = tap
         self.xfade      = xfade
         self.xfade_bits = exact_log2(xfade)
         # delay type: integer component is index into delay line
         # +1 is necessary so that we don't overflow on adding grain_sz.
-        self.dtype = fixed.SQ(self.delayln.address_width+1, 8)
+        self.dtype = fixed.SQ(self.tap.address_width+1, 8)
         super().__init__({
             "i": In(stream.Signature(data.StructLayout({
                     "pitch": self.dtype,
-                    "grain_sz": unsigned(exact_log2(delayln.max_delay)),
+                    "grain_sz": unsigned(exact_log2(tap.max_delay)),
                   }))),
             "o": Out(stream.Signature(ASQ)),
         })
 
     def elaborate(self, platform):
         m = Module()
-
 
         # Current position in delay line 0, 1 (+= pitch every sample)
         delay0 = Signal(self.dtype)
@@ -867,23 +830,23 @@ class PitchShift(wiring.Component):
                     m.next = 'TAP0'
             with m.State('TAP0'):
                 m.d.comb += [
-                    self.delayln.ds.ready.eq(1),
-                    self.delayln.da.valid.eq(1),
-                    self.delayln.da.payload.eq(delay0.round() >> delay0.f_width),
+                    self.tap.o.ready.eq(1),
+                    self.tap.i.valid.eq(1),
+                    self.tap.i.payload.eq(delay0.round() >> delay0.f_width),
                 ]
-                with m.If(self.delayln.ds.valid):
-                    m.d.comb += self.delayln.da.valid.eq(0),
-                    m.d.sync += sample0.eq(self.delayln.ds.payload)
+                with m.If(self.tap.o.valid):
+                    m.d.comb += self.tap.i.valid.eq(0),
+                    m.d.sync += sample0.eq(self.tap.o.payload)
                     m.next = 'TAP1'
             with m.State('TAP1'):
                 m.d.comb += [
-                    self.delayln.ds.ready.eq(1),
-                    self.delayln.da.valid.eq(1),
-                    self.delayln.da.payload.eq(delay1.round() >> delay1.f_width),
+                    self.tap.o.ready.eq(1),
+                    self.tap.i.valid.eq(1),
+                    self.tap.i.payload.eq(delay1.round() >> delay1.f_width),
                 ]
-                with m.If(self.delayln.ds.valid):
-                    m.d.comb += self.delayln.da.valid.eq(0),
-                    m.d.sync += sample1.eq(self.delayln.ds.payload)
+                with m.If(self.tap.o.valid):
+                    m.d.comb += self.tap.i.valid.eq(0),
+                    m.d.sync += sample1.eq(self.tap.o.payload)
                     m.next = 'ENV'
             with m.State('ENV'):
                 with m.If(delay0 < self.xfade):

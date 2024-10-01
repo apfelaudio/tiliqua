@@ -555,54 +555,34 @@ class MidiCVTop(wiring.Component):
 
         return m
 
-class DelayTop(wiring.Component):
+class PingPongDelayCore(wiring.Component):
 
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    bus: Out(wishbone.Signature(addr_width=22,
-                                data_width=32,
-                                granularity=8,
-                                features={'bte', 'cti'}))
+    """
+    2-channel stereo ping-pong delay core.
+    Based on 2 delay lines, fed back into each other.
+    """
+
+    def __init__(self, delayln1, delayln2):
+        self.delayln1 = delayln1
+        self.delayln2 = delayln2
+        super().__init__({
+            "i": In(stream.Signature(data.ArrayLayout(ASQ, 4))),
+            "o": Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+        })
 
     def elaborate(self, platform):
         m = Module()
 
-        # 2 delay lines, backed by 2 different slices of PSRAM address space.
-
-        m.submodules.delayln1 = delayln1 = dsp.DelayLine(
-            max_delay=0x10000,
-            addr_width_o=self.bus.addr_width,
-            base=0x00000,
-            write_triggers_read=True,
-        )
-
-        m.submodules.delayln2 = delayln2 = dsp.DelayLine(
-            max_delay=0x10000,
-            addr_width_o=self.bus.addr_width,
-            base=0x10000,
-            write_triggers_read=True,
-        )
-
-        # Both delay lines share our top-level bus for all operations.
-
-        self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
-                                         data_width=self.bus.data_width,
-                                         granularity=self.bus.granularity,
-                                         features=self.bus.features)
-        self._arbiter.add(delayln1.bus)
-        self._arbiter.add(delayln2.bus)
-
-        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
-
-        m.submodules.arbiter = self._arbiter
+        assert self.delayln1.write_triggers_read
+        assert self.delayln2.write_triggers_read
 
         # Each delay has a single read tap. `write_triggers_read` above ensures
         # stream is connected such that it emits a sample stream synchronized
         # with writes, rather than us needing to connect up tapX.i. (this is
         # only needed if you want multiple delayline reads per write per tap).
 
-        tap1 = delayln1.add_tap(fixed_delay=30000)
-        tap2 = delayln2.add_tap(fixed_delay=30000)
+        tap1 = self.delayln1.add_tap(fixed_delay=15000)
+        tap2 = self.delayln2.add_tap(fixed_delay=15000)
 
         # Only use the first 2 of 4 input jacks, as 2 separate streams.
 
@@ -642,8 +622,120 @@ class DelayTop(wiring.Component):
 
         wiring.connect(m, omix4.o[0],  omerge2.i[0])
         wiring.connect(m, omix4.o[1],  omerge2.i[1])
-        wiring.connect(m, omix4.o[2],  delayln1.i)
-        wiring.connect(m, omix4.o[3],  delayln2.i)
+        wiring.connect(m, omix4.o[2],  self.delayln1.i)
+        wiring.connect(m, omix4.o[3],  self.delayln2.i)
+
+        return m
+
+class PSRAMPingPongDelay(wiring.Component):
+
+    """
+    2-channel stereo ping-pong delay, backed by external PSRAM.
+
+    2 delay lines are instantiated in isolated slices of the external
+    memory address space. Using external memory allows for much longer
+    delay times whilst using less resources, compared to SRAM-backed
+    delay lines, however on a larger design, you have to be careful
+    that PSRAM-backed delay lines don't get starved by other PSRAM
+    traffic (i.e video framebuffer operations).
+
+    Tiliqua input 0/1 is stereo in, output 0/1 is stereo out.
+    """
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    # shared bus to external memory
+    bus: Out(wishbone.Signature(addr_width=22,
+                                data_width=32,
+                                granularity=8,
+                                features={'bte', 'cti'}))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        # 2 delay lines, backed by 2 different slices of PSRAM address space.
+
+        delayln1 = dsp.DelayLine(
+            max_delay=0x4000, # careful this doesn't collide with delayln2.base!
+            addr_width_o=self.bus.addr_width,
+            base=0x00000,
+            write_triggers_read=True,
+        )
+
+        delayln2 = dsp.DelayLine(
+            max_delay=0x4000,
+            addr_width_o=self.bus.addr_width,
+            base=0x4000,
+            write_triggers_read=True,
+        )
+
+        # Both delay lines share our memory bus round-robin for all operations.
+
+        self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
+                                         data_width=self.bus.data_width,
+                                         granularity=self.bus.granularity,
+                                         features=self.bus.features)
+        self._arbiter.add(delayln1.bus)
+        self._arbiter.add(delayln2.bus)
+
+        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
+
+        m.submodules.arbiter = self._arbiter
+
+        # Create the core delay logic using the above delay lines.
+
+        m.submodules.pingping = pingpong = PingPongDelayCore(delayln1, delayln2)
+        wiring.connect(m, wiring.flipped(self.i), pingpong.i)
+        wiring.connect(m, pingpong.o, wiring.flipped(self.o))
+
+        # Add delay line submodules after PingPongDelayCore has created taps
+        # FIXME: technically this depends on elaboration order, and shouldn't!
+
+        m.submodules.delayln1 = delayln1
+        m.submodules.delayln2 = delayln2
+
+        return m
+
+class SRAMPingPongDelay(wiring.Component):
+
+    """
+    2-channel stereo ping-pong delay, backed by internal SRAM.
+
+    Tiliqua input 0/1 is stereo in, output 0/1 is stereo out.
+    """
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        # 2 delay lines, backed by independent slabs of internal SRAM.
+
+        delayln1 = dsp.DelayLine(
+            max_delay=0x4000,
+            psram_backed=False,
+            write_triggers_read=True,
+        )
+
+        delayln2 = dsp.DelayLine(
+            max_delay=0x4000,
+            psram_backed=False,
+            write_triggers_read=True,
+        )
+
+        # Create the core delay logic using the above delay lines.
+
+        m.submodules.pingping = pingpong = PingPongDelayCore(delayln1, delayln2)
+        wiring.connect(m, wiring.flipped(self.i), pingpong.i)
+        wiring.connect(m, pingpong.o, wiring.flipped(self.o))
+
+        # Add delay line submodules after PingPongDelayCore has created taps
+        # FIXME: technically this depends on elaboration order, and shouldn't!
+
+        m.submodules.delayln1 = delayln1
+        m.submodules.delayln2 = delayln2
 
         return m
 
@@ -719,7 +811,8 @@ CORES = {
     "waveshaper": (False, DualWaveshaper),
     "nco":        (False, QuadNCO),
     "midicv":     (False, MidiCVTop),
-    "delay":      (False, DelayTop),
+    "psramdelay": (False, PSRAMPingPongDelay),
+    "sramdelay":  (False, SRAMPingPongDelay),
 }
 
 def simulation_ports(fragment):
