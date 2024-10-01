@@ -619,10 +619,10 @@ class DelayTop(wiring.Component):
 
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=4, o_channels=4,
-            coefficients=[[0.0, 0.0, 0.5, 0.0],  # in0
-                          [0.0, 0.0, 0.0, 0.5],  # in1
-                          [1.0, 0.0, 0.0, 0.5],  # tap1.o
-                          [0.0, 1.0, 0.5, 0.0]]) # tap2.o
+            coefficients=[[0.5, 0.0, 0.5, 0.0],  # in0
+                          [0.0, 0.5, 0.0, 0.5],  # in1
+                          [0.5, 0.0, 0.0, 0.5],  # tap1.o
+                          [0.0, 0.5, 0.5, 0.0]]) # tap2.o
                         # out0 out1 tap1.i tap2.i
 
         # Split matrix input / output into independent streams
