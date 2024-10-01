@@ -569,7 +569,7 @@ class DelayLine(wiring.Component):
         self._arbiter.add(self.internal_writer_bus)
 
         self._adapter = WishboneAdapter(
-            addr_width_i=data_width,
+            addr_width_i=self.address_width,
             addr_width_o=addr_width_o,
             base=base
         )
@@ -605,8 +605,12 @@ class DelayLine(wiring.Component):
             if self.write_triggers_read:
                 # Every write sample propagates to a read sample without needing
                 # to hook up the 'i' stream on delay taps.
-                wiring.connect(m, isplit.o[1+n], tap.i)
-                m.d.comb += tap.i.payload.eq(tap.fixed_delay)
+                sync_on = isplit.o[1+n]
+                m.d.comb += [
+                    tap.i.valid.eq(sync_on.valid),
+                    sync_on.ready.eq(tap.i.ready),
+                    tap.i.payload.eq(tap.fixed_delay),
+                ]
 
         named_submodules(m.submodules, self.taps)
 
