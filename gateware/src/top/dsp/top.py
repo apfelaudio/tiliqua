@@ -279,7 +279,7 @@ class Diffuser(wiring.Component):
 
         # matrix <-> independent streams
         wiring.connect(m, matrix_mix.o, split8.i)
-        wiring.connect(m, merge8.o, matrix_mix.i)
+        dsp.connect_feedback_kick(m, merge8.o, matrix_mix.i)
 
         for n in range(4):
             # audio -> matrix [0-3]
@@ -627,8 +627,10 @@ class DelayTop(wiring.Component):
 
         # Split matrix input / output into independent streams
 
-        m.submodules.imix4 = imix4 = dsp.Merge(n_channels=4, sink=matrix_mix.i)
+        m.submodules.imix4 = imix4 = dsp.Merge(n_channels=4)
         m.submodules.omix4 = omix4 = dsp.Split(n_channels=4, source=matrix_mix.o)
+
+        dsp.connect_feedback_kick(m, imix4.o, matrix_mix.i)
 
         # Connect up delayln writes, read tap, audio in / out as described above
         # to the matrix feedback network.

@@ -667,10 +667,6 @@ class DelayLineTap(wiring.Component):
         bus = self.bus
 
         with m.FSM() as fsm:
-            with m.State('UNBLOCK'):
-                m.d.comb += self.o.valid.eq(1)
-                with m.If(self.o.ready):
-                    m.next = 'WAIT-VALID'
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1)
                 with m.If(self.i.valid):
@@ -693,6 +689,29 @@ class DelayLineTap(wiring.Component):
 
         return m
 
+class KickFeedback(Elaboratable):
+    """
+    Inject a single dummy (garbage) sample after reset between
+    two streams. This is necessary to break infinite blocking
+    after reset if streams are set up in a feedback loop.
+    """
+    def __init__(self, o, i):
+        self.o = o
+        self.i = i
+    def elaborate(self, platform):
+        m = Module()
+        wiring.connect(m, self.o, self.i)
+        with m.FSM() as fsm:
+            with m.State('KICK'):
+                m.d.comb += self.i.valid.eq(1)
+                with m.If(self.i.ready):
+                    m.next = 'FORWARD'
+            with m.State('FORWARD'):
+                pass
+        return m
+
+def connect_feedback_kick(m, o, i):
+    m.submodules += KickFeedback(o, i)
 
 '''
 class DelayLine(wiring.Component):
