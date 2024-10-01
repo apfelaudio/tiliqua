@@ -129,14 +129,15 @@ class Pitch(wiring.Component):
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
-        m.submodules.delay_line = delay_line = dsp.DelayLine(max_delay=8192)
+        m.submodules.delay_line = delay_line = dsp.DelayLine(
+            max_delay=8192, psram_backed=False)
         m.submodules.pitch_shift = pitch_shift = dsp.PitchShift(
-            delayln=delay_line, xfade=delay_line.max_delay//4)
+            tap=delay_line.add_tap(), xfade=delay_line.max_delay//4)
 
         wiring.connect(m, wiring.flipped(self.i), split4.i)
 
         # write audio samples to delay line
-        wiring.connect(m, split4.o[0], delay_line.sw)
+        wiring.connect(m, split4.o[0], delay_line.i)
 
         # hook up 2nd input channel as pitch control, use fixed grain_sz
         m.d.comb += [

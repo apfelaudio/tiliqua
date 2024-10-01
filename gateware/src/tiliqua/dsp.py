@@ -700,6 +700,8 @@ class DelayLineTap(wiring.Component):
     def __init__(self, parent_bus, fixed_delay=None):
 
         self.fixed_delay = fixed_delay
+        self.max_delay   = 2**parent_bus.addr_width
+        self.addr_width  = parent_bus.addr_width
 
         # internal signals between parent DelayLine and child DelayLineTap
         self._wrpointer = Signal(unsigned(parent_bus.addr_width))
@@ -777,13 +779,13 @@ class PitchShift(wiring.Component):
     """
 
     def __init__(self, tap, xfade=256):
-        assert(xfade <= tap.max_delay/4)
+        assert xfade <= (tap.max_delay // 4)
         self.tap        = tap
         self.xfade      = xfade
         self.xfade_bits = exact_log2(xfade)
         # delay type: integer component is index into delay line
         # +1 is necessary so that we don't overflow on adding grain_sz.
-        self.dtype = fixed.SQ(self.tap.address_width+1, 8)
+        self.dtype = fixed.SQ(self.tap.addr_width+1, 8)
         super().__init__({
             "i": In(stream.Signature(data.StructLayout({
                     "pitch": self.dtype,
