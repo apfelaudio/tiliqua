@@ -8,12 +8,6 @@ For updates, subscribe to the [Crowd Supply page](https://www.crowdsupply.com/ap
 
 <img src="doc/img/tiliqua-front-left.jpg" width="500">
 
-## Where do I get a Tiliqua?
-
-Tiliqua will launch on [Crowd Supply](https://www.crowdsupply.com/apfelaudio/tiliqua). Subscribing there is the best place to get production updates.
-
-<img src="doc/img/tiliqua-rear-left.jpg" width="700">
-
 # Documentation
 
 (🚧 under construction) documentation is available at [apfelaudio.github.io/tiliqua](https://apfelaudio.github.io/tiliqua/)
