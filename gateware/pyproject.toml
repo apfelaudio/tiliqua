@@ -19,6 +19,13 @@ test = [
     "pytest",
 ]
 
+docs = [
+  "sphinx~=7.1",
+  "sphinxcontrib-platformpicker~=1.4",
+  "sphinx-rtd-theme~=2.0",
+  "sphinx-autobuild",
+]
+
 [tool.pdm.scripts]
 # Top-level bitstreams
 bootloader         = "src/top/bootloader/top.py"
@@ -32,3 +39,5 @@ xbeam              = "src/top/xbeam/top.py"
 # Additional utilities
 test               = { cmd = "pytest" }
 colors_vectorscope = { call = "example_vectorscope.top:colors()" }
+# Documentation
+document.cmd = "sphinx-build docs/ docs/_build/ -W --keep-going"
