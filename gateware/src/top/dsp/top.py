@@ -607,9 +607,10 @@ class PSRAMDiffuser(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        dsp.named_submodules(m.submodules, self.delay_lines)
-
+        m.submodules.arbiter = self._arbiter
         wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
+
+        dsp.named_submodules(m.submodules, self.delay_lines)
 
         m.submodules.diffuser = self.diffuser
 
