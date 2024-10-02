@@ -19,9 +19,9 @@ from amaranth_soc             import wishbone
 from amaranth_future          import fixed
 
 from tiliqua                  import eurorack_pmod, dsp, midi, psram_peripheral, delay
-from tiliqua.cache            import WishboneL2Cache
 from tiliqua.eurorack_pmod    import ASQ
 from tiliqua.cli              import top_level_cli
+from tiliqua.delay_line       import DelayLine
 
 # for sim
 from amaranth.back            import verilog
@@ -127,7 +127,7 @@ class Pitch(wiring.Component):
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
-        m.submodules.delay_line = delay_line = dsp.DelayLine(
+        m.submodules.delay_line = delay_line = DelayLine(
             max_delay=8192, psram_backed=False)
         m.submodules.pitch_shift = pitch_shift = dsp.PitchShift(
             tap=delay_line.add_tap(), xfade=delay_line.max_delay//4)
@@ -466,14 +466,14 @@ class PSRAMPingPongDelay(wiring.Component):
 
         # 2 delay lines, backed by 2 different slices of PSRAM address space.
 
-        self.delayln1 = dsp.DelayLine(
+        self.delayln1 = DelayLine(
             max_delay=0x4000, # careful this doesn't collide with delayln2.base!
             psram_backed=True,
             addr_width_o=self.bus.addr_width,
             base=0x00000,
         )
 
-        self.delayln2 = dsp.DelayLine(
+        self.delayln2 = DelayLine(
             max_delay=0x4000,
             psram_backed=True,
             addr_width_o=self.bus.addr_width,
@@ -526,8 +526,8 @@ class SRAMPingPongDelay(wiring.Component):
 
         # 2 delay lines, backed by independent slabs of internal SRAM.
 
-        self.delayln1 = dsp.DelayLine(max_delay=0x4000)
-        self.delayln2 = dsp.DelayLine(max_delay=0x4000)
+        self.delayln1 = DelayLine(max_delay=0x4000)
+        self.delayln2 = DelayLine(max_delay=0x4000)
 
         # Create the PingPongCore using the above delay lines.
 
@@ -567,25 +567,25 @@ class PSRAMDiffuser(wiring.Component):
         # 4 delay lines, backed by 4 different slices of PSRAM address space.
 
         self.delay_lines = [
-            dsp.DelayLine(
+            DelayLine(
                 max_delay=0x10000,
                 psram_backed=True,
                 addr_width_o=self.bus.addr_width,
                 base=0x00000,
             ),
-            dsp.DelayLine(
+            DelayLine(
                 max_delay=0x10000,
                 psram_backed=True,
                 addr_width_o=self.bus.addr_width,
                 base=0x10000,
             ),
-            dsp.DelayLine(
+            DelayLine(
                 max_delay=0x10000,
                 psram_backed=True,
                 addr_width_o=self.bus.addr_width,
                 base=0x20000,
             ),
-            dsp.DelayLine(
+            DelayLine(
                 max_delay=0x10000,
                 psram_backed=True,
                 addr_width_o=self.bus.addr_width,
@@ -633,10 +633,10 @@ class SRAMDiffuser(wiring.Component):
         # 4 delay lines, backed by 4 independent SRAM banks.
 
         self.delay_lines = [
-            dsp.DelayLine(max_delay=2048),
-            dsp.DelayLine(max_delay=4096),
-            dsp.DelayLine(max_delay=8192),
-            dsp.DelayLine(max_delay=8192),
+            DelayLine(max_delay=2048),
+            DelayLine(max_delay=4096),
+            DelayLine(max_delay=8192),
+            DelayLine(max_delay=8192),
         ]
 
         self.diffuser = delay.Diffuser(self.delay_lines)

@@ -16,6 +16,7 @@ from amaranth_soc              import csr
 from amaranth_future           import fixed
 
 from tiliqua                   import eurorack_pmod, dsp, midi, scope, sim, delay
+from tiliqua.delay_line        import DelayLine
 from tiliqua.eurorack_pmod     import ASQ
 from tiliqua.tiliqua_soc       import TiliquaSoc
 from tiliqua.cli               import top_level_cli
@@ -31,10 +32,10 @@ class Diffuser(wiring.Component):
         # 4 delay lines, backed by 4 independent SRAM banks.
 
         self.delay_lines = [
-            dsp.DelayLine(max_delay=2048),
-            dsp.DelayLine(max_delay=4096),
-            dsp.DelayLine(max_delay=8192),
-            dsp.DelayLine(max_delay=8192),
+            DelayLine(max_delay=2048),
+            DelayLine(max_delay=4096),
+            DelayLine(max_delay=8192),
+            DelayLine(max_delay=8192),
         ]
 
         self.diffuser = delay.Diffuser(self.delay_lines)
