@@ -468,16 +468,16 @@ class PSRAMPingPongDelay(wiring.Component):
 
         self.delayln1 = dsp.DelayLine(
             max_delay=0x4000, # careful this doesn't collide with delayln2.base!
+            psram_backed=True,
             addr_width_o=self.bus.addr_width,
             base=0x00000,
-            write_triggers_read=True,
         )
 
         self.delayln2 = dsp.DelayLine(
             max_delay=0x4000,
+            psram_backed=True,
             addr_width_o=self.bus.addr_width,
             base=0x4000,
-            write_triggers_read=True,
         )
 
         # Both delay lines share our memory bus round-robin for all operations.
@@ -526,17 +526,8 @@ class SRAMPingPongDelay(wiring.Component):
 
         # 2 delay lines, backed by independent slabs of internal SRAM.
 
-        self.delayln1 = dsp.DelayLine(
-            max_delay=0x4000,
-            psram_backed=False,
-            write_triggers_read=True,
-        )
-
-        self.delayln2 = dsp.DelayLine(
-            max_delay=0x4000,
-            psram_backed=False,
-            write_triggers_read=True,
-        )
+        self.delayln1 = dsp.DelayLine(max_delay=0x4000)
+        self.delayln2 = dsp.DelayLine(max_delay=0x4000)
 
         # Create the PingPongCore using the above delay lines.
 
@@ -578,27 +569,27 @@ class PSRAMDiffuser(wiring.Component):
         self.delay_lines = [
             dsp.DelayLine(
                 max_delay=0x10000,
+                psram_backed=True,
                 addr_width_o=self.bus.addr_width,
                 base=0x00000,
-                write_triggers_read=True,
             ),
             dsp.DelayLine(
                 max_delay=0x10000,
+                psram_backed=True,
                 addr_width_o=self.bus.addr_width,
                 base=0x10000,
-                write_triggers_read=True,
             ),
             dsp.DelayLine(
                 max_delay=0x10000,
+                psram_backed=True,
                 addr_width_o=self.bus.addr_width,
                 base=0x20000,
-                write_triggers_read=True,
             ),
             dsp.DelayLine(
                 max_delay=0x10000,
+                psram_backed=True,
                 addr_width_o=self.bus.addr_width,
                 base=0x30000,
-                write_triggers_read=True,
             ),
         ]
 
@@ -642,26 +633,10 @@ class SRAMDiffuser(wiring.Component):
         # 4 delay lines, backed by 4 independent SRAM banks.
 
         self.delay_lines = [
-            dsp.DelayLine(
-                max_delay=2048,
-                psram_backed=False,
-                write_triggers_read=True,
-            ),
-            dsp.DelayLine(
-                max_delay=4096,
-                psram_backed=False,
-                write_triggers_read=True,
-            ),
-            dsp.DelayLine(
-                max_delay=8192,
-                psram_backed=False,
-                write_triggers_read=True,
-            ),
-            dsp.DelayLine(
-                max_delay=8192,
-                psram_backed=False,
-                write_triggers_read=True,
-            ),
+            dsp.DelayLine(max_delay=2048),
+            dsp.DelayLine(max_delay=4096),
+            dsp.DelayLine(max_delay=8192),
+            dsp.DelayLine(max_delay=8192),
         ]
 
         self.diffuser = delay.Diffuser(self.delay_lines)

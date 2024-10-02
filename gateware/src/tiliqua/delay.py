@@ -128,16 +128,13 @@ class Diffuser(wiring.Component):
         for delay, delayln in zip(self.delays, self.delay_lines):
             self.taps.append(delayln.add_tap(fixed_delay=delay))
 
-    def elaborate(self, platform):
-        m = Module()
-
         # quadrants in the below matrix are:
         #
         # [in    -> out] [in    -> delay]
         # [delay -> out] [delay -> delay] <- feedback
         #
 
-        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
+        self.matrix_mix = dsp.MatrixMix(
             i_channels=8, o_channels=8,
             coefficients=[[0.6, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0, 0.0], # in0
                           [0.0, 0.6, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0], #  |
@@ -148,6 +145,11 @@ class Diffuser(wiring.Component):
                           [0.0, 0.0, 0.4, 0.0,-0.4,-0.4, 0.4,-0.4], #  |
                           [0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4, 0.4]])# ds3
                           # out0 ------- out3  sw0 ---------- sw3
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.matrix_mix = matrix_mix = self.matrix_mix
 
         m.submodules.split4 = split4 = dsp.Split(n_channels=4)
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)

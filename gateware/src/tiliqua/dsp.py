@@ -555,8 +555,8 @@ class DelayLine(wiring.Component):
     INTERNAL_BUS_DATA_WIDTH  = 16
     INTERNAL_BUS_GRANULARITY = 8
 
-    def __init__(self, max_delay, psram_backed=True, addr_width_o=None, base=None,
-                 write_triggers_read=False):
+    def __init__(self, max_delay, psram_backed=False, addr_width_o=None, base=None,
+                 write_triggers_read=True):
 
         if psram_backed:
             assert base is not None
