@@ -30,11 +30,11 @@ class DelayLine(wiring.Component):
     Usage
     -----
 
-    Each `DelayLine` instance operates in a single-writer, multiple-reader
-    fashion - that is, for each `DelayLine`, there may be only one stream
-    of samples being *written*, however from each `DelayLine` you may
-    create N instances of `DelayLineTap`, which are submodules of `DelayLine`
-    used to produce output streams (read operations) on the `DelayLine`.
+    Each :class:`DelayLine` instance operates in a single-writer, multiple-reader
+    fashion - that is, for each :class:`DelayLine`, there may be only one stream
+    of samples being *written*, however from each :class:`DelayLine` you may
+    create N instances of :class:`DelayLineTap`, which are submodules of :class:`DelayLine`
+    used to produce output streams (read operations) on the :class:`DelayLine`.
 
     For a simple, SRAM-backed delay line, the following is sufficient:
 
@@ -52,17 +52,13 @@ class DelayLine(wiring.Component):
         tap1 = delayln.add_tap()
         tap2 = delayln.add_tap()
 
-    .. note::
-
-        Each tap automatically becomes a submodule of the `DelayLine` instance.
-        That is, you only need to add `DelayLine` itself to `m.submodules`.
-
-    The `delayln` instance requires a single incoming stream `delayln.i`,
+    The :class:`DelayLine` instance requires a single incoming stream :py:`DelayLine.i`,
     on which incoming samples are taken and written to the backing store.
 
-    Each `tap` instance requires both an incoming *and* outgoing stream,
-    `tap1.i`, `tap1.o`, where an output sample is *only* produced some
-    time after the requested delay count has arrived on `tap1.i`.
+    Each :class:`DelayLineTap` instance requires both an incoming *and* outgoing
+    stream, :py:`DelayLineTap.i`, :py:`DelayLineTap.o`, where an output sample is
+    *only* produced some time after the requested delay count has arrived on
+    :py:`DelayLineTap.i`.
 
     This gives applications the flexibility to read multiple times per
     write sample (useful for example for fractional delay lines where
@@ -75,7 +71,7 @@ class DelayLine(wiring.Component):
     input stream if you just want some taps with fixed delays.
 
     So, if you want a simple fixed delay tap, you can use the
-    `write_triggers_read=True` option when creating the `DelayLine`. Then,
+    :py:`write_triggers_read=True` option when creating the :class:`DelayLine`. Then,
     you can specify explicit fixed delay taps as follows:
 
     .. code-block:: python
@@ -86,10 +82,10 @@ class DelayLine(wiring.Component):
 
     .. note::
 
-        When used in this mode, `tap1` and `tap2` will internally have their
+        When used in this mode, :py:`tap1` and :py:`tap2` will internally have their
         inputs (sample request streams) hooked up to the write strobe. This
-        means you no longer need to hook up `tapX.i` and will automatically
-        get a single sample on each `tapX.o` after every write to `delayln`.
+        means you no longer need to hook up :py:`tapX.i` and will automatically
+        get a single sample on each :py:`tapX.o` after every write to :py:`delayln`.
 
     Backing store
     -------------
@@ -119,23 +115,18 @@ class DelayLine(wiring.Component):
     .. note::
         As each delayline contains completely different samples and individually
         has quite a predictable access pattern, it makes sense to have one cache
-        per `DelayLine`, rather than one larger shared cache (which would likely
+        per :class:`DelayLine`, rather than one larger shared cache (which would likely
         perform worse considering area/bandwidth). The important factor is that
         all writes and reads on the same delayline share the same cache, as
         the write and read taps have the same working set.
 
-    Input Ports
-    -----------
-    i : stream.Signature(ASQ)
-        The input stream for writing samples to the delay line.
-
-    Output Ports
-    ------------
-    bus : wishbone.Signature
-        Only present for PSRAM-backed delay lines. This is the Wishbone bus
-        interface for connecting to external PSRAM.
-
-
+    Members
+    -------
+    i : :py:`In(stream.Signature(ASQ))`
+        Input stream for writing samples to the delay line.
+    bus : :py:`Out(wishbone.Signature)`
+        Wishbone bus for connecting to external PSRAM (usually through an arbiter).
+        *Only present for PSRAM-backed delay lines.*
     """
 
     INTERNAL_BUS_DATA_WIDTH  = 16
@@ -145,15 +136,20 @@ class DelayLine(wiring.Component):
                  write_triggers_read=True):
         """
         max_delay : int
-            The maximum delay in samples.
+            The maximum delay in samples. This exactly corresponds to the memory
+            required in the backing store. Must be a power of 2.
         psram_backed : bool, optional
-            If True, the delay line is backed by PSRAM.
+            If True, the delay line is backed by PSRAM. Otherwise, it is backed
+            by SRAM.
         addr_width_o : int, optional
-            The address width (required for PSRAM-backed delay lines)
+            *Required for PSRAM-backed delay lines.*
+            The address width of the external memory bus.
         base : int, optional
-            The memory slice base address (required PSRAM-backed delay lines).
+            *Required for PSRAM-backed delay lines.*
+            The memory slice base address. This is the physical address offset in bytes.
         write_triggers_read : bool, optional
-            If True, writing to the delay line triggers a read.
+            If True, writing to the delay line triggers a read. This means the
+            :py:`DelayLineTap.i` stream does not need to be connected
         """
 
         if psram_backed:
@@ -220,6 +216,18 @@ class DelayLine(wiring.Component):
         super().__init__(ports)
 
     def add_tap(self, fixed_delay=None):
+        """
+        Add and return a new :class:`DelayLineTap` to stream samples read from this :class:`DelayLine`.
+
+        .. note::
+
+            Each tap automatically becomes a submodule of the :class:`DelayLine` instance.
+            That is, you only need to add :class:`DelayLine` itself to :py:`m.submodules`.
+
+        fixed_delay : int
+            The :py:`DelayLineTap.i` is automatically set to a fixed delay.
+            *Only used when* :py:`write_triggers_read=True`.
+        """
         if self.write_triggers_read:
             assert fixed_delay is not None
             assert fixed_delay < self.max_delay
@@ -304,8 +312,19 @@ class DelayLine(wiring.Component):
 
 class DelayLineTap(wiring.Component):
     """
-    A single read tap of a parent `DelayLine`.
-    See `DelayLine` top-level comment for information on usage.
+    A single read tap of a parent :class:`DelayLine`.
+    See :class:`DelayLine` top-level comment for information on usage.
+    :class:`DelayLineTap` should only be created using :py:`DelayLine.add_tap()`.
+
+    Members
+    -------
+    i : :py:`In(unsigned(N))`
+        Stream of delays requested to be read from the delay line.
+        The unit is in number of samples *behind* the last written
+        sample to the delay line.
+    o : :py:`Out(stream.Signature(ASQ))`
+        Stream of samples read from the delay line, one per request
+        on :py:`DelayLineTap.i`.
     """
     def __init__(self, parent_bus, fixed_delay=None):
 
