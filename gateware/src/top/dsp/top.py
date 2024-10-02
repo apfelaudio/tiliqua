@@ -180,127 +180,6 @@ class Matrix(wiring.Component):
 
         return m
 
-class SRAMDiffuser(wiring.Component):
-
-    """
-    SRAM-backed 4-channel feedback delay, diffused by a matrix mixer.
-    """
-
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
-
-    def __init__(self):
-        super().__init__()
-
-        # 4 delay lines, backed by 4 independent SRAM banks.
-
-        self.delay_lines = [
-            dsp.DelayLine(
-                max_delay=2048,
-                psram_backed=False,
-                write_triggers_read=True,
-            ),
-            dsp.DelayLine(
-                max_delay=4096,
-                psram_backed=False,
-                write_triggers_read=True,
-            ),
-            dsp.DelayLine(
-                max_delay=8192,
-                psram_backed=False,
-                write_triggers_read=True,
-            ),
-            dsp.DelayLine(
-                max_delay=8192,
-                psram_backed=False,
-                write_triggers_read=True,
-            ),
-        ]
-
-        self.diffuser = delay.Diffuser(self.delay_lines)
-
-    def elaborate(self, platform):
-        m = Module()
-
-        dsp.named_submodules(m.submodules, self.delay_lines)
-
-        m.submodules.diffuser = self.diffuser
-
-        wiring.connect(m, wiring.flipped(self.i), self.diffuser.i)
-        wiring.connect(m, self.diffuser.o, wiring.flipped(self.o))
-
-        return m
-
-class PSRAMDiffuser(wiring.Component):
-
-    """
-    PSRAM-backed 4-channel feedback delay, diffused by a matrix mixer.
-    """
-
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    bus: Out(wishbone.Signature(addr_width=22,
-                                data_width=32,
-                                granularity=8,
-                                features={'bte', 'cti'}))
-
-    def __init__(self):
-        super().__init__()
-
-        # 4 delay lines, backed by 4 different slices of PSRAM address space.
-
-        self.delay_lines = [
-            dsp.DelayLine(
-                max_delay=0x10000,
-                addr_width_o=self.bus.addr_width,
-                base=0x00000,
-                write_triggers_read=True,
-            ),
-            dsp.DelayLine(
-                max_delay=0x10000,
-                addr_width_o=self.bus.addr_width,
-                base=0x10000,
-                write_triggers_read=True,
-            ),
-            dsp.DelayLine(
-                max_delay=0x10000,
-                addr_width_o=self.bus.addr_width,
-                base=0x20000,
-                write_triggers_read=True,
-            ),
-            dsp.DelayLine(
-                max_delay=0x10000,
-                addr_width_o=self.bus.addr_width,
-                base=0x30000,
-                write_triggers_read=True,
-            ),
-        ]
-
-        # All delay lines share our top-level bus for read/write operations.
-
-        self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
-                                         data_width=self.bus.data_width,
-                                         granularity=self.bus.granularity,
-                                         features=self.bus.features)
-        for delayln in self.delay_lines:
-            self._arbiter.add(delayln.bus)
-
-        self.diffuser = delay.Diffuser(self.delay_lines)
-
-    def elaborate(self, platform):
-        m = Module()
-
-        dsp.named_submodules(m.submodules, self.delay_lines)
-
-        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
-
-        m.submodules.diffuser = self.diffuser
-
-        wiring.connect(m, wiring.flipped(self.i), self.diffuser.i)
-        wiring.connect(m, self.diffuser.o, wiring.flipped(self.o))
-
-        return m
-
 class DualWaveshaper(wiring.Component):
 
     """Soft distortion, channel 1/2 inputs, 3 is overdrive gain."""
@@ -365,7 +244,6 @@ class TouchMixTop(wiring.Component):
         wiring.connect(m, matrix_mix.o, wiring.flipped(self.o))
 
         return m
-
 
 class QuadNCO(wiring.Component):
 
@@ -559,7 +437,6 @@ class MidiCVTop(wiring.Component):
 
         return m
 
-
 class PSRAMPingPongDelay(wiring.Component):
 
     """
@@ -680,6 +557,127 @@ class SRAMPingPongDelay(wiring.Component):
 
         return m
 
+class PSRAMDiffuser(wiring.Component):
+
+    """
+    PSRAM-backed 4-channel feedback delay, diffused by a matrix mixer.
+    """
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    bus: Out(wishbone.Signature(addr_width=22,
+                                data_width=32,
+                                granularity=8,
+                                features={'bte', 'cti'}))
+
+    def __init__(self):
+        super().__init__()
+
+        # 4 delay lines, backed by 4 different slices of PSRAM address space.
+
+        self.delay_lines = [
+            dsp.DelayLine(
+                max_delay=0x10000,
+                addr_width_o=self.bus.addr_width,
+                base=0x00000,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=0x10000,
+                addr_width_o=self.bus.addr_width,
+                base=0x10000,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=0x10000,
+                addr_width_o=self.bus.addr_width,
+                base=0x20000,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=0x10000,
+                addr_width_o=self.bus.addr_width,
+                base=0x30000,
+                write_triggers_read=True,
+            ),
+        ]
+
+        # All delay lines share our top-level bus for read/write operations.
+
+        self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
+                                         data_width=self.bus.data_width,
+                                         granularity=self.bus.granularity,
+                                         features=self.bus.features)
+        for delayln in self.delay_lines:
+            self._arbiter.add(delayln.bus)
+
+        self.diffuser = delay.Diffuser(self.delay_lines)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        dsp.named_submodules(m.submodules, self.delay_lines)
+
+        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
+
+        m.submodules.diffuser = self.diffuser
+
+        wiring.connect(m, wiring.flipped(self.i), self.diffuser.i)
+        wiring.connect(m, self.diffuser.o, wiring.flipped(self.o))
+
+        return m
+
+class SRAMDiffuser(wiring.Component):
+
+    """
+    SRAM-backed 4-channel feedback delay, diffused by a matrix mixer.
+    """
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    def __init__(self):
+        super().__init__()
+
+        # 4 delay lines, backed by 4 independent SRAM banks.
+
+        self.delay_lines = [
+            dsp.DelayLine(
+                max_delay=2048,
+                psram_backed=False,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=4096,
+                psram_backed=False,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=8192,
+                psram_backed=False,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=8192,
+                psram_backed=False,
+                write_triggers_read=True,
+            ),
+        ]
+
+        self.diffuser = delay.Diffuser(self.delay_lines)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        dsp.named_submodules(m.submodules, self.delay_lines)
+
+        m.submodules.diffuser = self.diffuser
+
+        wiring.connect(m, wiring.flipped(self.i), self.diffuser.i)
+        wiring.connect(m, self.diffuser.o, wiring.flipped(self.o))
+
+        return m
+
 class CoreTop(Elaboratable):
 
     def __init__(self, dsp_core, enable_touch):
@@ -751,10 +749,10 @@ CORES = {
     "waveshaper":     (False, DualWaveshaper),
     "nco":            (False, QuadNCO),
     "midicv":         (False, MidiCVTop),
-    "sram_diffuser":  (False, SRAMDiffuser),
-    "psram_diffuser": (False, PSRAMDiffuser),
-    "sram_pingpong":  (False, SRAMPingPongDelay),
     "psram_pingpong": (False, PSRAMPingPongDelay),
+    "sram_pingpong":  (False, SRAMPingPongDelay),
+    "psram_diffuser": (False, PSRAMDiffuser),
+    "sram_diffuser":  (False, SRAMDiffuser),
 }
 
 def simulation_ports(fragment):
