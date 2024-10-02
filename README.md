@@ -16,7 +16,9 @@ Tiliqua will launch on [Crowd Supply](https://www.crowdsupply.com/apfelaudio/til
 
 # Documentation
 
-(🚧 under construction) documentation is available here.
+(🚧 under construction) documentation is available at [apfelaudio.github.io/tiliqua](https://apfelaudio.github.io/tiliqua/)
+
+Documentation is built from source in `gateware/docs`.
 
 ## Builds on the following (awesome) open projects
 
