@@ -1,4 +1,4 @@
-Technical Specifications
+Technical specifications
 ########################
 
 Audio Interface

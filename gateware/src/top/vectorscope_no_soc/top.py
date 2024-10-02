@@ -12,8 +12,11 @@ memory and video subsystems with an ILA or simulation, as it's smaller.
 
 See 'xbeam' for SoC version of the scope with a menu system.
 
-# for visualizing the color palette
-$ pdm colors_vectorscope
+.. code-block:: bash
+
+    # for visualizing the color palette
+    $ pdm colors_vectorscope
+
 """
 
 import os

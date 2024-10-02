@@ -14,5 +14,6 @@ Tiliqua Manual
    hardware
    install
    gettingstarted
+   top
    dsp
    technical

@@ -1,6 +1,11 @@
 # Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
+"""
+Collect some information about Tiliqua health, display it on the video
+output and log it over serial. This is mostly used to check for
+hardware issues and for bringup.
+"""
 
 import os
 

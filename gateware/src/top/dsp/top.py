@@ -2,8 +2,18 @@
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 #
+"""
+Designs demoing parts of the DSP library. Build any of them as follows:
 
-"""Collection of designs showing how to use the DSP library."""
+.. code-block:: bash
+
+   # from `gateware` directory. Show all available example cores -
+   pdm dsp -h
+
+   # build an example core
+   pdm dsp build --dsp-core nco
+
+"""
 
 import os
 import sys

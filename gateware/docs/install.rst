@@ -1,8 +1,5 @@
-Installation
-############
-
 Prerequisites
--------------
+#############
 
 On an Ubuntu system, the following are the main dependencies:
 
@@ -25,3 +22,5 @@ To set up the environment:
    cd gateware
    git submodule update --init --recursive
    pdm install
+
+All examples are built in CI. If you're having trouble setting up your environment, it may also be worth checking the github workflow configuration.
