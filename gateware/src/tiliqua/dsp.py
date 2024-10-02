@@ -552,6 +552,93 @@ class WishboneAdapter(wiring.Component):
 
 class DelayLine(wiring.Component):
 
+    """
+    SRAM- or PSRAM- backed audio delay line.
+
+    This forms the backbone of many different types of effects - echoes,
+    pitch shifting, chorus, feedback synthesis etc.
+
+    Usage
+    -----
+
+    Each `DelayLine` instance operates in a single-writer, multiple-reader
+    fashion - that is, for each `DelayLine`, there may be only one stream
+    of samples being *written*, however from each `DelayLine` you may
+    create N instances of `DelayLineTap`, which are submodules of `DelayLine`
+    used to produce output streams (read operations) on the `DelayLine`.
+
+    For a simple, SRAM-backed delay line, the following is sufficient:
+
+        delayln = dsp.DelayLine(max_delay=8192)
+
+    From this, you can create some read taps:
+
+        tap1 = delayln.add_tap()
+        tap2 = delayln.add_tap()
+
+    Each tap automatically becomes a submodule of the `DelayLine` instance.
+    That is, you only need to add `DelayLine` itself to `m.submodules`.
+
+    The `delayln` instance requires a single incoming stream `delayln.i`,
+    on which incoming samples are taken and written to the backing store.
+
+    Each `tap` instance requires both an incoming *and* outgoing stream,
+    `tap1.i`, `tap1.o`, where an output sample is *only* produced some
+    time after the requested delay count has arrived on `tap1.i`.
+
+    This gives applications the flexibility to read multiple times per
+    write sample (useful for example for fractional delay lines where
+    we want to interpolate between two adjacent samples).
+
+    Fixed (simple) delay taps
+    -------------------------
+
+    It can be a bit cumbersome to need to provide each tap with an
+    input stream if you just want some taps with fixed delays.
+
+    So, if you want a simple fixed delay tap, you can use the
+    `write_triggers_read` option when creating the `DelayLine`. Then,
+    you can specify explicit fixed delay taps as follows:
+
+        delayln = dsp.DelayLine(max_delay=8192, write_triggers_read=True)
+        tap1    = delayln.add_tap(fixed_delay=5000)
+        tap2    = delayln.add_tap(fixed_delay=7000)
+
+    When used in this mode, `tap1` and `tap2` will internally have their
+    inputs (sample request streams) hooked up to the write strobe. This
+    means you no longer need to hook up `tapX.i` and will automatically
+    get a single sample on each `tapX.o` after every write to `delayln`.
+
+    Backing Store
+    -------------
+
+    The backing store is a contiguous region of memory where samples are
+    written to a wrapped incrementing index (i.e circular buffer fashion).
+
+    The same memory space is shared by all read & write operations, however
+    the way this works is slightly different when comparing SRAM- and PSRAM-
+    backed delay lines. In both cases, all read & write operations go through
+    an arbiter and share the same memory bus.
+
+    In the SRAM case, this memory bus is connected directly to an FPGA DPRAM
+    instantiation and as such does not need to be connected to any external
+    memory bus.
+
+    In the PSRAM case, this is a bit more complicated. Due to the memory
+    access latency of PSRAM, simply forwarding each read/write access would
+    quickly consume memory bandwidth simply due to the access latency.
+    So, in the PSRAM case, a small L2 cache is inserted between the internal
+    delay line R/W bus and the memory bus exposed by `delayln.bus` (normally
+    hooked up to the PSRAM). The purpose of this cache is to collect as many
+    read & write operations into burstable transactions as possible.
+
+    As each delayline contains completely different samples and individually
+    has quite a predictable access pattern, it makes sense to have one cache
+    per `DelayLine`, rather than one larger shared cache (which would likely
+    perform worse considering area/bandwidth). The important factor is that
+    all writes and reads on the same delayline share the small cache.
+    """
+
     INTERNAL_BUS_DATA_WIDTH  = 16
     INTERNAL_BUS_GRANULARITY = 8
 
