@@ -3,8 +3,13 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 
 """
-Advanced version of `example_vectorscope` that includes an SoC and menu system.
-Rasterizes X/Y (audio channel 0, 1) and color (audio channel 3) to a simulated CRT.
+Vectorscope and 4-channel oscilloscope with menu system.
+
+In vectorscope mode, rasterize X/Y (audio channel 0, 1) and
+color (audio channel 3) to a simulated CRT.
+
+In oscilloscope mode, all 4 input channels are plotted simultaneosly
+in classic oscilloscope fashion.
 """
 
 import logging

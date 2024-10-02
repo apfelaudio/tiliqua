@@ -2,6 +2,16 @@
 # Copyright (c) 2024 Seb Holzapfel <me@sebholzapfel.com>
 #
 # SPDX-License-Identifier: BSD--3-Clause
+"""
+4-channel USB2 audio interface, based on LUNA project.
+
+Enumerates as a 4-in, 4-out 48kHz sound card.
+
+TODO: this may require a resampler to improve stability
+as the PLL is not currently generating exactly 256*48kHz,
+however it seems to be close enough, at least for
+glitch-free audio on my Linux machine...
+"""
 
 import os
 

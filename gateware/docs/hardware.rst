@@ -1,5 +1,5 @@
-Hardware Overview (Beta R2)
-##############################
+Hardware overview
+#################
 
 Front
 -----

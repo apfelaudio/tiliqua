@@ -1,6 +1,23 @@
 # Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
+"""
+8-voice polyphonic synthesizer with video display and menu system.
+
+The synthesizer can be controlled through touching jacks 0-5 or using a
+MIDI keyboard through TRS midi. The control source must be selected in
+the menu system.
+
+In touch mode, the touch magnitude controls the filter envelopes of
+each voice. In MIDI mode, the velocity of each note as well as the
+value of the modulation wheel affects the filter envelopes.
+
+Output audio is sent to output channels 2 and 3 (last 2 jacks).
+
+Input jack 0 also controls phase modulation of all oscillators,
+so you can patch input jack 0 to an LFO for retro-sounding slow
+vibrato, or to an oscillator for some wierd FM effects.
+"""
 
 import logging
 import os
@@ -265,11 +282,6 @@ class PolySynth(wiring.Component):
         return m
 
 class SynthPeripheral(wiring.Component):
-
-    """
-    Bridges SoC memory space such that we can peek and poke
-    registers of the polysynth engine from our SoC.
-    """
 
     class Drive(csr.Register, access="w"):
         value: csr.Field(csr.action.W, unsigned(16))
