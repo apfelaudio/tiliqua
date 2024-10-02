@@ -25,4 +25,4 @@ VCAs
 Delay Lines
 -----------
 
-.. autoclass:: tiliqua.dsp.DelayLine
+.. autoclass:: tiliqua.delay_line.DelayLine

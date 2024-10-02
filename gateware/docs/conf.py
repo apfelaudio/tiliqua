@@ -9,11 +9,11 @@ project = "Tiliqua Project"
 copyright = time.strftime("2024—%Y, S. Holzapfel and Tiliqua contributors")
 
 extensions = [
+    "sphinx.ext.napoleon",
 	"sphinx.ext.intersphinx",
 	"sphinx.ext.doctest",
     "sphinx.ext.todo",
     "sphinx.ext.autodoc",
-    "sphinx.ext.napoleon",
     "sphinx_rtd_theme",
     "sphinxcontrib.platformpicker",
 ]

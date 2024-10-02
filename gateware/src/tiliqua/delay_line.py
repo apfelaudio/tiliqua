@@ -22,8 +22,7 @@ from tiliqua.dsp           import *
 
 class DelayLine(wiring.Component):
 
-    """
-    SRAM- or PSRAM- backed audio delay line.
+    """SRAM- or PSRAM-backed audio delay line.
 
     This forms the backbone of many different types of effects - echoes,
     pitch shifting, chorus, feedback synthesis etc.
@@ -39,6 +38,8 @@ class DelayLine(wiring.Component):
 
     For a simple, SRAM-backed delay line, the following is sufficient:
 
+    .. code-block:: python
+
         delayln = DelayLine(
             max_delay=8192,
             write_triggers_read=False,
@@ -46,11 +47,15 @@ class DelayLine(wiring.Component):
 
     From this, you can create some read taps:
 
+    .. code-block:: python
+
         tap1 = delayln.add_tap()
         tap2 = delayln.add_tap()
 
-    Each tap automatically becomes a submodule of the `DelayLine` instance.
-    That is, you only need to add `DelayLine` itself to `m.submodules`.
+    .. note::
+
+        Each tap automatically becomes a submodule of the `DelayLine` instance.
+        That is, you only need to add `DelayLine` itself to `m.submodules`.
 
     The `delayln` instance requires a single incoming stream `delayln.i`,
     on which incoming samples are taken and written to the backing store.
@@ -73,14 +78,18 @@ class DelayLine(wiring.Component):
     `write_triggers_read=True` option when creating the `DelayLine`. Then,
     you can specify explicit fixed delay taps as follows:
 
+    .. code-block:: python
+
         delayln = DelayLine(max_delay=8192, write_triggers_read=True)
         tap1    = delayln.add_tap(fixed_delay=5000)
         tap2    = delayln.add_tap(fixed_delay=7000)
 
-    When used in this mode, `tap1` and `tap2` will internally have their
-    inputs (sample request streams) hooked up to the write strobe. This
-    means you no longer need to hook up `tapX.i` and will automatically
-    get a single sample on each `tapX.o` after every write to `delayln`.
+    .. note::
+
+        When used in this mode, `tap1` and `tap2` will internally have their
+        inputs (sample request streams) hooked up to the write strobe. This
+        means you no longer need to hook up `tapX.i` and will automatically
+        get a single sample on each `tapX.o` after every write to `delayln`.
 
     Backing store
     -------------
@@ -93,23 +102,51 @@ class DelayLine(wiring.Component):
     backed delay lines. In both cases, all read & write operations go through
     an arbiter and share the same memory bus.
 
-    In the SRAM case, this memory bus is connected directly to an FPGA DPRAM
-    instantiation and as such does not need to be connected to any external
-    memory bus.
+    - **SRAM-backed delay line**
+        The memory bus is connected directly to an
+        FPGA DPRAM instantiation and does not need to be connected to any external
+        memory bus.
 
-    In the PSRAM case, this is a bit more complicated. Due to the memory
-    access latency of PSRAM, simply forwarding each read/write access would
-    quickly consume memory bandwidth simply due to the access latency.
-    So, in the PSRAM case, a small L2 cache is inserted between the internal
-    delay line R/W bus and the memory bus exposed by `delayln.bus` (normally
-    hooked up to the PSRAM). The purpose of this cache is to collect as many
-    read & write operations into burstable transactions as possible.
+    - **PSRAM-backed delay line**
+        Due to the memory access latency of PSRAM,
+        simply forwarding each read/write access would quickly consume memory
+        bandwidth simply due to the access latency. So, in the PSRAM case, a
+        small cache is inserted between the internal delay line R/W bus and
+        the memory bus exposed by `DelayLine.bus` (normally hooked up to the PSRAM).
+        The purpose of this cache is to collect as many read & write operations into
+        burstable transactions as possible.
 
-    As each delayline contains completely different samples and individually
-    has quite a predictable access pattern, it makes sense to have one cache
-    per `DelayLine`, rather than one larger shared cache (which would likely
-    perform worse considering area/bandwidth). The important factor is that
-    all writes and reads on the same delayline share the small cache.
+    .. note::
+        As each delayline contains completely different samples and individually
+        has quite a predictable access pattern, it makes sense to have one cache
+        per `DelayLine`, rather than one larger shared cache (which would likely
+        perform worse considering area/bandwidth). The important factor is that
+        all writes and reads on the same delayline share the same cache, as
+        the write and read taps have the same working set.
+
+    Input Ports
+    -----------
+    i : stream.Signature(ASQ)
+        The input stream for writing samples to the delay line.
+
+    Output Ports
+    ------------
+    bus : wishbone.Signature
+        Only present for PSRAM-backed delay lines. This is the Wishbone bus
+        interface for connecting to external PSRAM.
+
+    Constructor Arguments
+    ---------------------
+    max_delay : int
+        The maximum delay in samples.
+    psram_backed : bool, optional
+        If True, the delay line is backed by PSRAM. Default is False.
+    addr_width_o : int, optional
+        The address width (required for PSRAM-backed delay lines)
+    base : int, optional
+        The memory slice base address (required PSRAM-backed delay lines).
+    write_triggers_read : bool, optional
+        If True, writing to the delay line triggers a read. Default is True.
 
     """
 
