@@ -135,6 +135,14 @@ def connect_remap(m, stream_o, stream_i, mapping):
         stream_o.ready.eq(stream_i.ready)
     ]
 
+def channel_remap(m, stream_o, stream_i, mapping_o_to_i):
+    def remap(o, i):
+        connections = []
+        for k in mapping_o_to_i:
+            connections.append(i.payload[mapping_o_to_i[k]].eq(o.payload[k]))
+        return connections
+    return connect_remap(m, stream_o, stream_i, remap)
+
 class VCA(wiring.Component):
 
     """
@@ -496,86 +504,29 @@ class SVF(wiring.Component):
 
         return m
 
-class DelayLine(wiring.Component):
-
+class KickFeedback(Elaboratable):
     """
-    Delay line with variable delay length. This can also be
-    used as a fixed delay line or a wavetable / grain storage.
-
-    - 'sw': sample write, each one written to an incrementing
-    index in a local circular buffer.
-    - 'da': delay address, each strobe (later) emits a 'ds' (sample),
-    the value of the audio sample 'da' elements later than the
-    last sample write 'sw' to occur up to 'max_delay'.
-
-    Other uses:
-    - If 'da' is a constant, this becomes a fixed delay line.
-    - If 'sw' stop sending samples, this is like a frozen wavetable.
-
+    Inject a single dummy (garbage) sample after reset between
+    two streams. This is necessary to break infinite blocking
+    after reset if streams are set up in a feedback loop.
     """
-
-    def __init__(self, max_delay=512):
-        self.max_delay = max_delay
-        self.address_width = exact_log2(max_delay)
-        super().__init__({
-            "sw": In(stream.Signature(ASQ)),
-            "da": In(stream.Signature(unsigned(self.address_width))),
-            "ds": Out(stream.Signature(ASQ)),
-        })
-
+    def __init__(self, o, i):
+        self.o = o
+        self.i = i
     def elaborate(self, platform):
         m = Module()
-
-        # TODO (amaranth 0.5+): use native ASQ shape in LUT memory
-        m.submodules.mem = mem = Memory(
-            shape=signed(ASQ.as_shape().width), depth=self.max_delay, init=[])
-        wport = mem.write_port()
-        rport = mem.read_port(transparent_for=(wport,))
-
-        wrpointer = Signal(self.address_width)
-        rdpointer = Signal(self.address_width)
-
-        #
-        # read side (da -> ds)
-        #
-
-        m.d.comb += [
-            rport.addr.eq(rdpointer),
-            self.ds.payload.eq(rport.data),
-            self.da.ready.eq(1),
-        ]
-
-        # Set read pointer on valid delay address
-        with m.If(self.da.valid):
-            m.d.comb += [
-                # Read pointer must be wrapped to max delay
-                # Should wrap correctly as long as max delay is POW2
-                rdpointer.eq(wrpointer - self.da.payload),
-                rport.en.eq(1),
-            ]
-            m.d.sync += self.ds.valid.eq(1),
-        # FIXME: don't go here unless ds is ready!
-        with m.Else():
-            m.d.sync += self.ds.valid.eq(0),
-
-        #
-        # write side (sw -> circular buffer)
-        #
-
-        m.d.comb += [
-            self.sw.ready.eq(1),
-            wport.addr.eq(wrpointer),
-            wport.en.eq(self.sw.valid),
-            wport.data.eq(self.sw.payload),
-        ]
-
-        with m.If(wport.en):
-            with m.If(wrpointer != (self.max_delay - 1)):
-                m.d.sync += wrpointer.eq(wrpointer + 1)
-            with m.Else():
-                m.d.sync += wrpointer.eq(0)
-
+        wiring.connect(m, self.o, self.i)
+        with m.FSM() as fsm:
+            with m.State('KICK'):
+                m.d.comb += self.i.valid.eq(1)
+                with m.If(self.i.ready):
+                    m.next = 'FORWARD'
+            with m.State('FORWARD'):
+                pass
         return m
+
+def connect_feedback_kick(m, o, i):
+    m.submodules += KickFeedback(o, i)
 
 class PitchShift(wiring.Component):
 
@@ -584,30 +535,29 @@ class PitchShift(wiring.Component):
     tracked taps on a delay line. As a result, maximum grain
     size is the delay line 'max_delay' // 2.
 
-    The delay line itself must be hooked up to the input audio
+    The delay line tap itself must be hooked up to the input
     source from outside this component (this allows multiple
     shifters to share a single delay line).
     """
 
-    def __init__(self, delayln, xfade=256):
-        assert(xfade <= delayln.max_delay/4)
-        self.delayln    = delayln
+    def __init__(self, tap, xfade=256):
+        assert xfade <= (tap.max_delay // 4)
+        self.tap        = tap
         self.xfade      = xfade
         self.xfade_bits = exact_log2(xfade)
         # delay type: integer component is index into delay line
         # +1 is necessary so that we don't overflow on adding grain_sz.
-        self.dtype = fixed.SQ(self.delayln.address_width+1, 8)
+        self.dtype = fixed.SQ(self.tap.addr_width+1, 8)
         super().__init__({
             "i": In(stream.Signature(data.StructLayout({
                     "pitch": self.dtype,
-                    "grain_sz": unsigned(exact_log2(delayln.max_delay)),
+                    "grain_sz": unsigned(exact_log2(tap.max_delay)),
                   }))),
             "o": Out(stream.Signature(ASQ)),
         })
 
     def elaborate(self, platform):
         m = Module()
-
 
         # Current position in delay line 0, 1 (+= pitch every sample)
         delay0 = Signal(self.dtype)
@@ -644,23 +594,23 @@ class PitchShift(wiring.Component):
                     m.next = 'TAP0'
             with m.State('TAP0'):
                 m.d.comb += [
-                    self.delayln.ds.ready.eq(1),
-                    self.delayln.da.valid.eq(1),
-                    self.delayln.da.payload.eq(delay0.round() >> delay0.f_width),
+                    self.tap.o.ready.eq(1),
+                    self.tap.i.valid.eq(1),
+                    self.tap.i.payload.eq(delay0.round() >> delay0.f_width),
                 ]
-                with m.If(self.delayln.ds.valid):
-                    m.d.comb += self.delayln.da.valid.eq(0),
-                    m.d.sync += sample0.eq(self.delayln.ds.payload)
+                with m.If(self.tap.o.valid):
+                    m.d.comb += self.tap.i.valid.eq(0),
+                    m.d.sync += sample0.eq(self.tap.o.payload)
                     m.next = 'TAP1'
             with m.State('TAP1'):
                 m.d.comb += [
-                    self.delayln.ds.ready.eq(1),
-                    self.delayln.da.valid.eq(1),
-                    self.delayln.da.payload.eq(delay1.round() >> delay1.f_width),
+                    self.tap.o.ready.eq(1),
+                    self.tap.i.valid.eq(1),
+                    self.tap.i.payload.eq(delay1.round() >> delay1.f_width),
                 ]
-                with m.If(self.delayln.ds.valid):
-                    m.d.comb += self.delayln.da.valid.eq(0),
-                    m.d.sync += sample1.eq(self.delayln.ds.payload)
+                with m.If(self.tap.o.valid):
+                    m.d.comb += self.tap.i.valid.eq(0),
+                    m.d.sync += sample1.eq(self.tap.o.payload)
                     m.next = 'ENV'
             with m.State('ENV'):
                 with m.If(delay0 < self.xfade):

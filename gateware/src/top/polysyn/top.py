@@ -15,88 +15,44 @@ from amaranth_soc              import csr
 
 from amaranth_future           import fixed
 
-from tiliqua                   import eurorack_pmod, dsp, midi, scope, sim
+from tiliqua                   import eurorack_pmod, dsp, midi, scope, sim, delay
+from tiliqua.delay_line        import DelayLine
 from tiliqua.eurorack_pmod     import ASQ
 from tiliqua.tiliqua_soc       import TiliquaSoc
 from tiliqua.cli               import top_level_cli
 
-# TODO: reconcile this with Diffuser in tiliqua.dsp
-# it's almost the same, just some coefficients tweaked so it doesn't
-# saturate quite as easily.
 class Diffuser(wiring.Component):
-
-    """
-    4-channel feedback delay, diffused by a matrix mixer.
-    """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
+    def __init__(self):
+        super().__init__()
+
+        # 4 delay lines, backed by 4 independent SRAM banks.
+
+        self.delay_lines = [
+            DelayLine(max_delay=2048),
+            DelayLine(max_delay=4096),
+            DelayLine(max_delay=8192),
+            DelayLine(max_delay=8192),
+        ]
+
+        self.diffuser = delay.Diffuser(self.delay_lines)
+
+        # Coefficients of this are tweaked by the SoC
+
+        self.matrix   = self.diffuser.matrix_mix
+
     def elaborate(self, platform):
         m = Module()
 
-        # quadrants in the below matrix are:
-        #
-        # [in    -> out] [in    -> delay]
-        # [delay -> out] [delay -> delay] <- feedback
-        #
+        dsp.named_submodules(m.submodules, self.delay_lines)
 
-        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
-            i_channels=8, o_channels=8,
-            coefficients=[[0.6, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0, 0.0], # in0
-                          [0.0, 0.6, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0], #  |
-                          [0.0, 0.0, 0.6, 0.0, 0.0, 0.0, 0.8, 0.0], #  |
-                          [0.0, 0.0, 0.0, 0.6, 0.0, 0.0, 0.0, 0.8], # in3
-                          [0.4, 0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4], # ds0
-                          [0.0, 0.4, 0.0, 0.0,-0.4, 0.4,-0.4,-0.4], #  |
-                          [0.0, 0.0, 0.4, 0.0,-0.4,-0.4, 0.4,-0.4], #  |
-                          [0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4, 0.4]])# ds3
-                          # out0 ------- out3  sw0 ---------- sw3
+        m.submodules.diffuser = self.diffuser
 
-        self.matrix = matrix_mix
-
-        delay_lines = [
-            dsp.DelayLine(max_delay=2048),
-            dsp.DelayLine(max_delay=4096),
-            dsp.DelayLine(max_delay=8192),
-            dsp.DelayLine(max_delay=8192),
-        ]
-
-        dsp.named_submodules(m.submodules, delay_lines)
-
-        m.d.comb += [delay_lines[n].da.valid.eq(1) for n in range(4)]
-        m.d.comb += [
-            delay_lines[0].da.payload.eq(2000),
-            delay_lines[1].da.payload.eq(3000),
-            delay_lines[2].da.payload.eq(5000),
-            delay_lines[3].da.payload.eq(7000),
-        ]
-
-        m.submodules.split4 = split4 = dsp.Split(n_channels=4)
-        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
-
-        m.submodules.split8 = split8 = dsp.Split(n_channels=8)
-        m.submodules.merge8 = merge8 = dsp.Merge(n_channels=8)
-
-        wiring.connect(m, wiring.flipped(self.i), split4.i)
-
-        # matrix <-> independent streams
-        wiring.connect(m, matrix_mix.o, split8.i)
-        wiring.connect(m, merge8.o, matrix_mix.i)
-
-        for n in range(4):
-            # audio -> matrix [0-3]
-            wiring.connect(m, split4.o[n], merge8.i[n])
-            # delay -> matrix [4-7]
-            wiring.connect(m, delay_lines[n].ds, merge8.i[4+n])
-
-        for n in range(4):
-            # matrix -> audio [0-3]
-            wiring.connect(m, split8.o[n], merge4.i[n])
-            # matrix -> delay [4-7]
-            wiring.connect(m, split8.o[4+n], delay_lines[n].sw)
-
-        wiring.connect(m, merge4.o, wiring.flipped(self.o))
+        wiring.connect(m, wiring.flipped(self.i), self.diffuser.i)
+        wiring.connect(m, self.diffuser.o, wiring.flipped(self.o))
 
         return m
 

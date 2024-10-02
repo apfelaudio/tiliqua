@@ -13,62 +13,32 @@ from amaranth_future       import fixed
 from amaranth.lib          import wiring, data
 from tiliqua.eurorack_pmod import ASQ
 
-from tiliqua import dsp
+from tiliqua import dsp, delay_line
 
 class DSPTests(unittest.TestCase):
-
-    def test_delayline(self):
-
-        delay_line = dsp.DelayLine()
-
-        async def stimulus(ctx):
-            for n in range(0, sys.maxsize):
-                ctx.set(delay_line.sw.valid, 1)
-                ctx.set(delay_line.sw.payload,
-                        fixed.Const(0.8*math.sin(n*0.2), shape=ASQ))
-                await ctx.tick()
-                ctx.set(delay_line.sw.valid, 0)
-                await ctx.tick()
-
-        async def testbench(ctx):
-            await ctx.tick().repeat(200)
-            for n in range(0, 10):
-                ctx.set(delay_line.da.payload, n)
-                ctx.set(delay_line.ds.ready, 1)
-                ctx.set(delay_line.da.valid, 1)
-                await ctx.tick()
-                ctx.set(delay_line.da.valid, 0)
-                await ctx.tick()
-
-        sim = Simulator(delay_line)
-        sim.add_clock(1e-6)
-        sim.add_process(stimulus)
-        sim.add_testbench(testbench)
-        with sim.write_vcd(vcd_file=open("test_delayline.vcd", "w")):
-            sim.run()
 
     def test_pitch(self):
 
         m = Module()
-        delay_line = dsp.DelayLine(max_delay=256)
-        pitch_shift = dsp.PitchShift(delayln=delay_line, xfade=32)
-        m.submodules += [delay_line, pitch_shift]
+        delayln = delay_line.DelayLine(max_delay=256, write_triggers_read=False)
+        pitch_shift = dsp.PitchShift(tap=delayln.add_tap(), xfade=32)
+        m.submodules += [delayln, pitch_shift]
 
         async def testbench(ctx):
             await ctx.tick()
             await ctx.tick()
             for n in range(0, 1000):
                 x = fixed.Const(0.8*math.sin(n*0.1), shape=ASQ)
-                ctx.set(delay_line.sw.valid, 1)
-                ctx.set(delay_line.sw.payload, x)
+                ctx.set(delayln.i.valid, 1)
+                ctx.set(delayln.i.payload, x)
                 await ctx.tick()
-                ctx.set(delay_line.sw.valid, 0)
+                ctx.set(delayln.i.valid, 0)
                 await ctx.tick()
                 await ctx.tick()
                 ctx.set(pitch_shift.i.payload.pitch, 
                     fixed.Const(-0.8, shape=pitch_shift.dtype))
                 ctx.set(pitch_shift.i.payload.grain_sz, 
-                    delay_line.max_delay//2)
+                    delayln.max_delay//2)
                 ctx.set(pitch_shift.o.ready, 1)
                 ctx.set(pitch_shift.i.valid, 1)
                 await ctx.tick()
