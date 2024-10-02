@@ -39,7 +39,10 @@ class DelayLine(wiring.Component):
 
     For a simple, SRAM-backed delay line, the following is sufficient:
 
-        delayln = DelayLine(max_delay=8192)
+        delayln = DelayLine(
+            max_delay=8192,
+            write_triggers_read=False,
+        )
 
     From this, you can create some read taps:
 
@@ -67,7 +70,7 @@ class DelayLine(wiring.Component):
     input stream if you just want some taps with fixed delays.
 
     So, if you want a simple fixed delay tap, you can use the
-    `write_triggers_read` option when creating the `DelayLine`. Then,
+    `write_triggers_read=True` option when creating the `DelayLine`. Then,
     you can specify explicit fixed delay taps as follows:
 
         delayln = DelayLine(max_delay=8192, write_triggers_read=True)

@@ -128,7 +128,7 @@ class Pitch(wiring.Component):
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
         m.submodules.delay_line = delay_line = DelayLine(
-            max_delay=8192, psram_backed=False)
+            max_delay=8192, write_triggers_read=False)
         m.submodules.pitch_shift = pitch_shift = dsp.PitchShift(
             tap=delay_line.add_tap(), xfade=delay_line.max_delay//4)
 
