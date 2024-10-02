@@ -11,23 +11,21 @@ import subprocess
 
 import math
 
-from amaranth              import *
-from amaranth.build        import *
-from amaranth.lib          import wiring, data, stream
-from amaranth.lib.wiring   import In, Out
-
-from amaranth_future       import fixed
-
+from amaranth                 import *
+from amaranth.build           import *
+from amaranth.lib             import wiring, data, stream
+from amaranth.lib.wiring      import In, Out
 from amaranth_soc             import wishbone
+from amaranth_future          import fixed
 
-from tiliqua                  import eurorack_pmod, dsp, midi, psram_peripheral
+from tiliqua                  import eurorack_pmod, dsp, midi, psram_peripheral, delay
 from tiliqua.cache            import WishboneL2Cache
 from tiliqua.eurorack_pmod    import ASQ
 from tiliqua.cli              import top_level_cli
 
 # for sim
-from amaranth.back import verilog
-from tiliqua       import sim
+from amaranth.back            import verilog
+from tiliqua                  import sim
 
 class Mirror(wiring.Component):
 
@@ -182,10 +180,61 @@ class Matrix(wiring.Component):
 
         return m
 
-class Diffuser(wiring.Component):
+class SRAMDiffuser(wiring.Component):
 
     """
-    4-channel feedback delay, diffused by a matrix mixer.
+    SRAM-backed 4-channel feedback delay, diffused by a matrix mixer.
+    """
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    def __init__(self):
+        super().__init__()
+
+        # 4 delay lines, backed by 4 independent SRAM banks.
+
+        self.delay_lines = [
+            dsp.DelayLine(
+                max_delay=2048,
+                psram_backed=False,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=4096,
+                psram_backed=False,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=8192,
+                psram_backed=False,
+                write_triggers_read=True,
+            ),
+            dsp.DelayLine(
+                max_delay=8192,
+                psram_backed=False,
+                write_triggers_read=True,
+            ),
+        ]
+
+        self.diffuser = delay.Diffuser(self.delay_lines)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        dsp.named_submodules(m.submodules, self.delay_lines)
+
+        m.submodules.diffuser = self.diffuser
+
+        wiring.connect(m, wiring.flipped(self.i), self.diffuser.i)
+        wiring.connect(m, self.diffuser.o, wiring.flipped(self.o))
+
+        return m
+
+class PSRAMDiffuser(wiring.Component):
+
+    """
+    PSRAM-backed 4-channel feedback delay, diffused by a matrix mixer.
     """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -195,12 +244,12 @@ class Diffuser(wiring.Component):
                                 granularity=8,
                                 features={'bte', 'cti'}))
 
-    def elaborate(self, platform):
-        m = Module()
+    def __init__(self):
+        super().__init__()
 
         # 4 delay lines, backed by 4 different slices of PSRAM address space.
 
-        delay_lines = [
+        self.delay_lines = [
             dsp.DelayLine(
                 max_delay=0x10000,
                 addr_width_o=self.bus.addr_width,
@@ -227,74 +276,28 @@ class Diffuser(wiring.Component):
             ),
         ]
 
-        dsp.named_submodules(m.submodules, delay_lines)
-
-        # Both delay lines share our top-level bus for all operations.
+        # All delay lines share our top-level bus for read/write operations.
 
         self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
                                          data_width=self.bus.data_width,
                                          granularity=self.bus.granularity,
                                          features=self.bus.features)
-        for delayln in delay_lines:
+        for delayln in self.delay_lines:
             self._arbiter.add(delayln.bus)
+
+        self.diffuser = delay.Diffuser(self.delay_lines)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        dsp.named_submodules(m.submodules, self.delay_lines)
 
         wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
 
-        m.submodules.arbiter = self._arbiter
+        m.submodules.diffuser = self.diffuser
 
-        # Each delay has a single read tap. `write_triggers_read` above ensures
-        # stream is connected such that it emits a sample stream synchronized
-        # with writes, rather than us needing to connect up tapX.i. (this is
-        # only needed if you want multiple delayline reads per write per tap).
-
-        taps = []
-        delays = [2000, 3000, 5000, 7000]
-        for delay, delayln in zip(delays, delay_lines):
-            taps.append(delayln.add_tap(fixed_delay=delay))
-
-        # quadrants in the below matrix are:
-        #
-        # [in    -> out] [in    -> delay]
-        # [delay -> out] [delay -> delay] <- feedback
-        #
-
-        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
-            i_channels=8, o_channels=8,
-            coefficients=[[0.6, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0, 0.0], # in0
-                          [0.0, 0.6, 0.0, 0.0, 0.0, 0.8, 0.0, 0.0], #  |
-                          [0.0, 0.0, 0.6, 0.0, 0.0, 0.0, 0.8, 0.0], #  |
-                          [0.0, 0.0, 0.0, 0.6, 0.0, 0.0, 0.0, 0.8], # in3
-                          [0.4, 0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4], # ds0
-                          [0.0, 0.4, 0.0, 0.0,-0.4, 0.4,-0.4,-0.4], #  |
-                          [0.0, 0.0, 0.4, 0.0,-0.4,-0.4, 0.4,-0.4], #  |
-                          [0.0, 0.0, 0.0, 0.4,-0.4,-0.4,-0.4, 0.4]])# ds3
-                          # out0 ------- out3  sw0 ---------- sw3
-
-        m.submodules.split4 = split4 = dsp.Split(n_channels=4)
-        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
-
-        m.submodules.split8 = split8 = dsp.Split(n_channels=8)
-        m.submodules.merge8 = merge8 = dsp.Merge(n_channels=8)
-
-        wiring.connect(m, wiring.flipped(self.i), split4.i)
-
-        # matrix <-> independent streams
-        wiring.connect(m, matrix_mix.o, split8.i)
-        dsp.connect_feedback_kick(m, merge8.o, matrix_mix.i)
-
-        for n in range(4):
-            # audio -> matrix [0-3]
-            wiring.connect(m, split4.o[n], merge8.i[n])
-            # delay -> matrix [4-7]
-            wiring.connect(m, taps[n].o, merge8.i[4+n])
-
-        for n in range(4):
-            # matrix -> audio [0-3]
-            wiring.connect(m, split8.o[n], merge4.i[n])
-            # matrix -> delay [4-7]
-            wiring.connect(m, split8.o[4+n], delay_lines[n].i)
-
-        wiring.connect(m, merge4.o, wiring.flipped(self.o))
+        wiring.connect(m, wiring.flipped(self.i), self.diffuser.i)
+        wiring.connect(m, self.diffuser.o, wiring.flipped(self.o))
 
         return m
 
@@ -556,77 +559,6 @@ class MidiCVTop(wiring.Component):
 
         return m
 
-class PingPongDelayCore(wiring.Component):
-
-    """
-    2-channel stereo ping-pong delay core.
-    Based on 2 delay lines, fed back into each other.
-    """
-
-    def __init__(self, delayln1, delayln2):
-        self.delayln1 = delayln1
-        self.delayln2 = delayln2
-        super().__init__({
-            "i": In(stream.Signature(data.ArrayLayout(ASQ, 4))),
-            "o": Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
-        })
-
-    def elaborate(self, platform):
-        m = Module()
-
-        assert self.delayln1.write_triggers_read
-        assert self.delayln2.write_triggers_read
-
-        # Each delay has a single read tap. `write_triggers_read` above ensures
-        # stream is connected such that it emits a sample stream synchronized
-        # with writes, rather than us needing to connect up tapX.i. (this is
-        # only needed if you want multiple delayline reads per write per tap).
-
-        tap1 = self.delayln1.add_tap(fixed_delay=15000)
-        tap2 = self.delayln2.add_tap(fixed_delay=15000)
-
-        # Only use the first 2 of 4 input jacks, as 2 separate streams.
-
-        m.submodules.isplit2 = isplit2 = dsp.Split(n_channels=4, source=wiring.flipped(self.i))
-        isplit2.wire_ready(m, [2, 3])
-
-        # Only use the first 2 of 4 output jacks, as 2 separate streams.
-
-        m.submodules.omerge2 = omerge2 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
-        omerge2.wire_valid(m, [2, 3])
-
-        # Feedback network of ping-ping delay. Each tap is fed back into the input of the
-        # opposite tap, mixed 50% with the audio input.
-
-        m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
-            i_channels=4, o_channels=4,
-            coefficients=[[0.5, 0.0, 0.5, 0.0],  # in0
-                          [0.0, 0.5, 0.0, 0.5],  # in1
-                          [0.5, 0.0, 0.0, 0.5],  # tap1.o
-                          [0.0, 0.5, 0.5, 0.0]]) # tap2.o
-                        # out0 out1 tap1.i tap2.i
-
-        # Split matrix input / output into independent streams
-
-        m.submodules.imix4 = imix4 = dsp.Merge(n_channels=4)
-        m.submodules.omix4 = omix4 = dsp.Split(n_channels=4, source=matrix_mix.o)
-
-        dsp.connect_feedback_kick(m, imix4.o, matrix_mix.i)
-
-        # Connect up delayln writes, read tap, audio in / out as described above
-        # to the matrix feedback network.
-
-        wiring.connect(m, isplit2.o[0], imix4.i[0])
-        wiring.connect(m, isplit2.o[1], imix4.i[1])
-        wiring.connect(m,       tap1.o, imix4.i[2])
-        wiring.connect(m,       tap2.o, imix4.i[3])
-
-        wiring.connect(m, omix4.o[0],  omerge2.i[0])
-        wiring.connect(m, omix4.o[1],  omerge2.i[1])
-        wiring.connect(m, omix4.o[2],  self.delayln1.i)
-        wiring.connect(m, omix4.o[3],  self.delayln2.i)
-
-        return m
 
 class PSRAMPingPongDelay(wiring.Component):
 
@@ -652,19 +584,19 @@ class PSRAMPingPongDelay(wiring.Component):
                                 granularity=8,
                                 features={'bte', 'cti'}))
 
-    def elaborate(self, platform):
-        m = Module()
+    def __init__(self):
+        super().__init__()
 
         # 2 delay lines, backed by 2 different slices of PSRAM address space.
 
-        delayln1 = dsp.DelayLine(
+        self.delayln1 = dsp.DelayLine(
             max_delay=0x4000, # careful this doesn't collide with delayln2.base!
             addr_width_o=self.bus.addr_width,
             base=0x00000,
             write_triggers_read=True,
         )
 
-        delayln2 = dsp.DelayLine(
+        self.delayln2 = dsp.DelayLine(
             max_delay=0x4000,
             addr_width_o=self.bus.addr_width,
             base=0x4000,
@@ -677,24 +609,27 @@ class PSRAMPingPongDelay(wiring.Component):
                                          data_width=self.bus.data_width,
                                          granularity=self.bus.granularity,
                                          features=self.bus.features)
-        self._arbiter.add(delayln1.bus)
-        self._arbiter.add(delayln2.bus)
+        self._arbiter.add(self.delayln1.bus)
+        self._arbiter.add(self.delayln2.bus)
+
+        # Create the PingPongCore using the above delay lines.
+
+        self.pingpong = delay.PingPongDelay(self.delayln1, self.delayln2)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.arbiter  = self._arbiter
+        m.submodules.delayln1 = self.delayln1
+        m.submodules.delayln2 = self.delayln2
+        m.submodules.pingping = self.pingpong
 
         wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
 
-        m.submodules.arbiter = self._arbiter
+        # Map hardware in/out channels 0, 1 (of 4) to pingpong stereo channels 0, 1
 
-        # Create the core delay logic using the above delay lines.
-
-        m.submodules.pingping = pingpong = PingPongDelayCore(delayln1, delayln2)
-        wiring.connect(m, wiring.flipped(self.i), pingpong.i)
-        wiring.connect(m, pingpong.o, wiring.flipped(self.o))
-
-        # Add delay line submodules after PingPongDelayCore has created taps
-        # FIXME: technically this depends on elaboration order, and shouldn't!
-
-        m.submodules.delayln1 = delayln1
-        m.submodules.delayln2 = delayln2
+        dsp.channel_remap(m, wiring.flipped(self.i), self.pingpong.i, {0: 0, 1: 1})
+        dsp.channel_remap(m, self.pingpong.o, wiring.flipped(self.o), {0: 0, 1: 1})
 
         return m
 
@@ -709,34 +644,39 @@ class SRAMPingPongDelay(wiring.Component):
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def elaborate(self, platform):
-        m = Module()
+    def __init__(self):
+        super().__init__()
 
         # 2 delay lines, backed by independent slabs of internal SRAM.
 
-        delayln1 = dsp.DelayLine(
+        self.delayln1 = dsp.DelayLine(
             max_delay=0x4000,
             psram_backed=False,
             write_triggers_read=True,
         )
 
-        delayln2 = dsp.DelayLine(
+        self.delayln2 = dsp.DelayLine(
             max_delay=0x4000,
             psram_backed=False,
             write_triggers_read=True,
         )
 
-        # Create the core delay logic using the above delay lines.
+        # Create the PingPongCore using the above delay lines.
 
-        m.submodules.pingping = pingpong = PingPongDelayCore(delayln1, delayln2)
-        wiring.connect(m, wiring.flipped(self.i), pingpong.i)
-        wiring.connect(m, pingpong.o, wiring.flipped(self.o))
+        self.pingpong = delay.PingPongDelay(self.delayln1, self.delayln2)
 
-        # Add delay line submodules after PingPongDelayCore has created taps
-        # FIXME: technically this depends on elaboration order, and shouldn't!
+    def elaborate(self, platform):
+        m = Module()
 
-        m.submodules.delayln1 = delayln1
-        m.submodules.delayln2 = delayln2
+        m.submodules.delayln1 = self.delayln1
+        m.submodules.delayln2 = self.delayln2
+
+        m.submodules.pingping = self.pingpong
+
+        # Map hardware in/out channels 0, 1 (of 4) to pingpong stereo channels 0, 1
+
+        dsp.channel_remap(m, wiring.flipped(self.i), self.pingpong.i, {0: 0, 1: 1})
+        dsp.channel_remap(m, self.pingpong.o, wiring.flipped(self.o), {0: 0, 1: 1})
 
         return m
 
@@ -801,19 +741,20 @@ class CoreTop(Elaboratable):
 
 # Different DSP cores that can be selected at top-level CLI.
 CORES = {
-    #             (touch, class name)
-    "mirror":     (False, Mirror),
-    "svf":        (False, ResonantFilter),
-    "vca":        (False, DualVCA),
-    "pitch":      (False, Pitch),
-    "matrix":     (False, Matrix),
-    "diffuser":   (False, Diffuser),
-    "touchmix":   (True,  TouchMixTop),
-    "waveshaper": (False, DualWaveshaper),
-    "nco":        (False, QuadNCO),
-    "midicv":     (False, MidiCVTop),
-    "psramdelay": (False, PSRAMPingPongDelay),
-    "sramdelay":  (False, SRAMPingPongDelay),
+    #                 (touch, class name)
+    "mirror":         (False, Mirror),
+    "svf":            (False, ResonantFilter),
+    "vca":            (False, DualVCA),
+    "pitch":          (False, Pitch),
+    "matrix":         (False, Matrix),
+    "touchmix":       (True,  TouchMixTop),
+    "waveshaper":     (False, DualWaveshaper),
+    "nco":            (False, QuadNCO),
+    "midicv":         (False, MidiCVTop),
+    "sram_diffuser":  (False, SRAMDiffuser),
+    "psram_diffuser": (False, PSRAMDiffuser),
+    "sram_pingpong":  (False, SRAMPingPongDelay),
+    "psram_pingpong": (False, PSRAMPingPongDelay),
 }
 
 def simulation_ports(fragment):

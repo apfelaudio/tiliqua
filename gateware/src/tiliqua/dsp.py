@@ -141,6 +141,14 @@ def connect_remap(m, stream_o, stream_i, mapping):
         stream_o.ready.eq(stream_i.ready)
     ]
 
+def channel_remap(m, stream_o, stream_i, mapping_o_to_i):
+    def remap(o, i):
+        connections = []
+        for k in mapping_o_to_i:
+            connections.append(i.payload[mapping_o_to_i[k]].eq(o.payload[k]))
+        return connections
+    return connect_remap(m, stream_o, stream_i, remap)
+
 class VCA(wiring.Component):
 
     """
