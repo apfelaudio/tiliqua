@@ -8,4 +8,8 @@ Tiliqua Manual
 .. toctree::
    :maxdepth: 2
 
+   hardware
    install
+   gettingstarted
+   dsp
+   technical
