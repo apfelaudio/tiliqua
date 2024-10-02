@@ -119,12 +119,12 @@ def connect_remap(m, stream_o, stream_i, mapping):
     map it to a different stream with a StructLayout payload, and the underlying
     bit-representation of both layouts do not match, I can remap using:
 
-    ```
-    dsp.connect_remap(m, vca_merge2a.o, vca0.i, lambda o, i : [
-        i.payload.x   .eq(o.payload[0]),
-        i.payload.gain.eq(o.payload[1] << 2)
-    ])
-    ```
+    .. code-block:: python
+
+        dsp.connect_remap(m, vca_merge2a.o, vca0.i, lambda o, i : [
+            i.payload.x   .eq(o.payload[0]),
+            i.payload.gain.eq(o.payload[1] << 2)
+        ])
 
     This is a bit of a hack. TODO perhaps implement this as a StreamConverter
     such that we can still use wiring.connect?.
@@ -1012,12 +1012,16 @@ def named_submodules(m_submodules, elaboratables, override_name=None):
     """
     Normally, using constructs like:
 
+    .. code-block:: python
+
         m.submodules += delaylines
 
     You get generated code with names like U$14 ... as Amaranth's
     namer doesn't give such modules a readable name.
 
     Instead, you can do:
+
+    .. code-block:: python
 
         named_submodules(m.submodules, delaylines)
 

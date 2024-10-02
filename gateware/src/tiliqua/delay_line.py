@@ -135,18 +135,6 @@ class DelayLine(wiring.Component):
         Only present for PSRAM-backed delay lines. This is the Wishbone bus
         interface for connecting to external PSRAM.
 
-    Constructor Arguments
-    ---------------------
-    max_delay : int
-        The maximum delay in samples.
-    psram_backed : bool, optional
-        If True, the delay line is backed by PSRAM. Default is False.
-    addr_width_o : int, optional
-        The address width (required for PSRAM-backed delay lines)
-    base : int, optional
-        The memory slice base address (required PSRAM-backed delay lines).
-    write_triggers_read : bool, optional
-        If True, writing to the delay line triggers a read. Default is True.
 
     """
 
@@ -155,6 +143,18 @@ class DelayLine(wiring.Component):
 
     def __init__(self, max_delay, psram_backed=False, addr_width_o=None, base=None,
                  write_triggers_read=True):
+        """
+        max_delay : int
+            The maximum delay in samples.
+        psram_backed : bool, optional
+            If True, the delay line is backed by PSRAM.
+        addr_width_o : int, optional
+            The address width (required for PSRAM-backed delay lines)
+        base : int, optional
+            The memory slice base address (required PSRAM-backed delay lines).
+        write_triggers_read : bool, optional
+            If True, writing to the delay line triggers a read.
+        """
 
         if psram_backed:
             assert base is not None
