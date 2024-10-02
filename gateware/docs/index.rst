@@ -3,7 +3,10 @@ Tiliqua Manual
 
 .. warning::
 
-   This manual is a work in progress and is seriously incomplete!
+   This manual is under construction and very incomplete!
+
+.. image:: _static/tiliqua_front_labelled.png
+  :width: 800
 
 .. toctree::
    :maxdepth: 2
