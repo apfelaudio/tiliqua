@@ -11,7 +11,7 @@ from amaranth                  import *
 from amaranth.lib              import wiring, data, stream
 from amaranth.lib.wiring       import In, Out, connect, flipped
 
-from amaranth_soc              import csr
+from amaranth_soc              import csr, wishbone
 
 from amaranth_future           import fixed
 
@@ -26,17 +26,53 @@ class Diffuser(wiring.Component):
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
+    bus: Out(wishbone.Signature(addr_width=22,
+                                data_width=32,
+                                granularity=8,
+                                features={'bte', 'cti'}))
+
     def __init__(self):
         super().__init__()
 
-        # 4 delay lines, backed by 4 independent SRAM banks.
+        # 4 delay lines, backed by 4 different slices of PSRAM address space.
+
+        # WARN: these base addresses shouldn't overlap anything else in PSRAM!
 
         self.delay_lines = [
-            DelayLine(max_delay=2048),
-            DelayLine(max_delay=4096),
-            DelayLine(max_delay=8192),
-            DelayLine(max_delay=8192),
+            DelayLine(
+                max_delay=0x10000,
+                psram_backed=True,
+                addr_width_o=self.bus.addr_width,
+                base=0xf00000,
+            ),
+            DelayLine(
+                max_delay=0x10000,
+                psram_backed=True,
+                addr_width_o=self.bus.addr_width,
+                base=0xf10000,
+            ),
+            DelayLine(
+                max_delay=0x10000,
+                psram_backed=True,
+                addr_width_o=self.bus.addr_width,
+                base=0xf20000,
+            ),
+            DelayLine(
+                max_delay=0x10000,
+                psram_backed=True,
+                addr_width_o=self.bus.addr_width,
+                base=0xf30000,
+            ),
         ]
+
+        # All delay lines share our top-level bus for read/write operations.
+
+        self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
+                                         data_width=self.bus.data_width,
+                                         granularity=self.bus.granularity,
+                                         features=self.bus.features)
+        for delayln in self.delay_lines:
+            self._arbiter.add(delayln.bus)
 
         self.diffuser = delay.Diffuser(self.delay_lines)
 
@@ -53,6 +89,9 @@ class Diffuser(wiring.Component):
 
         wiring.connect(m, wiring.flipped(self.i), self.diffuser.i)
         wiring.connect(m, self.diffuser.o, wiring.flipped(self.o))
+
+        m.submodules.arbiter  = self._arbiter
+        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
 
         return m
 
@@ -75,6 +114,10 @@ class PolySynth(wiring.Component):
 
     i_touch: In(8).array(8)
     i_jack:  In(8)
+
+    def __init__(self):
+        super().__init__()
+        self.diffuser = Diffuser()
 
     def elaborate(self, platform):
         m = Module()
@@ -198,8 +241,7 @@ class PolySynth(wiring.Component):
 
         # Output diffuser
 
-        m.submodules.diffuser = diffuser = Diffuser()
-        self.diffuser = diffuser
+        m.submodules.diffuser = self.diffuser
 
         # Stereo HPF to remove DC from any voices in 'zero cutoff'
         # Route to audio output channels 2 & 3
@@ -208,7 +250,7 @@ class PolySynth(wiring.Component):
         dsp.named_submodules(m.submodules, output_hpfs, override_name="output_hpf")
 
         m.submodules.hpf_split2 = hpf_split2 = dsp.Split(n_channels=2, source=matrix_mix.o)
-        m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=diffuser.i)
+        m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=self.diffuser.i)
         hpf_merge4.wire_valid(m, [0, 1])
 
         for lr in [0, 1]:
@@ -225,7 +267,7 @@ class PolySynth(wiring.Component):
         # Implement stereo distortion effect after diffuser.
 
         m.submodules.diffuser_split4 = diffuser_split4 = dsp.Split(
-                n_channels=4, source=diffuser.o)
+                n_channels=4, source=self.diffuser.o)
         diffuser_split4.wire_ready(m, [0, 1])
 
         m.submodules.cv_gain_split2 = cv_gain_split2 = dsp.Split(
@@ -375,6 +417,10 @@ class PolySoc(TiliquaSoc):
         self.synth_periph = SynthPeripheral()
         self.csr_decoder.add(self.synth_periph.bus, addr=self.synth_periph_base, name="synth_periph")
 
+        # connect synth delay memory bus up to external psram
+        self.synth_periph.synth = self.polysynth = PolySynth()
+        self.psram_periph.add_master(self.polysynth.diffuser.bus)
+
         # now we can freeze the memory map
         self.finalize_csr_bridge()
 
@@ -383,12 +429,8 @@ class PolySoc(TiliquaSoc):
         m = Module()
 
         m.submodules.vector_periph = self.vector_periph
-
-        m.submodules.polysynth = polysynth = PolySynth()
-        self.synth_periph.synth = polysynth
-
+        m.submodules.polysynth = polysynth = self.polysynth
         m.submodules.synth_periph = self.synth_periph
-
         m.submodules += super().elaborate(platform)
 
         pmod0 = self.pmod0_periph.pmod
