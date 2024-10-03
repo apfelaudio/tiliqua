@@ -1,8 +1,13 @@
-Technical specifications
-########################
+Hardware details
+################
+
+.. image:: _static/tiliqua_disassembled.png
+  :width: 800
 
 Audio Interface
 ---------------
+
+**KiCAD files + schematics here:** `eurorack-pmod R3.3 hardware <https://github.com/apfelaudio/eurorack-pmod/tree/master/hardware/schematics>`_
 
 - 8 (4 in + 4 out) DC-coupled audio channels, 192 KHz / 24-bit sampling supported
 - Touch and proximity sensing on all 8 audio jacks (if unused)
@@ -11,6 +16,8 @@ Audio Interface
 
 Motherboard
 -----------
+
+**KiCAD files + schematics here:** `Tiliqua R2 motherboard <https://github.com/apfelaudio/tiliqua/tree/main/hardware>`_
 
 - Switched rotary encoder with bar graph display.
 - Dual USB ports:
@@ -22,6 +29,13 @@ Motherboard
 
 Embedded FPGA SoM (`soldiercrab`)
 ---------------------------------
+
+**Schematics here :** `SoldierCrab R2 <https://github.com/apfelaudio/tiliqua/tree/main/hardware/schematics>`_
+
+.. note::
+
+    SoldierCrab KiCAD files need some cleanup and will be published before the
+    CrowdSupply campaign is launched.
 
 - Lattice ECP5 (25 K) FPGA, supported by open-source FPGA toolchains
 - 256 Mbit (32 MByte) HyperRAM / oSPI RAM (for long audio buffers or video framebuffers)

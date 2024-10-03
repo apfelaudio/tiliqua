@@ -12,9 +12,10 @@ Tiliqua Manual
    :maxdepth: 2
 
    hardware
+   technical
    install
    gettingstarted
+   soc
    bootloader
    top
    dsp
-   technical

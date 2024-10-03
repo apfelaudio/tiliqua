@@ -17,6 +17,12 @@ Output audio is sent to output channels 2 and 3 (last 2 jacks).
 Input jack 0 also controls phase modulation of all oscillators,
 so you can patch input jack 0 to an LFO for retro-sounding slow
 vibrato, or to an oscillator for some wierd FM effects.
+
+A block diagram of the core components of this polysynth:
+
+.. image:: _static/polysynth.png
+  :width: 800
+
 """
 
 import logging

@@ -562,6 +562,12 @@ class PSRAMDiffuser(wiring.Component):
 
     """
     PSRAM-backed 4-channel feedback delay, diffused by a matrix mixer.
+
+    A block diagram of the signal flow inside this demo:
+
+    .. image:: _static/diffusor.png
+      :width: 800
+
     """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))

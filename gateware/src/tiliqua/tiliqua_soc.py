@@ -5,6 +5,31 @@
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 
+"""
+Many Tiliqua projects contain an SoC alongside the DSP logic, in an arrangement like this:
+
+.. image:: _static/tiliquasoc.png
+  :width: 800
+
+Overview
+--------
+
+At a very high level, we have a vexriscv RISCV softcore running firmware (written
+in Rust), that interfaces with a bunch of peripherals through CSR registers. As
+the Vex also runs the menu system, often there is a dedicated peripheral with
+CSRs used to tweak parameters of the DSP pipeline.
+
+PSRAM
+-----
+
+PSRAM bandwidth is important to keep under control. For this reason, the SoC
+only interfaces with the PSRAM for text/line draw operations. Normal instruction
+and data fetches are to a local SRAM and so do not touch external PSRAM (which
+is usually hammered with video traffic).
+
+TODO: describe each peripheral in detail
+"""
+
 import shutil
 import subprocess
 import os
