@@ -14,6 +14,7 @@ Tiliqua Manual
    hardware
    install
    gettingstarted
+   bootloader
    top
    dsp
    technical

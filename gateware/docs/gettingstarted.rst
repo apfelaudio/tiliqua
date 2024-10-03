@@ -46,6 +46,13 @@ The built-in RP2040 JTAG debugger is based on the ``dirtyJtag`` project. You can
 
    sudo openFPGALoader -c dirtyJtag build/top.bit
 
+.. warning::
+
+    If you flash with ``-f`` to the SPI flash, usually you will want to specify
+    an offset so you don't overwrite the bootloader. See the *Bootloader* section
+    for more information on flash addressing. In any case it's not possible to
+    brick the Tiliqua - so don't be too scared to play!
+
 If you are running an SoC, it will give you serial output that you can monitor like so:
 
 .. code-block:: bash
