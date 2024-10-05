@@ -87,10 +87,12 @@ class WishboneL2Cache(wiring.Component):
 
         write_from_slave = Signal()
 
+        ix = Signal.like(burst_offset)
+
         m.d.comb += [
             wr_port.addr.eq(adr_line),
             rd_port.addr.eq(adr_line),
-            slave.dat_w.eq(rd_port.data >> (self.data_width*burst_offset)),
+            slave.dat_w.eq(rd_port.data >> (self.data_width*ix)),
             slave.sel.eq(2**(dw_to//8)-1),
             master.dat_r.eq(rd_port.data >> (self.data_width*adr_offset)),
         ]
@@ -171,6 +173,7 @@ class WishboneL2Cache(wiring.Component):
                         tag_wr_port.en.eq(1),
                     ]
                     m.d.sync += burst_offset.eq(burst_offset + 1)
+                    m.d.comb += ix.eq(burst_offset+1)
                     with m.If(burst_offset == (self.burst_len - 1)):
                         m.d.comb += slave.cti.eq(wishbone.CycleType.END_OF_BURST)
                         m.next = "WAIT"
