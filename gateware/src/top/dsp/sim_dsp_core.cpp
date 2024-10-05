@@ -53,16 +53,18 @@ int main(int argc, char** argv) {
     printf("sync domain is: %i KHz (%i ns/cycle)\n",  SYNC_CLK_HZ/1000,  ns_in_sync_cycle);
     printf("audio clock is: %i KHz (%i ns/cycle)\n", AUDIO_CLK_HZ/1000, ns_in_audio_cycle);
 
+#ifdef PSRAM_SIM
     uint32_t psram_size_bytes = 1024*1024*16;
     uint8_t *psram_data = (uint8_t*)malloc(psram_size_bytes);
     memset(psram_data, 0, psram_size_bytes);
 
+    uint64_t idle_lo = 0;
+    uint64_t idle_hi = 0;
+#endif
+
     uint32_t mod = 0;
     uint32_t mod_pmod;
     uint32_t pmod_clocks = 0;
-
-    uint64_t idle_lo = 0;
-    uint64_t idle_hi = 0;
 
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
 
@@ -71,12 +73,8 @@ int main(int argc, char** argv) {
         // Sync clock domain (PSRAM read/write simulation)
         if (timestamp_ns % (ns_in_sync_cycle/2) == 0) {
             top->clk_sync = !top->clk_sync;
+#ifdef PSRAM_SIM
             if (top->clk_sync) {
-
-                // Probably incorrect ram r/w timing is causing the visual shift
-                // Switch these assignments to use internal comb do_read / do_write?
-                // put these inside the ram simulation component
-
                 if (top->read_ready) {
                     top->read_data_view =
                         (psram_data[top->address_ptr+3] << 24)  |
@@ -101,6 +99,7 @@ int main(int argc, char** argv) {
                 }
 
             }
+#endif
         }
 
 
@@ -124,12 +123,14 @@ int main(int argc, char** argv) {
             }
         }
 
+#ifdef PSRAM_SIM
         // Track PSRAM usage to see how close we are to saturation
         if (top->idle == 1) {
             idle_hi += 1;
         } else {
             idle_lo += 1;
         }
+#endif
 
         contextp->timeInc(1000);
         top->eval();
@@ -138,8 +139,10 @@ int main(int argc, char** argv) {
 #endif
     }
 
+#ifdef PSRAM_SIM
     printf("RAM bandwidth: idle: %i, !idle: %i, percent_used: %f\n", idle_hi, idle_lo,
             100.0f * (float)idle_lo / (float)(idle_hi + idle_lo));
+#endif
 
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
     tfp->close();

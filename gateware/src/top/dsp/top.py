@@ -683,7 +683,9 @@ class CoreTop(Elaboratable):
         self.inject2 = Signal(signed(16))
         self.inject3 = Signal(signed(16))
 
-        self.psram_periph = psram_peripheral.Peripheral(size=16*1024*1024)
+        # Only if this core uses PSRAM
+        if hasattr(self.core, "bus"):
+            self.psram_periph = psram_peripheral.Peripheral(size=16*1024*1024)
 
         super().__init__()
 
@@ -748,7 +750,7 @@ CORES = {
 }
 
 def simulation_ports(fragment):
-    return {
+    ports = {
         "clk_audio":      (ClockSignal("audio"),                       None),
         "rst_audio":      (ResetSignal("audio"),                       None),
         "clk_sync":       (ClockSignal("sync"),                        None),
@@ -758,13 +760,18 @@ def simulation_ports(fragment):
         "fs_inject1":     (fragment.inject1,                           None),
         "fs_inject2":     (fragment.inject2,                           None),
         "fs_inject3":     (fragment.inject3,                           None),
-        "idle":           (fragment.psram_periph.simif.idle,           None),
-        "address_ptr":    (fragment.psram_periph.simif.address_ptr,    None),
-        "read_data_view": (fragment.psram_periph.simif.read_data_view, None),
-        "write_data":     (fragment.psram_periph.simif.write_data,     None),
-        "read_ready":     (fragment.psram_periph.simif.read_ready,     None),
-        "write_ready":    (fragment.psram_periph.simif.write_ready,    None),
     }
+    # Maybe hook up PSRAM simulation interface
+    if hasattr(fragment.core, "bus"):
+        ports |= {
+            "idle":           (fragment.psram_periph.simif.idle,           None),
+            "address_ptr":    (fragment.psram_periph.simif.address_ptr,    None),
+            "read_data_view": (fragment.psram_periph.simif.read_data_view, None),
+            "write_data":     (fragment.psram_periph.simif.write_data,     None),
+            "read_ready":     (fragment.psram_periph.simif.read_ready,     None),
+            "write_ready":    (fragment.psram_periph.simif.write_ready,    None),
+        }
+    return ports
 
 def argparse_callback(parser):
     parser.add_argument('--dsp-core', type=str, default="mirror",
