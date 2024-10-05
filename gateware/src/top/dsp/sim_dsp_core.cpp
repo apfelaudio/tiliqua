@@ -61,6 +61,9 @@ int main(int argc, char** argv) {
     uint32_t mod_pmod;
     uint32_t pmod_clocks = 0;
 
+    uint64_t idle_lo = 0;
+    uint64_t idle_hi = 0;
+
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
 
         uint64_t timestamp_ns = contextp->time() / 1000;
@@ -121,12 +124,22 @@ int main(int argc, char** argv) {
             }
         }
 
+        // Track PSRAM usage to see how close we are to saturation
+        if (top->idle == 1) {
+            idle_hi += 1;
+        } else {
+            idle_lo += 1;
+        }
+
         contextp->timeInc(1000);
         top->eval();
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
         tfp->dump(contextp->time());
 #endif
     }
+
+    printf("RAM bandwidth: idle: %i, !idle: %i, percent_used: %f\n", idle_hi, idle_lo,
+            100.0f * (float)idle_lo / (float)(idle_hi + idle_lo));
 
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
     tfp->close();

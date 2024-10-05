@@ -387,8 +387,7 @@ class WishboneAdapter(wiring.Component):
                                        granularity=8)),
             "o": Out(wishbone.Signature(addr_width=addr_width_o,
                                         data_width=32,
-                                        granularity=8,
-                                        features={'bte', 'cti'})),
+                                        granularity=8)),
         })
 
     def elaborate(self, platform):

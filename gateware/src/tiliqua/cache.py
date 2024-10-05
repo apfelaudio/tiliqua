@@ -39,8 +39,8 @@ class WishboneL2Cache(wiring.Component):
     - Translation of bus data widths is removed (for simplicity).
     """
 
-    def __init__(self, cachesize_words=256,
-                 addr_width=22, data_width=32, granularity=8, burst_len=8):
+    def __init__(self, cachesize_words=64,
+                 addr_width=22, data_width=32, granularity=8, burst_len=4):
 
         self.cachesize_words = cachesize_words
         self.data_width      = data_width
@@ -49,8 +49,7 @@ class WishboneL2Cache(wiring.Component):
         super().__init__({
             "master": In(wishbone.Signature(addr_width=addr_width,
                                             data_width=data_width,
-                                            granularity=granularity,
-                                            features={"cti", "bte"})),
+                                            granularity=granularity)),
             "slave": Out(wishbone.Signature(addr_width=addr_width,
                                             data_width=data_width,
                                             granularity=granularity,
