@@ -25,26 +25,36 @@ class WishboneL2Cache(wiring.Component):
 
     The 'master' bus is for the wishbone master that uses the cache.
     The 'slave' bus is for the backing store. The cache acts as a master on
-    this bus in order to fill / evict cache lines.
+    this bus in order to fill / evict cache lines. The cache will issue burst
+    transactions of length `burst_len` whenever a cache line is to be evicted
+    (written to the backing store) or refilled (read from the backing store).
 
-    `cachesize_words` (in 32-bit words) is the size of the data store and must be
-    a power of 2.
+    `cachesize_words` (in `data_width` words) is the size of the data store
+    and must be a power of 2.
 
     This cache is a partial rewrite of the equivalent LiteX component:
     https://github.com/enjoy-digital/litex/blob/master/litex/soc/interconnect/wishbone.py
 
     Key differences to LiteX implementation:
     - Tags now include a 'valid' bit, so every cache line must be refilled
-      after reset before it can be used.
-    - Translation of bus data widths is removed (for simplicity).
+      after reset before it can be used (imporant for any component that is
+      reading from external memory, particularly if contains data at boot).
+    - Translation of bus data widths is removed and replaced with wishbone burst
+      transactions of length matching the cache line. Cache lines themselves have
+      have size (in bits) of `data_width*burst_len`.
     """
 
-    def __init__(self, cachesize_words=64,
-                 addr_width=22, data_width=32, granularity=8, burst_len=4):
+    def __init__(self, cachesize_words=64, addr_width=22, data_width=32,
+                 granularity=8, burst_len=4):
+
+        # Technically we should issue classic transactions to the backing
+        # store if burst_len == 1, but this cache will always issue bursts.
+        assert burst_len > 1
 
         self.cachesize_words = cachesize_words
         self.data_width      = data_width
         self.burst_len       = burst_len
+        self.granularity     = granularity
 
         super().__init__({
             "master": In(wishbone.Signature(addr_width=addr_width,
@@ -64,9 +74,8 @@ class WishboneL2Cache(wiring.Component):
 
         dw_from = dw_to = self.data_width
 
-        # Address Split.
-        # --------------
-        # TAG | LINE NUMBER | OFFSET.
+        # Slice master.addr into 3 fields:
+        # (MSB) adr_tag .. adr_line .. adr_offset (LSB)
         addressbits = len(slave.adr)
         offsetbits  = exact_log2(self.burst_len)
         linebits    = exact_log2(self.cachesize_words // self.burst_len)
@@ -75,39 +84,42 @@ class WishboneL2Cache(wiring.Component):
         adr_line    = master.adr.bit_select(offsetbits, linebits)
         adr_tag     = master.adr.bit_select(offsetbits+linebits, tagbits)
 
+        # Similar usage as adr_offset, iterates from 0..burst_len when
+        # refilling/evicting cache lines.
         burst_offset = Signal.like(adr_offset)
+        burst_offset_lookahead = Signal.like(burst_offset)
 
-        # Data Memory.
-        # ------------
+        # Cache line (data) memory. Each line has size `data_width*burst_len`, in bits.
         m.submodules.data_mem = data_mem = Memory(
             shape=unsigned(self.data_width*self.burst_len), depth=2**linebits, init=[])
-        wr_port = data_mem.write_port(granularity=8)
+        wr_port = data_mem.write_port(granularity=self.granularity)
         rd_port = data_mem.read_port(transparent_for=(wr_port,))
 
         write_from_slave = Signal()
 
-        ix = Signal.like(burst_offset)
+        word_select = Const(1).replicate(dw_to//self.granularity)
 
         m.d.comb += [
             wr_port.addr.eq(adr_line),
             rd_port.addr.eq(adr_line),
-            slave.dat_w.eq(rd_port.data >> (self.data_width*ix)),
-            slave.sel.eq(2**(dw_to//8)-1),
+            slave.dat_w.eq(rd_port.data >> (self.data_width*burst_offset_lookahead)),
+            slave.sel.eq(word_select),
             master.dat_r.eq(rd_port.data >> (self.data_width*adr_offset)),
         ]
 
         with m.If(write_from_slave):
             m.d.comb += [
                 wr_port.data.eq(slave.dat_r << (self.data_width*burst_offset)),
-                wr_port.en.eq(Const(1).replicate(dw_to//8) << (4*burst_offset)),
+                wr_port.en.eq(word_select << ((dw_to//self.granularity)*burst_offset)),
             ]
         with m.Else():
             m.d.comb += wr_port.data.eq(master.dat_w << (self.data_width*adr_offset)),
             with m.If(master.cyc & master.stb & master.we & master.ack):
-                m.d.comb += wr_port.en.eq(master.sel << (4*adr_offset))
+                m.d.comb += wr_port.en.eq(master.sel << ((dw_to//self.granularity)*adr_offset))
 
-        # Tag memory.
-        # -----------
+        # Tag storage memory. Maps addr_line (cache line address) to the higher order
+        # bits of master.adr (adr_tag). If the adr_tag in the tag storage matches
+        # the requested adr_tag, we know the cache line has the data we want.
         tag_layout = data.StructLayout({
             "tag": unsigned(tagbits),
             "dirty": unsigned(1),
@@ -172,12 +184,13 @@ class WishboneL2Cache(wiring.Component):
                         tag_wr_port.en.eq(1),
                     ]
                     m.d.sync += burst_offset.eq(burst_offset + 1)
-                    m.d.comb += ix.eq(burst_offset+1)
+                    m.d.comb += burst_offset_lookahead.eq(burst_offset+1)
                     with m.If(burst_offset == (self.burst_len - 1)):
                         m.d.comb += slave.cti.eq(wishbone.CycleType.END_OF_BURST)
                         m.next = "WAIT"
 
             with m.State("WAIT"):
+                # Deassert stb between EVICT/REFILL
                 m.next = "REFILL"
 
             with m.State("REFILL"):
