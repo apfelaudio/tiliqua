@@ -40,10 +40,11 @@ class WishboneL2Cache(wiring.Component):
     """
 
     def __init__(self, cachesize_words=256,
-                 addr_width=22, data_width=32, granularity=8):
+                 addr_width=22, data_width=32, granularity=8, burst_len=8):
 
         self.cachesize_words = cachesize_words
         self.data_width      = data_width
+        self.burst_len       = burst_len
 
         super().__init__({
             "master": In(wishbone.Signature(addr_width=addr_width,
@@ -66,17 +67,21 @@ class WishboneL2Cache(wiring.Component):
 
         # Address Split.
         # --------------
-        # TAG | LINE NUMBER.
+        # TAG | LINE NUMBER | OFFSET.
         addressbits = len(slave.adr)
-        linebits    = exact_log2(self.cachesize_words)
-        tagbits     = addressbits - linebits
-        adr_line    = master.adr.bit_select(0, linebits)
-        adr_tag     = master.adr.bit_select(linebits, tagbits)
+        offsetbits  = exact_log2(self.burst_len)
+        linebits    = exact_log2(self.cachesize_words // self.burst_len)
+        tagbits     = addressbits - linebits - offsetbits
+        adr_offset  = master.adr.bit_select(0, offsetbits)
+        adr_line    = master.adr.bit_select(offsetbits, linebits)
+        adr_tag     = master.adr.bit_select(offsetbits+linebits, tagbits)
+
+        burst_offset = Signal.like(adr_offset)
 
         # Data Memory.
         # ------------
         m.submodules.data_mem = data_mem = Memory(
-            shape=unsigned(dw_to), depth=2**linebits, init=[])
+            shape=unsigned(self.data_width*self.burst_len), depth=2**linebits, init=[])
         wr_port = data_mem.write_port(granularity=8)
         rd_port = data_mem.read_port(transparent_for=(wr_port,))
 
@@ -85,20 +90,20 @@ class WishboneL2Cache(wiring.Component):
         m.d.comb += [
             wr_port.addr.eq(adr_line),
             rd_port.addr.eq(adr_line),
-            slave.dat_w.eq(rd_port.data),
+            slave.dat_w.eq(rd_port.data >> (self.data_width*burst_offset)),
             slave.sel.eq(2**(dw_to//8)-1),
-            master.dat_r.eq(rd_port.data),
+            master.dat_r.eq(rd_port.data >> (self.data_width*adr_offset)),
         ]
 
         with m.If(write_from_slave):
             m.d.comb += [
-                wr_port.data.eq(slave.dat_r),
-                wr_port.en.eq(Const(1).replicate(dw_to//8)),
+                wr_port.data.eq(slave.dat_r << (self.data_width*burst_offset)),
+                wr_port.en.eq(Const(1).replicate(dw_to//8) << (4*burst_offset)),
             ]
         with m.Else():
-            m.d.comb += wr_port.data.eq(master.dat_w),
+            m.d.comb += wr_port.data.eq(master.dat_w << (self.data_width*adr_offset)),
             with m.If(master.cyc & master.stb & master.we & master.ack):
-                m.d.comb += wr_port.en.eq(master.sel)
+                m.d.comb += wr_port.en.eq(master.sel << (4*adr_offset))
 
         # Tag memory.
         # -----------
@@ -123,7 +128,7 @@ class WishboneL2Cache(wiring.Component):
             tag_di.tag.eq(adr_tag)
         ]
 
-        m.d.comb += slave.adr.eq(Cat(adr_line, tag_do.tag))
+        m.d.comb += slave.adr.eq(Cat(Const(0).replicate(offsetbits), adr_line, tag_do.tag))
 
         with m.FSM() as fsm:
 
@@ -157,6 +162,7 @@ class WishboneL2Cache(wiring.Component):
                     slave.stb.eq(1),
                     slave.cyc.eq(1),
                     slave.we.eq(1),
+                    slave.cti.eq(wishbone.CycleType.INCR_BURST),
                 ]
                 with m.If(slave.ack):
                     # Write the tag first to set the slave address
@@ -164,18 +170,28 @@ class WishboneL2Cache(wiring.Component):
                         tag_di.valid.eq(1),
                         tag_wr_port.en.eq(1),
                     ]
-                    m.next = "REFILL"
+                    m.d.sync += burst_offset.eq(burst_offset + 1)
+                    with m.If(burst_offset == (self.burst_len - 1)):
+                        m.d.comb += slave.cti.eq(wishbone.CycleType.END_OF_BURST)
+                        m.next = "WAIT"
+
+            with m.State("WAIT"):
+                m.next = "REFILL"
 
             with m.State("REFILL"):
                 m.d.comb += [
                     slave.stb.eq(1),
                     slave.cyc.eq(1),
                     slave.we.eq(0),
+                    slave.cti.eq(wishbone.CycleType.INCR_BURST),
                 ]
                 with m.If(slave.ack):
                     m.d.comb += [
                         write_from_slave.eq(1),
                     ]
-                    m.next = "TEST_HIT"
+                    m.d.sync += burst_offset.eq(burst_offset + 1)
+                    with m.If(burst_offset == (self.burst_len - 1)):
+                        m.d.comb += slave.cti.eq(wishbone.CycleType.END_OF_BURST)
+                        m.next = "TEST_HIT"
 
         return m
