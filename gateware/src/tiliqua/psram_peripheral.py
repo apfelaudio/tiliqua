@@ -94,11 +94,17 @@ class Peripheral(wiring.Component):
             # PSRAM controller only, with fake PHY signals and simulation interface.
             m.submodules.psram = psram
             wiring.connect(m, self.simif, flipped(psram.simif))
+            # Simulate DATAVALID delay after READ of ~ 8 cycles.
+            phy_read_cnt = Signal(8)
+            with m.If(psram.phy.read != 0):
+                m.d.sync += phy_read_cnt.eq(phy_read_cnt + 1)
+            with m.Else():
+                m.d.sync += phy_read_cnt.eq(0)
             # Assert minimum PHY signals needed for psram to progress.
             m.d.comb += [
                 psram.phy.ready.eq(1),
                 psram.phy.burstdet.eq(1),
-                psram.phy.datavalid.eq(1),
+                psram.phy.datavalid.eq(phy_read_cnt > 8),
             ]
 
         counter      = Signal(range(128))
