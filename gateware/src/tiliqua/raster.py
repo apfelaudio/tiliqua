@@ -204,8 +204,8 @@ class Stroke(wiring.Component):
         self.fs = fs
         self.n_upsample = n_upsample
 
-        self.bus = wishbone.Interface(addr_width=bus_master.addr_width, data_width=32, granularity=8,
-                                      features={"cti", "bte"})
+        self.bus = wishbone.Interface(addr_width=bus_master.addr_width,
+                                      data_width=32, granularity=8)
 
         self.sample_x = Signal(signed(16))
         self.sample_y = Signal(signed(16))
@@ -329,7 +329,6 @@ class Stroke(wiring.Component):
             with m.State('READ'):
 
                 m.d.comb += [
-                    bus.cti.eq(wishbone.CycleType.CLASSIC),
                     bus.stb.eq(1),
                     bus.cyc.eq(1),
                     bus.we.eq(0),
@@ -352,7 +351,6 @@ class Stroke(wiring.Component):
             with m.State('WRITE'):
 
                 m.d.comb += [
-                    bus.cti.eq(wishbone.CycleType.CLASSIC),
                     bus.stb.eq(1),
                     bus.cyc.eq(1),
                     bus.we.eq(1),

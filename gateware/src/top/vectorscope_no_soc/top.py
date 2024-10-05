@@ -77,7 +77,9 @@ class VectorScopeTop(Elaboratable):
         self.psram_periph.add_master(self.persist.bus)
 
         if self.wishbone_l2_cache:
-            self.cache = cache.WishboneL2Cache(addr_width=self.psram_periph.bus.addr_width)
+            self.cache = cache.WishboneL2Cache(
+                    addr_width=self.psram_periph.bus.addr_width,
+                    cachesize_words=128)
             self.psram_periph.add_master(self.cache.slave)
         else:
             self.psram_periph.add_master(self.stroke.bus)

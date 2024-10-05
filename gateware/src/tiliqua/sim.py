@@ -140,6 +140,13 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
     else:
         video_cflags = []
 
+    if hasattr(fragment, "psram_periph"):
+        psram_cflags = [
+           "-CFLAGS", f"-DPSRAM_SIM=1",
+       ]
+    else:
+        psram_cflags = []
+
     clock_sync_hz = 60000000
     audio_clk_hz = 48000000
 
@@ -163,7 +170,7 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
                            "-Ibuild",
                            "-CFLAGS", f"-DSYNC_CLK_HZ={clock_sync_hz}",
                            "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
-                          ] + video_cflags + [
+                          ] + video_cflags + psram_cflags + [
                            harness,
                            f"{dst}",
                           ] + [

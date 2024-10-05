@@ -123,21 +123,24 @@ class DelayLineTests(unittest.TestCase):
             # Simulate some transactions against a fake PSRAM bus.
             mem = [0] * dut.max_delay
             membus = dut.bus
-            for _ in range(200):
+            for _ in range(100):
                 while not ctx.get(membus.stb):
                     await ctx.tick()
+                adr = adr_start = ctx.get(membus.adr)
                 # Simulate acks delayed from stb
                 await ctx.tick().repeat(2)
-                ctx.set(membus.ack, 1)
-                adr = ctx.get(membus.adr)
-                if ctx.get(membus.we):
-                    # warn: only whole-word transactions are simulated
-                    mem[adr] = ctx.get(membus.dat_w)
-                    print("write", hex(mem[adr]), "@", adr)
-                else:
-                    print("read", hex(mem[adr]), "@", adr)
-                    ctx.set(membus.dat_r, mem[ctx.get(membus.adr)])
-                await ctx.tick()
+                while ctx.get(membus.stb):
+                    ctx.set(membus.ack, 1)
+                    if ctx.get(membus.we):
+                        # warn: only whole-word transactions are simulated
+                        mem[adr] = ctx.get(membus.dat_w)
+                        print("write", hex(mem[adr]), "@", adr)
+                    else:
+                        print("read", hex(mem[adr]), "@", adr)
+                        ctx.set(membus.dat_r, mem[ctx.get(membus.adr)])
+                    await ctx.tick()
+                    adr += 1
+                assert adr - adr_start == dut._cache.burst_len
                 ctx.set(membus.ack, 0)
                 await ctx.tick()
 
