@@ -114,7 +114,7 @@ class DelayLineTests(unittest.TestCase):
             ctx.set(tap2.o.ready, 1)
             for n in range(0, sys.maxsize):
                 ctx.set(tap2.i.valid, 1)
-                ctx.set(tap2.i.payload, 10)
+                ctx.set(tap2.i.payload, 200)
                 await ctx.tick()
                 ctx.set(tap2.i.valid, 0)
                 await ctx.tick().repeat(30)

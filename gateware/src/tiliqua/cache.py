@@ -89,9 +89,11 @@ class WishboneL2Cache(wiring.Component):
         burst_offset = Signal.like(adr_offset)
         burst_offset_lookahead = Signal.like(burst_offset)
 
-        # Cache line (data) memory. Each line has size `data_width*burst_len`, in bits.
+        # Cache line (data) memory. Each line has (virtual) size `data_width*burst_len`.
+        # 'burst_offset'/'adr_offset' index are just extra concatenated address lines.
+        # This ensures DPRAM inference still works (it doesn't for shape > 32bits).
         m.submodules.data_mem = data_mem = Memory(
-            shape=unsigned(self.data_width*self.burst_len), depth=2**linebits, init=[])
+            shape=unsigned(self.data_width), depth=2**linebits*self.burst_len, init=[])
         wr_port = data_mem.write_port(granularity=self.granularity)
         rd_port = data_mem.read_port(transparent_for=(wr_port,))
 
@@ -100,22 +102,23 @@ class WishboneL2Cache(wiring.Component):
         word_select = Const(1).replicate(dw_to//self.granularity)
 
         m.d.comb += [
-            wr_port.addr.eq(adr_line),
-            rd_port.addr.eq(adr_line),
-            slave.dat_w.eq(rd_port.data >> (self.data_width*burst_offset_lookahead)),
+            rd_port.addr.eq(Cat(adr_offset, adr_line)),
+            slave.dat_w.eq(rd_port.data),
             slave.sel.eq(word_select),
-            master.dat_r.eq(rd_port.data >> (self.data_width*adr_offset)),
+            master.dat_r.eq(rd_port.data),
         ]
 
         with m.If(write_from_slave):
             m.d.comb += [
-                wr_port.data.eq(slave.dat_r << (self.data_width*burst_offset)),
-                wr_port.en.eq(word_select << ((dw_to//self.granularity)*burst_offset)),
+                wr_port.addr.eq(Cat(burst_offset, adr_line)),
+                wr_port.data.eq(slave.dat_r),
+                wr_port.en.eq(word_select),
             ]
         with m.Else():
-            m.d.comb += wr_port.data.eq(master.dat_w << (self.data_width*adr_offset)),
+            m.d.comb += wr_port.addr.eq(Cat(adr_offset, adr_line)),
+            m.d.comb += wr_port.data.eq(master.dat_w),
             with m.If(master.cyc & master.stb & master.we & master.ack):
-                m.d.comb += wr_port.en.eq(master.sel << ((dw_to//self.granularity)*adr_offset))
+                m.d.comb += wr_port.en.eq(master.sel)
 
         # Tag storage memory. Maps addr_line (cache line address) to the higher order
         # bits of master.adr (adr_tag). If the adr_tag in the tag storage matches
@@ -176,6 +179,7 @@ class WishboneL2Cache(wiring.Component):
                     slave.cyc.eq(1),
                     slave.we.eq(1),
                     slave.cti.eq(wishbone.CycleType.INCR_BURST),
+                    rd_port.addr.eq(Cat(burst_offset_lookahead, adr_line)),
                 ]
                 with m.If(slave.ack):
                     # Write the tag first to set the slave address
