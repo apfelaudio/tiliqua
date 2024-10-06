@@ -670,6 +670,98 @@ class SRAMDiffuser(wiring.Component):
 
         return m
 
+class PSRAMMultiDiffuser(wiring.Component):
+
+    """
+    Kind of ridiculous 3x chained diffusers (4x4 diffuser into 4x4 diffuser into 4x4 diffuser).
+
+    Be careful with the input amplitude on this one, it clips inside the diffuser multipliers
+    pretty easily and can be a bit unstable.
+
+    Sounds pretty close to a REALLY long reverb. A single diffuser suffices
+    for most real audio applications, but this one is a bit crazy :).
+
+    Its also useful for stress-testing the memory interface logic.
+
+    With 2x PSRAM-backed diffusers that's 8x simultaneous 48kHz audio streams hitting the
+    PSRAM (4 write streams, 4 read streams). In simulation the PSRAM controller is blocking
+    ~15% of the time. Looking at the traces it seems the cache is bursting twice as often
+    as it really needs to (in theory), so probably tweaking the cache architecture could
+    get the PSRAM bandwidth consumption down considerably.
+    """
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    bus: Out(wishbone.Signature(addr_width=22,
+                                data_width=32,
+                                granularity=8,
+                                features={'bte', 'cti'}))
+
+    def __init__(self):
+        super().__init__()
+
+        # tap lengths of each feedback delay section, each one longer than the last
+        self.delay_set = {
+            0: [150,       290,    580,    720], # 1x 4x4 diffuser - sram-backed
+            1: [1*2000, 1*3000, 1*5000, 1*7000], # 1x 4x4 diffuser - psram-backed (short)
+            2: [5*2300, 5*3700, 5*5900, 5*6900]  # 1x 4x4 diffuser - psram-backed (long)
+        }
+
+        max_delay = 0x10000
+        sram_max_delay = 1024 # if taps are smaller than this, use SRAM delay line.
+        spacing   = max_delay*len(self.delay_set[0])
+        self.delay_lines = {}
+        for n in self.delay_set:
+            self.delay_lines[n] = []
+            psram_backed = max(self.delay_set[n]) >= sram_max_delay
+            for ix, _ in enumerate(self.delay_set[n]):
+                if psram_backed:
+                    self.delay_lines[n].append(
+                        DelayLine(
+                            max_delay=max_delay,
+                            psram_backed=True,
+                            addr_width_o=self.bus.addr_width,
+                            base=n*spacing + max_delay*ix,
+                        )
+                    )
+                else:
+                    self.delay_lines[n].append(
+                        DelayLine(
+                            max_delay=sram_max_delay,
+                            psram_backed=False,
+                        )
+                    )
+
+        self._arbiter = wishbone.Arbiter(addr_width=self.bus.addr_width,
+                                         data_width=self.bus.data_width,
+                                         granularity=self.bus.granularity,
+                                         features=self.bus.features)
+        for n in self.delay_set:
+            for delayln in self.delay_lines[n]:
+                if delayln.psram_backed:
+                    self._arbiter.add(delayln.bus)
+
+        self.diffusers = {}
+        for n in self.delay_set:
+            self.diffusers[n] = delay.Diffuser(self.delay_lines[n], delays=self.delay_set[n])
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.arbiter = self._arbiter
+        wiring.connect(m, self._arbiter.bus, wiring.flipped(self.bus))
+
+        for n in self.delay_set:
+            m.submodules += self.diffusers[n]
+            m.submodules += self.delay_lines[n]
+
+        wiring.connect(m, wiring.flipped(self.i), self.diffusers[0].i)
+        wiring.connect(m, self.diffusers[0].o, self.diffusers[1].i)
+        wiring.connect(m, self.diffusers[1].o, self.diffusers[2].i)
+        wiring.connect(m, self.diffusers[2].o, wiring.flipped(self.o))
+
+        return m
+
 class CoreTop(Elaboratable):
 
     def __init__(self, dsp_core, enable_touch):
@@ -747,6 +839,7 @@ CORES = {
     "sram_pingpong":  (False, SRAMPingPongDelay),
     "psram_diffuser": (False, PSRAMDiffuser),
     "sram_diffuser":  (False, SRAMDiffuser),
+    "multi_diffuser": (False, PSRAMMultiDiffuser),
 }
 
 def simulation_ports(fragment):

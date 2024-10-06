@@ -107,13 +107,17 @@ class Diffuser(wiring.Component):
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def __init__(self, delay_lines):
+    def __init__(self, delay_lines, delays=None):
         super().__init__()
+
+        if delays is None:
+            self.delays = [2000, 3000, 5000, 7000] # tap delays of each channel.
+        else:
+            self.delays = delays
 
         # Verify we were supplied 4 delay lines with the correct properties
 
         assert len(delay_lines) == 4
-        self.delays = [2000, 3000, 5000, 7000] # tap delays of each channel.
         self.delay_lines = delay_lines
         for delay_line, delay in zip(delay_lines, self.delays):
             assert delay_line.write_triggers_read
