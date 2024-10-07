@@ -105,7 +105,7 @@ class DelayLineTests(unittest.TestCase):
             ctx.set(tap1.o.ready, 1)
             for n in range(0, sys.maxsize):
                 ctx.set(tap1.i.valid, 1)
-                ctx.set(tap1.i.payload, 4)
+                ctx.set(tap1.i.payload, 150)
                 await ctx.tick()
                 ctx.set(tap1.i.valid, 0)
                 await ctx.tick().repeat(30)
@@ -114,7 +114,7 @@ class DelayLineTests(unittest.TestCase):
             ctx.set(tap2.o.ready, 1)
             for n in range(0, sys.maxsize):
                 ctx.set(tap2.i.valid, 1)
-                ctx.set(tap2.i.payload, 200)
+                ctx.set(tap2.i.payload, 220)
                 await ctx.tick()
                 ctx.set(tap2.i.valid, 0)
                 await ctx.tick().repeat(30)
@@ -137,7 +137,7 @@ class DelayLineTests(unittest.TestCase):
                         print("write", hex(mem[adr]), "@", adr)
                     else:
                         print("read", hex(mem[adr]), "@", adr)
-                        ctx.set(membus.dat_r, mem[ctx.get(membus.adr)])
+                        ctx.set(membus.dat_r, mem[adr])
                     await ctx.tick()
                     adr += 1
                 assert adr - adr_start == dut._cache.burst_len
