@@ -128,18 +128,23 @@ class DelayLineTests(unittest.TestCase):
                     await ctx.tick()
                 adr = adr_start = ctx.get(membus.adr)
                 # Simulate acks delayed from stb
-                await ctx.tick().repeat(2)
-                while ctx.get(membus.stb):
-                    ctx.set(membus.ack, 1)
-                    if ctx.get(membus.we):
-                        # warn: only whole-word transactions are simulated
+                # warn: only whole-word transactions are simulated
+                await ctx.tick().repeat(8)
+                if ctx.get(membus.we):
+                    while ctx.get(membus.cti == wishbone.CycleType.INCR_BURST):
                         mem[adr] = ctx.get(membus.dat_w)
                         print("write", hex(mem[adr]), "@", adr)
-                    else:
+                        await ctx.tick()
+                        ctx.set(membus.ack, 1)
+                        adr += 1
+                    await ctx.tick()
+                else:
+                    ctx.set(membus.ack, 1)
+                    while ctx.get(membus.stb):
                         print("read", hex(mem[adr]), "@", adr)
                         ctx.set(membus.dat_r, mem[adr])
-                    await ctx.tick()
-                    adr += 1
+                        await ctx.tick()
+                        adr += 1
                 assert adr - adr_start == dut._cache.burst_len
                 ctx.set(membus.ack, 0)
                 await ctx.tick()
