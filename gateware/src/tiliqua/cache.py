@@ -95,7 +95,7 @@ class WishboneL2Cache(wiring.Component):
         m.submodules.data_mem = data_mem = Memory(
             shape=unsigned(self.data_width), depth=2**linebits*self.burst_len, init=[])
         wr_port = data_mem.write_port(granularity=self.granularity)
-        rd_port = data_mem.read_port(transparent_for=(wr_port,))
+        rd_port = data_mem.read_port(domain='comb')
 
         write_from_slave = Signal()
 
