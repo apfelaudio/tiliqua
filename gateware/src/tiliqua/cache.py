@@ -100,7 +100,7 @@ class WishboneL2Cache(wiring.Component):
         if self.lutram_backed:
             rd_port = data_mem.read_port(domain='comb')
         else:
-            rd_port = data_mem.read_port(transparent_for=(wr_port,))
+            rd_port = data_mem.read_port()
 
 
         write_from_slave = Signal()
@@ -170,6 +170,8 @@ class WishboneL2Cache(wiring.Component):
                     m.next = "IDLE"
                 with m.Else():
                     with m.If(tag_do.dirty):
+                        if not self.lutram_backed:
+                            m.d.sync += burst_offset_lookahead.eq(0)
                         m.next = "EVICT"
                     with m.Else():
                         # Write the tag first to set the slave address
@@ -190,15 +192,29 @@ class WishboneL2Cache(wiring.Component):
                 ]
 
                 if not self.lutram_backed:
-                    a = Signal(self.data_width)
-                    a_valid = Signal()
+                    # Latch data at index zero and move read address to index
+                    # 1, so we can instantly switch from supplying data[0] to
+                    # data[1] on the slave write port on the same clock as we get an
+                    # ACK. This logic is needed because of the 1-cycle memory
+                    # access delay and isn't needed if the cache has a 'comb' read
+                    # port (i.e is lutram-backed).
+                    data0 = Signal(self.data_width)
+                    data0_valid = Signal()
+                    m.d.comb += slave.dat_w.eq(data0)
                     with m.If(burst_offset_lookahead == 0):
-                        m.d.sync += burst_offset_lookahead.eq(burst_offset_lookahead+1)
-                        m.d.sync += a_valid.eq(0)
-                    with m.If(~a_valid):
-                        m.d.sync += a.eq(rd_port.data)
-                        m.d.sync += a_valid.eq(1)
-                    m.d.comb += slave.dat_w.eq(a)
+                        m.d.comb += [
+                            slave.stb.eq(0),
+                            slave.cyc.eq(0),
+                        ]
+                        m.d.sync += [
+                            burst_offset_lookahead.eq(burst_offset_lookahead+1),
+                            data0_valid.eq(0),
+                        ]
+                    with m.Elif(~data0_valid):
+                        m.d.sync += [
+                            data0.eq(rd_port.data),
+                            data0_valid.eq(1),
+                        ]
 
                 with m.If(slave.ack):
                     # Write the tag first to set the slave address
@@ -210,14 +226,16 @@ class WishboneL2Cache(wiring.Component):
                     if self.lutram_backed:
                         m.d.comb += burst_offset_lookahead.eq(burst_offset+1)
                     else:
-                        skip = Signal.like(burst_offset_lookahead)
+                        # 'rd_offset' is a bit special. on the same clock as the
+                        # first ACK, 'rd_offset' must already be fetching data[2].
+                        rd_offset = Signal.like(burst_offset_lookahead)
                         m.d.comb += slave.dat_w.eq(rd_port.data)
-                        m.d.comb += rd_port.addr.eq(Cat(skip, adr_line)),
+                        m.d.comb += rd_port.addr.eq(Cat(rd_offset, adr_line)),
                         with m.If(burst_offset_lookahead != self.burst_len-1):
                             m.d.sync += burst_offset_lookahead.eq(burst_offset_lookahead+1)
-                            m.d.comb += skip.eq(burst_offset_lookahead + 1)
+                            m.d.comb += rd_offset.eq(burst_offset_lookahead + 1)
                         with m.Else():
-                            m.d.comb += skip.eq(burst_offset_lookahead)
+                            m.d.comb += rd_offset.eq(burst_offset_lookahead)
 
                     m.d.sync += burst_offset.eq(burst_offset + 1)
                     with m.If(burst_offset == (self.burst_len - 1)):
@@ -225,8 +243,6 @@ class WishboneL2Cache(wiring.Component):
                         m.next = "WAIT"
 
             with m.State("WAIT"):
-                if not self.lutram_backed:
-                    m.d.sync += burst_offset_lookahead.eq(0)
                 # Deassert stb between EVICT/REFILL
                 m.next = "REFILL"
 
