@@ -86,11 +86,11 @@ class DelayLineTests(unittest.TestCase):
             psram_backed=True,
             base=0x0,
             addr_width_o=22,
-            write_triggers_read=False,
+            write_triggers_read=True,
         )
 
-        tap1 = dut.add_tap()
-        tap2 = dut.add_tap()
+        tap1 = dut.add_tap(fixed_delay=150)
+        tap2 = dut.add_tap(fixed_delay=220)
 
         async def stimulus_wr(ctx):
             for n in range(0, sys.maxsize):
@@ -101,28 +101,12 @@ class DelayLineTests(unittest.TestCase):
                 ctx.set(dut.i.valid, 0)
                 await ctx.tick().repeat(30)
 
-        async def stimulus_rd1(ctx):
-            ctx.set(tap1.o.ready, 1)
-            for n in range(0, sys.maxsize):
-                ctx.set(tap1.i.valid, 1)
-                ctx.set(tap1.i.payload, 150)
-                await ctx.tick()
-                ctx.set(tap1.i.valid, 0)
-                await ctx.tick().repeat(30)
-
-        async def stimulus_rd2(ctx):
-            ctx.set(tap2.o.ready, 1)
-            for n in range(0, sys.maxsize):
-                ctx.set(tap2.i.valid, 1)
-                ctx.set(tap2.i.payload, 220)
-                await ctx.tick()
-                ctx.set(tap2.i.valid, 0)
-                await ctx.tick().repeat(30)
-
         async def testbench(ctx):
             # Simulate some transactions against a fake PSRAM bus.
             mem = [0] * dut.max_delay
             membus = dut.bus
+            ctx.set(tap1.o.ready, 1)
+            ctx.set(tap2.o.ready, 1)
             for _ in range(100):
                 while not ctx.get(membus.stb):
                     await ctx.tick()
@@ -153,7 +137,5 @@ class DelayLineTests(unittest.TestCase):
         sim.add_clock(1e-6)
         sim.add_testbench(testbench)
         sim.add_process(stimulus_wr)
-        sim.add_process(stimulus_rd1)
-        sim.add_process(stimulus_rd2)
         with sim.write_vcd(vcd_file=open("test_psram_delayln.vcd", "w")):
             sim.run()
