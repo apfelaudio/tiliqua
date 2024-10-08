@@ -23,7 +23,8 @@ class WishboneL2Cache(wiring.Component):
     - 'direct-mapped': https://en.wikipedia.org/wiki/Cache_placement_policies
     - 'write-back': https://en.wikipedia.org/wiki/Cache_(computing)#Writing_policies
 
-    The 'master' bus is for the wishbone master that uses the cache.
+    The 'master' bus is for the wishbone master that uses the cache. It may only
+    issue classic transactions (i.e no burst transactions).
     The 'slave' bus is for the backing store. The cache acts as a master on
     this bus in order to fill / evict cache lines. The cache will issue burst
     transactions of length `burst_len` whenever a cache line is to be evicted
@@ -53,8 +54,9 @@ class WishboneL2Cache(wiring.Component):
         # store if burst_len == 1, but this cache will always issue bursts.
         assert burst_len > 1
 
-        # DPRAM-backed cache works on delay line demos but seems to glitch
-        # when used in the video frontent. Prohibit its use for now.
+        # DPRAM-backed cache works on delay line demos but seems to show
+        # artifacts when used in the video frontend. So there is likely
+        # bug in this, haven't tracked it down yet. Prohibit usage for now.
         assert lutram_backed
 
         self.cachesize_words = cachesize_words
