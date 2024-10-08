@@ -42,20 +42,26 @@ class WishboneL2Cache(wiring.Component):
     - Translation of bus data widths is removed and replaced with wishbone burst
       transactions of length matching the cache line. Cache lines themselves have
       have size (in bits) of `data_width*burst_len`.
+    - Data storage can be lutram-backed or dual-port-RAM backed (you can trade
+      off DPRAM usage vs. combinatorial / FF usage)
     """
 
     def __init__(self, cachesize_words=64, addr_width=22, data_width=32,
-                 granularity=8, burst_len=4, lutram_backed=False):
+                 granularity=8, burst_len=4, lutram_backed=True):
 
         # Technically we should issue classic transactions to the backing
         # store if burst_len == 1, but this cache will always issue bursts.
         assert burst_len > 1
 
+        # DPRAM-backed cache works on delay line demos but seems to glitch
+        # when used in the video frontent. Prohibit its use for now.
+        assert lutram_backed
+
         self.cachesize_words = cachesize_words
         self.data_width      = data_width
         self.burst_len       = burst_len
         self.granularity     = granularity
-        self.lutram_backed    = lutram_backed
+        self.lutram_backed   = lutram_backed
 
         super().__init__({
             "master": In(wishbone.Signature(addr_width=addr_width,
@@ -152,6 +158,9 @@ class WishboneL2Cache(wiring.Component):
 
         m.d.comb += slave.adr.eq(Cat(Const(0).replicate(offsetbits), adr_line, tag_do.tag))
 
+        if not self.lutram_backed:
+            data0_valid = Signal()
+
         with m.FSM() as fsm:
 
             with m.State("IDLE"):
@@ -171,10 +180,11 @@ class WishboneL2Cache(wiring.Component):
                 with m.Else():
                     with m.If(tag_do.dirty):
                         if not self.lutram_backed:
-                            m.d.sync += burst_offset_lookahead.eq(0)
+                            m.d.sync += data0_valid.eq(0)
+                            m.d.comb += rd_port.addr.eq(Cat(Const(0, unsigned(offsetbits)), adr_line)),
                         m.next = "EVICT"
                     with m.Else():
-                        # Write the tag first to set the slave address
+                        # Write the tag to set the slave address for the cache refill.
                         m.d.comb += [
                             tag_di.valid.eq(1),
                             tag_wr_port.en.eq(1),
@@ -199,29 +209,20 @@ class WishboneL2Cache(wiring.Component):
                     # access delay and isn't needed if the cache has a 'comb' read
                     # port (i.e is lutram-backed).
                     data0 = Signal(self.data_width)
-                    data0_valid = Signal()
                     m.d.comb += slave.dat_w.eq(data0)
-                    with m.If(burst_offset_lookahead == 0):
+                    m.d.comb += rd_port.addr.eq(Cat(Const(1, unsigned(offsetbits)), adr_line)),
+                    with m.If(~data0_valid):
+                        m.d.sync += [
+                            data0.eq(rd_port.data),
+                            data0_valid.eq(1),
+                            burst_offset_lookahead.eq(1),
+                        ]
                         m.d.comb += [
                             slave.stb.eq(0),
                             slave.cyc.eq(0),
                         ]
-                        m.d.sync += [
-                            burst_offset_lookahead.eq(burst_offset_lookahead+1),
-                            data0_valid.eq(0),
-                        ]
-                    with m.Elif(~data0_valid):
-                        m.d.sync += [
-                            data0.eq(rd_port.data),
-                            data0_valid.eq(1),
-                        ]
 
                 with m.If(slave.ack):
-                    # Write the tag first to set the slave address
-                    m.d.comb += [
-                        tag_di.valid.eq(1),
-                        tag_wr_port.en.eq(1),
-                    ]
 
                     if self.lutram_backed:
                         m.d.comb += burst_offset_lookahead.eq(burst_offset+1)
@@ -240,9 +241,14 @@ class WishboneL2Cache(wiring.Component):
                     m.d.sync += burst_offset.eq(burst_offset + 1)
                     with m.If(burst_offset == (self.burst_len - 1)):
                         m.d.comb += slave.cti.eq(wishbone.CycleType.END_OF_BURST)
-                        m.next = "WAIT"
+                        m.next = "WAIT-REFILL"
 
-            with m.State("WAIT"):
+            with m.State("WAIT-REFILL"):
+                # Write the tag to set the slave address for the cache refill.
+                m.d.comb += [
+                    tag_di.valid.eq(1),
+                    tag_wr_port.en.eq(1),
+                ]
                 # Deassert stb between EVICT/REFILL
                 m.next = "REFILL"
 
