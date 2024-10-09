@@ -126,10 +126,19 @@ class DualVCA(wiring.Component):
 
 class Pitch(wiring.Component):
 
-    """Pitch shifter with CV-controlled pitch."""
+    """
+    PSRAM-backed pitch shifter with CV-controlled pitch.
+    Grain size is quite large (~250ms) to reduce fluttering.
+    """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    # shared bus to external memory
+    bus: Out(wishbone.Signature(addr_width=22,
+                                data_width=32,
+                                granularity=8,
+                                features={'bte', 'cti'}))
 
     def elaborate(self, platform):
         m = Module()
@@ -138,7 +147,13 @@ class Pitch(wiring.Component):
         m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
 
         m.submodules.delay_line = delay_line = DelayLine(
-            max_delay=8192, write_triggers_read=False)
+            max_delay=0x8000,
+            psram_backed=True,
+            write_triggers_read=False,
+            addr_width_o=self.bus.addr_width,
+            base=0x00000,
+        )
+
         m.submodules.pitch_shift = pitch_shift = dsp.PitchShift(
             tap=delay_line.add_tap(), xfade=delay_line.max_delay//4)
 
@@ -165,6 +180,8 @@ class Pitch(wiring.Component):
         wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
 
         wiring.connect(m, merge4.o, wiring.flipped(self.o))
+
+        wiring.connect(m, delay_line.bus, wiring.flipped(self.bus))
 
         return m
 
