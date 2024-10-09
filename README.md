@@ -14,6 +14,14 @@ For updates, subscribe to the [Crowd Supply page](https://www.crowdsupply.com/ap
 
 Documentation is built from source in `gateware/docs`.
 
+# Community
+
+`apfelaudio` has a Matrix channel, [#apfelaudio:matrix.org](https://matrix.to/#/#apfelaudio:matrix.org). Feel free to join to ask questions or discuss ongoing development.
+
+You might also find some interesting things:
+- On my [personal YouTube channel](https://www.youtube.com/channel/UCj2hxwW2fD-3egUAxqW0mhg)
+- On the [apfelaudio Instagram page](https://www.instagram.com/apfelaudio/)
+
 ## Builds on the following (awesome) open projects
 
 - The [Amaranth HDL](https://github.com/amaranth-lang/amaranth) and [Amaranth SoC](https://github.com/amaranth-lang/amaranth-soc) projects.
