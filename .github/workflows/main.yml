@@ -107,7 +107,9 @@ jobs:
             override: True
             components: rustfmt, clippy, llvm-tools
             target: riscv32imac-unknown-none-elf
-      - run: cargo install cargo-binutils svd2rust form
+      - run: cargo install cargo-binutils form
+      # https://github.com/rust-embedded/svd2rust/issues/863
+      - run: cargo install svd2rust --locked
       - run: git submodule update --init --recursive
       - run: yosys --version
       - run: |
@@ -131,7 +133,8 @@ jobs:
             override: True
             components: rustfmt, clippy, llvm-tools
             target: riscv32imac-unknown-none-elf
-      - run: cargo install cargo-binutils svd2rust form
+      - run: cargo install cargo-binutils form
+      - run: cargo install svd2rust --locked
       - run: git submodule update --init --recursive
       - run: yosys --version
       - run: |
@@ -156,7 +159,8 @@ jobs:
             override: True
             components: rustfmt, clippy, llvm-tools
             target: riscv32imac-unknown-none-elf
-      - run: cargo install cargo-binutils svd2rust form
+      - run: cargo install cargo-binutils form
+      - run: cargo install svd2rust --locked
       - run: git submodule update --init --recursive
       - run: yosys --version
       - run: |
@@ -197,7 +201,8 @@ jobs:
             override: True
             components: rustfmt, clippy, llvm-tools
             target: riscv32imac-unknown-none-elf
-      - run: cargo install cargo-binutils svd2rust form
+      - run: cargo install cargo-binutils form
+      - run: cargo install svd2rust --locked
       - run: git submodule update --init --recursive
       - run: yosys --version
       - run: |
