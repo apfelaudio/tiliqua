@@ -54,10 +54,11 @@ class WishboneL2Cache(wiring.Component):
         # store if burst_len == 1, but this cache will always issue bursts.
         assert burst_len > 1
 
-        # DPRAM-backed cache works on delay line demos but seems to show
-        # artifacts when used in the video frontend. So there is likely
-        # bug in this, haven't tracked it down yet. Prohibit usage for now.
-        assert lutram_backed
+        if not lutram_backed:
+            print()
+            print("WARN: DPRAM-backed cache healthy in delay line tests but shows "
+                  "artifacts when used in the video frontend. So there is likely a "
+                  "bug in this, haven't tracked it down yet.")
 
         self.cachesize_words = cachesize_words
         self.data_width      = data_width
