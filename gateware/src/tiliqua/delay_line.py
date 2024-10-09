@@ -133,7 +133,7 @@ class DelayLine(wiring.Component):
     INTERNAL_BUS_GRANULARITY = 8
 
     def __init__(self, max_delay, psram_backed=False, addr_width_o=None, base=None,
-                 write_triggers_read=True):
+                 write_triggers_read=True, cache_kwargs=None):
         """
         max_delay : int
             The maximum delay in samples. This exactly corresponds to the memory
@@ -150,6 +150,9 @@ class DelayLine(wiring.Component):
         write_triggers_read : bool, optional
             If True, writing to the delay line triggers a read. This means the
             :py:`DelayLineTap.i` stream does not need to be connected
+        cache_kwargs : dict, optional
+            *Relevant only for PSRAM-backed delay lines.*
+            Arguments to forward to creation of the internal memory cache.
         """
 
         if psram_backed:
@@ -208,10 +211,15 @@ class DelayLine(wiring.Component):
                 base=base
             )
 
-            self._cache = WishboneL2Cache(
-                addr_width=addr_width_o,
-                cachesize_words=64
-            )
+            if cache_kwargs is None:
+                self._cache = WishboneL2Cache(
+                    addr_width=addr_width_o,
+                )
+            else:
+                self._cache = WishboneL2Cache(
+                    addr_width=addr_width_o,
+                    **cache_kwargs,
+                )
 
         super().__init__(ports)
 
@@ -231,7 +239,8 @@ class DelayLine(wiring.Component):
         if self.write_triggers_read:
             assert fixed_delay is not None
             assert fixed_delay < self.max_delay
-        tap = DelayLineTap(parent_bus=self._arbiter.bus, fixed_delay=fixed_delay)
+        tap = DelayLineTap(parent_bus=self._arbiter.bus, writer_bus=self.internal_writer_bus,
+                           fixed_delay=fixed_delay)
         self.taps.append(tap)
         self._arbiter.add(tap._bus)
         return tap
@@ -326,11 +335,12 @@ class DelayLineTap(wiring.Component):
         Stream of samples read from the delay line, one per request
         on :py:`DelayLineTap.i`.
     """
-    def __init__(self, parent_bus, fixed_delay=None):
+    def __init__(self, parent_bus, writer_bus, fixed_delay=None):
 
         self.fixed_delay = fixed_delay
         self.max_delay   = 2**parent_bus.addr_width
         self.addr_width  = parent_bus.addr_width
+        self.writer_bus  = writer_bus
 
         # internal signals between parent DelayLine and child DelayLineTap
         self._wrpointer = Signal(unsigned(parent_bus.addr_width))
@@ -352,8 +362,15 @@ class DelayLineTap(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1)
                 with m.If(self.i.valid):
-                    m.d.sync += bus.adr.eq(self._wrpointer - self.i.payload)
-                    m.next = 'READ'
+                    with m.If(self.i.payload == 0):
+                        m.next = 'ZDELAY'
+                    with m.Else():
+                        m.d.sync += bus.adr.eq(self._wrpointer - self.i.payload)
+                        m.next = 'READ'
+            with m.State('ZDELAY'):
+                with m.If(self.writer_bus.stb):
+                    m.d.sync += self.o.payload.eq(self.writer_bus.dat_w)
+                    m.next = 'WAIT-READY'
             with m.State('READ'):
                 m.d.comb += [
                     bus.stb.eq(1),

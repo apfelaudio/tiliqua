@@ -12,6 +12,7 @@ dependencies = [
     "luna-usb @ git+https://github.com/schnommus/luna@seb/iso-amaranth5",
     "scipy>=1.9.3",
     "matplotlib>=3.9.0",
+    "parameterized>=0.9.0",
 ]
 
 [tool.pdm.dev-dependencies]
