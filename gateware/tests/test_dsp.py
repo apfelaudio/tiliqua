@@ -24,31 +24,49 @@ class DSPTests(unittest.TestCase):
         pitch_shift = dsp.PitchShift(tap=delayln.add_tap(), xfade=32)
         m.submodules += [delayln, pitch_shift]
 
-        async def testbench(ctx):
-            await ctx.tick()
-            await ctx.tick()
-            for n in range(0, 1000):
-                x = fixed.Const(0.8*math.sin(n*0.1), shape=ASQ)
+        def stimulus_values():
+            for n in range(0, sys.maxsize):
+                yield fixed.Const(0.8*math.sin(n*0.2), shape=ASQ)
+
+        async def stimulus_i(ctx):
+            """Send `stimulus_values` to the DUT."""
+
+            ctx.set(pitch_shift.i.payload.pitch,
+                fixed.Const(0.5, shape=pitch_shift.dtype))
+            ctx.set(pitch_shift.i.payload.grain_sz,
+                delayln.max_delay//2)
+
+            s = stimulus_values()
+            while True:
+                # First clock a sample into the delay line
+                await ctx.tick().until(delayln.i.ready)
                 ctx.set(delayln.i.valid, 1)
-                ctx.set(delayln.i.payload, x)
+                ctx.set(delayln.i.payload, next(s))
                 await ctx.tick()
                 ctx.set(delayln.i.valid, 0)
-                await ctx.tick()
-                await ctx.tick()
-                ctx.set(pitch_shift.i.payload.pitch, 
-                    fixed.Const(-0.8, shape=pitch_shift.dtype))
-                ctx.set(pitch_shift.i.payload.grain_sz, 
-                    delayln.max_delay//2)
-                ctx.set(pitch_shift.o.ready, 1)
+                # Now clock a sample into the pitch shifter
+                await ctx.tick().until(pitch_shift.i.ready)
                 ctx.set(pitch_shift.i.valid, 1)
                 await ctx.tick()
                 ctx.set(pitch_shift.i.valid, 0)
                 await ctx.tick()
-                while ctx.get(pitch_shift.i.ready) != 1:
-                    await ctx.tick()
+
+        async def testbench(ctx):
+            n_samples_in = 0
+            n_samples_out = 0
+            ctx.set(pitch_shift.o.ready, 1)
+            for n in range(0, 1000):
+                n_samples_in  += ctx.get(delayln.i.valid & delayln.i.ready)
+                n_samples_out += ctx.get(pitch_shift.o.valid & pitch_shift.o.ready)
+                await ctx.tick()
+            print("n_samples_in",  n_samples_in)
+            print("n_samples_out", n_samples_out)
+            assert n_samples_in > 50
+            assert (n_samples_out - n_samples_in) < 2
 
         sim = Simulator(m)
         sim.add_clock(1e-6)
+        sim.add_process(stimulus_i)
         sim.add_testbench(testbench)
         with sim.write_vcd(vcd_file=open("test_pitch.vcd", "w")):
             sim.run()
