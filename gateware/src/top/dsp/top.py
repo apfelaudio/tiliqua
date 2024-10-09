@@ -166,7 +166,7 @@ class Pitch(wiring.Component):
         m.d.comb += [
             split4.o[1].ready.eq(pitch_shift.i.ready),
             pitch_shift.i.valid.eq(split4.o[1].valid),
-            pitch_shift.i.payload.pitch.eq(split4.o[1].payload.raw() >> 8),
+            pitch_shift.i.payload.pitch.eq(-fixed.Const(1.0, shape=pitch_shift.dtype)),
             pitch_shift.i.payload.grain_sz.eq(delay_line.max_delay//2),
         ]
 
@@ -714,8 +714,10 @@ class PSRAMMultiDiffuser(wiring.Component):
                                 granularity=8,
                                 features={'bte', 'cti'}))
 
-    def __init__(self):
+    def __init__(self, shimmer=True):
         super().__init__()
+
+        self.shimmer = shimmer
 
         # tap lengths of each feedback delay section, each one longer than the last
         self.delay_set = {
@@ -727,6 +729,7 @@ class PSRAMMultiDiffuser(wiring.Component):
         max_delay = 0x10000
         sram_max_delay = 1024 # if taps are smaller than this, use SRAM delay line.
         spacing   = max_delay*len(self.delay_set[0])
+        diffuser_delayln_addr_end = None
         self.delay_lines = {}
         for n in self.delay_set:
             self.delay_lines[n] = []
@@ -741,6 +744,7 @@ class PSRAMMultiDiffuser(wiring.Component):
                             base=n*spacing + max_delay*ix,
                         )
                     )
+                    diffuser_delayln_addr_end = n*spacing + max_delay*(ix+1)
                 else:
                     self.delay_lines[n].append(
                         DelayLine(
@@ -758,9 +762,27 @@ class PSRAMMultiDiffuser(wiring.Component):
                 if delayln.psram_backed:
                     self._arbiter.add(delayln.bus)
 
+        if shimmer:
+            self.ps_delay_line = DelayLine(
+                max_delay=0x8000,
+                psram_backed=True,
+                write_triggers_read=False,
+                addr_width_o=self.bus.addr_width,
+                base=diffuser_delayln_addr_end,
+            )
+
+            self.pitch_shift = dsp.PitchShift(
+                tap=self.ps_delay_line.add_tap(), xfade=self.ps_delay_line.max_delay//4)
+
+            self._arbiter.add(self.ps_delay_line.bus)
+
         self.diffusers = {}
         for n in self.delay_set:
-            self.diffusers[n] = delay.Diffuser(self.delay_lines[n], delays=self.delay_set[n])
+            if n == 1:
+                self.diffusers[n] = delay.Diffuser(self.delay_lines[n], delays=self.delay_set[n],
+                                                   feedback_write=self.ps_delay_line.i, feedback_read=self.pitch_shift.o)
+            else:
+                self.diffusers[n] = delay.Diffuser(self.delay_lines[n], delays=self.delay_set[n])
 
     def elaborate(self, platform):
         m = Module()
@@ -771,6 +793,16 @@ class PSRAMMultiDiffuser(wiring.Component):
         for n in self.delay_set:
             m.submodules += self.diffusers[n]
             m.submodules += self.delay_lines[n]
+
+        if self.shimmer:
+            m.submodules.pitch_shift = self.pitch_shift
+            m.submodules.ps_delay_line = self.ps_delay_line
+
+            m.d.comb += [
+                self.pitch_shift.i.valid.eq(self.ps_delay_line.i.valid),
+                self.pitch_shift.i.payload.pitch.eq(-fixed.Const(1.0, shape=self.pitch_shift.dtype)),
+                self.pitch_shift.i.payload.grain_sz.eq(self.ps_delay_line.max_delay//2),
+            ]
 
         wiring.connect(m, wiring.flipped(self.i), self.diffusers[0].i)
         wiring.connect(m, self.diffusers[0].o, self.diffusers[1].i)

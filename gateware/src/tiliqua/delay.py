@@ -107,13 +107,16 @@ class Diffuser(wiring.Component):
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
-    def __init__(self, delay_lines, delays=None):
+    def __init__(self, delay_lines, delays=None, feedback_write=None, feedback_read=None):
         super().__init__()
 
         if delays is None:
             self.delays = [2000, 3000, 5000, 7000] # tap delays of each channel.
         else:
             self.delays = delays
+
+        self.feedback_write = feedback_write
+        self.feedback_read  = feedback_read
 
         # Verify we were supplied 4 delay lines with the correct properties
 
@@ -171,7 +174,14 @@ class Diffuser(wiring.Component):
             # audio -> matrix [0-3]
             wiring.connect(m, split4.o[n], merge8.i[n])
             # delay -> matrix [4-7]
-            wiring.connect(m, self.taps[n].o, merge8.i[4+n])
+            if self.feedback_write is None or self.feedback_read is None:
+                wiring.connect(m, self.taps[n].o, merge8.i[4+n])
+            else:
+                if n == 0:
+                    wiring.connect(m, self.taps[0].o, self.feedback_write)
+                    wiring.connect(m, self.feedback_read, merge8.i[4+0])
+                else:
+                    wiring.connect(m, self.taps[n].o, merge8.i[4+n])
 
         for n in range(4):
             # matrix -> audio [0-3]
