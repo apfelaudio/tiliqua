@@ -6,6 +6,8 @@
 #include "stb_image_write.h"
 
 #include <cxxrtl/cxxrtl_vcd.h>
+#include <cxxrtl/cxxrtl_server.h>
+using namespace cxxrtl::time_literals;
 
 #include "tiliqua_soc.cpp"
 
@@ -29,7 +31,10 @@ int main()
     std::ofstream waves("waves.vcd");
 #endif
 
-    top.step();
+	cxxrtl::agent<cxxrtl_design::p_top> agent(cxxrtl::spool("spool.bin"), top);
+    std::cerr << "Waiting for debugger on " << agent.start_debugging() << std::endl;
+
+    agent.step();
 
 #ifdef TRACE_VCD
     vcd.sample(0);
@@ -60,18 +65,19 @@ int main()
     top.p_rst__sync.set<bool>(true);
     top.p_rst__audio.set<bool>(true);
 
-    top.step();
+    agent.step();
 
     top.p_rst__dvi.set<bool>(false);
     top.p_rst__sync.set<bool>(false);
     top.p_rst__audio.set<bool>(false);
 
-    top.step();
+    agent.step();
 
     for(uint64_t timestamp_ns=0;timestamp_ns<100000000;++timestamp_ns){
 
         if (timestamp_ns % (ns_in_dvi_cycle/2) == 0) {
             top.p_clk__dvi.set<bool>(!top.p_clk__dvi.get<bool>());
+#if 0
             if (!top.p_clk__dvi.get<bool>()) {
                 uint32_t x = top.p_dvi__x.get<uint32_t>();
                 uint32_t y = top.p_dvi__y.get<uint32_t>();
@@ -88,6 +94,7 @@ int main()
                     ++frames;
                 }
             }
+#endif
         }
 
         if (timestamp_ns % (ns_in_sync_cycle/2) == 0) {
@@ -103,7 +110,7 @@ int main()
                         (psram_data[aptr+1] << 8)   |
                         (psram_data[aptr+0] << 0)
                     );
-                    top.step();
+                    agent.step();
                 }
 
                 if (top.p_write__ready.get<bool>()) {
@@ -113,7 +120,7 @@ int main()
                     psram_data[aptr+1] = (uint8_t)(wdat >> 8);
                     psram_data[aptr+2] = (uint8_t)(wdat >> 16);
                     psram_data[aptr+3] = (uint8_t)(wdat >> 24);
-                    top.step();
+                    agent.step();
                 }
 
             }
@@ -140,7 +147,8 @@ int main()
             }
         }
 
-        top.step();
+        agent.step();
+		agent.advance(1_ns);
 #ifdef TRACE_VCD
         vcd.sample(timestamp_ns);
         waves << vcd.buffer;
