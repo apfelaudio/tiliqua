@@ -10,7 +10,7 @@ import shutil
 import subprocess
 
 from amaranth              import *
-from amaranth.back         import verilog
+from amaranth.back         import cxxrtl
 from amaranth.build        import *
 from amaranth.lib          import wiring, data
 from amaranth.lib.wiring   import In, Out
@@ -67,7 +67,7 @@ class FakePSRAMSimulationInterface(wiring.Signature):
 
 # Main purpose of using this custom platform instead of
 # simply None is to track extra files added to the build.
-class VerilatorPlatform():
+class CxxRtlPlatform():
     def __init__(self, hw_platform):
         self.files = {}
         self.ila = False
@@ -106,14 +106,14 @@ def soc_simulation_ports(fragment):
 def simulate(fragment, ports, harness, hw_platform, tracing=False):
 
     build_dst = "build"
-    dst = f"{build_dst}/tiliqua_soc.v"
-    print(f"write verilog implementation of 'tiliqua_soc' to '{dst}'...")
+    dst = f"{build_dst}/tiliqua_soc.cpp"
+    print(f"cxxrtl: elaborate design to '{dst}'...")
 
-    sim_platform = VerilatorPlatform(hw_platform)
+    sim_platform = CxxRtlPlatform(hw_platform)
 
     os.makedirs(build_dst, exist_ok=True)
     with open(dst, "w") as f:
-        f.write(verilog.convert(
+        f.write(cxxrtl.convert(
             fragment,
             platform=sim_platform,
             ports=ports
@@ -125,24 +125,22 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
         with open(os.path.join("build", file), "w") as f:
             f.write(sim_platform.files[file])
 
-    tracing_flags = ["--trace-fst", "--trace-structs"] if tracing else []
-
     if hasattr(fragment, "video"):
         # TODO: warn if this is far from the PLL output?
         dvi_clk_hz = int(fragment.video.dvi_tgen.timings.pll.pixel_clk_mhz * 1e6)
         dvi_h_active = fragment.video.dvi_tgen.timings.h_active
         dvi_v_active = fragment.video.dvi_tgen.timings.v_active
         video_cflags = [
-           "-CFLAGS", f"-DDVI_H_ACTIVE={dvi_h_active}",
-           "-CFLAGS", f"-DDVI_V_ACTIVE={dvi_v_active}",
-           "-CFLAGS", f"-DDVI_CLK_HZ={dvi_clk_hz}",
+           f"-DDVI_H_ACTIVE={dvi_h_active}",
+           f"-DDVI_V_ACTIVE={dvi_v_active}",
+           f"-DDVI_CLK_HZ={dvi_clk_hz}",
         ]
     else:
         video_cflags = []
 
     if hasattr(fragment, "psram_periph"):
         psram_cflags = [
-           "-CFLAGS", f"-DPSRAM_SIM=1",
+           "-DPSRAM_SIM=1",
        ]
     else:
         psram_cflags = []
@@ -150,37 +148,32 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
     clock_sync_hz = 60000000
     audio_clk_hz = 48000000
 
-    verilator_dst = "build/obj_dir"
-    shutil.rmtree(verilator_dst, ignore_errors=True)
-    print(f"verilate '{dst}' into C++ binary...")
-    subprocess.check_call(["verilator",
-                           "-Wno-COMBDLY",
-                           "-Wno-CASEINCOMPLETE",
-                           "-Wno-CASEOVERLAP",
-                           "-Wno-WIDTHEXPAND",
-                           "-Wno-WIDTHTRUNC",
-                           "-Wno-TIMESCALEMOD",
-                           "-Wno-PINMISSING",
-                           "-Wno-ASCRANGE",
-                           "-cc"] + tracing_flags + [
-                           "--exe",
-                           "--Mdir", f"{verilator_dst}",
-                           "--build",
-                           "-j", "0",
-                           "-Ibuild",
-                           "-CFLAGS", f"-DSYNC_CLK_HZ={clock_sync_hz}",
-                           "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
-                          ] + video_cflags + psram_cflags + [
-                           harness,
-                           f"{dst}",
-                          ] + [
-                               f for f in sim_platform.files
-                               if f.endswith(".svh") or f.endswith(".sv") or f.endswith(".v")
-                          ],
-                          env=os.environ)
+    tracing_flags = ["-DTRACE_VCD"] if tracing else []
 
-    print(f"run verilated binary '{verilator_dst}/Vtiliqua_soc'...")
-    subprocess.check_call([f"{verilator_dst}/Vtiliqua_soc"],
+    yosys_dat_dir = subprocess.check_output(
+            ['yosys-config', '--datdir'], env=os.environ).strip().decode()
+    yosys_include = os.path.join(
+            yosys_dat_dir, "include/backends/cxxrtl/runtime")
+
+    print(f"compile '{dst}' into C++ binary...")
+    subprocess.check_call(["clang++",
+                           "-g",
+                           "-O3",
+                           "-std=c++14",
+                           "-Wno-array-bounds",
+                           "-Wno-shift-count-overflow",
+                           f"-I{yosys_include}",
+                           f"-Ibuild",
+                           f"-DAUDIO_CLK_HZ={audio_clk_hz}",
+                           f"-DSYNC_CLK_HZ={clock_sync_hz}",
+                          ] + tracing_flags + video_cflags + psram_cflags + [
+                            harness,
+                           "-o", f"{build_dst}/tb_tiliqua_soc",
+                          ],
+                           env=os.environ)
+
+    print(f"run binary {build_dst}/tb_tiliqua_soc ...")
+    subprocess.check_call([f"{build_dst}/tb_tiliqua_soc"],
                           env=os.environ)
 
     print(f"done.")

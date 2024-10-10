@@ -52,8 +52,8 @@ def top_level_cli(
 
     if sim_ports or issubclass(fragment, TiliquaSoc):
         simulation_supported = True
-        parser.add_argument('--trace-fst', action='store_true',
-                            help="Simulation: enable dumping of traces to FST file.")
+        parser.add_argument('--trace-vcd', action='store_true',
+                            help="Simulation: enable dumping of traces to .vcd file.")
     else:
         simulation_supported = False
 
@@ -152,7 +152,7 @@ def top_level_cli(
 
     if args.action == CliAction.Simulate:
         sim.simulate(fragment, sim_ports(fragment), sim_harness,
-                     hw_platform, args.trace_fst)
+                     hw_platform, args.trace_vcd)
         sys.exit(0)
 
     if ila_supported and args.ila:
