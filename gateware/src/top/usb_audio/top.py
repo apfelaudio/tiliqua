@@ -43,6 +43,7 @@ from luna.gateware.architecture.car           import PHYResetController
 
 from tiliqua.cli                              import top_level_cli
 from tiliqua.eurorack_pmod                    import EurorackPmod
+from tiliqua.tiliqua_platform                 import RebootProvider
 from vendor.ila                               import AsyncSerialILA
 
 from util                   import EdgeToPulse, connect_fifo_to_stream, connect_stream_to_fifo
@@ -321,7 +322,10 @@ class USB2AudioInterface(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.car = platform.clock_domain_generator()
+        m.submodules.car = car = platform.clock_domain_generator()
+        m.submodules.reboot = reboot = RebootProvider(car.clocks_hz["sync"])
+        m.submodules.btn = FFSynchronizer(
+                platform.request("encoder").s.i, reboot.button)
 
         ulpi = platform.request(platform.default_usb_connection)
         m.submodules.usb = usb = USBDevice(bus=ulpi)

@@ -4,9 +4,10 @@
 
 """ Tiliqua and SoldierCrab platform definitions. """
 
-from amaranth import *
-from amaranth.build import *
-from amaranth.vendor import LatticeECP5Platform
+from amaranth                    import *
+from amaranth.build              import *
+from amaranth.lib                import wiring
+from amaranth.vendor             import LatticeECP5Platform
 
 from amaranth_boards.resources   import *
 
@@ -236,3 +237,30 @@ class TiliquaR2SC3Platform(SoldierCrabR3Platform, LUNAPlatform):
         *SoldierCrabR3Platform.connectors,
         *_TiliquaR2Mobo.connectors
     ]
+
+class RebootProvider(wiring.Component):
+
+    """
+    Issue a 'self_program' (return to bootloader) when the 'button'
+    signal is high for 'reboot_seconds'.
+    """
+
+    button: wiring.In(unsigned(1))
+
+    def __init__(self, clock_sync_hz, reboot_seconds=3):
+        self.reboot_seconds = reboot_seconds
+        self.clock_sync_hz  = clock_sync_hz
+        super().__init__()
+
+    def elaborate(self, platform):
+        m = Module()
+        timeout = self.reboot_seconds*self.clock_sync_hz
+        button_counter = Signal(range(timeout+1))
+        with m.If(button_counter >= timeout):
+            m.d.comb += platform.request("self_program").o.eq(1)
+        with m.Else():
+            with m.If(self.button):
+                m.d.sync += button_counter.eq(button_counter + 1)
+            with m.Else():
+                m.d.sync += button_counter.eq(0)
+        return m

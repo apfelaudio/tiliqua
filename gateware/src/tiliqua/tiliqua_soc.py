@@ -350,21 +350,15 @@ class TiliquaSoc(Component):
             m.submodules.dtr0 = self.dtr0
 
             # generate our domain clocks/resets
-            m.submodules.car = platform.clock_domain_generator(audio_192=self.audio_192,
-                                                               pixclk_pll=self.dvi_timings.pll)
+            m.submodules.car = car = platform.clock_domain_generator(audio_192=self.audio_192,
+                                                                     pixclk_pll=self.dvi_timings.pll)
 
             # Enable LED driver on motherboard
             m.d.comb += platform.request("mobo_leds_oe").o.eq(1),
 
-            # HACK: encoder push override -- hold for 3sec will re-enter bootloader
-            REBOOT_SEC = 3
-            button_counter = Signal(unsigned(32))
-            with m.If(button_counter > REBOOT_SEC*self.clock_sync_hz):
-                m.d.comb += platform.request("self_program").o.eq(1)
-            with m.If(self.encoder0._button.f.button.r_data):
-                m.d.sync += button_counter.eq(button_counter + 1)
-            with m.Else():
-                m.d.sync += button_counter.eq(0)
+            # Connect encoder button to RebootProvider
+            m.submodules.reboot = reboot = RebootProvider(car.clocks_hz["sync"])
+            m.d.comb += reboot.button.eq(self.encoder0._button.f.button.r_data)
         else:
             m.submodules.car = sim.FakeTiliquaDomainGenerator()
             self.pmod0_periph.pmod = sim.FakeEurorackPmod()
