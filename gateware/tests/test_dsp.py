@@ -6,16 +6,87 @@ import sys
 import unittest
 
 import math
+import itertools
+
 
 from amaranth              import *
 from amaranth.sim          import *
 from amaranth_future       import fixed
 from amaranth.lib          import wiring, data
-from tiliqua.eurorack_pmod import ASQ
 
-from tiliqua import dsp, delay_line
+from scipy                 import signal
+from parameterized         import parameterized
+
+from tiliqua.eurorack_pmod import ASQ
+from tiliqua               import dsp, delay_line
 
 class DSPTests(unittest.TestCase):
+
+
+    @parameterized.expand([
+        ["dual_sine_small", 100, 16,  lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        ["dual_sine_large", 100, 64,  lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        ["impulse_small",   100, 16,  lambda n: 0.95 if n == 0 else 0.0],
+    ])
+    def test_fir(self, name, n_samples, n_order, stimulus_function):
+
+        dut = dsp.FIR(fs=48000, filter_cutoff_hz=2000,
+                      filter_order=n_order)
+        expected_latency = n_order + 1
+
+        def stimulus_values():
+            """Create fixed-point samples to stimulate the DUT."""
+            for n in range(0, sys.maxsize):
+                yield fixed.Const(stimulus_function(n), shape=ASQ)
+
+        def expected_samples():
+            """Same samples filtered by scipy.signal (should ~match those from our RTL)."""
+            x = itertools.islice(stimulus_values(), n_samples)
+            return signal.lfilter(dut.taps_float, [1.0], [v.as_float() for v in x])
+
+        async def stimulus_i(ctx):
+            """Send `stimulus_values` to the DUT."""
+            s = stimulus_values()
+            while True:
+                await ctx.tick().until(dut.i.ready)
+                ctx.set(dut.i.valid, 1)
+                ctx.set(dut.i.payload, next(s))
+                await ctx.tick()
+                ctx.set(dut.i.valid, 0)
+                await ctx.tick()
+
+        async def testbench(ctx):
+            """Observe and measure FIR filter outputs."""
+            y_expected = expected_samples()
+            n_samples_in = 0
+            n_samples_out = 0
+            n_latency = 0
+            ctx.set(dut.o.ready, 1)
+            for n in range(0, sys.maxsize):
+                i_sample = ctx.get(dut.i.valid & dut.i.ready)
+                o_sample = ctx.get(dut.o.valid & dut.o.ready)
+                if i_sample:
+                    n_samples_in += 1
+                    n_latency     = 0
+                if o_sample:
+                    # Verify latency and value of the payload is as we expect.
+                    assert n_latency == expected_latency
+                    assert abs(ctx.get(dut.o.payload).as_float() - y_expected[n_samples_out]) < 0.005
+                    n_samples_out += 1
+                    if n_samples_out == len(y_expected):
+                        break
+                await ctx.tick()
+                n_latency += 1
+            assert n_samples_in == n_samples
+            assert n_samples_out == n_samples
+
+        sim = Simulator(dut)
+        sim.add_clock(1e-6)
+        sim.add_process(stimulus_i)
+        sim.add_testbench(testbench)
+        with sim.write_vcd(vcd_file=open(f"test_fir_{name}.vcd", "w")):
+            sim.run()
+
 
     def test_pitch(self):
 
@@ -231,33 +302,6 @@ class DSPTests(unittest.TestCase):
         sim.add_clock(1e-6)
         sim.add_testbench(testbench)
         with sim.write_vcd(vcd_file=open("test_nco.vcd", "w")):
-            sim.run()
-
-    def test_fir(self):
-
-        fir = dsp.FIR(fs=48000, filter_cutoff_hz=2000,
-                      filter_order=10)
-
-        async def testbench(ctx):
-            for n in range(0, 100):
-                x = fixed.Const(0.4*(math.sin(n*0.2) + math.sin(n)), shape=ASQ)
-                ctx.set(fir.i.payload, x)
-                ctx.set(fir.i.valid, 1)
-                await ctx.tick()
-                ctx.set(fir.i.valid, 0)
-                await ctx.tick()
-                while ctx.get(fir.o.valid) != 1:
-                    await ctx.tick()
-                out0 = ctx.get(fir.o.payload)
-                ctx.set(fir.o.ready, 1)
-                await ctx.tick()
-                ctx.set(fir.o.ready, 0)
-                await ctx.tick()
-
-        sim = Simulator(fir)
-        sim.add_clock(1e-6)
-        sim.add_testbench(testbench)
-        with sim.write_vcd(vcd_file=open("test_fir.vcd", "w")):
             sim.run()
 
     def test_resample(self):
