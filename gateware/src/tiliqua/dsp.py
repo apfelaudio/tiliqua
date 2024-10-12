@@ -809,15 +809,28 @@ class FIR(wiring.Component):
 
         self.ctype = fixed.SQ(2, ASQ.f_width)
 
-        self.taps = taps = Array(fixed.Const(t*self.prescale, shape=self.ctype)
-                                 for t in self.taps_float)
-        x                = Array(Signal(self.ctype) for t in taps)
-        n                = len(self.taps)
+        n = len(self.taps_float)
 
-        ix = Signal(range(n+1))
+        m.submodules.taps_mem = taps_mem = Memory(
+            shape=self.ctype, depth=n, init=[
+                fixed.Const(t*self.prescale, shape=self.ctype)
+                for t in self.taps_float
+            ]
+        )
+
+        taps_rport = taps_mem.read_port()
+
+        x = Array(Signal(self.ctype) for _ in range(n))
+
+        ix = Signal(range(n))
         a  = Signal(self.ctype)
         b  = Signal(self.ctype)
         y  = Signal(self.ctype)
+
+        m.d.comb += taps_rport.en.eq(1)
+        m.d.comb += taps_rport.addr.eq(0)
+        with m.If(ix < (n-1)):
+            m.d.comb += taps_rport.addr.eq(ix+1)
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
@@ -826,20 +839,20 @@ class FIR(wiring.Component):
                     m.d.sync += [x[i+1].eq(x[i]) for i in range(n-1)]
                     m.d.sync += x[0].eq(self.i.payload)
                     m.d.sync += [
-                        ix.eq(1),
+                        ix.eq(0),
                         a.eq(x[0]),
-                        b.eq(taps[0]),
+                        b.eq(taps_rport.data),
                         y.eq(0)
                     ]
                     m.next = "MAC"
             with m.State("MAC"):
                 m.d.sync += y.eq(y + (a * b))
-                with m.If(ix == n):
+                with m.If(ix == (n-1)):
                     m.next = "WAIT-READY"
                 with m.Else():
                     m.d.sync += [
                         a.as_value().eq(x[ix].as_value()),
-                        b.as_value().eq(taps[ix].as_value()),
+                        b.eq(taps_rport.data),
                         ix.eq(ix + 1)
                     ]
             with m.State('WAIT-READY'):
