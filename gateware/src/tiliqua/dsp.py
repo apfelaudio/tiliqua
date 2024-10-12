@@ -859,7 +859,7 @@ class FIR(wiring.Component):
 
         # Filter tap memory and read port
 
-        # if t*prescale overflows, fixed.Const should provide a warning.
+        # If t*prescale overflows, fixed.Const should provide a warning.
         m.submodules.taps_mem = taps_mem = Memory(
             shape=self.ctype, depth=n, init=[
                 fixed.Const(t*self.prescale, shape=self.ctype)
@@ -880,11 +880,19 @@ class FIR(wiring.Component):
 
         # FIR filter logic
 
+        # Number of MACs performed per sample, up to n/self.stride
+        macs   = Signal(range(n))
+        # Write position in input sample memory
+        w_pos  = Signal(range(n), reset=1)
+        # Stride position from 0 .. self.stride, moves by 1 every
+        # input sample to shift taps looked at (even if the input
+        # is padded with zeroes)
+        s_pos  = Signal(range(self.stride), reset=0)
+        # Read indices into tap and sample memories
         ix_tap = Signal(range(n))
         ix_rd  = Signal(range(n))
-        macs   = Signal(range(n))
-        w_pos  = Signal(range(n), reset=1)
-        s_pos  = Signal(range(self.stride), reset=0)
+
+        # MAC variables: y = a * b
         a  = Signal(self.ctype)
         b  = Signal(self.ctype)
         y  = Signal(self.ctype)
@@ -904,8 +912,10 @@ class FIR(wiring.Component):
                 with m.If(self.i.valid):
                     with m.If(s_pos == 0):
                         m.d.comb += x_wport.en.eq(1)
+                    # Set up first MAC combinatorially
                     m.d.comb += x_rport.addr.eq(x_wport.addr)
                     m.d.comb += taps_rport.addr.eq(s_pos)
+                    # Subsequent MACs use ix_rd / ix_tap.
                     m.d.sync += [
                         ix_rd.eq(w_pos),
                         ix_tap.eq(s_pos + self.stride),
@@ -919,18 +929,20 @@ class FIR(wiring.Component):
                     a.eq(x_rport.data),
                     b.eq(taps_rport.data),
                 ]
-                m.d.sync += y.eq(y + (a * b))
+                m.d.sync += [
+                    y.eq(y + (a * b)),
+                    macs.eq(macs+1),
+                ]
+                # next tap read position
+                m.d.sync += ix_tap.eq(ix_tap + self.stride),
+                # next sample read position
+                with m.If(ix_rd == 0):
+                    m.d.sync += ix_rd.eq((n//self.stride - 1))
+                with m.Else():
+                    m.d.sync += ix_rd.eq(ix_rd - 1),
+                # done?
                 with m.If(macs == (n//self.stride - 1)):
                     m.next = "WAIT-READY"
-                with m.Else():
-                    m.d.sync += [
-                        macs.eq(macs+1),
-                        ix_tap.eq(ix_tap + self.stride),
-                    ]
-                    with m.If(ix_rd == 0):
-                        m.d.sync += ix_rd.eq((n//self.stride - 1))
-                    with m.Else():
-                        m.d.sync += ix_rd.eq(ix_rd - 1),
 
             with m.State('WAIT-READY'):
                 m.d.comb += [
@@ -940,6 +952,7 @@ class FIR(wiring.Component):
 
                 with m.If(self.o.ready):
 
+                    # update write and stride offsets.
                     with m.If(s_pos == (self.stride-1)):
                         m.d.sync += s_pos.eq(0)
                         with m.If(w_pos == (n//self.stride - 1)):
