@@ -7,6 +7,7 @@ use embedded_graphics::{
 };
 
 use crate::opt;
+use crate::logo_coords;
 
 use heapless::String;
 use core::fmt::Write;
@@ -172,6 +173,28 @@ where
 
     Ok(())
 }
+
+pub fn draw_boot_logo<D>(d: &mut D, sx: i32, sy: i32, ix: u32) -> Result<(), D::Error>
+where
+    D: DrawTarget<Color = Gray8>,
+{
+    use logo_coords::BOOT_LOGO_COORDS;
+    let stroke_white = PrimitiveStyleBuilder::new()
+        .stroke_color(Gray8::WHITE)
+        .stroke_width(1)
+        .build();
+    let p = ((ix % ((BOOT_LOGO_COORDS.len() as u32)-1)) + 1) as usize;
+    let x = BOOT_LOGO_COORDS[p].0/2;
+    let y = -BOOT_LOGO_COORDS[p].1/2;
+    let xl = BOOT_LOGO_COORDS[p-1].0/2;
+    let yl = -BOOT_LOGO_COORDS[p-1].1/2;
+    Line::new(Point::new(sx+xl as i32, sy+yl as i32),
+              Point::new(sx+x as i32, sy+y as i32))
+              .into_styled(stroke_white)
+              .draw(d)?;
+    Ok(())
+}
+
 
 #[cfg(test)]
 mod test_data {
