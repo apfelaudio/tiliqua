@@ -876,15 +876,15 @@ class FIR(wiring.Component):
         )
 
         x_wport = x_mem.write_port()
-        x_rport = x_mem.read_port()
+        x_rport = x_mem.read_port(transparent_for=(x_wport,))
 
         # FIR filter logic
 
         ix_tap = Signal(range(n))
         ix_rd  = Signal(range(n))
-        w_pos  = Signal(range(n))
-        last_w_pos = Signal(range(n))
-        s_pos  = Signal(range(self.stride), reset=(self.stride-1))
+        macs   = Signal(range(n))
+        w_pos  = Signal(range(n), reset=1)
+        s_pos  = Signal(range(self.stride), reset=0)
         a  = Signal(self.ctype)
         b  = Signal(self.ctype)
         y  = Signal(self.ctype)
@@ -902,56 +902,35 @@ class FIR(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                    with m.If(s_pos == (self.stride-1)):
+                    with m.If(s_pos == 0):
                         m.d.comb += x_wport.en.eq(1)
-                        m.d.sync += s_pos.eq(0)
-                        with m.If(w_pos == (n//self.stride - 1)):
-                            m.d.sync += w_pos.eq(0)
-                        with m.Else():
-                            m.d.sync += w_pos.eq(w_pos+1)
-                    with m.Else():
-                        m.d.sync += s_pos.eq(s_pos+1)
-
-                    m.d.sync += valid.eq(0)
-
-                    m.next = "UPD"
-
-            with m.State("UPD"):
-
-                m.d.sync += [
-                    ix_rd.eq(w_pos),
-                    ix_tap.eq(s_pos),
-                    y.eq(0)
-                ]
-
-                m.next = "MAC"
+                    m.d.comb += x_rport.addr.eq(x_wport.addr)
+                    m.d.comb += taps_rport.addr.eq(s_pos)
+                    m.d.sync += [
+                        ix_rd.eq(w_pos),
+                        ix_tap.eq(s_pos + self.stride),
+                        y.eq(0),
+                        macs.eq(0),
+                    ]
+                    m.next = "MAC"
 
             with m.State("MAC"):
-                m.d.sync += valid.eq(1)
-                with m.If(valid):
-                    m.d.comb += [
-                        a.eq(x_rport.data),
-                        b.eq(taps_rport.data),
-                    ]
-                    m.d.sync += y.eq(y + (a * b))
-                with m.If(ix_tap >= (n-self.stride)):
-                    m.next = "MAC2"
+                m.d.comb += [
+                    a.eq(x_rport.data),
+                    b.eq(taps_rport.data),
+                ]
+                m.d.sync += y.eq(y + (a * b))
+                with m.If(macs == (n//self.stride - 1)):
+                    m.next = "WAIT-READY"
                 with m.Else():
                     m.d.sync += [
+                        macs.eq(macs+1),
                         ix_tap.eq(ix_tap + self.stride),
                     ]
                     with m.If(ix_rd == 0):
                         m.d.sync += ix_rd.eq((n//self.stride - 1))
                     with m.Else():
                         m.d.sync += ix_rd.eq(ix_rd - 1),
-
-            with m.State("MAC2"):
-                m.d.comb += [
-                    a.eq(x_rport.data),
-                    b.eq(taps_rport.data),
-                ]
-                m.d.sync += y.eq(y + (a * b))
-                m.next = 'WAIT-READY'
 
             with m.State('WAIT-READY'):
                 m.d.comb += [
@@ -960,6 +939,16 @@ class FIR(wiring.Component):
                 ]
 
                 with m.If(self.o.ready):
+
+                    with m.If(s_pos == (self.stride-1)):
+                        m.d.sync += s_pos.eq(0)
+                        with m.If(w_pos == (n//self.stride - 1)):
+                            m.d.sync += w_pos.eq(0)
+                        with m.Else():
+                            m.d.sync += w_pos.eq(w_pos+1)
+                    with m.Else():
+                        m.d.sync += s_pos.eq(s_pos+1)
+
                     m.next = 'WAIT-VALID'
 
         return m
