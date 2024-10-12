@@ -24,6 +24,7 @@ import math
 from amaranth                 import *
 from amaranth.build           import *
 from amaranth.lib             import wiring, data, stream
+from amaranth.lib.cdc         import FFSynchronizer
 from amaranth.lib.wiring      import In, Out
 from amaranth_soc             import wishbone
 from amaranth_future          import fixed
@@ -32,6 +33,7 @@ from tiliqua                  import eurorack_pmod, dsp, midi, psram_peripheral,
 from tiliqua.eurorack_pmod    import ASQ
 from tiliqua.cli              import top_level_cli
 from tiliqua.delay_line       import DelayLine
+from tiliqua.tiliqua_platform import RebootProvider
 
 # for sim
 from amaranth.back            import verilog
@@ -802,11 +804,14 @@ class CoreTop(Elaboratable):
         m = Module()
 
         if sim.is_hw(platform):
-            m.submodules.car = platform.clock_domain_generator()
+            m.submodules.car = car = platform.clock_domain_generator()
             m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
                     pmod_pins=platform.request("audio_ffc"),
                     hardware_r33=True,
                     touch_enabled=self.touch)
+            m.submodules.reboot = reboot = RebootProvider(car.clocks_hz["sync"])
+            m.submodules.btn = FFSynchronizer(
+                    platform.request("encoder").s.i, reboot.button)
         else:
             m.submodules.car = sim.FakeTiliquaDomainGenerator()
             m.submodules.pmod0 = pmod0 = sim.FakeEurorackPmod()
