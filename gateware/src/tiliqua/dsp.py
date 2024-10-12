@@ -883,6 +883,7 @@ class FIR(wiring.Component):
         ix_tap = Signal(range(n))
         ix_rd  = Signal(range(n))
         w_pos  = Signal(range(n))
+        last_w_pos = Signal(range(n))
         s_pos  = Signal(range(self.stride), reset=(self.stride-1))
         a  = Signal(self.ctype)
         b  = Signal(self.ctype)
@@ -890,7 +891,7 @@ class FIR(wiring.Component):
 
         m.d.comb += taps_rport.en.eq(1)
         m.d.comb += taps_rport.addr.eq(ix_tap)
-        m.d.comb += x_wport.addr.eq(w_pos)
+        m.d.comb += x_wport.addr.eq(w_pos+1) # WARN: wrap on non-2**n
         m.d.comb += x_wport.data.eq(self.i.payload)
         m.d.comb += x_rport.addr.eq(ix_rd)
         m.d.comb += x_rport.en.eq(1)
@@ -901,7 +902,6 @@ class FIR(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-
                     with m.If(s_pos == (self.stride-1)):
                         m.d.comb += x_wport.en.eq(1)
                         m.d.sync += s_pos.eq(0)
@@ -918,12 +918,8 @@ class FIR(wiring.Component):
 
             with m.State("UPD"):
 
-                with m.If(w_pos == 0):
-                    m.d.sync += ix_rd.eq(n//self.stride - 1)
-                with m.Else():
-                    m.d.sync += ix_rd.eq(w_pos-1)
-
                 m.d.sync += [
+                    ix_rd.eq(w_pos),
                     ix_tap.eq(s_pos),
                     y.eq(0)
                 ]
