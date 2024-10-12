@@ -10,7 +10,7 @@ from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import SyncFIFO
 from amaranth.lib.memory   import Memory
-from amaranth.utils        import exact_log2
+from amaranth.utils        import exact_log2, ceil_log2
 
 from scipy import signal
 
@@ -779,12 +779,19 @@ class MatrixMix(wiring.Component):
 class FIR(wiring.Component):
 
     """
-    Fixed FIR filter that uses a single multiplier.
+    Fixed-point FIR filter that uses a single multiplier.
 
-    Takes some inspiration from `amlib/dsp/fixedpointfirfilter.py` from
-    `https://github.com/amaranth-farm/amlib`, however this implementation is
-    mostly rewritten. The `amlib` filter is copyright (c) 2021 Hans Baier
-    <hansfbaier@gmail.com> and was licensed under CERN-OHL-W-2.0
+    Filter order must be of the form :py:`2**N`, to allow for efficient
+    implementation of index wrapping (internal memory sizes power of 2).
+
+    Members
+    -------
+    i : :py:`In(stream.Signature(ASQ))`
+        Input stream for sending samples to the filter.
+    o : :py:`In(stream.Signature(ASQ))`
+        Output stream for getting samples to the filter. There is 1 output
+        sample per input sample, presented :py:`filter_order+1` cycles after
+        the input sample.
     """
 
     i: In(stream.Signature(ASQ))
@@ -796,21 +803,47 @@ class FIR(wiring.Component):
                  filter_order:     int,
                  filter_type:      str='lowpass',
                  prescale:         float=1):
-
-        taps = signal.firwin(numtaps=filter_order+1, cutoff=filter_cutoff_hz,
+        """
+        fs : int
+            Sample rate of the filter, used for calculating FIR coefficients.
+        filter_cutoff_hz : int
+            Cutoff frequency of the filter, used for calculating FIR coefficients.
+        filter_order : int
+            Size of the filter (number of coefficients), as FIRs are symmetric.
+            Must be of the form :py:`filter_order == 2**N`. If this is not
+            held, the filter order is changed to the next larger order of
+            this form.
+        filter_type : str
+            Type of the filter passed to :py:`signal.firwin` - :py:`"lowpass"`,
+            :py:`"highpass"` or so on.
+        prescale : float
+            All taps are scaled by :py:`prescale`. This is used in cases where
+            you are upsampling and need to preserve energy. Be careful with this,
+            it can overflow the tap coefficients (you'll get a warning).
+        """
+        order_needed = 2**ceil_log2(filter_order)
+        if order_needed != filter_order:
+            print(f"WARN: FIR: using next highest 2**N order (was: {filter_order}, now: {order_needed})")
+            filter_order = order_needed
+        taps = signal.firwin(numtaps=filter_order, cutoff=filter_cutoff_hz,
                              fs=fs, pass_zero=filter_type, window='hamming')
+        assert exact_log2(len(taps))
         self.taps_float = taps
         self.prescale   = prescale
-
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
+        # Tap and accumulator sizes
+
         self.ctype = fixed.SQ(2, ASQ.f_width)
 
         n = len(self.taps_float)
 
+        # Filter tap memory and read port
+
+        # if t*prescale overflows, fixed.Const should provide a warning.
         m.submodules.taps_mem = taps_mem = Memory(
             shape=self.ctype, depth=n, init=[
                 fixed.Const(t*self.prescale, shape=self.ctype)
@@ -820,27 +853,42 @@ class FIR(wiring.Component):
 
         taps_rport = taps_mem.read_port()
 
-        x = Array(Signal(self.ctype) for _ in range(n))
+        # Input sample memory, write and read port
 
-        ix = Signal(range(n))
+        m.submodules.x_mem = x_mem = Memory(
+            shape=self.ctype, depth=n, init=[]
+        )
+
+        x_wport = x_mem.write_port()
+        x_rport = x_mem.read_port()
+
+        # FIR filter logic
+
+        ix    = Signal(range(n))
+        w_pos = Signal(range(n))
         a  = Signal(self.ctype)
         b  = Signal(self.ctype)
         y  = Signal(self.ctype)
 
         m.d.comb += taps_rport.en.eq(1)
         m.d.comb += taps_rport.addr.eq(0)
+        m.d.comb += x_wport.addr.eq(w_pos)
+        m.d.comb += x_wport.data.eq(self.i.payload)
+        m.d.comb += x_rport.addr.eq(w_pos)
+        m.d.comb += x_rport.en.eq(1)
         with m.If(ix < (n-1)):
             m.d.comb += taps_rport.addr.eq(ix+1)
+            m.d.comb += x_rport.addr.eq(w_pos+ix+1)
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                    m.d.sync += [x[i+1].eq(x[i]) for i in range(n-1)]
-                    m.d.sync += x[0].eq(self.i.payload)
+                    m.d.comb += x_wport.en.eq(1)
                     m.d.sync += [
+                        w_pos.eq(w_pos+1),
                         ix.eq(0),
-                        a.eq(x[0]),
+                        a.eq(self.i.payload),
                         b.eq(taps_rport.data),
                         y.eq(0)
                     ]
@@ -851,7 +899,7 @@ class FIR(wiring.Component):
                     m.next = "WAIT-READY"
                 with m.Else():
                     m.d.sync += [
-                        a.as_value().eq(x[ix].as_value()),
+                        a.eq(x_rport.data),
                         b.eq(taps_rport.data),
                         ix.eq(ix + 1)
                     ]
@@ -904,7 +952,7 @@ class Resample(wiring.Component):
             fs=self.fs_in*self.n_up,
             filter_cutoff_hz=min(self.fs_in*self.bw,
                                  int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
-            filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
+            filter_order=4*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
             prescale=self.n_up)
 
         m.submodules.down_fifo = down_fifo = SyncFIFO(
