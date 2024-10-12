@@ -71,11 +71,11 @@ class USB2AudioInterface(Elaboratable):
             d.bDeviceSubclass    = 0x02
             d.bDeviceProtocol    = 0x01
             d.idVendor           = 0x1209
-            d.idProduct          = 0x1234
+            d.idProduct          = 0xAA62
 
-            d.iManufacturer      = "ApfelAudio"
-            d.iProduct           = "PMODface"
-            d.iSerialNumber      = "1234"
+            d.iManufacturer      = "apfelaudio.com"
+            d.iProduct           = "Tiliqua"
+            d.iSerialNumber      = "r2-beta-0000"
             d.bcdDevice          = 0.01
 
             d.bNumConfigurations = 1
