@@ -952,7 +952,7 @@ class Resample(wiring.Component):
             fs=self.fs_in*self.n_up,
             filter_cutoff_hz=min(self.fs_in*self.bw,
                                  int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
-            filter_order=4*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
+            filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
             prescale=self.n_up)
 
         m.submodules.down_fifo = down_fifo = SyncFIFO(
