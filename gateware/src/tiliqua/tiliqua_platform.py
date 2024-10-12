@@ -2,9 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-""" soldiercrab / tiliqua platform definitions and PLL configuration. """
-
-import os
+""" Tiliqua and SoldierCrab platform definitions. """
 
 from amaranth import *
 from amaranth.build import *
@@ -14,7 +12,7 @@ from amaranth_boards.resources   import *
 
 from luna.gateware.platform.core import LUNAPlatform
 
-from tiliqua.video               import DVI_TIMINGS
+from tiliqua                     import tiliqua_pll
 
 class _SoldierCrabPlatform(LatticeECP5Platform):
     package      = "BG256"
@@ -207,196 +205,10 @@ class _TiliquaR2Mobo:
         Connector("pmod", 1, "59 63 67 71 - - 61 65 69 73 - -", conn=("m2", 0)),
     ]
 
-class TiliquaDomainGenerator(Elaboratable):
-    """ Clock generator for Tiliqua platform. """
-
-    def __init__(self, *, pixclk_pll=None, audio_192=False, clock_frequencies=None, clock_signal_name=None):
-        super().__init__()
-        self.pixclk_pll = pixclk_pll
-        self.audio_192  = audio_192
-
-    def elaborate(self, platform):
-        m = Module()
-
-        # Create our domains.
-        m.domains.sync   = ClockDomain()
-        m.domains.usb    = ClockDomain()
-        m.domains.fast   = ClockDomain()
-        m.domains.audio  = ClockDomain()
-        m.domains.raw48  = ClockDomain()
-
-        if self.pixclk_pll is not None:
-            m.domains.dvi   = ClockDomain()
-            m.domains.dvi5x = ClockDomain()
-
-
-        clk48 = platform.request(platform.default_clk, dir='i').i
-        reset  = platform.request(platform.default_rst, dir='i').i
-        #reset  = Signal(1, reset=0)
-
-        # ecppll -i 48 --clkout0 60 --clkout1 120 --clkout2 50 --reset -f pll60.v
-        # 60MHz for USB (currently also sync domain. fast is for DQS)
-
-        m.d.comb += [
-            ClockSignal("raw48").eq(clk48),
-        ]
-
-        feedback60 = Signal()
-        locked60   = Signal()
-        m.submodules.pll = Instance("EHXPLLL",
-
-                # Clock in.
-                i_CLKI=clk48,
-
-                # Generated clock outputs.
-                o_CLKOP=feedback60,
-                o_CLKOS=ClockSignal("fast"),
-                o_CLKOS2=ClockSignal("audio"),
-
-                # Status.
-                o_LOCK=locked60,
-
-                # PLL parameters...
-                p_PLLRST_ENA="ENABLED",
-                p_INTFB_WAKE="DISABLED",
-                p_STDBY_ENABLE="DISABLED",
-                p_DPHASE_SOURCE="DISABLED",
-                p_OUTDIVIDER_MUXA="DIVA",
-                p_OUTDIVIDER_MUXB="DIVB",
-                p_OUTDIVIDER_MUXC="DIVC",
-                p_OUTDIVIDER_MUXD="DIVD",
-                p_CLKI_DIV=4,
-                p_CLKOP_ENABLE="ENABLED",
-                p_CLKOP_DIV=10,
-                p_CLKOP_CPHASE=4,
-                p_CLKOP_FPHASE=0,
-                p_CLKOS_ENABLE="ENABLED",
-                p_CLKOS_DIV=5,
-                p_CLKOS_CPHASE=4,
-                p_CLKOS_FPHASE=0,
-                p_CLKOS2_ENABLE="ENABLED",
-                p_CLKOS2_DIV=12 if self.audio_192 else 48, # 50.0MHz (~195kHz) or 12.0MHz (~47kHz)
-                p_CLKOS2_CPHASE=4,
-                p_CLKOS2_FPHASE=0,
-                p_FEEDBK_PATH="CLKOP",
-                p_CLKFB_DIV=5,
-
-                # Internal feedback.
-                i_CLKFB=feedback60,
-
-                # Control signals.
-                i_RST=reset,
-                i_PHASESEL0=0,
-                i_PHASESEL1=0,
-                i_PHASEDIR=1,
-                i_PHASESTEP=1,
-                i_PHASELOADREG=1,
-                i_STDBY=0,
-                i_PLLWAKESYNC=0,
-
-                # Output Enables.
-                i_ENCLKOP=0,
-                i_ENCLKOS=0,
-                i_ENCLKOS2=0,
-                i_ENCLKOS3=0,
-
-                # Synthesis attributes.
-                a_ICP_CURRENT="12",
-                a_LPF_RESISTOR="8"
-        )
-
-        if self.pixclk_pll is not None:
-
-            # Extra PLL to generate DVI clocks, 1x pixel clock and 5x (half DVI TDMS clock, output is DDR)
-
-            feedback_dvi = Signal()
-            locked_dvi   = Signal()
-            m.submodules.pll_dvi = Instance("EHXPLLL",
-
-                    # Clock in.
-                    i_CLKI=clk48,
-
-                    # Generated clock outputs.
-                    o_CLKOP=feedback_dvi,
-                    o_CLKOS=ClockSignal("dvi5x"),
-                    o_CLKOS2=ClockSignal("dvi"),
-
-                    # Status.
-                    o_LOCK=locked_dvi,
-
-                    # PLL parameters...
-                    p_PLLRST_ENA      = "ENABLED",
-                    p_INTFB_WAKE      = "DISABLED",
-                    p_STDBY_ENABLE    = "DISABLED",
-                    p_DPHASE_SOURCE   = "DISABLED",
-                    p_OUTDIVIDER_MUXA = "DIVA",
-                    p_OUTDIVIDER_MUXB = "DIVB",
-                    p_OUTDIVIDER_MUXC = "DIVC",
-                    p_OUTDIVIDER_MUXD = "DIVD",
-                    p_CLKI_DIV        = self.pixclk_pll.clki_div,
-                    p_CLKOP_ENABLE    = "ENABLED",
-                    p_CLKOP_DIV       = self.pixclk_pll.clkop_div,
-                    p_CLKOP_CPHASE    = self.pixclk_pll.clkop_cphase,
-                    p_CLKOP_FPHASE    = 0,
-                    p_CLKOS_ENABLE    = "ENABLED",
-                    p_CLKOS_DIV       = self.pixclk_pll.clkos_div,
-                    p_CLKOS_CPHASE    = self.pixclk_pll.clkos_cphase,
-                    p_CLKOS_FPHASE    = 0,
-                    p_CLKOS2_ENABLE   = "ENABLED",
-                    p_CLKOS2_DIV      = self.pixclk_pll.clkos2_div,
-                    p_CLKOS2_CPHASE   = self.pixclk_pll.clkos2_cphase,
-                    p_CLKOS2_FPHASE   = 0,
-                    p_FEEDBK_PATH     = "CLKOP",
-                    p_CLKFB_DIV       = self.pixclk_pll.clkfb_div,
-
-                    # Internal feedback.
-                    i_CLKFB=feedback_dvi,
-
-                    # Control signals.
-                    i_RST=reset,
-                    i_PHASESEL0=0,
-                    i_PHASESEL1=0,
-                    i_PHASEDIR=1,
-                    i_PHASESTEP=1,
-                    i_PHASELOADREG=1,
-                    i_STDBY=0,
-                    i_PLLWAKESYNC=0,
-
-                    # Output Enables.
-                    i_ENCLKOP=0,
-                    i_ENCLKOS=0,
-                    i_ENCLKOS2=0,
-                    i_ENCLKOS3=0,
-
-                    # Synthesis attributes.
-                    a_ICP_CURRENT="12",
-                    a_LPF_RESISTOR="8"
-            )
-
-
-        # Derived clocks and resets
-        m.d.comb += [
-            ClockSignal("sync")  .eq(feedback60),
-            ClockSignal("usb")   .eq(feedback60),
-
-            ResetSignal("sync")  .eq(~locked60),
-            ResetSignal("fast")  .eq(~locked60),
-            ResetSignal("usb")   .eq(~locked60),
-            ResetSignal("audio") .eq(~locked60),
-        ]
-
-        if self.pixclk_pll is not None:
-            m.d.comb += [
-                ResetSignal("dvi")  .eq(~locked_dvi),
-                ResetSignal("dvi5x").eq(~locked_dvi),
-            ]
-
-        return m
-
 class TiliquaR2SC2Platform(SoldierCrabR2Platform, LUNAPlatform):
     name                   = ("Tiliqua R2 / SoldierCrab R2 "
                               f"({SoldierCrabR2Platform.device}/{SoldierCrabR2Platform.psram_id})")
-    clock_domain_generator = TiliquaDomainGenerator
+    clock_domain_generator = tiliqua_pll.TiliquaDomainGenerator4PLLs
     default_usb_connection = "ulpi"
 
     resources = [
@@ -412,7 +224,7 @@ class TiliquaR2SC2Platform(SoldierCrabR2Platform, LUNAPlatform):
 class TiliquaR2SC3Platform(SoldierCrabR3Platform, LUNAPlatform):
     name                   = ("Tiliqua R2 / SoldierCrab R3 "
                               f"({SoldierCrabR3Platform.device}/{SoldierCrabR3Platform.psram_id})")
-    clock_domain_generator = TiliquaDomainGenerator
+    clock_domain_generator = tiliqua_pll.TiliquaDomainGenerator2PLLs
     default_usb_connection = "ulpi"
 
     resources = [

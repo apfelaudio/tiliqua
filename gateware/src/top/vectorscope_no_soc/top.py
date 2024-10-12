@@ -107,7 +107,7 @@ class VectorScopeTop(Elaboratable):
                 self.pmod0.fs_strobe.eq(self.fs_strobe),
             ]
         else:
-            m.submodules.car = TiliquaDomainGenerator(audio_192=True, pixclk_pll=self.dvi_timings.pll)
+            m.submodules.car = platform.clock_domain_generator(audio_192=True, pixclk_pll=self.dvi_timings.pll)
 
         if sim.is_hw(platform):
             self.pmod0 = eurorack_pmod.EurorackPmod(
