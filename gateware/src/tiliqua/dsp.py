@@ -802,7 +802,8 @@ class FIR(wiring.Component):
                  filter_cutoff_hz: int,
                  filter_order:     int,
                  filter_type:      str='lowpass',
-                 prescale:         float=1):
+                 prescale:         float=1,
+                 stride:           int=1):
         """
         fs : int
             Sample rate of the filter, used for calculating FIR coefficients.
@@ -828,8 +829,10 @@ class FIR(wiring.Component):
         taps = signal.firwin(numtaps=filter_order, cutoff=filter_cutoff_hz,
                              fs=fs, pass_zero=filter_type, window='hamming')
         assert exact_log2(len(taps))
+        assert len(taps) % stride == 0
         self.taps_float = taps
         self.prescale   = prescale
+        self.stride     = stride
         super().__init__()
 
     def elaborate(self, platform):
@@ -856,7 +859,7 @@ class FIR(wiring.Component):
         # Input sample memory, write and read port
 
         m.submodules.x_mem = x_mem = Memory(
-            shape=self.ctype, depth=n, init=[]
+            shape=self.ctype, depth=n//self.stride, init=[]
         )
 
         x_wport = x_mem.write_port()
@@ -864,50 +867,89 @@ class FIR(wiring.Component):
 
         # FIR filter logic
 
-        ix    = Signal(range(n))
-        w_pos = Signal(range(n))
+        ix_tap = Signal(range(n))
+        ix_rd  = Signal(range(n))
+        w_pos  = Signal(range(n))
+        s_pos  = Signal(range(self.stride), reset=(self.stride-1))
         a  = Signal(self.ctype)
         b  = Signal(self.ctype)
         y  = Signal(self.ctype)
 
         m.d.comb += taps_rport.en.eq(1)
-        m.d.comb += taps_rport.addr.eq(0)
+        m.d.comb += taps_rport.addr.eq(ix_tap)
         m.d.comb += x_wport.addr.eq(w_pos)
         m.d.comb += x_wport.data.eq(self.i.payload)
-        m.d.comb += x_rport.addr.eq(w_pos)
+        m.d.comb += x_rport.addr.eq(ix_rd)
         m.d.comb += x_rport.en.eq(1)
-        with m.If(ix < (n-1)):
-            m.d.comb += taps_rport.addr.eq(ix+1)
-            m.d.comb += x_rport.addr.eq(w_pos+ix+1)
+
+        valid = Signal()
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                    m.d.comb += x_wport.en.eq(1)
-                    m.d.sync += [
-                        w_pos.eq(w_pos+1),
-                        ix.eq(0),
-                        a.eq(self.i.payload),
-                        b.eq(taps_rport.data),
-                        y.eq(0)
-                    ]
-                    m.next = "MAC"
-            with m.State("MAC"):
-                m.d.sync += y.eq(y + (a * b))
-                with m.If(ix == (n-1)):
-                    m.next = "WAIT-READY"
+
+                    with m.If(s_pos == (self.stride-1)):
+                        m.d.comb += x_wport.en.eq(1)
+                        m.d.sync += s_pos.eq(0)
+                        with m.If(w_pos == (n//self.stride - 1)):
+                            m.d.sync += w_pos.eq(0)
+                        with m.Else():
+                            m.d.sync += w_pos.eq(w_pos+1)
+                    with m.Else():
+                        m.d.sync += s_pos.eq(s_pos+1)
+
+                    m.d.sync += valid.eq(0)
+
+                    m.next = "UPD"
+
+            with m.State("UPD"):
+
+                with m.If(w_pos == 0):
+                    m.d.sync += ix_rd.eq(n//self.stride - 1)
                 with m.Else():
-                    m.d.sync += [
+                    m.d.sync += ix_rd.eq(w_pos-1)
+
+                m.d.sync += [
+                    ix_tap.eq(s_pos),
+                    y.eq(0)
+                ]
+
+                m.next = "MAC"
+
+            with m.State("MAC"):
+                m.d.sync += valid.eq(1)
+                with m.If(valid):
+                    m.d.comb += [
                         a.eq(x_rport.data),
                         b.eq(taps_rport.data),
-                        ix.eq(ix + 1)
                     ]
+                    m.d.sync += y.eq(y + (a * b))
+                with m.If(ix_tap >= (n-self.stride)):
+                    m.next = "MAC2"
+                with m.Else():
+                    m.d.sync += [
+                        ix_tap.eq(ix_tap + self.stride),
+                    ]
+                    with m.If(ix_rd == 0):
+                        m.d.sync += ix_rd.eq((n//self.stride - 1))
+                    with m.Else():
+                        m.d.sync += ix_rd.eq(ix_rd - 1),
+
+            with m.State("MAC2"):
+                m.d.comb += [
+                    a.eq(x_rport.data),
+                    b.eq(taps_rport.data),
+                ]
+                m.d.sync += y.eq(y + (a * b))
+                m.next = 'WAIT-READY'
+
             with m.State('WAIT-READY'):
                 m.d.comb += [
                     self.o.valid.eq(1),
                     self.o.payload.eq(y)
                 ]
+
                 with m.If(self.o.ready):
                     m.next = 'WAIT-VALID'
 
