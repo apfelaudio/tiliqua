@@ -784,6 +784,9 @@ class FIR(wiring.Component):
     Filter order must be of the form :py:`2**N`, to allow for efficient
     implementation of index wrapping (internal memory sizes power of 2).
 
+    This filter contains some optional optimizations to act as an efficient
+    interpolator. See the documentation on the :py:`stride` argument below.
+
     Members
     -------
     i : :py:`In(stream.Signature(ASQ))`
@@ -821,6 +824,16 @@ class FIR(wiring.Component):
             All taps are scaled by :py:`prescale`. This is used in cases where
             you are upsampling and need to preserve energy. Be careful with this,
             it can overflow the tap coefficients (you'll get a warning).
+        stride : int
+            When an FIR filter is used as an interpolator, a common pattern is
+            to provide 1 'actual' sample and pad S-1 zeroes for every S
+            output samples needed. For any :py:`stride > 1`, the :py:`stride`
+            must evenly divide :py:`filter_order` (i.e. no remainder). For
+            :py:`stride > 1`, this core applies some optimizations, assuming
+            every S'th sample is nonzero, and the rest are zero. This results in
+            a factor S reduction in MAC ops (latency) and a factor S reduction in
+            RAM needed for sample storage. The tap storage remains of size
+            :py:`filter_order` as all taps are still mathematically required.
         """
         order_needed = 2**ceil_log2(filter_order)
         if order_needed != filter_order:
