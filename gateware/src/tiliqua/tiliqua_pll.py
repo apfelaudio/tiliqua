@@ -83,6 +83,19 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
         self.pixclk_pll = pixclk_pll
         self.audio_192  = audio_192
 
+        self.clocks_hz = {
+            "sync":  60_000_000,
+            "fast": 120_000_000,
+            "audio": 50_000_000 if audio_192 else 12_500_000,
+        }
+        if isinstance(pixclk_pll, video.DVIPLL):
+            self.clocks_hz |= {
+                "dvi": int(pixclk_pll.pixel_clk_mhz*1_000_000),
+                "dvi5x": 5*int(pixclk_pll.pixel_clk_mhz*1_000_000),
+            }
+
+        print("PLL outputs:", self.clocks_hz)
+
     def elaborate(self, platform):
         m = Module()
 
@@ -210,6 +223,19 @@ class TiliquaDomainGenerator4PLLs(Elaboratable):
         super().__init__()
         self.pixclk_pll = pixclk_pll
         self.audio_192  = audio_192
+
+        self.clocks_hz = {
+            "sync":  60_000_000,
+            "fast": 120_000_000,
+            "audio": 49_152_000 if audio_192 else 12_288_000,
+        }
+        if isinstance(pixclk_pll, video.DVIPLL):
+            self.clocks_hz |= {
+                "dvi": int(pixclk_pll.pixel_clk_mhz*1_000_000),
+                "dvi5x": 5*int(pixclk_pll.pixel_clk_mhz*1_000_000),
+            }
+
+        print("PLL outputs:", self.clocks_hz)
 
     def elaborate(self, platform):
         m = Module()
