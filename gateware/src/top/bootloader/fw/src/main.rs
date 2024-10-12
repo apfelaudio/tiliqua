@@ -73,11 +73,11 @@ fn main() -> ! {
     let pause_flush = |timer: &mut Timer0, uptime_ms: &mut u32, period_ms: u32| {
         timer.delay_ms(period_ms);
         *uptime_ms += period_ms;
-        pac::cpu::vexriscv::flush_dcache();
+        //pac::cpu::vexriscv::flush_dcache();
     };
 
     let mut uptime_ms = 0u32;
-    let period_ms = 10u32;
+    let period_ms = 2u32;
 
     let mut rng = fastrand::Rng::with_seed(0);
 
@@ -87,9 +87,20 @@ fn main() -> ! {
 
     let mut opts = opts::Options::new();
 
+    let mut logo_coord_ix = 0u32;
+
+    let mut video = Video0::new(peripherals.VIDEO_PERIPH);
+
+    video.set_persist(2048);
+
     loop {
 
         draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, 0).ok();
+
+        for _ in 0..5 {
+            let _ = draw::draw_boot_logo(&mut display, (H_ACTIVE/2) as i32, (V_ACTIVE/2+200) as i32, logo_coord_ix);
+            logo_coord_ix += 1;
+        }
 
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
@@ -123,7 +134,7 @@ fn main() -> ! {
             if toggle_encoder_leds {
                 if let Some(n) = opts.view().selected() {
                     pmod.led_set_manual(n, i8::MAX);
-                    if time_since_encoder_touched > 250 {
+                    if time_since_encoder_touched > 150 {
                         info!("BITSTREAM{}\n\r", n);
                     }
                 }
