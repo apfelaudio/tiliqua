@@ -1004,6 +1004,7 @@ class Resample(wiring.Component):
             Expected sample rate of incoming samples, used for calculating filter coefficients.
         n_up : int
             Numerator of the resampling ratio. Samples are produced at :py:`fs_in * (n_up / m_down)`.
+            FIXME: must be a power of 2 due to FIR implementation details.
         m_down : int
             Denominator of the resampling ratio. Samples are produced at :py:`fs_in * (n_up / m_down)`.
         bw : float
