@@ -51,6 +51,58 @@ class Mirror(wiring.Component):
         wiring.connect(m, wiring.flipped(self.i), wiring.flipped(self.o))
         return m
 
+class Resampler(wiring.Component):
+
+    """Resample different channels to a different sample rate (and back)."""
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.split4 = split4 = dsp.Split(n_channels=4, source=wiring.flipped(self.i))
+        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
+
+        # ch0: 48kHz => 6kHz => 48kHz
+
+        m.submodules.resample0a = resample0a = dsp.Resample(
+            fs_in=48000,    n_up=1, m_down=8)
+        m.submodules.resample0b = resample0b = dsp.Resample(
+            fs_in=48000//8, n_up=8, m_down=1)
+
+        wiring.connect(m, split4.o[0], resample0a.i)
+        wiring.connect(m, resample0a.o, resample0b.i)
+        wiring.connect(m, resample0b.o, merge4.i[0])
+
+        # ch1: 48kHz => 192kHz => 48kHz
+
+        m.submodules.resample1a = resample1a = dsp.Resample(
+            fs_in=48000,    n_up=4, m_down=1)
+        m.submodules.resample1b = resample1b = dsp.Resample(
+            fs_in=48000*4,  n_up=1, m_down=4)
+
+        wiring.connect(m, split4.o[1], resample1a.i)
+        wiring.connect(m, resample1a.o, resample1b.i)
+        wiring.connect(m, resample1b.o, merge4.i[1])
+
+        # ch2: 48kHz => 27.43kHz => 48kHz (odd ratio)
+
+        m.submodules.resample2a = resample2a = dsp.Resample(
+            fs_in=48000, n_up=4, m_down=7)
+        m.submodules.resample2b = resample2b = dsp.Resample(
+         fs_in=48000*(4/7), n_up=7, m_down=4)
+
+        wiring.connect(m, split4.o[2], resample2a.i)
+        wiring.connect(m, resample2a.o, resample2b.i)
+        wiring.connect(m, resample2b.o, merge4.i[2])
+
+        # ch3: passthrough
+
+        wiring.connect(m, split4.o[3], merge4.i[3])
+
+        return m
+
 class ResonantFilter(wiring.Component):
 
     """High-, Low-, Bandpass with cutoff & resonance control."""
@@ -862,6 +914,7 @@ CORES = {
     "psram_diffuser": (False, PSRAMDiffuser),
     "sram_diffuser":  (False, SRAMDiffuser),
     "multi_diffuser": (False, PSRAMMultiDiffuser),
+    "resampler":      (False, Resampler),
 }
 
 def simulation_ports(fragment):
