@@ -91,8 +91,10 @@ class DSPTests(unittest.TestCase):
 
     @parameterized.expand([
         ["dual_sine_n4_m1", 100, 4, 1, 0.001, lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
-        # TODO: fix alignment of downsample reference waveform.
+        # TODO: looks correct, fix alignment of reference waveform and reduce tolerance.
         ["dual_sine_n1_m4", 100, 1, 4, 0.1,   lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        # TODO: looks correct, fix alignment of reference waveform and reduce tolerance.
+        ["dual_sine_n2_m3", 100, 2, 3, 0.25,  lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
     ])
     def test_resample(self, name, n_samples, n_up, m_down, tolerance, stimulus_function):
 

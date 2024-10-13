@@ -1013,8 +1013,8 @@ class Resample(wiring.Component):
         gcd = math.gcd(n_up, m_down)
         if gcd > 1:
             print(f"WARN: Resample {n_up}/{m_down} has GCD {gcd}. Using {n_up/gcd}/{m_down/gcd}.")
-            n_up = n_up/gcd
-            m_down = m_down/gcd
+            n_up = n_up//gcd
+            m_down = m_down//gcd
 
         self.fs_in  = fs_in
         self.n_up   = n_up
