@@ -837,13 +837,8 @@ class FIR(wiring.Component):
             RAM needed for sample storage. The tap storage remains of size
             :py:`filter_order` as all taps are still mathematically required.
         """
-        order_needed = 2**ceil_log2(filter_order)
-        if order_needed != filter_order:
-            print(f"WARN: FIR: using next highest 2**N order (was: {filter_order}, now: {order_needed})")
-            filter_order = order_needed
         taps = signal.firwin(numtaps=filter_order, cutoff=filter_cutoff_hz,
                              fs=fs, pass_zero=filter_type, window='hamming')
-        assert exact_log2(len(taps))
         assert len(taps) % stride == 0
         self.taps_float = taps
         self.prescale   = prescale
@@ -901,10 +896,14 @@ class FIR(wiring.Component):
 
         m.d.comb += taps_rport.en.eq(1)
         m.d.comb += taps_rport.addr.eq(ix_tap)
-        m.d.comb += x_wport.addr.eq(w_pos+1) # WARN: wrap on non-2**n
         m.d.comb += x_wport.data.eq(self.i.payload)
         m.d.comb += x_rport.addr.eq(ix_rd)
         m.d.comb += x_rport.en.eq(1)
+
+        with m.If(w_pos == (n//self.stride - 1)):
+            m.d.comb += x_wport.addr.eq(0)
+        with m.Else():
+            m.d.comb += x_wport.addr.eq(w_pos+1)
 
         valid = Signal()
 
@@ -1013,7 +1012,7 @@ class Resample(wiring.Component):
 
         gcd = math.gcd(n_up, m_down)
         if gcd > 1:
-            print(f"WARN: Resample {n_up}/{m_down} has GCD {gcd}. Using {n_up/gcd}/{m_down/gcd}.")
+            print(f"WARN: Resample {n_up}/{m_down} has GCD {gcd}. Using {n_up//gcd}/{m_down//gcd}.")
             n_up = n_up//gcd
             m_down = m_down//gcd
 
@@ -1022,11 +1021,17 @@ class Resample(wiring.Component):
         self.m_down = m_down
         self.bw     = bw
 
+        filter_order = 8*max(self.n_up, self.m_down)
+        # If the filter is not divisible by n_up, choose the next largest filter
+        # order that is, so that we can use FIR 'stride' (polyphase resampling).
+        if filter_order % self.n_up != 0:
+            filter_order = self.n_up * ((filter_order // self.n_up) + 1)
+
         self.filt = FIR(
             fs=self.fs_in*self.n_up,
             filter_cutoff_hz=min(self.fs_in*self.bw,
                                  int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
-            filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
+            filter_order=filter_order,
             prescale=self.n_up,
             stride=self.n_up
         )
