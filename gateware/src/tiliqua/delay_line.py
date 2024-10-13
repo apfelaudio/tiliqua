@@ -191,6 +191,10 @@ class DelayLine(wiring.Component):
         # internal signal between DelayLine and DelayLineTap
         self._wrpointer = Signal(unsigned(self.address_width))
 
+        # flag to indicate the delay line is free of garbage samples
+        # PSRAM may not be zeroed out on boot!
+        self._garbage_free = Signal()
+
         # ports exposed to the outside world
         ports = {
             "i":   In(stream.Signature(ASQ)),
@@ -259,6 +263,7 @@ class DelayLine(wiring.Component):
 
         for n, tap in enumerate(self.taps):
             m.d.comb += tap._wrpointer.eq(self._wrpointer)
+            m.d.comb += tap._force_zeros.eq(~self._garbage_free)
             if self.write_triggers_read:
                 # Every write sample propagates to a read sample without needing
                 # to hook up the 'i' stream on delay taps.
@@ -315,6 +320,7 @@ class DelayLine(wiring.Component):
                         m.d.sync += self._wrpointer.eq(self._wrpointer + 1)
                     with m.Else():
                         m.d.sync += self._wrpointer.eq(0)
+                        m.d.sync += self._garbage_free.eq(1)
                     m.next = 'WAIT-VALID'
 
         return m
@@ -344,6 +350,7 @@ class DelayLineTap(wiring.Component):
 
         # internal signals between parent DelayLine and child DelayLineTap
         self._wrpointer = Signal(unsigned(parent_bus.addr_width))
+        self._force_zeros = Signal()
         self._bus = wishbone.Signature(addr_width=parent_bus.addr_width,
                                        data_width=parent_bus.data_width,
                                        granularity=parent_bus.granularity).create()
@@ -362,7 +369,9 @@ class DelayLineTap(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1)
                 with m.If(self.i.valid):
-                    with m.If(self.i.payload == 0):
+                    with m.If(self._force_zeros):
+                        m.next = 'FORCE-ZEROS'
+                    with m.Elif(self.i.payload == 0):
                         m.next = 'ZDELAY'
                     with m.Else():
                         m.d.sync += bus.adr.eq(self._wrpointer - self.i.payload)
@@ -370,6 +379,10 @@ class DelayLineTap(wiring.Component):
             with m.State('ZDELAY'):
                 with m.If(self.writer_bus.stb):
                     m.d.sync += self.o.payload.eq(self.writer_bus.dat_w)
+                    m.next = 'WAIT-READY'
+            with m.State('FORCE-ZEROS'):
+                with m.If(self.writer_bus.stb):
+                    m.d.sync += self.o.payload.eq(0)
                     m.next = 'WAIT-READY'
             with m.State('READ'):
                 m.d.comb += [
