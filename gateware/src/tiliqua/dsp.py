@@ -5,6 +5,8 @@
 
 """Streaming DSP library with a strong focus on audio."""
 
+import math
+
 from amaranth              import *
 from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
@@ -784,6 +786,9 @@ class FIR(wiring.Component):
     Filter order must be of the form :py:`2**N`, to allow for efficient
     implementation of index wrapping (internal memory sizes power of 2).
 
+    This filter contains some optional optimizations to act as an efficient
+    interpolator. See the documentation on the :py:`stride` argument below.
+
     Members
     -------
     i : :py:`In(stream.Signature(ASQ))`
@@ -802,7 +807,8 @@ class FIR(wiring.Component):
                  filter_cutoff_hz: int,
                  filter_order:     int,
                  filter_type:      str='lowpass',
-                 prescale:         float=1):
+                 prescale:         float=1,
+                 stride:           int=1):
         """
         fs : int
             Sample rate of the filter, used for calculating FIR coefficients.
@@ -820,6 +826,16 @@ class FIR(wiring.Component):
             All taps are scaled by :py:`prescale`. This is used in cases where
             you are upsampling and need to preserve energy. Be careful with this,
             it can overflow the tap coefficients (you'll get a warning).
+        stride : int
+            When an FIR filter is used as an interpolator, a common pattern is
+            to provide 1 'actual' sample and pad S-1 zeroes for every S
+            output samples needed. For any :py:`stride > 1`, the :py:`stride`
+            must evenly divide :py:`filter_order` (i.e. no remainder). For
+            :py:`stride > 1`, this core applies some optimizations, assuming
+            every S'th sample is nonzero, and the rest are zero. This results in
+            a factor S reduction in MAC ops (latency) and a factor S reduction in
+            RAM needed for sample storage. The tap storage remains of size
+            :py:`filter_order` as all taps are still mathematically required.
         """
         order_needed = 2**ceil_log2(filter_order)
         if order_needed != filter_order:
@@ -828,8 +844,10 @@ class FIR(wiring.Component):
         taps = signal.firwin(numtaps=filter_order, cutoff=filter_cutoff_hz,
                              fs=fs, pass_zero=filter_type, window='hamming')
         assert exact_log2(len(taps))
+        assert len(taps) % stride == 0
         self.taps_float = taps
         self.prescale   = prescale
+        self.stride     = stride
         super().__init__()
 
     def elaborate(self, platform):
@@ -843,7 +861,7 @@ class FIR(wiring.Component):
 
         # Filter tap memory and read port
 
-        # if t*prescale overflows, fixed.Const should provide a warning.
+        # If t*prescale overflows, fixed.Const should provide a warning.
         m.submodules.taps_mem = taps_mem = Memory(
             shape=self.ctype, depth=n, init=[
                 fixed.Const(t*self.prescale, shape=self.ctype)
@@ -856,59 +874,96 @@ class FIR(wiring.Component):
         # Input sample memory, write and read port
 
         m.submodules.x_mem = x_mem = Memory(
-            shape=self.ctype, depth=n, init=[]
+            shape=self.ctype, depth=n//self.stride, init=[]
         )
 
         x_wport = x_mem.write_port()
-        x_rport = x_mem.read_port()
+        x_rport = x_mem.read_port(transparent_for=(x_wport,))
 
         # FIR filter logic
 
-        ix    = Signal(range(n))
-        w_pos = Signal(range(n))
+        # Number of MACs performed per sample, up to n/self.stride
+        macs   = Signal(range(n))
+        # Write position in input sample memory
+        w_pos  = Signal(range(n), init=1)
+        # Stride position from 0 .. self.stride, moves by 1 every
+        # input sample to shift taps looked at (even if the input
+        # is padded with zeroes)
+        s_pos  = Signal(range(self.stride), init=0)
+        # Read indices into tap and sample memories
+        ix_tap = Signal(range(n))
+        ix_rd  = Signal(range(n))
+
+        # MAC variables: y = a * b
         a  = Signal(self.ctype)
         b  = Signal(self.ctype)
         y  = Signal(self.ctype)
 
         m.d.comb += taps_rport.en.eq(1)
-        m.d.comb += taps_rport.addr.eq(0)
-        m.d.comb += x_wport.addr.eq(w_pos)
+        m.d.comb += taps_rport.addr.eq(ix_tap)
+        m.d.comb += x_wport.addr.eq(w_pos+1) # WARN: wrap on non-2**n
         m.d.comb += x_wport.data.eq(self.i.payload)
-        m.d.comb += x_rport.addr.eq(w_pos)
+        m.d.comb += x_rport.addr.eq(ix_rd)
         m.d.comb += x_rport.en.eq(1)
-        with m.If(ix < (n-1)):
-            m.d.comb += taps_rport.addr.eq(ix+1)
-            m.d.comb += x_rport.addr.eq(w_pos+ix+1)
+
+        valid = Signal()
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                    m.d.comb += x_wport.en.eq(1)
+                    with m.If(s_pos == 0):
+                        m.d.comb += x_wport.en.eq(1)
+                    # Set up first MAC combinatorially
+                    m.d.comb += x_rport.addr.eq(x_wport.addr)
+                    m.d.comb += taps_rport.addr.eq(s_pos)
+                    # Subsequent MACs use ix_rd / ix_tap.
                     m.d.sync += [
-                        w_pos.eq(w_pos+1),
-                        ix.eq(0),
-                        a.eq(self.i.payload),
-                        b.eq(taps_rport.data),
-                        y.eq(0)
+                        ix_rd.eq(w_pos),
+                        ix_tap.eq(s_pos + self.stride),
+                        y.eq(0),
+                        macs.eq(0),
                     ]
                     m.next = "MAC"
+
             with m.State("MAC"):
-                m.d.sync += y.eq(y + (a * b))
-                with m.If(ix == (n-1)):
-                    m.next = "WAIT-READY"
+                m.d.comb += [
+                    a.eq(x_rport.data),
+                    b.eq(taps_rport.data),
+                ]
+                m.d.sync += [
+                    y.eq(y + (a * b)),
+                    macs.eq(macs+1),
+                ]
+                # next tap read position
+                m.d.sync += ix_tap.eq(ix_tap + self.stride),
+                # next sample read position
+                with m.If(ix_rd == 0):
+                    m.d.sync += ix_rd.eq((n//self.stride - 1))
                 with m.Else():
-                    m.d.sync += [
-                        a.eq(x_rport.data),
-                        b.eq(taps_rport.data),
-                        ix.eq(ix + 1)
-                    ]
+                    m.d.sync += ix_rd.eq(ix_rd - 1),
+                # done?
+                with m.If(macs == (n//self.stride - 1)):
+                    m.next = "WAIT-READY"
+
             with m.State('WAIT-READY'):
                 m.d.comb += [
                     self.o.valid.eq(1),
                     self.o.payload.eq(y)
                 ]
+
                 with m.If(self.o.ready):
+
+                    # update write and stride offsets.
+                    with m.If(s_pos == (self.stride-1)):
+                        m.d.sync += s_pos.eq(0)
+                        with m.If(w_pos == (n//self.stride - 1)):
+                            m.d.sync += w_pos.eq(0)
+                        with m.Else():
+                            m.d.sync += w_pos.eq(w_pos+1)
+                    with m.Else():
+                        m.d.sync += s_pos.eq(s_pos+1)
+
                     m.next = 'WAIT-VALID'
 
         return m
@@ -916,16 +971,24 @@ class FIR(wiring.Component):
 class Resample(wiring.Component):
 
     """
-    Fractional N/M resampler.
+    Polyphase fractional resampler.
 
     Upsamples by factor N, filters the result, then downsamples by factor M.
     The upsampling action zero-pads before applying the low-pass filter, so
     the low-pass filter coefficients are prescaled by N to preserve total energy.
 
-    Takes some inspiration from `amlib/dsp/resampler.py` from
-    `https://github.com/amaranth-farm/amlib`, however this implementation is
-    mostly rewritten. The `amlib` resampler is copyright (c) 2021 Hans Baier
-    <hansfbaier@gmail.com> and was licensed under CERN-OHL-W-2.0
+    The underlying FIR interpolator only performs MACs on non-zero input samples,
+    reducing the latency by a factor of :py:`n_up`, which can make a big difference
+    for large upsampling/interpolating ratios and is what makes this a polyphase
+    resampler - time complexity per output sample proportional to O(fir_order/N).
+
+    Members
+    -------
+    i : :py:`In(stream.Signature(ASQ))`
+        Input stream for sending samples to the resampler at sample rate :py:`fs_in`.
+    o : :py:`In(stream.Signature(ASQ))`
+        Output stream for getting samples from the resampler. Samples are produced
+        at a rate determined by :py:`fs_in * (n_up / m_down)`.
     """
 
     i: In(stream.Signature(ASQ))
@@ -936,11 +999,37 @@ class Resample(wiring.Component):
                  n_up:   int,
                  m_down: int,
                  bw:     float=0.4):
+        """
+        fs_in : int
+            Expected sample rate of incoming samples, used for calculating filter coefficients.
+        n_up : int
+            Numerator of the resampling ratio. Samples are produced at :py:`fs_in * (n_up / m_down)`.
+            FIXME: must be a power of 2 due to FIR implementation details.
+        m_down : int
+            Denominator of the resampling ratio. Samples are produced at :py:`fs_in * (n_up / m_down)`.
+        bw : float
+            Bandwidth (0 to 1, proportion of the nyquist frequency) of the resampling filter..
+        """
+
+        gcd = math.gcd(n_up, m_down)
+        if gcd > 1:
+            print(f"WARN: Resample {n_up}/{m_down} has GCD {gcd}. Using {n_up/gcd}/{m_down/gcd}.")
+            n_up = n_up//gcd
+            m_down = m_down//gcd
 
         self.fs_in  = fs_in
         self.n_up   = n_up
         self.m_down = m_down
         self.bw     = bw
+
+        self.filt = FIR(
+            fs=self.fs_in*self.n_up,
+            filter_cutoff_hz=min(self.fs_in*self.bw,
+                                 int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
+            filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
+            prescale=self.n_up,
+            stride=self.n_up
+        )
 
         super().__init__()
 
@@ -948,12 +1037,7 @@ class Resample(wiring.Component):
 
         m = Module()
 
-        m.submodules.filt = filt = FIR(
-            fs=self.fs_in*self.n_up,
-            filter_cutoff_hz=min(self.fs_in*self.bw,
-                                 int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
-            filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
-            prescale=self.n_up)
+        m.submodules.filt = filt = self.filt
 
         m.submodules.down_fifo = down_fifo = SyncFIFOBuffered(
             width=ASQ.as_shape().width, depth=self.n_up)
