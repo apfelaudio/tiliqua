@@ -89,6 +89,75 @@ class DSPTests(unittest.TestCase):
         with sim.write_vcd(vcd_file=open(f"test_fir_{name}.vcd", "w")):
             sim.run()
 
+    @parameterized.expand([
+        ["dual_sine_n4_m1", 100, 4, 1, 0.001, lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        # TODO: fix alignment of downsample reference waveform.
+        ["dual_sine_n1_m4", 100, 1, 4, 0.1,   lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+    ])
+    def test_resample(self, name, n_samples, n_up, m_down, tolerance, stimulus_function):
+
+        m = Module()
+        dut = dsp.Resample(fs_in=48000, n_up=n_up, m_down=m_down)
+        m.submodules.dut = dut
+
+        # fake signals so we can see the expected output in VCD output.
+        expected_output = Signal(ASQ)
+        s_expected_output = Signal(ASQ)
+        m.d.comb += s_expected_output.eq(expected_output)
+
+        def stimulus_values():
+            """Create fixed-point samples to stimulate the DUT."""
+            for n in range(0, sys.maxsize):
+                yield fixed.Const(stimulus_function(n), shape=ASQ)
+
+        def expected_samples():
+            """Same samples filtered by scipy (should ~match those from our RTL)."""
+            x = [v.as_float() for v in itertools.islice(stimulus_values(), n_samples)]
+            # zero padding needed to align to the RTL outputs.
+            x = [0]*(len(dut.filt.taps_float)//(n_up * 2)) + x
+            resampled = signal.resample_poly(x, n_up, m_down, window=dut.filt.taps_float)
+            aligned =  resampled[max(0, n_up // 2-1):-n_up*4]
+            return aligned
+
+        async def stimulus_i(ctx):
+            """Send `stimulus_values` to the DUT."""
+            s = stimulus_values()
+            while True:
+                await ctx.tick().until(dut.i.ready)
+                ctx.set(dut.i.valid, 1)
+                ctx.set(dut.i.payload, next(s))
+                await ctx.tick()
+                ctx.set(dut.i.valid, 0)
+                await ctx.tick()
+
+        async def testbench(ctx):
+            """Observe and measure resampler outputs."""
+            y_expected = expected_samples()
+            n_samples_in = 0
+            n_samples_out = 0
+            ctx.set(dut.o.ready, 1)
+            for n in range(0, sys.maxsize):
+                i_sample = ctx.get(dut.i.valid & dut.i.ready)
+                o_sample = ctx.get(dut.o.valid & dut.o.ready)
+                if i_sample:
+                    n_samples_in += 1
+                if o_sample:
+                    # Verify value of the payload is as we expect.
+                    assert abs(ctx.get(dut.o.payload).as_float() - y_expected[n_samples_out]) < tolerance
+                    ctx.set(expected_output, fixed.Const(y_expected[n_samples_out], shape=ASQ))
+                    n_samples_out += 1
+                    if n_samples_out == len(y_expected):
+                        break
+                await ctx.tick()
+            assert n_samples_out == len(y_expected)
+            assert abs(n_samples_out - (n_samples * n_up / m_down)) < 5
+
+        sim = Simulator(m)
+        sim.add_clock(1e-6)
+        sim.add_process(stimulus_i)
+        sim.add_testbench(testbench)
+        with sim.write_vcd(vcd_file=open(f"test_resample_{name}.vcd", "w")):
+            sim.run()
 
     def test_pitch(self):
 
@@ -304,32 +373,6 @@ class DSPTests(unittest.TestCase):
         sim.add_clock(1e-6)
         sim.add_testbench(testbench)
         with sim.write_vcd(vcd_file=open("test_nco.vcd", "w")):
-            sim.run()
-
-    def test_resample(self):
-
-        N_UP   = 3
-        M_DOWN = 2
-
-        resample = dsp.Resample(fs_in=48000, n_up=N_UP, m_down=M_DOWN)
-
-        async def testbench(ctx):
-            for n in range(0, 100):
-                x = fixed.Const(0.4*(math.sin(n*0.2) + math.sin(n)), shape=ASQ)
-                ctx.set(resample.i.payload, x)
-                ctx.set(resample.i.valid, 1)
-                await ctx.tick()
-                ctx.set(resample.i.valid, 0)
-                await ctx.tick()
-                ctx.set(resample.o.ready, 1)
-                while ctx.get(resample.i.ready) != 1:
-                    await ctx.tick()
-                await ctx.tick()
-
-        sim = Simulator(resample)
-        sim.add_clock(1e-6)
-        sim.add_testbench(testbench)
-        with sim.write_vcd(vcd_file=open("test_resample.vcd", "w")):
             sim.run()
 
     def test_boxcar(self):

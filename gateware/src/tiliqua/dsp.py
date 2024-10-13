@@ -5,7 +5,7 @@
 
 """Streaming DSP library with a strong focus on audio."""
 
-import math 
+import math
 
 from amaranth              import *
 from amaranth.lib          import wiring, data, stream
@@ -885,11 +885,11 @@ class FIR(wiring.Component):
         # Number of MACs performed per sample, up to n/self.stride
         macs   = Signal(range(n))
         # Write position in input sample memory
-        w_pos  = Signal(range(n), reset=1)
+        w_pos  = Signal(range(n), init=1)
         # Stride position from 0 .. self.stride, moves by 1 every
         # input sample to shift taps looked at (even if the input
         # is padded with zeroes)
-        s_pos  = Signal(range(self.stride), reset=0)
+        s_pos  = Signal(range(self.stride), init=0)
         # Read indices into tap and sample memories
         ix_tap = Signal(range(n))
         ix_rd  = Signal(range(n))
@@ -1021,19 +1021,22 @@ class Resample(wiring.Component):
         self.m_down = m_down
         self.bw     = bw
 
+        self.filt = FIR(
+            fs=self.fs_in*self.n_up,
+            filter_cutoff_hz=min(self.fs_in*self.bw,
+                                 int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
+            filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
+            prescale=self.n_up,
+            stride=self.n_up
+        )
+
         super().__init__()
 
     def elaborate(self, platform):
 
         m = Module()
 
-        m.submodules.filt = filt = FIR(
-            fs=self.fs_in*self.n_up,
-            filter_cutoff_hz=min(self.fs_in*self.bw,
-                                 int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
-            filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
-            prescale=self.n_up,
-            stride=self.n_up)
+        m.submodules.filt = filt = self.filt
 
         m.submodules.down_fifo = down_fifo = SyncFIFOBuffered(
             width=ASQ.as_shape().width, depth=self.n_up)
