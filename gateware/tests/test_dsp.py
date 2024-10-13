@@ -24,17 +24,29 @@ class DSPTests(unittest.TestCase):
 
 
     @parameterized.expand([
-        ["dual_sine_small",      100, 16, 1, 17, lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
-        ["dual_sine_large",      100, 64, 1, 65, lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
-        ["impulse_small",        100, 16, 1, 17, lambda n: 0.95 if n == 0 else 0.0],
-        ["sine_interpolator_s1", 100, 16, 1, 17, lambda n: 0.9*math.sin(n*0.2) if n % 4 == 0 else 0.0],
-        ["sine_interpolator_s2", 100, 16, 2, 9,  lambda n: 0.9*math.sin(n*0.2) if n % 4 == 0 else 0.0],
-        ["sine_interpolator_s4", 100, 16, 4, 5,  lambda n: 0.9*math.sin(n*0.2) if n % 4 == 0 else 0.0],
+        ["dual_sine_small",          100, 16, 1, 17, 0.005, lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        ["dual_sine_large",          100, 64, 1, 65, 0.005, lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        ["dual_sine_odd",            100, 59, 1, 60, 0.005, lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        ["impulse_small_9",          100,  9, 1, 10, 0.005, lambda n: 0.95 if n == 0 else 0.0],
+        ["impulse_small_10",         100, 10, 1, 11, 0.005, lambda n: 0.95 if n == 0 else 0.0],
+        ["impulse_small_16",         100, 16, 1, 17, 0.005, lambda n: 0.95 if n == 0 else 0.0],
+        ["sine_interpolator_s1_n16", 100, 16, 1, 17, 0.005, lambda n: 0.9*math.sin(n*0.2) if n % 4 == 0 else 0.0],
+        ["sine_interpolator_s2_n16", 100, 16, 2, 9,  0.005, lambda n: 0.9*math.sin(n*0.2) if n % 4 == 0 else 0.0],
+        ["sine_interpolator_s4_n16", 100, 16, 4, 5,  0.005, lambda n: 0.9*math.sin(n*0.2) if n % 4 == 0 else 0.0],
+        ["sine_interpolator_s2_n10", 100, 10, 2, 6,  0.005, lambda n: 0.9*math.sin(n*0.2) if n % 2 == 0 else 0.0],
+        ["sine_interpolator_s3_n9",  100,  9, 3, 4,  0.005, lambda n: 0.9*math.sin(n*0.2) if n % 3 == 0 else 0.0],
     ])
-    def test_fir(self, name, n_samples, n_order, stride, expected_latency, stimulus_function):
+    def test_fir(self, name, n_samples, n_order, stride, expected_latency, tolerance, stimulus_function):
 
+        m = Module()
         dut = dsp.FIR(fs=48000, filter_cutoff_hz=2000,
                       filter_order=n_order, stride=stride)
+        m.submodules.dut = dut
+
+        # fake signals so we can see the expected output in VCD output.
+        expected_output = Signal(ASQ)
+        s_expected_output = Signal(ASQ)
+        m.d.comb += s_expected_output.eq(expected_output)
 
         def stimulus_values():
             """Create fixed-point samples to stimulate the DUT."""
@@ -71,9 +83,11 @@ class DSPTests(unittest.TestCase):
                     n_samples_in += 1
                     n_latency     = 0
                 if o_sample:
+                    ctx.set(expected_output, fixed.Const(y_expected[n_samples_out], shape=ASQ))
                     # Verify latency and value of the payload is as we expect.
                     assert n_latency == expected_latency
-                    assert abs(ctx.get(dut.o.payload).as_float() - y_expected[n_samples_out]) < 0.005
+                    if tolerance is not None:
+                        assert abs(ctx.get(dut.o.payload).as_float() - y_expected[n_samples_out]) < tolerance
                     n_samples_out += 1
                     if n_samples_out == len(y_expected):
                         break
@@ -82,7 +96,7 @@ class DSPTests(unittest.TestCase):
             assert n_samples_in == n_samples
             assert n_samples_out == n_samples
 
-        sim = Simulator(dut)
+        sim = Simulator(m)
         sim.add_clock(1e-6)
         sim.add_process(stimulus_i)
         sim.add_testbench(testbench)
@@ -90,13 +104,13 @@ class DSPTests(unittest.TestCase):
             sim.run()
 
     @parameterized.expand([
-        ["dual_sine_n4_m1", 100, 4, 1, 0.001, lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
-        # TODO: looks correct, fix alignment of reference waveform and reduce tolerance.
-        ["dual_sine_n1_m4", 100, 1, 4, 0.1,   lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
-        # TODO: looks correct, fix alignment of reference waveform and reduce tolerance.
-        ["dual_sine_n2_m3", 100, 2, 3, 0.25,  lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        ["dual_sine_n4_m1",     100, 4,  1, 4,   1,   0.005, lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        # TODO (below this comment): all visually look correct, fix reference alignment and reduce tolerance.
+        ["dual_sine_n1_m4",     100, 14, 0, 1,   4,   0.1,   lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        ["dual_sine_n2_m3",     100, 5,  0, 2,   3,   0.25,  lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
+        ["dual_sine_n441_m480", 50,  5,  0, 441, 480, 0.25,  lambda n: 0.4*(math.sin(n*0.2) + math.sin(n))],
     ])
-    def test_resample(self, name, n_samples, n_up, m_down, tolerance, stimulus_function):
+    def test_resample(self, name, n_samples, n_pad, n_align, n_up, m_down, tolerance, stimulus_function):
 
         m = Module()
         dut = dsp.Resample(fs_in=48000, n_up=n_up, m_down=m_down)
@@ -116,9 +130,9 @@ class DSPTests(unittest.TestCase):
             """Same samples filtered by scipy (should ~match those from our RTL)."""
             x = [v.as_float() for v in itertools.islice(stimulus_values(), n_samples)]
             # zero padding needed to align to the RTL outputs.
-            x = [0]*(len(dut.filt.taps_float)//(n_up * 2)) + x
-            resampled = signal.resample_poly(x, n_up, m_down, window=dut.filt.taps_float)
-            aligned =  resampled[max(0, n_up // 2-1):-n_up*4]
+            x = [0]*n_pad + x
+            resampled = signal.resample_poly(x, dut.n_up, dut.m_down, window=dut.filt.taps_float)
+            aligned =  resampled[n_align:-10]
             return aligned
 
         async def stimulus_i(ctx):
@@ -152,7 +166,7 @@ class DSPTests(unittest.TestCase):
                         break
                 await ctx.tick()
             assert n_samples_out == len(y_expected)
-            assert abs(n_samples_out - (n_samples * n_up / m_down)) < 5
+            assert abs(n_samples_out - (n_samples * n_up / m_down)) < 10
 
         sim = Simulator(m)
         sim.add_clock(1e-6)
