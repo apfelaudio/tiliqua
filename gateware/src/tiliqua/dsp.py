@@ -5,6 +5,8 @@
 
 """Streaming DSP library with a strong focus on audio."""
 
+import math 
+
 from amaranth              import *
 from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
@@ -969,16 +971,24 @@ class FIR(wiring.Component):
 class Resample(wiring.Component):
 
     """
-    Fractional N/M resampler.
+    Polyphase fractional resampler.
 
     Upsamples by factor N, filters the result, then downsamples by factor M.
     The upsampling action zero-pads before applying the low-pass filter, so
     the low-pass filter coefficients are prescaled by N to preserve total energy.
 
-    Takes some inspiration from `amlib/dsp/resampler.py` from
-    `https://github.com/amaranth-farm/amlib`, however this implementation is
-    mostly rewritten. The `amlib` resampler is copyright (c) 2021 Hans Baier
-    <hansfbaier@gmail.com> and was licensed under CERN-OHL-W-2.0
+    The underlying FIR interpolator only performs MACs on non-zero input samples,
+    reducing the latency by a factor of :py:`n_up`, which can make a big difference
+    for large upsampling/interpolating ratios and is what makes this a polyphase
+    resampler - time complexity per output sample proportional to O(fir_order/N).
+
+    Members
+    -------
+    i : :py:`In(stream.Signature(ASQ))`
+        Input stream for sending samples to the resampler at sample rate :py:`fs_in`.
+    o : :py:`In(stream.Signature(ASQ))`
+        Output stream for getting samples from the resampler. Samples are produced
+        at a rate determined by :py:`fs_in * (n_up / m_down)`.
     """
 
     i: In(stream.Signature(ASQ))
@@ -989,6 +999,22 @@ class Resample(wiring.Component):
                  n_up:   int,
                  m_down: int,
                  bw:     float=0.4):
+        """
+        fs_in : int
+            Expected sample rate of incoming samples, used for calculating filter coefficients.
+        n_up : int
+            Numerator of the resampling ratio. Samples are produced at :py:`fs_in * (n_up / m_down)`.
+        m_down : int
+            Denominator of the resampling ratio. Samples are produced at :py:`fs_in * (n_up / m_down)`.
+        bw : float
+            Bandwidth (0 to 1, proportion of the nyquist frequency) of the resampling filter..
+        """
+
+        gcd = math.gcd(n_up, m_down)
+        if gcd > 1:
+            print(f"WARN: Resample {n_up}/{m_down} has GCD {gcd}. Using {n_up/gcd}/{m_down/gcd}.")
+            n_up = n_up/gcd
+            m_down = m_down/gcd
 
         self.fs_in  = fs_in
         self.n_up   = n_up
@@ -1006,7 +1032,8 @@ class Resample(wiring.Component):
             filter_cutoff_hz=min(self.fs_in*self.bw,
                                  int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
             filter_order=8*max(self.n_up, self.m_down), # order must be scaled by upsampling factor
-            prescale=self.n_up)
+            prescale=self.n_up,
+            stride=self.n_up)
 
         m.submodules.down_fifo = down_fifo = SyncFIFOBuffered(
             width=ASQ.as_shape().width, depth=self.n_up)
