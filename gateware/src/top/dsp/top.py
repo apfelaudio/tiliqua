@@ -41,7 +41,10 @@ from tiliqua                  import sim
 
 class Mirror(wiring.Component):
 
-    """Route audio inputs straight to outputs (in the audio domain)."""
+    """
+    Route audio inputs straight to outputs (in the audio domain).
+    This is the simplest possible core, useful for basic tests.
+    """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -51,9 +54,135 @@ class Mirror(wiring.Component):
         wiring.connect(m, wiring.flipped(self.i), wiring.flipped(self.o))
         return m
 
+class QuadNCO(wiring.Component):
+
+    """
+    Audio-rate oscillator (NCO) with internal oversampling.
+    4 different waveform outputs.
+
+    in0: V/oct pitch
+    in1: phase modulation
+    out0: sine
+    out1: saw
+    out2: tri
+    out3: square
+    """
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.split4 = split4 = dsp.Split(n_channels=4)
+        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
+
+        m.submodules.rep4 = rep4 = dsp.Split(n_channels=4,
+                                             replicate=True)
+
+        m.submodules.merge2 = merge2 = dsp.Merge(n_channels=2)
+
+        m.submodules.nco    = nco    = dsp.SawNCO(shift=4)
+
+        def v_oct_lut(x, clamp_lo=-8.0, clamp_hi=6.0):
+            def volts_to_freq(volts, a3_freq_hz=440.0):
+                return (a3_freq_hz / 8.0) * 2 ** (volts + 2.0 - 3.0/4.0)
+            def volts_to_delta(volts, sample_rate_hz=48000):
+                return (1.0 / sample_rate_hz) * volts_to_freq(volts)
+            # convert audio sample [-1, 1] to volts
+            x = x*(2**15/4000)
+            if x > clamp_hi:
+                x = clamp_hi
+            if x < clamp_lo:
+                x = clamp_lo
+            out = volts_to_delta(x) * 16
+            return out
+
+        m.submodules.v_oct = v_oct = dsp.WaveShaper(
+                lut_function=v_oct_lut, lut_size=128, continuous=False)
+
+        amplitude = 0.4
+
+        def sine_osc(x):
+            return amplitude*math.sin(math.pi*x)
+
+        def saw_osc(x):
+            return amplitude*x
+
+        def tri_osc(x):
+            return amplitude * (2*abs(x) - 1.0)
+
+        def square_osc(x):
+            return amplitude if x > 0 else -amplitude
+
+        waveshapers = [
+            dsp.WaveShaper(lut_function=sine_osc,
+                           lut_size=128, continuous=True),
+            dsp.WaveShaper(lut_function=saw_osc,
+                           lut_size=128, continuous=True),
+            dsp.WaveShaper(lut_function=tri_osc,
+                           lut_size=128, continuous=True),
+            dsp.WaveShaper(lut_function=square_osc,
+                           lut_size=128, continuous=True),
+        ]
+
+        m.submodules += waveshapers
+
+        N_UP = 16
+        M_DOWN = 16
+
+        m.submodules.resample_up0 = resample_up0 = dsp.Resample(
+                fs_in=48000, n_up=N_UP, m_down=1)
+        m.submodules.resample_up1 = resample_up1 = dsp.Resample(
+                fs_in=48000, n_up=N_UP, m_down=1)
+
+        m.submodules.down0 = resample_down0 = dsp.Resample(
+                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
+        m.submodules.down1 = resample_down1 = dsp.Resample(
+                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
+        m.submodules.down2 = resample_down2 = dsp.Resample(
+                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
+        m.submodules.down3 = resample_down3 = dsp.Resample(
+                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
+
+        wiring.connect(m, wiring.flipped(self.i), split4.i)
+
+        wiring.connect(m, split4.o[0], resample_up0.i)
+        wiring.connect(m, split4.o[1], resample_up1.i)
+        wiring.connect(m, split4.o[2], dsp.ASQ_READY)
+        wiring.connect(m, split4.o[3], dsp.ASQ_READY)
+
+        wiring.connect(m, resample_up0.o, v_oct.i)
+        wiring.connect(m, v_oct.o, merge2.i[0])
+        wiring.connect(m, resample_up1.o, merge2.i[1])
+        wiring.connect(m, merge2.o, nco.i)
+        wiring.connect(m, nco.o, rep4.i)
+        wiring.connect(m, rep4.o[0], waveshapers[0].i)
+        wiring.connect(m, rep4.o[1], waveshapers[1].i)
+        wiring.connect(m, rep4.o[2], waveshapers[2].i)
+        wiring.connect(m, rep4.o[3], waveshapers[3].i)
+
+        wiring.connect(m, waveshapers[0].o, resample_down0.i)
+        wiring.connect(m, waveshapers[1].o, resample_down1.i)
+        wiring.connect(m, waveshapers[2].o, resample_down2.i)
+        wiring.connect(m, waveshapers[3].o, resample_down3.i)
+
+        wiring.connect(m, resample_down0.o, merge4.i[0])
+        wiring.connect(m, resample_down1.o, merge4.i[1])
+        wiring.connect(m, resample_down2.o, merge4.i[2])
+        wiring.connect(m, resample_down3.o, merge4.i[3])
+
+        wiring.connect(m, merge4.o, wiring.flipped(self.o))
+
+        return m
+
+
 class Resampler(wiring.Component):
 
-    """Resample different channels to a different sample rate (and back)."""
+    """
+    Resample different channels to a different sample rate (and back).
+    Not very musically interesting
+    """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -105,7 +234,17 @@ class Resampler(wiring.Component):
 
 class ResonantFilter(wiring.Component):
 
-    """High-, Low-, Bandpass with cutoff & resonance control."""
+    """
+    High-, Low-, Bandpass with cutoff & resonance control.
+
+    in0: audio in
+    in1: cutoff (0V == off, ~5V == open)
+    in2: resonance (0V == min, ~5V == crazy)
+
+    out0: LPF out
+    out1: HPF out
+    out2: BPF out
+    """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -124,7 +263,7 @@ class ResonantFilter(wiring.Component):
 
             svf0.i.payload.x.eq(self.i.payload[0]),
             svf0.i.payload.cutoff.eq(self.i.payload[1]),
-            svf0.i.payload.resonance.eq(self.i.payload[2]),
+            svf0.i.payload.resonance.eq(ASQ.max() - self.i.payload[2]),
         ]
 
         m.d.comb += [
@@ -326,128 +465,16 @@ class TouchMixTop(wiring.Component):
 
         return m
 
-class QuadNCO(wiring.Component):
-
-    """Audio-rate NCO with oversampling. 4 different waveform outputs."""
-
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.submodules.split4 = split4 = dsp.Split(n_channels=4)
-        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4)
-
-        m.submodules.rep4 = rep4 = dsp.Split(n_channels=4,
-                                             replicate=True)
-
-        m.submodules.merge2 = merge2 = dsp.Merge(n_channels=2)
-
-        m.submodules.nco    = nco    = dsp.SawNCO(shift=4)
-
-        def v_oct_lut(x, clamp_lo=-8.0, clamp_hi=6.0):
-            def volts_to_freq(volts, a3_freq_hz=440.0):
-                return (a3_freq_hz / 8.0) * 2 ** (volts + 2.0 - 3.0/4.0)
-            def volts_to_delta(volts, sample_rate_hz=48000):
-                return (1.0 / sample_rate_hz) * volts_to_freq(volts)
-            # convert audio sample [-1, 1] to volts
-            x = x*(2**15/4000)
-            if x > clamp_hi:
-                x = clamp_hi
-            if x < clamp_lo:
-                x = clamp_lo
-            out = volts_to_delta(x) * 16
-            return out
-
-        m.submodules.v_oct = v_oct = dsp.WaveShaper(
-                lut_function=v_oct_lut, lut_size=128, continuous=False)
-
-        amplitude = 0.4
-
-        def sine_osc(x):
-            return amplitude*math.sin(math.pi*x)
-
-        def saw_osc(x):
-            return amplitude*x
-
-        def tri_osc(x):
-            return amplitude * (2*abs(x) - 1.0)
-
-        def square_osc(x):
-            return amplitude if x > 0 else -amplitude
-
-        waveshapers = [
-            dsp.WaveShaper(lut_function=sine_osc,
-                           lut_size=128, continuous=True),
-            dsp.WaveShaper(lut_function=saw_osc,
-                           lut_size=128, continuous=True),
-            dsp.WaveShaper(lut_function=tri_osc,
-                           lut_size=128, continuous=True),
-            dsp.WaveShaper(lut_function=square_osc,
-                           lut_size=128, continuous=True),
-        ]
-
-        m.submodules += waveshapers
-
-        N_UP = 4
-        M_DOWN = 4
-
-        m.submodules.resample_up0 = resample_up0 = dsp.Resample(
-                fs_in=48000, n_up=N_UP, m_down=1)
-        m.submodules.resample_up1 = resample_up1 = dsp.Resample(
-                fs_in=48000, n_up=N_UP, m_down=1)
-
-        m.submodules.down0 = resample_down0 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
-        m.submodules.down1 = resample_down1 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
-        m.submodules.down2 = resample_down2 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
-        m.submodules.down3 = resample_down3 = dsp.Resample(
-                fs_in=48000*N_UP, n_up=1, m_down=M_DOWN)
-
-        wiring.connect(m, wiring.flipped(self.i), split4.i)
-
-        wiring.connect(m, split4.o[0], resample_up0.i)
-        wiring.connect(m, split4.o[1], resample_up1.i)
-        wiring.connect(m, split4.o[2], dsp.ASQ_READY)
-        wiring.connect(m, split4.o[3], dsp.ASQ_READY)
-
-        wiring.connect(m, resample_up0.o, v_oct.i)
-        wiring.connect(m, v_oct.o, merge2.i[0])
-        wiring.connect(m, resample_up1.o, merge2.i[1])
-        wiring.connect(m, merge2.o, nco.i)
-        wiring.connect(m, nco.o, rep4.i)
-        wiring.connect(m, rep4.o[0], waveshapers[0].i)
-        wiring.connect(m, rep4.o[1], waveshapers[1].i)
-        wiring.connect(m, rep4.o[2], waveshapers[2].i)
-        wiring.connect(m, rep4.o[3], waveshapers[3].i)
-
-        wiring.connect(m, waveshapers[0].o, resample_down0.i)
-        wiring.connect(m, waveshapers[1].o, resample_down1.i)
-        wiring.connect(m, waveshapers[2].o, resample_down2.i)
-        wiring.connect(m, waveshapers[3].o, resample_down3.i)
-
-        wiring.connect(m, resample_down0.o, merge4.i[0])
-        wiring.connect(m, resample_down1.o, merge4.i[1])
-        wiring.connect(m, resample_down2.o, merge4.i[2])
-        wiring.connect(m, resample_down3.o, merge4.i[3])
-
-        wiring.connect(m, merge4.o, wiring.flipped(self.o))
-
-        return m
-
 class MidiCVTop(wiring.Component):
 
     """
     Simple monophonic MIDI to CV conversion.
 
-    Output mapping is:
-    Output 0: Gate
-    Output 1: V/oct CV
-    Output 2: Velocity
-    Output 3: Mod Wheel (CC1)
+    in: (TRS MIDI)
+    out0: Gate
+    out1: V/oct CV
+    out2: Velocity
+    out3: Mod Wheel (CC1)
     """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -639,6 +666,8 @@ class PSRAMDiffuser(wiring.Component):
     .. image:: _static/diffusor.png
       :width: 800
 
+    All 4 input channels are inputs.
+    All 4 output channels are outputs.
     """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -745,6 +774,9 @@ class PSRAMMultiDiffuser(wiring.Component):
 
     """
     Kind of ridiculous 3x chained diffusers (4x4 diffuser into 4x4 diffuser into 4x4 diffuser).
+
+    All 4 input channels are inputs.
+    All 4 output channels are outputs.
 
     Be careful with the input amplitude on this one, it clips inside the diffuser multipliers
     pretty easily and can be a bit unstable.
@@ -901,13 +933,13 @@ class CoreTop(Elaboratable):
 CORES = {
     #                 (touch, class name)
     "mirror":         (False, Mirror),
+    "nco":            (False, QuadNCO),
     "svf":            (False, ResonantFilter),
     "vca":            (False, DualVCA),
     "pitch":          (False, Pitch),
     "matrix":         (False, Matrix),
     "touchmix":       (True,  TouchMixTop),
     "waveshaper":     (False, DualWaveshaper),
-    "nco":            (False, QuadNCO),
     "midicv":         (False, MidiCVTop),
     "psram_pingpong": (False, PSRAMPingPongDelay),
     "sram_pingpong":  (False, SRAMPingPongDelay),
