@@ -783,9 +783,6 @@ class FIR(wiring.Component):
     """
     Fixed-point FIR filter that uses a single multiplier.
 
-    Filter order must be of the form :py:`2**N`, to allow for efficient
-    implementation of index wrapping (internal memory sizes power of 2).
-
     This filter contains some optional optimizations to act as an efficient
     interpolator. See the documentation on the :py:`stride` argument below.
 
@@ -815,10 +812,7 @@ class FIR(wiring.Component):
         filter_cutoff_hz : int
             Cutoff frequency of the filter, used for calculating FIR coefficients.
         filter_order : int
-            Size of the filter (number of coefficients), as FIRs are symmetric.
-            Must be of the form :py:`filter_order == 2**N`. If this is not
-            held, the filter order is changed to the next larger order of
-            this form.
+            Size of the filter (number of coefficients).
         filter_type : str
             Type of the filter passed to :py:`signal.firwin` - :py:`"lowpass"`,
             :py:`"highpass"` or so on.
@@ -836,6 +830,7 @@ class FIR(wiring.Component):
             a factor S reduction in MAC ops (latency) and a factor S reduction in
             RAM needed for sample storage. The tap storage remains of size
             :py:`filter_order` as all taps are still mathematically required.
+            The nonzero sample must be the first sample to arrive.
         """
         taps = signal.firwin(numtaps=filter_order, cutoff=filter_cutoff_hz,
                              fs=fs, pass_zero=filter_type, window='hamming')
@@ -978,7 +973,7 @@ class Resample(wiring.Component):
 
     The underlying FIR interpolator only performs MACs on non-zero input samples,
     reducing the latency by a factor of :py:`n_up`, which can make a big difference
-    for large upsampling/interpolating ratios and is what makes this a polyphase
+    for large upsampling/interpolating ratios, and is what makes this a polyphase
     resampler - time complexity per output sample proportional to O(fir_order/N).
 
     Members
@@ -994,20 +989,26 @@ class Resample(wiring.Component):
     o: Out(stream.Signature(ASQ))
 
     def __init__(self,
-                 fs_in:  int,
-                 n_up:   int,
-                 m_down: int,
-                 bw:     float=0.4):
+                 fs_in:      int,
+                 n_up:       int,
+                 m_down:     int,
+                 bw:         float=0.4,
+                 order_mult: int=5):
         """
         fs_in : int
             Expected sample rate of incoming samples, used for calculating filter coefficients.
         n_up : int
             Numerator of the resampling ratio. Samples are produced at :py:`fs_in * (n_up / m_down)`.
-            FIXME: must be a power of 2 due to FIR implementation details.
+            If :py:`n_up` and :py:`m_down` share a common factor, the internal resampling ratio is reduced.
         m_down : int
             Denominator of the resampling ratio. Samples are produced at :py:`fs_in * (n_up / m_down)`.
+            If :py:`n_up` and :py:`m_down` share a common factor, the internal resampling ratio is reduced.
         bw : float
-            Bandwidth (0 to 1, proportion of the nyquist frequency) of the resampling filter..
+            Bandwidth (0 to 1, proportion of the nyquist frequency) of the resampling filter.
+        order_mult : int
+            Filter order multiplier, determines number of taps in underlying FIR filter. The
+            underlying tap count is determined as :py:`order_factor*max(self.n_up, self.m_down)`,
+            rounded up to the next multiple of :py:`n_up` (required for even zero padding).
         """
 
         gcd = math.gcd(n_up, m_down)
@@ -1021,10 +1022,11 @@ class Resample(wiring.Component):
         self.m_down = m_down
         self.bw     = bw
 
-        filter_order = 8*max(self.n_up, self.m_down)
-        # If the filter is not divisible by n_up, choose the next largest filter
-        # order that is, so that we can use FIR 'stride' (polyphase resampling).
+        filter_order = order_mult*max(self.n_up, self.m_down)
         if filter_order % self.n_up != 0:
+            # If the filter is not divisible by n_up, choose the next largest filter
+            # order that is, so that we can use FIR 'stride' (polyphase resampling
+            # optimization based on known zero padding).
             filter_order = self.n_up * ((filter_order // self.n_up) + 1)
 
         self.filt = FIR(

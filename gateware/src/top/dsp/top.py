@@ -86,12 +86,12 @@ class Resampler(wiring.Component):
         wiring.connect(m, resample1a.o, resample1b.i)
         wiring.connect(m, resample1b.o, merge4.i[1])
 
-        # ch2: 48kHz => 27.43kHz => 48kHz (odd ratio)
+        # ch2: 48kHz => 44.1kHz => 48kHz (odd ratio)
 
         m.submodules.resample2a = resample2a = dsp.Resample(
-            fs_in=48000, n_up=4, m_down=7)
+            fs_in=48000, n_up=441, m_down=480)
         m.submodules.resample2b = resample2b = dsp.Resample(
-         fs_in=48000*(4/7), n_up=7, m_down=4)
+         fs_in=48000*(441/480), n_up=480, m_down=441)
 
         wiring.connect(m, split4.o[2], resample2a.i)
         wiring.connect(m, resample2a.o, resample2b.i)

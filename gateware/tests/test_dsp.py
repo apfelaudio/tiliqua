@@ -113,7 +113,7 @@ class DSPTests(unittest.TestCase):
     def test_resample(self, name, n_samples, n_pad, n_align, n_up, m_down, tolerance, stimulus_function):
 
         m = Module()
-        dut = dsp.Resample(fs_in=48000, n_up=n_up, m_down=m_down)
+        dut = dsp.Resample(fs_in=48000, n_up=n_up, m_down=m_down, order_mult=8)
         m.submodules.dut = dut
 
         # fake signals so we can see the expected output in VCD output.
