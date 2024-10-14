@@ -784,16 +784,17 @@ class FIR(wiring.Component):
     Fixed-point FIR filter that uses a single multiplier.
 
     This filter contains some optional optimizations to act as an efficient
-    interpolator. See the documentation on the :py:`stride` argument below.
+    interpolator/decimator. For details, see :py:`stride_i`, :py:`stride_o` below.
 
     Members
     -------
     i : :py:`In(stream.Signature(ASQ))`
         Input stream for sending samples to the filter.
     o : :py:`In(stream.Signature(ASQ))`
-        Output stream for getting samples to the filter. There is 1 output
+        Output stream for getting samples from the filter. There is 1 output
         sample per input sample, presented :py:`filter_order+1` cycles after
-        the input sample.
+        the input sample. For :py:`stride_o > 1`, there is only 1 output
+        sample per :py:`stride_o` input samples.
     """
 
     i: In(stream.Signature(ASQ))
@@ -805,7 +806,8 @@ class FIR(wiring.Component):
                  filter_order:     int,
                  filter_type:      str='lowpass',
                  prescale:         float=1,
-                 stride:           int=1):
+                 stride_i:         int=1,
+                 stride_o:         int=1):
         """
         fs : int
             Sample rate of the filter, used for calculating FIR coefficients.
@@ -820,7 +822,7 @@ class FIR(wiring.Component):
             All taps are scaled by :py:`prescale`. This is used in cases where
             you are upsampling and need to preserve energy. Be careful with this,
             it can overflow the tap coefficients (you'll get a warning).
-        stride : int
+        stride_i : int
             When an FIR filter is used as an interpolator, a common pattern is
             to provide 1 'actual' sample and pad S-1 zeroes for every S
             output samples needed. For any :py:`stride > 1`, the :py:`stride`
@@ -831,13 +833,20 @@ class FIR(wiring.Component):
             RAM needed for sample storage. The tap storage remains of size
             :py:`filter_order` as all taps are still mathematically required.
             The nonzero sample must be the first sample to arrive.
+        stride_o : int
+            When an FIR filter is used as a decimator, it is common to keep only
+            1 sample and discard M-1 samples (if decimating by factor M). For
+            :py:`stride_o == M`, only 1 output sample is produced per M input
+            samples. This does not reduce LUT/RAM usage, but avoids performing
+            MACs to produce samples that will be discarded.
         """
         taps = signal.firwin(numtaps=filter_order, cutoff=filter_cutoff_hz,
                              fs=fs, pass_zero=filter_type, window='hamming')
-        assert len(taps) % stride == 0
+        assert len(taps) % stride_i == 0
         self.taps_float = taps
         self.prescale   = prescale
-        self.stride     = stride
+        self.stride_i   = stride_i
+        self.stride_o   = stride_o
         super().__init__()
 
     def elaborate(self, platform):
@@ -864,7 +873,7 @@ class FIR(wiring.Component):
         # Input sample memory, write and read port
 
         m.submodules.x_mem = x_mem = Memory(
-            shape=self.ctype, depth=n//self.stride, init=[]
+            shape=self.ctype, depth=n//self.stride_i, init=[]
         )
 
         x_wport = x_mem.write_port()
@@ -874,12 +883,20 @@ class FIR(wiring.Component):
 
         # Number of MACs performed per sample, up to n/self.stride
         macs   = Signal(range(n))
+
         # Write position in input sample memory
         w_pos  = Signal(range(n), init=1)
-        # Stride position from 0 .. self.stride, moves by 1 every
+
+        # Stride position from 0 .. self.stride_i, moves by 1 every
         # input sample to shift taps looked at (even if the input
         # is padded with zeroes)
-        s_pos  = Signal(range(self.stride), init=0)
+        stride_i_pos  = Signal(range(self.stride_i), init=0)
+
+        # Stride position from 0 .. self.stride_o, moves by 1 every
+        # output sample. For 'stride_o' == M, output sample is only
+        # calculated/emitted once per every M samples.
+        stride_o_pos  = Signal(range(self.stride_o), init=0)
+
         # Read indices into tap and sample memories
         ix_tap = Signal(range(n))
         ix_rd  = Signal(range(n))
@@ -895,7 +912,7 @@ class FIR(wiring.Component):
         m.d.comb += x_rport.addr.eq(ix_rd)
         m.d.comb += x_rport.en.eq(1)
 
-        with m.If(w_pos == (n//self.stride - 1)):
+        with m.If(w_pos == (n//self.stride_i - 1)):
             m.d.comb += x_wport.addr.eq(0)
         with m.Else():
             m.d.comb += x_wport.addr.eq(w_pos+1)
@@ -906,19 +923,23 @@ class FIR(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                    with m.If(s_pos == 0):
+                    with m.If(stride_i_pos == 0):
                         m.d.comb += x_wport.en.eq(1)
                     # Set up first MAC combinatorially
                     m.d.comb += x_rport.addr.eq(x_wport.addr)
-                    m.d.comb += taps_rport.addr.eq(s_pos)
+                    m.d.comb += taps_rport.addr.eq(stride_i_pos)
                     # Subsequent MACs use ix_rd / ix_tap.
                     m.d.sync += [
                         ix_rd.eq(w_pos),
-                        ix_tap.eq(s_pos + self.stride),
+                        ix_tap.eq(stride_i_pos + self.stride_i),
                         y.eq(0),
                         macs.eq(0),
                     ]
-                    m.next = "MAC"
+
+                    with m.If(stride_o_pos == 0):
+                        m.next = "MAC"
+                    with m.Else():
+                        m.next = "WAIT-READY"
 
             with m.State("MAC"):
                 m.d.comb += [
@@ -930,33 +951,44 @@ class FIR(wiring.Component):
                     macs.eq(macs+1),
                 ]
                 # next tap read position
-                m.d.sync += ix_tap.eq(ix_tap + self.stride),
+                m.d.sync += ix_tap.eq(ix_tap + self.stride_i),
                 # next sample read position
                 with m.If(ix_rd == 0):
-                    m.d.sync += ix_rd.eq((n//self.stride - 1))
+                    m.d.sync += ix_rd.eq((n//self.stride_i - 1))
                 with m.Else():
                     m.d.sync += ix_rd.eq(ix_rd - 1),
                 # done?
-                with m.If(macs == (n//self.stride - 1)):
+                with m.If(macs == (n//self.stride_i - 1)):
                     m.next = "WAIT-READY"
 
             with m.State('WAIT-READY'):
+
+                # if stride_o indicates this sample should be discarded, never
+                # assert 'valid', simply update the stride counters and jump
+                # straight back to 'WAIT-VALID'.
+
                 m.d.comb += [
-                    self.o.valid.eq(1),
+                    self.o.valid.eq(stride_o_pos == 0),
                     self.o.payload.eq(y)
                 ]
 
-                with m.If(self.o.ready):
+                with m.If(self.o.ready | (stride_o_pos != 0)):
 
-                    # update write and stride offsets.
-                    with m.If(s_pos == (self.stride-1)):
-                        m.d.sync += s_pos.eq(0)
-                        with m.If(w_pos == (n//self.stride - 1)):
+                    # update write and stride_i offsets.
+                    with m.If(stride_i_pos == (self.stride_i - 1)):
+                        m.d.sync += stride_i_pos.eq(0)
+                        with m.If(w_pos == (n//self.stride_i - 1)):
                             m.d.sync += w_pos.eq(0)
                         with m.Else():
                             m.d.sync += w_pos.eq(w_pos+1)
                     with m.Else():
-                        m.d.sync += s_pos.eq(s_pos+1)
+                        m.d.sync += stride_i_pos.eq(stride_i_pos+1)
+
+                    # update stride_o index
+                    with m.If(stride_o_pos == (self.stride_o - 1)):
+                        m.d.sync += stride_o_pos.eq(0)
+                    with m.Else():
+                        m.d.sync += stride_o_pos.eq(stride_o_pos + 1)
 
                     m.next = 'WAIT-VALID'
 
@@ -971,8 +1003,8 @@ class Resample(wiring.Component):
     The upsampling action zero-pads before applying the low-pass filter, so
     the low-pass filter coefficients are prescaled by N to preserve total energy.
 
-    The underlying FIR interpolator only performs MACs on non-zero input samples,
-    reducing the latency by a factor of :py:`n_up`, which can make a big difference
+    The underlying FIR interpolator only performs MACs on non-padded input samples,
+    (and for output samples which are not discarded), which can make a big difference
     for large upsampling/interpolating ratios, and is what makes this a polyphase
     resampler - time complexity per output sample proportional to O(fir_order/N).
 
@@ -1035,7 +1067,8 @@ class Resample(wiring.Component):
                                  int((self.fs_in*self.bw)*(self.n_up/self.m_down))),
             filter_order=filter_order,
             prescale=self.n_up,
-            stride=self.n_up
+            stride_i=self.n_up,
+            stride_o=self.m_down
         )
 
         super().__init__()
@@ -1046,16 +1079,11 @@ class Resample(wiring.Component):
 
         m.submodules.filt = filt = self.filt
 
-        m.submodules.down_fifo = down_fifo = SyncFIFOBuffered(
-            width=ASQ.as_shape().width, depth=self.n_up)
-
         upsampled_signal  = Signal(ASQ)
         upsample_counter  = Signal(range(self.n_up))
 
         m.d.comb += [
-            self.i.ready.eq((upsample_counter == 0) & down_fifo.w_rdy & filt.i.ready),
-            down_fifo.w_en.eq(down_fifo.w_rdy & filt.o.valid),
-            filt.o.ready.eq(down_fifo.w_en),
+            self.i.ready.eq((upsample_counter == 0) & filt.i.ready),
         ]
 
         with m.If(filt.i.ready):
@@ -1072,26 +1100,8 @@ class Resample(wiring.Component):
                 ]
                 m.d.sync += upsample_counter.eq(upsample_counter - 1)
 
-        downsample_counter = Signal(range(self.m_down+1))
 
-        m.d.comb += [
-            down_fifo.w_data.eq(filt.o.payload),
-        ]
-
-        with m.If(down_fifo.r_rdy):
-            with m.If(downsample_counter == 0):
-                m.d.comb += [
-                    self.o.payload.eq(down_fifo.r_data),
-                    self.o.valid.eq(1),
-                ]
-                # hold onto sample if counter == 0
-                with m.If(self.o.ready):
-                    m.d.comb += down_fifo.r_en.eq(1)
-                    m.d.sync += downsample_counter.eq(self.m_down - 1)
-            with m.Else():
-                # drop samples if counter != 0
-                m.d.comb += down_fifo.r_en.eq(1)
-                m.d.sync += downsample_counter.eq(downsample_counter - 1)
+        wiring.connect(m, filt.o, wiring.flipped(self.o))
 
         return m
 

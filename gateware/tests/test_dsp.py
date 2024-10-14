@@ -36,11 +36,11 @@ class DSPTests(unittest.TestCase):
         ["sine_interpolator_s2_n10", 100, 10, 2, 6,  0.005, lambda n: 0.9*math.sin(n*0.2) if n % 2 == 0 else 0.0],
         ["sine_interpolator_s3_n9",  100,  9, 3, 4,  0.005, lambda n: 0.9*math.sin(n*0.2) if n % 3 == 0 else 0.0],
     ])
-    def test_fir(self, name, n_samples, n_order, stride, expected_latency, tolerance, stimulus_function):
+    def test_fir(self, name, n_samples, n_order, stride_i, expected_latency, tolerance, stimulus_function):
 
         m = Module()
         dut = dsp.FIR(fs=48000, filter_cutoff_hz=2000,
-                      filter_order=n_order, stride=stride)
+                      filter_order=n_order, stride_i=stride_i)
         m.submodules.dut = dut
 
         # fake signals so we can see the expected output in VCD output.
