@@ -121,7 +121,7 @@ class DelayLineTests(unittest.TestCase):
             n_write_bursts  = 0
             n_read_bursts   = 0
 
-            for _ in range(max_delay*20):
+            for _ in range(max_delay*40):
                 n_samples_in    += ctx.get(dut.i.valid & dut.i.ready)
                 n_samples_tap1  += ctx.get(tap1.o.valid & tap1.o.ready)
                 n_samples_tap2  += ctx.get(tap2.o.valid & tap2.o.ready)
