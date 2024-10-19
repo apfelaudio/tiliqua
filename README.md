@@ -37,3 +37,9 @@ The hardware and gateware in this project is largely covered under the CERN Open
 **Copyright (C) 2024 Sebastian Holzapfel**
 
 The above LICENSE and copyright notice do NOT apply to imported artifacts in this repository (i.e datasheets, third-party footprints), or dependencies released under a different (but compatible) open-source license.
+
+# Derivative works
+
+If you create or manufacture your own derivative hardware, the name "apfelaudio", the names of any apfelaudio products and the names of the authors, are *not to be used in derivative hardware or marketing materials*, except where obligated for attribution and for retaining the above copyright notice.
+
+For example, your 3U adaptation of "Apfelaudio Tiliqua" could be called "Gizzard Modular - Lizardbobulator".
