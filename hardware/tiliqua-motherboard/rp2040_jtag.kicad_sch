@@ -5434,7 +5434,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C133334"
+		(property "lcsc#" "C20625731"
 			(at 85.09 134.62 90)
 			(effects
 				(font
@@ -5445,6 +5445,15 @@
 		)
 		(property "Tol" ""
 			(at 85.09 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "mfg#" "ABM8-272-T3"
+			(at 85.09 134.62 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5871,15 +5880,15 @@
 		(dnp no)
 		(uuid "487a9caf-69f6-46d1-8a27-4c9c99dc73ea")
 		(property "Reference" "R5"
-			(at 76.2 128.27 0)
+			(at 77.216 130.81 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Value" "100R"
-			(at 90.805 128.27 0)
+		(property "Value" "1K"
+			(at 81.28 129.54 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -5912,34 +5921,7 @@
 				(hide yes)
 			)
 		)
-		(property "Fieldname 1" "Value 1"
-			(at 81.28 129.54 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(hide yes)
-			)
-		)
-		(property "Fieldname2" "Value2"
-			(at 81.28 129.54 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(hide yes)
-			)
-		)
-		(property "Fieldname3" "Value3"
-			(at 81.28 129.54 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C25076"
+		(property "lcsc#" ""
 			(at 81.28 129.54 0)
 			(effects
 				(font
@@ -6446,7 +6428,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "18pF/50V/5%/C0G/C0402"
+		(property "Value" "15pF"
 			(at 66.04 133.35 90)
 			(effects
 				(font
@@ -6481,34 +6463,7 @@
 				(hide yes)
 			)
 		)
-		(property "Fieldname 1" "Value 1"
-			(at 64.77 132.08 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(hide yes)
-			)
-		)
-		(property "Fieldname2" "Value2"
-			(at 64.77 132.08 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(hide yes)
-			)
-		)
-		(property "Fieldname3" "Value3"
-			(at 64.77 132.08 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C1549"
+		(property "lcsc#" "C1548"
 			(at 64.77 132.08 0)
 			(effects
 				(font
@@ -8015,7 +7970,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "18pF/50V/5%/C0G/C0402"
+		(property "Value" "15pF"
 			(at 66.04 135.89 90)
 			(effects
 				(font
@@ -8077,7 +8032,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C1549"
+		(property "lcsc#" "C1548"
 			(at 64.77 137.16 0)
 			(effects
 				(font

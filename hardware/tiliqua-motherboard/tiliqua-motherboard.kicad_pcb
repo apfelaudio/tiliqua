@@ -3398,6 +3398,19 @@
 				)
 			)
 		)
+		(property "lcsc#" "  C5301785"
+			(at 0 0 0)
+			(unlocked yes)
+			(layer "F.Fab")
+			(hide yes)
+			(uuid "8869f89a-2413-44e4-b562-f812e470748f")
+			(effects
+				(font
+					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "MountingHole*Pad*")
 		(path "/6dc91d02-eb2a-4b6a-84fe-793f971243d5")
 		(sheetname "Root")
