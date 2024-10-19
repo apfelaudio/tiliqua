@@ -1577,6 +1577,22 @@
 		(color 0 0 0 0)
 		(uuid "fec3561d-a441-4390-80b0-8798fd522d37")
 	)
+	(no_connect
+		(at 177.8 102.87)
+		(uuid "041caefc-3dd2-4176-8f0a-8987dd98af06")
+	)
+	(no_connect
+		(at 162.56 102.87)
+		(uuid "b225dddd-1d4f-46e5-a53d-670f76c7aef5")
+	)
+	(no_connect
+		(at 162.56 105.41)
+		(uuid "c3e5902b-5b12-4240-abdc-88847761a350")
+	)
+	(no_connect
+		(at 177.8 105.41)
+		(uuid "f91c8c68-11a1-46be-a0ea-d0261f1434db")
+	)
 	(wire
 		(pts
 			(xy 73.66 92.71) (xy 75.565 92.71)
@@ -1839,16 +1855,6 @@
 	)
 	(wire
 		(pts
-			(xy 172.72 102.87) (xy 177.8 102.87)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "45aa7c8f-a572-452b-a4c6-7011f16ae6f5")
-	)
-	(wire
-		(pts
 			(xy 73.66 92.71) (xy 73.66 93.98)
 		)
 		(stroke
@@ -2049,16 +2055,6 @@
 	)
 	(wire
 		(pts
-			(xy 162.56 105.41) (xy 170.18 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9c0a0ec7-adcc-46cc-bd8d-7201612e938d")
-	)
-	(wire
-		(pts
 			(xy 187.96 82.55) (xy 187.96 85.09)
 		)
 		(stroke
@@ -2136,16 +2132,6 @@
 			(type default)
 		)
 		(uuid "c75e1e82-14b7-4d81-9e68-8b387a076820")
-	)
-	(wire
-		(pts
-			(xy 175.26 105.41) (xy 177.8 105.41)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c8b4efb7-1208-423a-b786-502ee286bf62")
 	)
 	(wire
 		(pts
@@ -2236,16 +2222,6 @@
 			(type default)
 		)
 		(uuid "e2ac8bde-9490-4c55-b1ce-8db6c4fc370d")
-	)
-	(wire
-		(pts
-			(xy 162.56 102.87) (xy 167.64 102.87)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e9762385-414c-4306-b9a4-dfe4dc65d4eb")
 	)
 	(wire
 		(pts
@@ -5040,110 +5016,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:LED_Small_Filled")
-		(at 172.72 105.41 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "990d9673-ba6a-46a2-aa73-ac29c8621d65")
-		(property "Reference" "D19"
-			(at 175.26 104.14 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "LED 0402 RED"
-			(at 172.7835 101.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "LED_SMD:LED_0402_1005Metric"
-			(at 172.72 105.41 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://datasheet.lcsc.com/lcsc/2211030000_XINGLIGHT-XL-1005SURC_C965790.pdf"
-			(at 172.72 105.41 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 172.72 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "dig#" ""
-			(at 172.72 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C965790"
-			(at 172.72 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "mfg#" "XL-1005SURC"
-			(at 172.72 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Tol" ""
-			(at 172.72 105.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "c149b72d-e308-4d10-959d-59173f72d063")
-		)
-		(pin "2"
-			(uuid "da7e46aa-d45f-427e-bfea-7e011e26b5be")
-		)
-		(instances
-			(project "tiliqua-motherboard"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670/cdf6c5cd-4778-4bd4-bc0a-19e7e0b15b0b"
-					(reference "D19")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R_Pack04_Split")
 		(at 181.61 77.47 90)
 		(unit 1)
@@ -7067,110 +6939,6 @@
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/cdf6c5cd-4778-4bd4-bc0a-19e7e0b15b0b"
 					(reference "D14")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:LED_Small_Filled")
-		(at 170.18 102.87 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "f3d5de60-0738-4020-8c0f-96259f58fb4c")
-		(property "Reference" "D15"
-			(at 172.72 101.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "LED 0402 GREEN"
-			(at 170.2435 99.06 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "LED_SMD:LED_0402_1005Metric"
-			(at 170.18 102.87 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://datasheet.lcsc.com/lcsc/2211021630_XINGLIGHT-XL-1005UGC_C2856703.pdf"
-			(at 170.18 102.87 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 170.18 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "dig#" ""
-			(at 170.18 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C2856703"
-			(at 170.18 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "mfg#" "XL-1005UGC"
-			(at 170.18 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Tol" ""
-			(at 170.18 102.87 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "066e5d74-9e72-4a8b-a791-791d55c893a5")
-		)
-		(pin "2"
-			(uuid "ad713321-77ad-4115-aabf-3ba9628c4d30")
-		)
-		(instances
-			(project "tiliqua-motherboard"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670/cdf6c5cd-4778-4bd4-bc0a-19e7e0b15b0b"
-					(reference "D15")
 					(unit 1)
 				)
 			)
