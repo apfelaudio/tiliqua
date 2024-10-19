@@ -3172,6 +3172,16 @@
 	)
 	(wire
 		(pts
+			(xy 274.32 118.11) (xy 274.32 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7ddf1041-fb9b-48c1-88e2-c81d5376b9f9")
+	)
+	(wire
+		(pts
 			(xy 50.8 111.76) (xy 58.42 111.76)
 		)
 		(stroke
@@ -3199,6 +3209,16 @@
 			(type default)
 		)
 		(uuid "8417f18c-b608-4c2b-9995-d49eee84e722")
+	)
+	(wire
+		(pts
+			(xy 274.32 123.19) (xy 274.32 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "86cd7e87-befd-4ab6-a902-6734657d60d8")
 	)
 	(wire
 		(pts
@@ -3299,6 +3319,16 @@
 			(type default)
 		)
 		(uuid "92d7e97e-08e8-4fc6-af6b-29f3737a23bf")
+	)
+	(wire
+		(pts
+			(xy 274.32 114.3) (xy 269.24 114.3)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "932d0fbe-86cf-46b4-9d25-9233bcf231a7")
 	)
 	(wire
 		(pts
@@ -3915,6 +3945,73 @@
 			(justify left bottom)
 		)
 		(uuid "7ba1389e-d440-46c9-8b98-fcb5ee54f8b5")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 274.32 129.54 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "008b44fb-d123-4675-b897-9b40de885d7a")
+		(property "Reference" "#PWR012"
+			(at 274.32 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 274.32 136.271 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 274.32 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 274.32 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 274.32 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "ff0a0be8-3351-44f9-9075-a197a449ff04")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
+					(reference "#PWR012")
+					(unit 1)
+				)
+			)
+		)
 	)
 	(symbol
 		(lib_id "Device:L_Ferrite_Small")
@@ -4639,6 +4736,110 @@
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
 					(reference "C29")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Polarized_Small")
+		(at 274.32 120.65 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "202967c2-0f0d-468f-89b2-6f0c5edb2cec")
+		(property "Reference" "C21"
+			(at 276.606 122.428 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "47uF"
+			(at 274.32 118.11 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:CP_Elec_6.3x5.4"
+			(at 274.32 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://datasheet.lcsc.com/lcsc/1809050343_Rubycon-25SEV47M6-3X5-5_C88735.pdf"
+			(at 274.32 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 274.32 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "dig#" ""
+			(at 271.78 128.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "mfg#" "25SEV47M6.3X5.5"
+			(at 271.78 130.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C88735"
+			(at 274.32 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
+			(at 274.32 120.65 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "bb0d103c-657d-4f93-9a1c-46a4eda53ba3")
+		)
+		(pin "2"
+			(uuid "e62b755b-20ed-4359-9df1-df69c1aabc23")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/4885642e-e1b2-4a9c-a477-910295b2621e"
+					(reference "C21")
 					(unit 1)
 				)
 			)
@@ -7668,7 +7869,7 @@
 		(dnp no)
 		(uuid "cd3946e6-564e-4a5d-b097-1a221b6b31ee")
 		(property "Reference" "C33"
-			(at 271.526 122.428 0)
+			(at 271.272 122.428 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7676,7 +7877,7 @@
 			)
 		)
 		(property "Value" "47uF"
-			(at 272.034 117.856 0)
+			(at 269.24 118.11 0)
 			(effects
 				(font
 					(size 1.27 1.27)
