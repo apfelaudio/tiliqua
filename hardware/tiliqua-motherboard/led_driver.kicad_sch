@@ -2347,7 +2347,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 80.01 90)
 			(effects
 				(font
@@ -2392,7 +2392,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg#" "YC124-JR-07120RL"
+		(property "mfg#" "YC124-JR-07220RL"
 			(at 193.0399 77.978 0)
 			(effects
 				(font
@@ -2402,7 +2402,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 80.01 0)
 			(effects
 				(font
@@ -3229,7 +3229,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 85.09 90)
 			(effects
 				(font
@@ -3274,7 +3274,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg#" "YC124-JR-07120RL"
+		(property "mfg#" "YC124-JR-07220RL"
 			(at 193.0399 83.058 0)
 			(effects
 				(font
@@ -3284,7 +3284,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 85.09 0)
 			(effects
 				(font
@@ -3352,7 +3352,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 115.57 90)
 			(effects
 				(font
@@ -3407,7 +3407,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 115.57 0)
 			(effects
 				(font
@@ -3579,7 +3579,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 82.55 90)
 			(effects
 				(font
@@ -3624,7 +3624,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg#" "YC124-JR-07120RL"
+		(property "mfg#" "YC124-JR-07220RL"
 			(at 193.0399 80.518 0)
 			(effects
 				(font
@@ -3634,7 +3634,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 82.55 0)
 			(effects
 				(font
@@ -3873,7 +3873,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 102.87 90)
 			(effects
 				(font
@@ -3928,7 +3928,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 102.87 0)
 			(effects
 				(font
@@ -4100,7 +4100,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 90.17 90)
 			(effects
 				(font
@@ -4155,7 +4155,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 90.17 0)
 			(effects
 				(font
@@ -4327,7 +4327,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 113.03 90)
 			(effects
 				(font
@@ -4382,7 +4382,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 113.03 0)
 			(effects
 				(font
@@ -4450,7 +4450,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 105.41 90)
 			(effects
 				(font
@@ -4505,7 +4505,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 105.41 0)
 			(effects
 				(font
@@ -4573,7 +4573,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 100.33 90)
 			(effects
 				(font
@@ -4628,7 +4628,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 100.33 0)
 			(effects
 				(font
@@ -5032,7 +5032,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 77.47 90)
 			(effects
 				(font
@@ -5077,7 +5077,7 @@
 				(hide yes)
 			)
 		)
-		(property "mfg#" "YC124-JR-07120RL"
+		(property "mfg#" "YC124-JR-07220RL"
 			(at 193.0399 75.438 0)
 			(effects
 				(font
@@ -5087,7 +5087,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 77.47 0)
 			(effects
 				(font
@@ -5383,7 +5383,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 92.71 90)
 			(effects
 				(font
@@ -5438,7 +5438,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 92.71 0)
 			(effects
 				(font
@@ -5782,7 +5782,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 110.49 90)
 			(effects
 				(font
@@ -5837,7 +5837,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 110.49 0)
 			(effects
 				(font
@@ -5905,7 +5905,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 97.79 90)
 			(effects
 				(font
@@ -5960,7 +5960,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 97.79 0)
 			(effects
 				(font
@@ -6028,7 +6028,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 107.95 90)
 			(effects
 				(font
@@ -6083,7 +6083,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 107.95 0)
 			(effects
 				(font
@@ -6439,7 +6439,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 87.63 90)
 			(effects
 				(font
@@ -6494,7 +6494,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 87.63 0)
 			(effects
 				(font
@@ -6734,7 +6734,7 @@
 				)
 			)
 		)
-		(property "Value" "120R"
+		(property "Value" "220R"
 			(at 181.61 95.25 90)
 			(effects
 				(font
@@ -6789,7 +6789,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C326871"
+		(property "lcsc#" "C326868"
 			(at 181.61 95.25 0)
 			(effects
 				(font
