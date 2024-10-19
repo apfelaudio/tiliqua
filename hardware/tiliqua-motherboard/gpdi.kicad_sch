@@ -619,6 +619,152 @@
 				)
 			)
 		)
+		(symbol "Device:Polyfuse_Small"
+			(pin_numbers hide)
+			(pin_names
+				(offset 0)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "F"
+				(at -1.905 0 90)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "Polyfuse_Small"
+				(at 1.905 0 90)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 1.27 -5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Resettable fuse, polymeric positive temperature coefficient, small symbol"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "resettable fuse PTC PPTC polyfuse polyswitch"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "*polyfuse* *PTC*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "Polyfuse_Small_0_1"
+				(rectangle
+					(start -0.508 1.27)
+					(end 0.508 -1.27)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54) (xy 0 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.016 1.27) (xy -1.016 0.762) (xy 1.016 -0.762) (xy 1.016 -1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "Polyfuse_Small_1_1"
+				(pin passive line
+					(at 0 2.54 270)
+					(length 0.635)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -2.54 90)
+					(length 0.635)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "Device:R"
 			(pin_numbers hide)
 			(pin_names
@@ -1314,16 +1460,16 @@
 		(uuid "06153ce1-06a1-4c0f-91d8-a3e9bc026489")
 	)
 	(junction
+		(at 121.92 86.36)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "1acb59c7-bf4c-485d-87ea-b5ac7f552d76")
+	)
+	(junction
 		(at 172.72 119.38)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "753f6a12-6560-437e-8410-fd12910bd5aa")
-	)
-	(junction
-		(at 120.65 91.44)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "762de5cc-4b3e-44b7-b485-54ddba5b3130")
 	)
 	(junction
 		(at 124.46 101.6)
@@ -1338,16 +1484,16 @@
 		(uuid "85278558-4bf1-4359-a973-fe441323798d")
 	)
 	(junction
-		(at 120.65 99.06)
+		(at 121.92 91.44)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "ad716342-87d3-4451-8d77-3d2ee1726672")
+		(uuid "a53d1a39-2043-4d0e-a1f7-dadaa9ed9121")
 	)
 	(junction
-		(at 101.6 86.36)
+		(at 119.38 99.06)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "b78df214-b6e2-40cd-be87-025ab50592d9")
+		(uuid "aa284c30-e30b-4dce-a073-0f633cb060d2")
 	)
 	(junction
 		(at 173.99 119.38)
@@ -1389,7 +1535,7 @@
 	)
 	(wire
 		(pts
-			(xy 109.22 99.06) (xy 120.65 99.06)
+			(xy 109.22 99.06) (xy 119.38 99.06)
 		)
 		(stroke
 			(width 0)
@@ -1469,6 +1615,16 @@
 	)
 	(wire
 		(pts
+			(xy 121.92 86.36) (xy 121.92 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3cfeaf32-2e43-484f-a880-d7518cbb3324")
+	)
+	(wire
+		(pts
 			(xy 109.22 101.6) (xy 124.46 101.6)
 		)
 		(stroke
@@ -1509,13 +1665,13 @@
 	)
 	(wire
 		(pts
-			(xy 120.65 91.44) (xy 107.95 91.44)
+			(xy 119.38 99.06) (xy 161.29 99.06)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "5af1f9f3-2fe4-43c7-93c4-6ce8c586fb4c")
+		(uuid "51c9939b-7df4-4a77-a6f8-718237e66bf1")
 	)
 	(wire
 		(pts
@@ -1559,23 +1715,13 @@
 	)
 	(wire
 		(pts
-			(xy 124.46 91.44) (xy 120.65 91.44)
+			(xy 124.46 91.44) (xy 121.92 91.44)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "64c90071-08b4-4e18-a87b-cff7426ee757")
-	)
-	(wire
-		(pts
-			(xy 120.65 99.06) (xy 161.29 99.06)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "66d962c6-3738-4070-a724-a987e4318adb")
 	)
 	(wire
 		(pts
@@ -1609,23 +1755,13 @@
 	)
 	(wire
 		(pts
-			(xy 107.95 86.36) (xy 101.6 86.36)
+			(xy 101.6 86.36) (xy 110.49 86.36)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "95968578-a9df-4157-95ff-16ace0af61c7")
-	)
-	(wire
-		(pts
-			(xy 107.95 91.44) (xy 107.95 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9cd8ee9f-21d0-4525-8f5b-0e3a66a64e9a")
 	)
 	(wire
 		(pts
@@ -1686,6 +1822,26 @@
 			(type default)
 		)
 		(uuid "c1d5298c-0ad9-4a45-aece-3651e13d4cc3")
+	)
+	(wire
+		(pts
+			(xy 121.92 91.44) (xy 119.38 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c95463c1-0657-46c3-9723-8e217f765f5e")
+	)
+	(wire
+		(pts
+			(xy 118.11 86.36) (xy 121.92 86.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d0ea10ba-fd1f-4e99-b06e-f81a5fdab291")
 	)
 	(wire
 		(pts
@@ -1968,6 +2124,18 @@
 		)
 		(uuid "7398f3fc-fcf8-4093-b0cc-ea8359242004")
 	)
+	(hierarchical_label "I2C_EN"
+		(shape bidirectional)
+		(at 109.22 96.52 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "7bdf801d-ca3d-4e61-ad0e-28ac0410e7a5")
+	)
 	(hierarchical_label "GPDI_CK+"
 		(shape output)
 		(at 142.24 86.36 180)
@@ -2096,7 +2264,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 120.65 95.25 180)
+		(at 119.38 95.25 180)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -2104,7 +2272,7 @@
 		(dnp no)
 		(uuid "272566f3-7d19-4076-bfd8-9a6622d35670")
 		(property "Reference" "R9"
-			(at 118.364 93.472 90)
+			(at 117.094 91.694 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2113,7 +2281,7 @@
 			)
 		)
 		(property "Value" "4K7"
-			(at 120.65 93.218 90)
+			(at 119.38 93.218 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2122,7 +2290,7 @@
 			)
 		)
 		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 122.428 95.25 90)
+			(at 121.158 95.25 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2131,7 +2299,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 120.65 95.25 0)
+			(at 119.38 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2140,7 +2308,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 120.65 95.25 0)
+			(at 119.38 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2149,7 +2317,7 @@
 			)
 		)
 		(property "Mfg" "Yageo"
-			(at 120.65 95.25 0)
+			(at 119.38 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2158,7 +2326,7 @@
 			)
 		)
 		(property "PN" ""
-			(at 120.65 95.25 0)
+			(at 119.38 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2167,7 +2335,7 @@
 			)
 		)
 		(property "lcsc#" "C25900"
-			(at 120.65 95.25 0)
+			(at 119.38 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2176,7 +2344,7 @@
 			)
 		)
 		(property "Tol" ""
-			(at 120.65 95.25 0)
+			(at 119.38 95.25 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2897,6 +3065,92 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:Polyfuse_Small")
+		(at 171.45 60.96 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "603d0c99-63f6-406c-9781-4647f00ff74d")
+		(property "Reference" "F3"
+			(at 173.99 60.198 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "15V 50mA"
+			(at 177.546 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Fuse:Fuse_0805_2012Metric"
+			(at 170.18 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 171.45 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Resettable fuse, polymeric positive temperature coefficient, small symbol"
+			(at 171.45 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C883096"
+			(at 171.45 60.96 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
+			(at 171.45 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "386131d0-8310-4b50-a5a9-cdcc3bfe4aa0")
+		)
+		(pin "1"
+			(uuid "3062a0d5-4667-4650-83e8-9bb04caa94ae")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/fab2810c-846b-4fd3-91f6-29ac3e93c045"
+					(reference "F3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Connector:HDMI_A")
 		(at 171.45 91.44 0)
 		(unit 1)
@@ -3040,6 +3294,111 @@
 	)
 	(symbol
 		(lib_id "Device:R")
+		(at 114.3 86.36 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "679957e5-7437-48a1-8e6e-02938c239593")
+		(property "Reference" "R44"
+			(at 112.522 84.074 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "200K"
+			(at 111.76 86.36 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 114.3 84.582 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 114.3 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 114.3 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Mfg" ""
+			(at 114.3 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "PN" ""
+			(at 114.3 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" ""
+			(at 114.3 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
+			(at 114.3 86.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "318277a4-3c79-4f8d-9b2c-c5c56b28a723")
+		)
+		(pin "2"
+			(uuid "214399c8-6a30-4a5b-96da-97c9e760b47f")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670/fab2810c-846b-4fd3-91f6-29ac3e93c045"
+					(reference "R44")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
 		(at 157.48 106.68 90)
 		(unit 1)
 		(exclude_from_sim no)
@@ -3138,72 +3497,6 @@
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/fab2810c-846b-4fd3-91f6-29ac3e93c045"
 					(reference "R28")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:+3V3")
-		(at 109.22 96.52 270)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "85e64bd9-f739-4317-b3fb-07ec1b007968")
-		(property "Reference" "#PWR012"
-			(at 105.41 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "+3V3"
-			(at 108.966 94.742 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" ""
-			(at 109.22 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 109.22 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" ""
-			(at 109.22 96.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "6ee1f318-d847-4dfa-96b0-266693dcd5ef")
-		)
-		(instances
-			(project "tiliqua-motherboard"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670/fab2810c-846b-4fd3-91f6-29ac3e93c045"
-					(reference "#PWR012")
 					(unit 1)
 				)
 			)
@@ -3593,7 +3886,7 @@
 	)
 	(symbol
 		(lib_id "power:+5V")
-		(at 101.6 86.36 0)
+		(at 121.92 86.36 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -3602,7 +3895,7 @@
 		(fields_autoplaced yes)
 		(uuid "ab74f32d-120d-4199-99b8-aa24f8d44a52")
 		(property "Reference" "#PWR011"
-			(at 101.6 90.17 0)
+			(at 121.92 90.17 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3611,7 +3904,7 @@
 			)
 		)
 		(property "Value" "+5V"
-			(at 101.6 81.28 0)
+			(at 121.92 81.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3619,7 +3912,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 101.6 86.36 0)
+			(at 121.92 86.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3628,7 +3921,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 101.6 86.36 0)
+			(at 121.92 86.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3637,7 +3930,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 101.6 86.36 0)
+			(at 121.92 86.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4023,7 +4316,7 @@
 	)
 	(symbol
 		(lib_id "power:+5V")
-		(at 171.45 63.5 0)
+		(at 171.45 58.42 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -4032,7 +4325,7 @@
 		(fields_autoplaced yes)
 		(uuid "eeffacab-e56e-457d-a3f5-2c3f2872e1bd")
 		(property "Reference" "#PWR014"
-			(at 171.45 67.31 0)
+			(at 171.45 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4041,7 +4334,7 @@
 			)
 		)
 		(property "Value" "+5V"
-			(at 171.45 58.42 0)
+			(at 171.45 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4049,7 +4342,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 171.45 63.5 0)
+			(at 171.45 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4058,7 +4351,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 171.45 63.5 0)
+			(at 171.45 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4067,7 +4360,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+5V\""
-			(at 171.45 63.5 0)
+			(at 171.45 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)

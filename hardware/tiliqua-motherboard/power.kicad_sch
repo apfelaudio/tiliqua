@@ -8298,7 +8298,7 @@
 				)
 			)
 		)
-		(property "Value" "15V 200mA"
+		(property "Value" "16V 350mA"
 			(at 55.88 45.974 90)
 			(effects
 				(font
@@ -8334,7 +8334,7 @@
 				(hide yes)
 			)
 		)
-		(property "lcsc#" "C883103"
+		(property "lcsc#" "C883107"
 			(at 55.88 48.26 90)
 			(effects
 				(font
