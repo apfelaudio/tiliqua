@@ -2478,10 +2478,6 @@
 		(uuid "d06d7722-1494-43be-a778-9760c2cc5b42")
 	)
 	(no_connect
-		(at 228.6 176.53)
-		(uuid "0db94d03-32bd-4972-a04f-67a074a167af")
-	)
-	(no_connect
 		(at 60.96 153.67)
 		(uuid "0f5f9257-d2a0-4484-bc66-e56c68a14533")
 	)
@@ -2504,10 +2500,6 @@
 	(no_connect
 		(at 232.41 142.24)
 		(uuid "5337f423-2ccc-4e6c-840f-91a6c3dab4bd")
-	)
-	(no_connect
-		(at 250.19 176.53)
-		(uuid "89968171-237b-4c64-a748-b4f07d447aa7")
 	)
 	(no_connect
 		(at 36.83 158.75)
@@ -2859,7 +2851,7 @@
 		)
 		(uuid "cf20202a-e259-424b-a9b1-83b23b49ff17")
 	)
-	(text "[apfelaudio]\nsoldiercrab R2 SoM\n(separate repository)"
+	(text "[apfelaudio]\nsoldiercrab R3 SoM\n(separate repository)"
 		(exclude_from_sim no)
 		(at 141.224 44.958 0)
 		(effects
@@ -5988,6 +5980,73 @@
 	)
 	(symbol
 		(lib_id "power:GND")
+		(at 228.6 176.53 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "70306d23-6983-400e-a72d-5d37f4a518a3")
+		(property "Reference" "#PWR036"
+			(at 228.6 182.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 228.6 181.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 228.6 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 228.6 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 228.6 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "18bf6d10-28f8-4903-8435-95c8f9ded90e")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "#PWR036")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
 		(at 119.38 147.32 0)
 		(unit 1)
 		(exclude_from_sim no)
@@ -6608,6 +6667,73 @@
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
 					(reference "#PWR021")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 250.19 176.53 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "b1a43f85-b5a1-48ba-ad4d-9913a8685506")
+		(property "Reference" "#PWR069"
+			(at 250.19 182.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 250.19 181.61 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 250.19 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 250.19 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 250.19 176.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "53bad513-8ee4-4dbb-8e0f-0c393361abbf")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "#PWR069")
 					(unit 1)
 				)
 			)
