@@ -2682,6 +2682,16 @@
 		)
 		(uuid "0dca061f-e728-430f-a5db-7b971126c453")
 	)
+	(polyline
+		(pts
+			(xy 223.52 129.54) (xy 223.52 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0e64f86d-24b9-4cc5-a50d-bde039641b1d")
+	)
 	(wire
 		(pts
 			(xy 234.95 52.07) (xy 234.95 54.61)
@@ -2822,6 +2832,16 @@
 		)
 		(uuid "74ed154f-b1d5-4a4a-ae60-2920c1617119")
 	)
+	(polyline
+		(pts
+			(xy 223.52 134.62) (xy 224.4081 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7bf5585b-3c96-477d-9c6a-5be96b644121")
+	)
 	(wire
 		(pts
 			(xy 111.76 36.83) (xy 111.76 38.1)
@@ -2892,6 +2912,16 @@
 		)
 		(uuid "bb078cd6-86ba-4f6e-b714-d713cdbbb478")
 	)
+	(polyline
+		(pts
+			(xy 223.52 129.54) (xy 224.4642 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bcebdb1e-00a3-4c3e-9653-76b578591b5c")
+	)
 	(wire
 		(pts
 			(xy 104.14 36.83) (xy 107.95 36.83)
@@ -2901,6 +2931,16 @@
 			(type default)
 		)
 		(uuid "c13b9f19-ca30-4add-b2f4-5426451ff2c1")
+	)
+	(polyline
+		(pts
+			(xy 224.4081 134.6199) (xy 224.4081 134.62)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ca81512a-079f-4740-9488-54e7f7169f8c")
 	)
 	(wire
 		(pts
@@ -2993,6 +3033,16 @@
 			)
 		)
 		(uuid "012df63d-c468-471f-87bb-c792a3864910")
+	)
+	(text "No pull-up resistors\nJust 2 spare IOs"
+		(exclude_from_sim no)
+		(at 212.598 132.08 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "09d6eec4-26c7-4f76-974a-3787009963f9")
 	)
 	(text "Expansion (PMOD compatible)"
 		(exclude_from_sim no)
@@ -3343,7 +3393,7 @@
 	)
 	(global_label "ECP5_C4"
 		(shape bidirectional)
-		(at 104.14 55.88 180)
+		(at 33.02 81.28 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3353,7 +3403,7 @@
 		)
 		(uuid "21ed822f-5329-435b-91dd-a34529c9f881")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 92.5109 55.88 0)
+			(at 21.3909 81.28 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3805,7 +3855,7 @@
 	)
 	(global_label "ECP5_D11"
 		(shape bidirectional)
-		(at 100.33 121.92 180)
+		(at 238.76 130.81 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3815,7 +3865,7 @@
 		)
 		(uuid "5fd21eae-4684-4be9-b707-481c76b2799b")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 86.6784 121.92 0)
+			(at 225.1084 130.81 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4421,7 +4471,7 @@
 	)
 	(global_label "ECP5_D5"
 		(shape bidirectional)
-		(at 33.02 81.28 180)
+		(at 238.76 133.35 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4431,7 +4481,7 @@
 		)
 		(uuid "a7b99231-4cff-46bd-a70c-b4a8a37d08e3")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 20.5779 81.28 0)
+			(at 226.3179 133.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8167,8 +8217,7 @@
 	)
 	(sheet
 		(at 238.76 111.76)
-		(size 31.75 19.05)
-		(fields_autoplaced yes)
+		(size 31.75 22.86)
 		(stroke
 			(width 0.1524)
 			(type solid)
@@ -8178,7 +8227,7 @@
 		)
 		(uuid "32fbecb8-cfc0-4e90-9d95-f47a131c8376")
 		(property "Sheetname" "rp2040_jtag"
-			(at 238.76 111.0484 0)
+			(at 258.572 133.604 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8187,7 +8236,7 @@
 			)
 		)
 		(property "Sheetfile" "rp2040_jtag.kicad_sch"
-			(at 238.76 131.3946 0)
+			(at 239.014 135.128 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8255,6 +8304,26 @@
 			)
 			(uuid "38e1fb8c-c5a0-4482-91d9-176720b46232")
 		)
+		(pin "I2C1_SDA" bidirectional
+			(at 238.76 130.81 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "17a2e5ee-c3f3-412a-99d9-8d1dfe562377")
+		)
+		(pin "I2C1_SCL" bidirectional
+			(at 238.76 133.35 180)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+			(uuid "140402f5-39e0-4acb-89a7-e64842ad5a04")
+		)
 		(instances
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
@@ -8304,7 +8373,6 @@
 	(sheet
 		(at 238.76 137.16)
 		(size 31.75 25.4)
-		(fields_autoplaced yes)
 		(stroke
 			(width 0.1524)
 			(type solid)
@@ -8314,7 +8382,7 @@
 		)
 		(uuid "830acc84-6e16-4cb8-9214-1acea5145425")
 		(property "Sheetname" "pmod_audio"
-			(at 238.76 136.4484 0)
+			(at 258.064 161.544 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8472,7 +8540,6 @@
 	(sheet
 		(at 238.76 63.5)
 		(size 31.75 9.525)
-		(fields_autoplaced yes)
 		(stroke
 			(width 0.1524)
 			(type solid)
@@ -8482,7 +8549,7 @@
 		)
 		(uuid "cdf6c5cd-4778-4bd4-bc0a-19e7e0b15b0b")
 		(property "Sheetname" "led_driver"
-			(at 238.76 62.7884 0)
+			(at 260.35 72.39 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8540,7 +8607,6 @@
 	(sheet
 		(at 238.76 78.105)
 		(size 31.75 29.337)
-		(fields_autoplaced yes)
 		(stroke
 			(width 0.1524)
 			(type solid)
@@ -8550,7 +8616,7 @@
 		)
 		(uuid "d2a2a9e8-d4aa-4c38-99cd-33ac9e017277")
 		(property "Sheetname" "usbc"
-			(at 238.76 77.3934 0)
+			(at 265.43 106.68 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8726,7 +8792,6 @@
 	(sheet
 		(at 238.76 15.24)
 		(size 31.75 43.18)
-		(fields_autoplaced yes)
 		(stroke
 			(width 0.1524)
 			(type solid)
@@ -8736,7 +8801,7 @@
 		)
 		(uuid "fab2810c-846b-4fd3-91f6-29ac3e93c045")
 		(property "Sheetname" "gpdi"
-			(at 238.76 14.5284 0)
+			(at 265.938 57.658 0)
 			(effects
 				(font
 					(size 1.27 1.27)
