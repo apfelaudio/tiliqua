@@ -1472,6 +1472,12 @@
 		(uuid "753f6a12-6560-437e-8410-fd12910bd5aa")
 	)
 	(junction
+		(at 109.22 86.36)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "7eddb23a-2838-4dce-a668-9ebef371e856")
+	)
+	(junction
 		(at 124.46 101.6)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1645,6 +1651,16 @@
 	)
 	(wire
 		(pts
+			(xy 109.22 86.36) (xy 110.49 86.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4ac7c5b6-60a6-4e8f-a470-bf3144dc8bb4")
+	)
+	(wire
+		(pts
 			(xy 142.24 81.28) (xy 151.13 81.28)
 		)
 		(stroke
@@ -1755,7 +1771,17 @@
 	)
 	(wire
 		(pts
-			(xy 101.6 86.36) (xy 110.49 86.36)
+			(xy 109.22 86.36) (xy 109.22 96.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "87a8ed31-e2b6-485f-9c8b-9eb085b1ad8b")
+	)
+	(wire
+		(pts
+			(xy 101.6 86.36) (xy 109.22 86.36)
 		)
 		(stroke
 			(width 0)
@@ -2123,18 +2149,6 @@
 			(justify right)
 		)
 		(uuid "7398f3fc-fcf8-4093-b0cc-ea8359242004")
-	)
-	(hierarchical_label "I2C_EN"
-		(shape bidirectional)
-		(at 109.22 96.52 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "7bdf801d-ca3d-4e61-ad0e-28ac0410e7a5")
 	)
 	(hierarchical_label "GPDI_CK+"
 		(shape output)
