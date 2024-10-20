@@ -3,12 +3,12 @@
 	(generator "pcbnew")
 	(generator_version "8.0")
 	(general
-		(thickness 1.6)
+		(thickness 1.1412)
 		(legacy_teardrops no)
 	)
 	(paper "A4")
 	(layers
-		(0 "F.Cu" signal)
+		(0 "F.Cu" jumper)
 		(1 "In1.Cu" signal)
 		(2 "In2.Cu" signal)
 		(31 "B.Cu" signal)
@@ -59,29 +59,29 @@
 			)
 			(layer "dielectric 1"
 				(type "prepreg")
-				(thickness 0.1)
+				(thickness 0.2104)
 				(material "FR4")
 				(epsilon_r 4.5)
 				(loss_tangent 0.02)
 			)
 			(layer "In1.Cu"
 				(type "copper")
-				(thickness 0.035)
+				(thickness 0.0152)
 			)
 			(layer "dielectric 2"
 				(type "core")
-				(thickness 1.24)
+				(thickness 0.6)
 				(material "FR4")
 				(epsilon_r 4.5)
 				(loss_tangent 0.02)
 			)
 			(layer "In2.Cu"
 				(type "copper")
-				(thickness 0.035)
+				(thickness 0.0152)
 			)
 			(layer "dielectric 3"
 				(type "prepreg")
-				(thickness 0.1)
+				(thickness 0.2104)
 				(material "FR4")
 				(epsilon_r 4.5)
 				(loss_tangent 0.02)
@@ -46207,6 +46207,18 @@
 		(at -33.56 76.95 0)
 		(layer "Dwgs.User")
 		(uuid "d568ec07-d6ef-46ae-acac-553f0fadff11")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+			(justify left bottom)
+		)
+	)
+	(gr_text "1.2mm 4-layer JLC04121H-7628 Stackup (matches 'no requirements')\nRA USB-C pin depth determines maximum board thickness."
+		(at 35.94 5.45 0)
+		(layer "Dwgs.User")
+		(uuid "f481c39e-6149-4a39-b9cd-d9e4ab0870b9")
 		(effects
 			(font
 				(size 1 1)
