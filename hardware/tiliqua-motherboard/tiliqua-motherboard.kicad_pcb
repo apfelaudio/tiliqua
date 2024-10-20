@@ -3460,6 +3460,17 @@
 			(pintype "input")
 			(uuid "509be7c0-f951-4be7-9669-5a9961323797")
 		)
+		(model "../libs/SMD_BD5.0-D3.5.wrl"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1.6)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
@@ -19406,7 +19417,7 @@
 			(pintype "passive")
 			(uuid "a87507ee-b647-4c55-b00e-6363f0e674bb")
 		)
-		(model "${KICAD8_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/Texas_S-PDSO-N10_EP1.2x2mm.wrl"
+		(model "/home/seb/dev/tiliqua/hardware/libs/SON-10_L2.5-W2.5-H0.8-P0.50.wrl"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -30238,7 +30249,7 @@
 				)
 			)
 		)
-		(model "${KICAD8_3DMODEL_DIR}/Button_Switch_SMD.3dshapes/SW_SPST_SKQG_WithStem.wrl"
+		(model "../libs/KEY-SMD_4P-L5.2-W5.2-H1.5-LS6.4-P3.70.wrl"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -34301,7 +34312,7 @@
 			(pintype "passive")
 			(uuid "82098df4-2ef9-49e0-b22d-edf451bfd712")
 		)
-		(model "${KICAD8_3DMODEL_DIR}/Inductor_SMD.3dshapes/L_Vishay_IHLP-2020.wrl"
+		(model "/home/seb/dev/tiliqua/hardware/libs/IND-SMD_L5.5-W5.2-H3.0.wrl"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -35680,7 +35691,7 @@
 			(pintype "power_in")
 			(uuid "6d499f17-b552-47ce-9c53-a3cdec05f6ed")
 		)
-		(model "${KICAD8_3DMODEL_DIR}/Package_DFN_QFN.3dshapes/Texas_X2QFN-12_1.6x1.6mm_P0.4mm.wrl"
+		(model "/home/seb/dev/tiliqua/hardware/libs/X2QFN-12_L1.6-W1.6-H0.4-P0.40-TL.wrl"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -38923,15 +38934,15 @@
 			(pintype "power_in")
 			(uuid "9ba91d06-0e8d-4bad-b6d6-35298c352b4e")
 		)
-		(model "${KICAD8_3DMODEL_DIR}/Package_SO.3dshapes/SOIC-8W_5.3x5.3mm_P1.27mm.wrl"
+		(model "../libs/SOIC-8_L5.2-W5.2-P1.27-LS8.0-BL.wrl"
 			(offset
-				(xyz 0 0 0)
+				(xyz 0 0 1)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 0 0 0)
+				(xyz 0 0 90)
 			)
 		)
 	)
