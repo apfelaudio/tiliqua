@@ -2318,7 +2318,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "ed1a54b0-d65a-423c-a6e8-e43649074d9f")
 		(property "Reference" "SW3"
 			(at 111.76 66.548 90)

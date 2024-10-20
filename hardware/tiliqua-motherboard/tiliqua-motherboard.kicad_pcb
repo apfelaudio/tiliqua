@@ -1718,7 +1718,7 @@
 				)
 			)
 		)
-		(property "Value" "47uF"
+		(property "Value" "100uF/10V"
 			(at 0 4.35 180)
 			(layer "F.Fab")
 			(uuid "66230fbe-f1ad-4567-97ac-313fddafd176")
@@ -1794,7 +1794,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C88735"
+		(property "lcsc#" "C88795"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -3415,7 +3415,7 @@
 		(path "/6dc91d02-eb2a-4b6a-84fe-793f971243d5")
 		(sheetname "Root")
 		(sheetfile "tiliqua-motherboard.kicad_sch")
-		(attr exclude_from_pos_files exclude_from_bom dnp)
+		(attr exclude_from_pos_files exclude_from_bom)
 		(fp_circle
 			(center 0 0)
 			(end 3.7 0)
@@ -5026,7 +5026,7 @@
 				)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C29401"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -5217,7 +5217,7 @@
 				)
 			)
 		)
-		(property "Value" "47uF"
+		(property "Value" "100uF/10V"
 			(at 0 4.349999 90)
 			(layer "F.Fab")
 			(uuid "1e1c355f-abcd-43d2-9058-0540f2be6d7c")
@@ -5293,7 +5293,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C88735"
+		(property "lcsc#" "C88795"
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -6324,7 +6324,7 @@
 				)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C131394"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -6844,7 +6844,7 @@
 				)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C270609"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -9707,7 +9707,7 @@
 				)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C25764"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -15968,7 +15968,7 @@
 				)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C131394"
 			(at 0 0 90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -21569,7 +21569,7 @@
 		(path "/17daa742-f20a-4e98-a58b-fde576cacd93/ed1a54b0-d65a-423c-a6e8-e43649074d9f")
 		(sheetname "encoder")
 		(sheetfile "encoder.kicad_sch")
-		(attr through_hole)
+		(attr through_hole dnp)
 		(fp_line
 			(start 5 -7.1)
 			(end -8.4 -7.1)
@@ -30880,7 +30880,7 @@
 				)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C131394"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -31134,7 +31134,7 @@
 				)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C131394"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -33827,7 +33827,7 @@
 				)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" " C11702"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -35340,7 +35340,7 @@
 				)
 			)
 		)
-		(property "lcsc#" ""
+		(property "lcsc#" "C77177"
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -40935,7 +40935,7 @@
 				(justify mirror)
 			)
 		)
-		(property "lcsc#" "C5378715"
+		(property "lcsc#" "C5373472"
 			(at 0 0 90)
 			(layer "B.Fab")
 			(hide yes)

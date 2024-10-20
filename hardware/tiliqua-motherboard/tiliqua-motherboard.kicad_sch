@@ -6220,16 +6220,16 @@
 	)
 	(symbol
 		(lib_id "Mechanical:MountingHole_Pad")
-		(at 212.09 175.26 0)
+		(at 142.24 83.82 0)
 		(unit 1)
 		(exclude_from_sim yes)
 		(in_bom no)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "6dc91d02-eb2a-4b6a-84fe-793f971243d5")
 		(property "Reference" "H3"
-			(at 214.63 172.7199 0)
+			(at 144.78 81.2799 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6238,7 +6238,7 @@
 			)
 		)
 		(property "Value" "MountingHole"
-			(at 214.63 175.2599 0)
+			(at 144.78 83.8199 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6247,7 +6247,7 @@
 			)
 		)
 		(property "Footprint" "m2:mounting_hole"
-			(at 212.09 175.26 0)
+			(at 142.24 83.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6256,7 +6256,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 212.09 175.26 0)
+			(at 142.24 83.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6265,7 +6265,7 @@
 			)
 		)
 		(property "Description" "Mounting Hole with connection"
-			(at 212.09 175.26 0)
+			(at 142.24 83.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6274,7 +6274,7 @@
 			)
 		)
 		(property "Tol" ""
-			(at 212.09 175.26 0)
+			(at 142.24 83.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6283,7 +6283,7 @@
 			)
 		)
 		(property "lcsc#" "C22368605"
-			(at 212.09 175.26 0)
+			(at 142.24 83.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7849,7 +7849,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 212.09 177.8 0)
+		(at 142.24 86.36 0)
 		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
@@ -7859,7 +7859,7 @@
 		(fields_autoplaced yes)
 		(uuid "dbaa9250-cd45-455c-891b-fc0915342bb8")
 		(property "Reference" "#PWR035"
-			(at 212.09 184.15 0)
+			(at 142.24 92.71 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7868,7 +7868,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 212.09 182.88 0)
+			(at 142.24 91.44 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7876,7 +7876,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 212.09 177.8 0)
+			(at 142.24 86.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7885,7 +7885,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 212.09 177.8 0)
+			(at 142.24 86.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7894,7 +7894,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 212.09 177.8 0)
+			(at 142.24 86.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
