@@ -1103,7 +1103,7 @@
 			(pintype "passive")
 			(uuid "dfcaaa8e-902b-45b1-a817-ede506d0fc4f")
 		)
-		(model "/home/seb/dev/tiliqua/hardware/libs/U264-141N-4BAC10.step"
+		(model "../libs/U264-141N-4BAC10.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -7788,7 +7788,7 @@
 			(pintype "passive")
 			(uuid "15ef3aa5-ce43-459b-9081-4908f97e3693")
 		)
-		(model "/home/seb/dev/tiliqua/hardware/libs/U264-141N-4BAC10.step"
+		(model "../libs/U264-141N-4BAC10.step"
 			(offset
 				(xyz 0 0 0)
 			)
@@ -38013,7 +38013,7 @@
 			(pintype "passive+no_connect")
 			(uuid "f81b5ae8-6399-4902-8ca3-9842f327d3a5")
 		)
-		(model "/home/seb/dev/tiliqua/hardware/libs/Unnamed-yJn7-U1.step"
+		(model "../libs/Unnamed-yJn7-U1.step"
 			(offset
 				(xyz 0 0 0)
 			)
