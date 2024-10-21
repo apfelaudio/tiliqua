@@ -6571,33 +6571,6 @@
 				(hide yes)
 			)
 		)
-		(property "Fieldname 1" "Value 1"
-			(at 73.66 33.02 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(hide yes)
-			)
-		)
-		(property "Fieldname2" "Value2"
-			(at 73.66 33.02 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(hide yes)
-			)
-		)
-		(property "Fieldname3" "Value3"
-			(at 73.66 33.02 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(hide yes)
-			)
-		)
 		(property "lcsc#" "C25744"
 			(at 73.66 33.02 0)
 			(effects
