@@ -2876,6 +2876,12 @@
 		)
 	)
 	(junction
+		(at 220.98 144.78)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "09166965-c3bc-4fb1-ae77-55dfccfdf629")
+	)
+	(junction
 		(at 208.28 162.56)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2910,6 +2916,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "3ce21d45-b175-4582-90c6-d4464dccb921")
+	)
+	(junction
+		(at 195.58 144.78)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6a5060e4-6d52-4adb-96b4-5d029c15d85d")
 	)
 	(junction
 		(at 195.58 154.94)
@@ -3019,6 +3031,16 @@
 	)
 	(wire
 		(pts
+			(xy 220.98 138.43) (xy 220.98 144.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "13900f13-e41e-4234-817b-0b2b49688e78")
+	)
+	(wire
+		(pts
 			(xy 236.22 43.18) (xy 238.76 43.18)
 		)
 		(stroke
@@ -3099,6 +3121,16 @@
 	)
 	(wire
 		(pts
+			(xy 203.2 138.43) (xy 220.98 138.43)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5e3cfcbe-d070-4b19-8b58-ce62041f753d")
+	)
+	(wire
+		(pts
 			(xy 220.98 144.78) (xy 220.98 160.02)
 		)
 		(stroke
@@ -3106,6 +3138,16 @@
 			(type default)
 		)
 		(uuid "5fb63896-02d0-4995-804b-29bad41f16af")
+	)
+	(wire
+		(pts
+			(xy 195.58 138.43) (xy 195.58 144.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "650e4054-a74c-446f-ae17-ea11b5da61e8")
 	)
 	(wire
 		(pts
@@ -7114,6 +7156,111 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 199.39 138.43 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "815700a1-f390-4cc3-bfb7-f344ae8bce18")
+		(property "Reference" "R46"
+			(at 199.644 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0R"
+			(at 197.358 138.43 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 199.39 136.652 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 199.39 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 199.39 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Mfg" "Yageo"
+			(at 199.39 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "PN" ""
+			(at 199.39 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Tol" ""
+			(at 199.39 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" " C17168"
+			(at 199.644 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "3ce0cf57-0646-4616-ab15-9718c742527a")
+		)
+		(pin "2"
+			(uuid "51d43778-74a7-44ba-84f6-60fc7a068224")
+		)
+		(instances
+			(project "tiliqua-motherboard"
+				(path "/df6062c3-a570-4505-924c-c7fe32df3670"
+					(reference "R46")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+12V")
 		(at 270.51 146.05 270)
 		(unit 1)
@@ -8012,7 +8159,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "c92a4009-eb8f-4aa5-9e25-3a6fbe171097")
 		(property "Reference" "U6"
 			(at 201.676 140.97 0)
