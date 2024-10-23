@@ -2366,6 +2366,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25900"
+			(at 117.094 91.694 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "5002b0b5-7d9f-4129-a303-f7ed76148b45")
 		)
@@ -2538,6 +2547,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25099"
+			(at 152.4 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "1febba7a-393c-40b0-8665-48b82ad18606")
 		)
@@ -2636,6 +2654,15 @@
 		)
 		(property "Tol" ""
 			(at 154.94 81.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25099"
+			(at 152.4 80.264 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2748,6 +2775,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25099"
+			(at 152.4 85.344 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "641c5a12-b502-4f5a-9e65-618195ade485")
 		)
@@ -2828,6 +2864,15 @@
 		)
 		(property "Tol" ""
 			(at 99.06 99.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C128835"
+			(at 100.584 110.744 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2958,6 +3003,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25099"
+			(at 152.4 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "10f98b15-e425-4ee1-90e2-1546a9265aeb")
 		)
@@ -3063,6 +3117,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25099"
+			(at 152.4 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "1a7de676-a321-41c1-81f4-8400e8bda9f1")
 		)
@@ -3142,6 +3205,15 @@
 		)
 		(property "Tol" ""
 			(at 171.45 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C883096"
+			(at 173.99 60.198 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3230,6 +3302,15 @@
 		)
 		(property "lcsc#" "C428493"
 			(at 171.45 91.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C428493"
+			(at 182.88 90.1699 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3396,6 +3477,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25764"
+			(at 112.522 84.074 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "318277a4-3c79-4f8d-9b2c-c5c56b28a723")
 		)
@@ -3494,6 +3584,15 @@
 		)
 		(property "Tol" ""
 			(at 157.48 106.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 159.258 104.394 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3673,6 +3772,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25099"
+			(at 152.4 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "a87be101-3ed7-4d33-a751-7741aae27a5e")
 		)
@@ -3778,6 +3886,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C474081"
+			(at 159.258 91.694 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "8e7cdc96-75e2-467a-8be2-a56144a762cb")
 		)
@@ -3876,6 +3993,15 @@
 		)
 		(property "Tol" ""
 			(at 124.46 97.79 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25900"
+			(at 127 96.012 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4103,6 +4229,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C173412"
+			(at 150.114 110.236 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "2"
 			(uuid "fe2e801f-43a9-4ebd-8d31-02d8bf48adb3")
 		)
@@ -4208,6 +4343,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25099"
+			(at 152.4 70.104 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "1c5b8c39-b75a-4bc3-bfa4-011555ec3035")
 		)
@@ -4306,6 +4450,15 @@
 		)
 		(property "Tol" ""
 			(at 157.48 109.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C474081"
+			(at 159.004 111.506 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -4477,6 +4630,15 @@
 		)
 		(property "Tol" ""
 			(at 146.05 88.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25099"
+			(at 152.4 87.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)

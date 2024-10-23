@@ -5998,6 +5998,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C2977809"
+			(at 121.92 50.292 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "592aa17c-00ca-441b-8daa-3c3bab3f7800")
 		)
@@ -6436,6 +6445,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25900"
+			(at 234.95 62.992 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "7ce4106a-d4c3-4a3e-aeb8-9c054e7b1aa2")
 		)
@@ -6533,6 +6551,15 @@
 		)
 		(property "Tol" ""
 			(at 104.14 40.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C12891"
+			(at 102.108 42.926 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6689,6 +6716,15 @@
 		)
 		(property "lcsc#" "C22368605"
 			(at 142.24 83.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C22368605"
+			(at 144.78 81.2799 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6905,6 +6941,15 @@
 		)
 		(property "Tol" ""
 			(at 195.58 158.75 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C25744"
+			(at 192.278 160.782 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7291,6 +7336,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC" "C25900"
+			(at 228.6 62.484 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "1"
 			(uuid "db672c0c-21c1-494f-b0e6-a3b2bea4f081")
 		)
@@ -7370,6 +7424,15 @@
 		)
 		(property "Tol" ""
 			(at 48.26 128.27 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C2897426"
+			(at 49.53 116.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7504,6 +7567,15 @@
 		)
 		(property "Tol" ""
 			(at 111.76 40.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C12891"
+			(at 109.728 42.926 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -7978,6 +8050,15 @@
 		)
 		(property "Description" "Single D Flip-Flop, Low-Voltage CMOS"
 			(at 208.28 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C2869706"
+			(at 201.676 140.97 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8675,6 +8756,15 @@
 		)
 		(property "Tol" ""
 			(at 48.26 156.21 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" "C2897426"
+			(at 49.53 144.78 0)
 			(effects
 				(font
 					(size 1.27 1.27)

@@ -1501,7 +1501,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C965790"
+		(property "lcsc#" "C25503345"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -3601,6 +3601,18 @@
 			(effects
 				(font
 					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C25762"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "e1827984-fce8-49d7-a830-e9de444c6711")
+			(effects
+				(font
+					(size 1.27 1.27)
 					(thickness 0.15)
 				)
 			)
@@ -6106,6 +6118,18 @@
 			(effects
 				(font
 					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "fdb59bf9-e259-4e11-ab4e-34e59b723760")
+			(effects
+				(font
+					(size 1.27 1.27)
 					(thickness 0.15)
 				)
 			)
@@ -9961,7 +9985,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C965790"
+		(property "lcsc#" "C25503345"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -11171,6 +11195,18 @@
 			(effects
 				(font
 					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "b7673702-0af8-4b05-99a6-e228b56c1ca4")
+			(effects
+				(font
+					(size 1.27 1.27)
 					(thickness 0.15)
 				)
 			)
@@ -14560,7 +14596,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C60133"
+		(property "lcsc#" "C15195"
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -15118,6 +15154,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C12530"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "1a9008ac-ee46-4afd-8fd3-120df2cff768")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "C? C_????_* C_???? SMD*_c Capacitor*")
 		(path "/32fbecb8-cfc0-4e90-9d95-f47a131c8376/a2aa776d-5357-4ed1-b21f-1c4235f19d23")
 		(sheetname "rp2040_jtag")
@@ -15332,7 +15380,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C965790"
+		(property "lcsc#" "C25503345"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -16247,6 +16295,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "acaffdc0-dd7a-498a-9687-4d74e471c018")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "C? C_????_* C_???? SMD*_c Capacitor*")
 		(path "/32fbecb8-cfc0-4e90-9d95-f47a131c8376/091aeda0-477d-42a1-b501-f4488a406ccd")
 		(sheetname "rp2040_jtag")
@@ -16753,7 +16813,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C60133"
+		(property "lcsc#" "C15195"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -17525,6 +17585,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "8c3281db-b0c7-4a81-97a0-37375dd625f7")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "C? C_????_* C_???? SMD*_c Capacitor*")
 		(path "/32fbecb8-cfc0-4e90-9d95-f47a131c8376/42c9de6d-4ccf-4da7-a994-2da05aa5d5fa")
 		(sheetname "rp2040_jtag")
@@ -18042,6 +18114,18 @@
 			(effects
 				(font
 					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "e774e3a0-8dc7-4dab-a7a3-5d6f4fa0d6f1")
+			(effects
+				(font
+					(size 1.27 1.27)
 					(thickness 0.15)
 				)
 			)
@@ -20057,6 +20141,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "fc88e50f-b3b2-4f96-a5b8-f411848c3ddc")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "C? C_????_* C_???? SMD*_c Capacitor*")
 		(path "/32fbecb8-cfc0-4e90-9d95-f47a131c8376/b75fbe34-8a01-4861-b011-50c9185453e8")
 		(sheetname "rp2040_jtag")
@@ -21080,6 +21176,18 @@
 			(effects
 				(font
 					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "284eb9c3-7778-4a03-a354-d2930ecbfd68")
+			(effects
+				(font
+					(size 1.27 1.27)
 					(thickness 0.15)
 				)
 			)
@@ -25162,6 +25270,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C12530"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "b765df62-9a3b-45b9-8218-84a861886434")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "C? C_????_* C_???? SMD*_c Capacitor*")
 		(path "/32fbecb8-cfc0-4e90-9d95-f47a131c8376/da005bbd-d172-4575-82f1-a57bebf7cf7d")
 		(sheetname "rp2040_jtag")
@@ -26719,6 +26839,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "568e1273-5532-4a56-82bc-e4736360ff2f")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "C? C_????_* C_???? SMD*_c Capacitor*")
 		(path "/32fbecb8-cfc0-4e90-9d95-f47a131c8376/cb1627d4-1bee-4572-855b-9e67ca938eca")
 		(sheetname "rp2040_jtag")
@@ -27234,6 +27366,18 @@
 			(effects
 				(font
 					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C11702"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "df4bef1c-0924-47f3-9459-e21600894d6e")
+			(effects
+				(font
+					(size 1.27 1.27)
 					(thickness 0.15)
 				)
 			)
@@ -28324,7 +28468,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C2856703"
+		(property "lcsc#" "C965793"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -28870,7 +29014,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C2856703"
+		(property "lcsc#" "C965793"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -32028,7 +32172,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C60133"
+		(property "lcsc#" "C15195"
 			(at 0 0 -90)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -32282,7 +32426,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C2856703"
+		(property "lcsc#" "C965793"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -33347,7 +33491,7 @@
 				)
 			)
 		)
-		(property "lcsc#" "C60133"
+		(property "lcsc#" "C15195"
 			(at 0 0 0)
 			(unlocked yes)
 			(layer "F.Fab")
@@ -33613,6 +33757,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "064f6aa9-b730-49b8-9db0-8bfd44088441")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "C? C_????_* C_???? SMD*_c Capacitor*")
 		(path "/32fbecb8-cfc0-4e90-9d95-f47a131c8376/eef14a81-0e7d-48d2-b81d-d424cb527e15")
 		(sheetname "rp2040_jtag")
@@ -33849,6 +34005,18 @@
 			(effects
 				(font
 					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C11702"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "9f960b09-9858-49b5-bc3a-96824b060a6f")
+			(effects
+				(font
+					(size 1.27 1.27)
 					(thickness 0.15)
 				)
 			)
@@ -36270,6 +36438,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "23614fa2-b6b4-4e71-b9e5-6c5d65b2fda2")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "C? C_????_* C_???? SMD*_c Capacitor*")
 		(path "/32fbecb8-cfc0-4e90-9d95-f47a131c8376/6a40b380-7e02-4f6e-9ec7-5a66604d12a1")
 		(sheetname "rp2040_jtag")
@@ -37399,6 +37579,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "86f033df-527b-42cb-b4e7-df2821bd5713")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "C? C_????_* C_???? SMD*_c Capacitor*")
 		(path "/32fbecb8-cfc0-4e90-9d95-f47a131c8376/efd524c6-33a0-4c5a-bcb2-f8bd43e3eec9")
 		(sheetname "rp2040_jtag")
@@ -37919,6 +38111,18 @@
 				)
 			)
 		)
+		(property "LCSC" "C2884942"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "99cbcbe6-c273-4816-98af-dcaaf573aa24")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
+			)
+		)
 		(property ki_fp_filters "Jack*")
 		(path "/dd79b704-4c8d-4498-8ec1-0bb3e9e805ab/e461c919-026e-433d-916d-dd4942c99ff6")
 		(sheetname "midi")
@@ -38116,6 +38320,18 @@
 			(effects
 				(font
 					(size 1 1)
+					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C307331"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "bb7e3dd3-2c79-45a3-83bd-d751bd0494cf")
+			(effects
+				(font
+					(size 1.27 1.27)
 					(thickness 0.15)
 				)
 			)
@@ -39506,7 +39722,7 @@
 				(justify mirror)
 			)
 		)
-		(property "lcsc#" "C2856703"
+		(property "lcsc#" "C965793"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -39795,7 +40011,7 @@
 				(justify mirror)
 			)
 		)
-		(property "lcsc#" "C2856703"
+		(property "lcsc#" "C965793"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -40084,7 +40300,7 @@
 				(justify mirror)
 			)
 		)
-		(property "lcsc#" "C2856703"
+		(property "lcsc#" "C965793"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -40357,6 +40573,18 @@
 					(thickness 0.15)
 				)
 				(justify mirror)
+			)
+		)
+		(property "LCSC" "C2869706"
+			(at 0 0 0)
+			(layer "B.SilkS")
+			(hide yes)
+			(uuid "55253414-ba7d-4e9d-9884-cb648aa8c5e4")
+			(effects
+				(font
+					(size 1.27 1.27)
+					(thickness 0.15)
+				)
 			)
 		)
 		(property ki_fp_filters "SOT* SG*")
@@ -40667,7 +40895,7 @@
 				(justify mirror)
 			)
 		)
-		(property "lcsc#" "C965790"
+		(property "lcsc#" "C25503345"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -40942,7 +41170,7 @@
 				(justify mirror)
 			)
 		)
-		(property "lcsc#" "C2856703"
+		(property "lcsc#" "C965793"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -42585,7 +42813,7 @@
 				(justify mirror)
 			)
 		)
-		(property "lcsc#" "C965790"
+		(property "lcsc#" "C25503345"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -44075,7 +44303,7 @@
 				(justify mirror)
 			)
 		)
-		(property "lcsc#" "C965790"
+		(property "lcsc#" "C25503345"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
@@ -44612,7 +44840,7 @@
 				(justify mirror)
 			)
 		)
-		(property "lcsc#" "C965790"
+		(property "lcsc#" "C25503345"
 			(at 0 0 180)
 			(unlocked yes)
 			(layer "B.Fab")
