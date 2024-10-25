@@ -164,7 +164,7 @@ class MidiVoiceTracker(wiring.Component):
     streams, one stream per voice, with voice culling.
     """
 
-    def __init__(self, max_voices=8, mod_wheel_caps_velocity=True, zero_velocity_gate=False):
+    def __init__(self, max_voices=8, mod_wheel_caps_velocity=False, zero_velocity_gate=False):
         self.max_voices = max_voices
         self.mod_wheel_caps_velocity = mod_wheel_caps_velocity
         self.zero_velocity_gate = zero_velocity_gate
