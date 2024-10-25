@@ -39,3 +39,44 @@ class MidiTests(unittest.TestCase):
         sim.add_testbench(testbench)
         with sim.write_vcd(vcd_file=open("test_midi.vcd", "w")):
             sim.run()
+
+    def test_midi_voice_tracker(self):
+
+        dut = midi.MidiVoiceTracker()
+
+        note_range = list(range(40, 43))
+
+        async def stimulus_notes(ctx):
+            """Send some MIDI NOTE_ON events."""
+            for note in note_range:
+                # FIXME: valid before ready in TBs EVERYWHERE!
+                ctx.set(dut.i.valid, 1)
+                ctx.set(dut.i.payload.midi_type, midi.MessageType.NOTE_ON)
+                ctx.set(dut.i.payload.midi_channel, 1)
+                ctx.set(dut.i.payload.midi_payload.note_on.note, note)
+                ctx.set(dut.i.payload.midi_payload.note_on.velocity, 0x60)
+                await ctx.tick().until(dut.i.ready)
+                ctx.set(dut.i.valid, 0)
+                await ctx.tick()
+
+        async def testbench(ctx):
+            """Check that the NOTE_ON events correspond to voice slots."""
+            for n in range(dut.max_voices):
+                ctx.set(dut.o[n].ready, 1)
+            for ticks in range(100):
+                for n in range(dut.max_voices):
+                    o_sample = ctx.get(dut.o[n].valid & dut.o[n].ready)
+                    if o_sample:
+                        note_in_slot = ctx.get(dut.o[n].payload.note)
+                        print(f"slot{n}:", note_in_slot)
+                        # Verify expected notes are in voice slots.
+                        if ticks > 50 and n < len(note_range):
+                            self.assertEqual(note_in_slot, note_range[n])
+                await ctx.tick()
+
+        sim = Simulator(dut)
+        sim.add_clock(1e-6)
+        sim.add_process(stimulus_notes)
+        sim.add_testbench(testbench)
+        with sim.write_vcd(vcd_file=open("test_midi_voice_tracker.vcd", "w")):
+            sim.run()

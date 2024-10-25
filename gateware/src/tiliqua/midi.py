@@ -9,8 +9,12 @@ from amaranth              import *
 from amaranth.lib.fifo     import SyncFIFOBuffered
 from amaranth.lib          import wiring, data, enum, stream
 from amaranth.lib.wiring   import In, Out
+from amaranth.lib.memory   import Memory
 
 from amaranth_stdio.serial import AsyncSerialRX
+
+from amaranth_future       import fixed
+from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
 
 MIDI_BAUD_RATE = 31250
 
@@ -150,17 +154,18 @@ class MidiDecode(wiring.Component):
 class MidiVoice(data.Struct):
     note:     unsigned(8)
     velocity: unsigned(8)
+    freq_inc: ASQ
 
 class MidiVoiceTracker(wiring.Component):
 
     """
     Read a stream of MIDI messages. Decode it into `max_voices` independent
-    streams, one stream per voice, with voice culling. Outgoing streams have
-    'valid' wired to 1, be careful how you synchronize them.
+    streams, one stream per voice, with voice culling.
     """
 
-    def __init__(self, max_voices=8):
+    def __init__(self, max_voices=8, mod_wheel_caps_velocity=True):
         self.max_voices = max_voices
+        self.mod_wheel_caps_velocity = mod_wheel_caps_velocity
         super().__init__({
             "i": In(stream.Signature(MidiMessage)),
             "o": Out(stream.Signature(MidiVoice)).array(max_voices),
@@ -169,48 +174,110 @@ class MidiVoiceTracker(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        c_voice = Signal(range(self.max_voices))
+        # MIDI note -> linearized frequency LUT memory
+
+        lut = []
+        sample_rate_hz = 48000
+        for i in range(128):
+            freq = 440 * 2**((i-69)/12.0)
+            freq_inc = freq * (1.0 / sample_rate_hz)
+            lut.append(fixed.Const(freq_inc, shape=ASQ)._value)
+        m.submodules.f_lut_mem = f_lut_mem = Memory(
+                shape=signed(ASQ.as_shape().width), depth=len(lut), init=lut)
+        f_lut_rport = f_lut_mem.read_port()
+
+        # Voice state memory
+
+        m.submodules.voice_mem = voice_mem = Memory(
+            shape=MidiVoice,
+            depth=self.max_voices, init=[])
+        voice_rport = voice_mem.read_port()
+        voice_wport = voice_mem.write_port()
+
+        # State captured on each incoming MIDI message
+
         msg = Signal(MidiMessage)
+        last_cc1 = Signal(8, init=255)
+
+        # Keep as many signals outside of FSM states as possible.
+
+        m.d.comb += [
+            f_lut_rport.en.eq(1),
+            f_lut_rport.addr.eq(msg.midi_payload.note_on.note),
+            voice_wport.data.note.eq(msg.midi_payload.note_on.note),
+            voice_wport.data.velocity.eq(msg.midi_payload.note_on.velocity),
+            voice_wport.data.freq_inc.eq(f_lut_rport.data),
+            voice_rport.en.eq(1),
+        ]
+
+        # All outgoing voice streams contain the same payloads to reduce
+        # logic usage. Only the stream strobes are iterated over.
 
         for n in range(self.max_voices):
-            m.d.comb += self.o[n].valid.eq(1)
+            m.d.comb += [
+                self.o[n].payload.note.eq(voice_rport.data.note),
+                self.o[n].payload.velocity.eq(voice_rport.data.velocity),
+                self.o[n].payload.freq_inc.eq(voice_rport.data.freq_inc),
+            ]
+            if self.mod_wheel_caps_velocity:
+                with m.If(last_cc1 < voice_rport.data.velocity):
+                    m.d.comb += self.o[n].payload.velocity.eq(last_cc1)
+
 
         with m.FSM() as fsm:
 
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
+                    m.d.sync += msg.eq(self.i.payload)
                     with m.Switch(self.i.payload.midi_type):
                         with m.Case(MessageType.NOTE_ON):
-                            m.d.sync += msg.eq(self.i.payload)
                             m.next = 'NOTE-ON'
                         with m.Case(MessageType.NOTE_OFF):
-                            m.d.sync += msg.eq(self.i.payload)
                             m.next = 'NOTE-OFF'
+                        with m.Case(MessageType.CONTROL_CHANGE):
+                            m.next = 'CONTROL-CHANGE'
 
             with m.State('NOTE-ON'):
+                m.d.comb += voice_wport.en.eq(1)
                 # Simple round robin selection of voice location
                 # TODO: if there is a slot that previously had this note, write
                 # the new velocity there for retriggering.
-                with m.If(c_voice == self.max_voices - 1):
-                    m.d.sync += c_voice.eq(0)
+                with m.If(voice_wport.addr == self.max_voices - 1):
+                    m.d.sync += voice_wport.addr.eq(0)
                 with m.Else():
-                    m.d.sync += c_voice.eq(c_voice + 1)
-                # Set voice in current location to MIDI payload attributes
-                with m.Switch(c_voice):
-                    for n in range(self.max_voices):
-                        with m.Case(n):
-                            m.d.sync += [
-                                self.o[n].payload.note.eq(msg.midi_payload.note_on.note),
-                                self.o[n].payload.velocity.eq(msg.midi_payload.note_on.velocity),
-                            ]
+                    m.d.sync += voice_wport.addr.eq(voice_wport.addr + 1)
                 m.next = 'WAIT-VALID'
 
             with m.State('NOTE-OFF'):
                 # Cull any voice that matches the MIDI payload note #
-                for n in range(self.max_voices):
-                    with m.If(self.o[n].payload.note == msg.midi_payload.note_on.note):
-                        m.d.sync += self.o[n].payload.velocity.eq(0)
+                # TODO by walking the voice memory
                 m.next = 'WAIT-VALID'
+
+            with m.State('CONTROL-CHANGE'):
+                with m.If(msg.midi_payload.control_change.controller_number == 1):
+                    m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
+                m.next = 'WAIT-VALID'
+
+        with m.FSM() as fsm:
+
+            with m.State('WAIT-READY'):
+                with m.Switch(voice_rport.addr):
+                    for n in range(self.max_voices):
+                        with m.Case(n):
+                            m.d.comb += self.o[n].valid.eq(1),
+                            with m.If(self.o[n].ready):
+                                m.next = 'NEXT'
+
+            with m.State('NEXT'):
+                with m.If(voice_rport.addr == self.max_voices - 1):
+                    m.d.sync += voice_rport.addr.eq(0)
+                with m.Else():
+                    m.d.sync += voice_rport.addr.eq(voice_rport.addr + 1)
+                m.next = 'WAIT-READ'
+
+            with m.State('WAIT-READ'):
+                m.next = 'WAIT-READY'
+
 
         return m
