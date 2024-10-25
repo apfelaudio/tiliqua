@@ -27,10 +27,33 @@ ASQ_VALID = stream.Signature(ASQ, always_valid=True).create()
 class Split(wiring.Component):
 
     """
-    Split a single stream into multiple independent streams.
+    Consumes payloads from a single stream and splits it into multiple independent streams.
+    This component may be instantiated in 2 modes depending on the value of :py:`replicate`:
+
+    - **Channel splitter** (:py:`replicate == False`):
+        The incoming stream has an :py:`data.ArrayLayout` signature. Each payload in the
+        :py:`data.ArrayLayout` becomes an independent outgoing stream. :py:`n_channels`
+        must match the number of payloads in the :py:`data.ArrayLayout`.
+
+    - **Channel replicater** (:py:`replicate == True`):
+        The incoming stream has a single payload. Each payload in the incoming stream
+        is replicated and at the output appears as :py:`n_channels` independent streams,
+        which produce the same values, however may be synchronized/consumed independently.
+
+    This class is inspired by previous work in the lambdalib and LiteX projects.
     """
 
     def __init__(self, n_channels, replicate=False, source=None):
+        """
+        n_channels : int
+            The number of independent output streams. See usage above.
+        replicate : bool, optional
+            See usage above.
+        source : stream, optional
+            Optional incoming stream to pass through to :py:`wiring.connect` on
+            elaboration. This argument means you do not have to hook up :py:`self.i`
+            and can make some pipelines a little easier to read.
+        """
         self.n_channels = n_channels
         self.replicate  = replicate
         self.source     = source
@@ -83,10 +106,20 @@ class Split(wiring.Component):
 class Merge(wiring.Component):
 
     """
-    Merge multiple independent streams into a single stream.
+    Consumes payloads from multiple independent streams and merges them into a single stream.
+
+    This class is inspired by previous work in the lambdalib and LiteX projects.
     """
 
     def __init__(self, n_channels, sink=None):
+        """
+        n_channels : int
+            The number of independent incoming streams.
+        sink : stream, optional
+            Optional outgoing stream to pass through to :py:`wiring.connect` on
+            elaboration. This argument means you do not have to hook up :py:`self.o`
+            and can make some pipelines a little easier to read.
+        """
         self.n_channels = n_channels
         self.sink       = sink
         super().__init__({
@@ -138,6 +171,21 @@ def connect_remap(m, stream_o, stream_i, mapping):
     ]
 
 def channel_remap(m, stream_o, stream_i, mapping_o_to_i):
+    """
+    Connect 2 streams of type :py:`data.ArrayLayout`, with different channel
+    counts or channel indices. For example, to connect a source with 4 channels
+    to a sink with 2 channels, mapping 0 to 0, 1 to 1, leaving 2 and 3 unconnected:
+
+    .. code-block:: python
+
+        s1 = stream.Signature(data.ArrayLayout(ASQ, 4)).create()
+        s2 = stream.Signature(data.ArrayLayout(ASQ, 2)).create()
+        dsp.channel_remap(m, s1, s2, {0: 0, 1: 1})
+
+    This also works the other way around, to connect e.g. a source with 2 channels to
+    a sink with 4 channels. The stream will make progress however the value of the
+    payloads in any unmapped output channels is undefined.
+    """
     def remap(o, i):
         connections = []
         for k in mapping_o_to_i:
@@ -148,7 +196,14 @@ def channel_remap(m, stream_o, stream_i, mapping_o_to_i):
 class VCA(wiring.Component):
 
     """
-    Voltage Controlled Amplifier.
+    Voltage Controlled Amplifier (simple multiplier).
+
+    Members
+    -------
+    i : :py:`In(stream.Signature(data.ArrayLayout(ASQ, 2)))`
+        2-channel input stream.
+    o : :py:`Out(stream.Signature(data.ArrayLayout(ASQ, 1)))`
+        Output stream, :py:`i.payload[0] * i.payload[1]`.
     """
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 2)))
@@ -170,6 +225,14 @@ class GainVCA(wiring.Component):
     """
     Voltage Controlled Amplifier where the gain amount can be > 1.
     The output is clipped to fit in a normal ASQ.
+
+    Members
+    -------
+    i : :py:`In(stream.Signature(data.StructLayout)`
+        2-channel input stream, with fields :py:`x` (audio in) and :py:`gain`
+        (multiplier that may be >1 for saturation. legal values :py:`-3 < gain < 3`)
+    o : :py:`Out(stream.Signature(ASQ))`
+        Output stream, :py:`x * gain` with saturation.
     """
 
     i: In(stream.Signature(data.StructLayout({
@@ -203,11 +266,20 @@ class GainVCA(wiring.Component):
         return m
 
 class SawNCO(wiring.Component):
-
     """
     Sawtooth Numerically Controlled Oscillator.
-    """
 
+    Often this can be simply routed into a LUT waveshaper for any other waveform type.
+
+    Members
+    -------
+    i : :py:`In(stream.Signature(data.StructLayout)`
+        Input stream, with fields :py:`freq_inc` (linear frequency) and
+        :py:`phase` (phase offset). One output sample is produced for each
+        input sample.
+    o : :py:`Out(stream.Signature(ASQ))`
+        Output stream, values sweep from :py:`ASQ.min()` to :py:`ASQ.max()`.
+    """
     i: In(stream.Signature(data.StructLayout({
             "freq_inc": ASQ,
             "phase": ASQ,
