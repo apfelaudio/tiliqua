@@ -44,7 +44,7 @@ class MidiTests(unittest.TestCase):
 
         dut = midi.MidiVoiceTracker()
 
-        note_range = list(range(40, 43))
+        note_range = list(range(40, 48))
 
         async def stimulus_notes(ctx):
             """Send some MIDI NOTE_ON events."""
@@ -59,19 +59,46 @@ class MidiTests(unittest.TestCase):
                 ctx.set(dut.i.valid, 0)
                 await ctx.tick()
 
+            await ctx.tick().repeat(50)
+
+            for note in note_range:
+                ctx.set(dut.i.valid, 1)
+                ctx.set(dut.i.payload.midi_type, midi.MessageType.NOTE_OFF)
+                ctx.set(dut.i.payload.midi_channel, 1)
+                ctx.set(dut.i.payload.midi_payload.note_off.note, note)
+                ctx.set(dut.i.payload.midi_payload.note_off.velocity, 0x30)
+                await ctx.tick().until(dut.i.ready)
+                ctx.set(dut.i.valid, 0)
+                await ctx.tick()
+
         async def testbench(ctx):
-            """Check that the NOTE_ON events correspond to voice slots."""
+            """Check that the NOTE_ON / OFF events correspond to voice slots."""
             for n in range(dut.max_voices):
                 ctx.set(dut.o[n].ready, 1)
-            for ticks in range(100):
+            n_o_ticks = 0
+            for ticks in range(200):
                 for n in range(dut.max_voices):
                     o_sample = ctx.get(dut.o[n].valid & dut.o[n].ready)
                     if o_sample:
                         note_in_slot = ctx.get(dut.o[n].payload.note)
-                        print(f"slot{n}:", note_in_slot)
-                        # Verify expected notes are in voice slots.
-                        if ticks > 50 and n < len(note_range):
-                            self.assertEqual(note_in_slot, note_range[n])
+                        vel_in_slot  = ctx.get(dut.o[n].payload.velocity)
+                        gate_in_slot = ctx.get(dut.o[n].payload.gate)
+                        print(f"{n_o_ticks} slot{n}: note={note_in_slot} vel={vel_in_slot} gate={gate_in_slot}")
+                        if n < len(note_range):
+                            if n_o_ticks > 8 and n_o_ticks < 24:
+                                # Verify NOTE_ON events written to voice slots.
+                                self.assertEqual(note_in_slot, note_range[n])
+                                self.assertEqual(vel_in_slot,  0x60)
+                                self.assertEqual(gate_in_slot, 1)
+                            if n_o_ticks > 48:
+                                # Verify NOTE_OFF events removed from voice slots.
+                                self.assertEqual(note_in_slot, note_range[n])
+                                self.assertEqual(gate_in_slot, 0)
+                                if dut.zero_velocity_gate:
+                                    self.assertEqual(vel_in_slot,  0x0)
+                                else:
+                                    self.assertEqual(vel_in_slot,  0x30)
+                        n_o_ticks += 1
                 await ctx.tick()
 
         sim = Simulator(dut)

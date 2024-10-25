@@ -154,6 +154,7 @@ class MidiDecode(wiring.Component):
 class MidiVoice(data.Struct):
     note:     unsigned(8)
     velocity: unsigned(8)
+    gate:     unsigned(1)
     freq_inc: ASQ
 
 class MidiVoiceTracker(wiring.Component):
@@ -163,9 +164,10 @@ class MidiVoiceTracker(wiring.Component):
     streams, one stream per voice, with voice culling.
     """
 
-    def __init__(self, max_voices=8, mod_wheel_caps_velocity=True):
+    def __init__(self, max_voices=8, mod_wheel_caps_velocity=True, zero_velocity_gate=False):
         self.max_voices = max_voices
         self.mod_wheel_caps_velocity = mod_wheel_caps_velocity
+        self.zero_velocity_gate = zero_velocity_gate
         super().__init__({
             "i": In(stream.Signature(MidiMessage)),
             "o": Out(stream.Signature(MidiVoice)).array(max_voices),
@@ -193,11 +195,16 @@ class MidiVoiceTracker(wiring.Component):
             depth=self.max_voices, init=[])
         voice_rport = voice_mem.read_port()
         voice_wport = voice_mem.write_port()
+        cull_rport  = voice_mem.read_port()
+
+        m.d.comb += cull_rport.en.eq(1)
 
         # State captured on each incoming MIDI message
 
         msg = Signal(MidiMessage)
         last_cc1 = Signal(8, init=255)
+
+        voice_ix_write = Signal(range(self.max_voices), init=0)
 
         # Keep as many signals outside of FSM states as possible.
 
@@ -206,6 +213,7 @@ class MidiVoiceTracker(wiring.Component):
             f_lut_rport.addr.eq(msg.midi_payload.note_on.note),
             voice_wport.data.note.eq(msg.midi_payload.note_on.note),
             voice_wport.data.velocity.eq(msg.midi_payload.note_on.velocity),
+            voice_wport.data.gate.eq(1),
             voice_wport.data.freq_inc.eq(f_lut_rport.data),
             voice_rport.en.eq(1),
         ]
@@ -217,6 +225,7 @@ class MidiVoiceTracker(wiring.Component):
             m.d.comb += [
                 self.o[n].payload.note.eq(voice_rport.data.note),
                 self.o[n].payload.velocity.eq(voice_rport.data.velocity),
+                self.o[n].payload.gate.eq(voice_rport.data.gate),
                 self.o[n].payload.freq_inc.eq(voice_rport.data.freq_inc),
             ]
             if self.mod_wheel_caps_velocity:
@@ -240,18 +249,42 @@ class MidiVoiceTracker(wiring.Component):
 
             with m.State('NOTE-ON'):
                 m.d.comb += voice_wport.en.eq(1)
+                m.d.comb += voice_wport.addr.eq(voice_ix_write)
                 # Simple round robin selection of voice location
                 # TODO: if there is a slot that previously had this note, write
                 # the new velocity there for retriggering.
-                with m.If(voice_wport.addr == self.max_voices - 1):
-                    m.d.sync += voice_wport.addr.eq(0)
+                with m.If(voice_ix_write == self.max_voices - 1):
+                    m.d.sync += voice_ix_write.eq(0)
                 with m.Else():
-                    m.d.sync += voice_wport.addr.eq(voice_wport.addr + 1)
+                    m.d.sync += voice_ix_write.eq(voice_ix_write + 1)
                 m.next = 'WAIT-VALID'
 
             with m.State('NOTE-OFF'):
                 # Cull any voice that matches the MIDI payload note #
-                # TODO by walking the voice memory
+                # by walking the voice memory.
+
+                with m.If(cull_rport.addr == self.max_voices - 1):
+                    m.d.sync += cull_rport.addr.eq(0)
+                    m.next = 'NOTE-OFF-LAST'
+                with m.Else():
+                    m.d.sync += cull_rport.addr.eq(cull_rport.addr + 1)
+
+                m.d.comb += voice_wport.data.gate.eq(0),
+                if self.zero_velocity_gate:
+                    m.d.comb += voice_wport.data.velocity.eq(0),
+                with m.If(cull_rport.addr > 0):
+                    m.d.comb += voice_wport.addr.eq(cull_rport.addr - 1),
+
+                with m.If((cull_rport.data.note == msg.midi_payload.note_off.note)):
+                    m.d.comb += voice_wport.en.eq(1),
+
+            with m.State('NOTE-OFF-LAST'):
+                m.d.comb += voice_wport.data.gate.eq(0),
+                if self.zero_velocity_gate:
+                    m.d.comb += voice_wport.data.velocity.eq(0),
+                m.d.comb += voice_wport.addr.eq(self.max_voices - 1),
+                with m.If((cull_rport.data.note == msg.midi_payload.note_off.note)):
+                    m.d.comb += voice_wport.en.eq(1),
                 m.next = 'WAIT-VALID'
 
             with m.State('CONTROL-CHANGE'):
