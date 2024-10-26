@@ -203,6 +203,9 @@ class MidiVoiceTracker(wiring.Component):
 
         msg = Signal(MidiMessage)
         last_cc1 = Signal(8, init=255)
+        # Pitch bend
+        pb = Signal(signed(16))
+        last_pb = Signal(shape=ASQ)
 
         voice_ix_write = Signal(range(self.max_voices), init=0)
 
@@ -222,17 +225,24 @@ class MidiVoiceTracker(wiring.Component):
         # All outgoing voice streams contain the same payloads to reduce
         # logic usage. Only the stream strobes are iterated over.
 
+        # pitch bend logic
+        pb_factor = fixed.Const(0.1225, shape=ASQ)
+        pb_scaled = Signal(shape=ASQ)
+        m.d.comb += pb_scaled.eq(pb_factor * last_pb)
+
+        finc = Signal(shape=ASQ)
+        m.d.comb += finc.eq(voice_rport.data.freq_inc)
+
         for n in range(self.max_voices):
             m.d.comb += [
                 self.o[n].payload.note.eq(voice_rport.data.note),
                 self.o[n].payload.velocity.eq(voice_rport.data.velocity),
                 self.o[n].payload.gate.eq(voice_rport.data.gate),
-                self.o[n].payload.freq_inc.eq(voice_rport.data.freq_inc),
+                self.o[n].payload.freq_inc.eq(finc + finc*pb_scaled),
             ]
             if self.mod_wheel_caps_velocity:
                 with m.If(last_cc1 < voice_rport.data.velocity):
                     m.d.comb += self.o[n].payload.velocity.eq(last_cc1)
-
 
         with m.FSM() as fsm:
 
@@ -247,8 +257,11 @@ class MidiVoiceTracker(wiring.Component):
                             m.next = 'NOTE-OFF'
                         with m.Case(MessageType.CONTROL_CHANGE):
                             m.next = 'CONTROL-CHANGE'
+                        with m.Case(MessageType.PITCH_BEND):
+                            m.next = 'PITCH-BEND'
 
             with m.State('NOTE-ON-WAIT'):
+                # wait for freq LUT RAM output to update
                 m.next = 'NOTE-ON'
 
             with m.State('NOTE-ON'):
@@ -296,6 +309,13 @@ class MidiVoiceTracker(wiring.Component):
             with m.State('CONTROL-CHANGE'):
                 with m.If(msg.midi_payload.control_change.controller_number == 1):
                     m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
+                m.next = 'WAIT-VALID'
+
+            with m.State('PITCH-BEND'):
+                # convert 14-bit pitch bend to 16-bit signed ASQ -1 .. 1
+                m.d.comb += pb.eq(Cat(msg.midi_payload.pitch_bend.lsb,
+                                      msg.midi_payload.pitch_bend.msb))
+                m.d.sync += last_pb.raw().eq(pb-(2*8192))
                 m.next = 'WAIT-VALID'
 
         with m.FSM() as fsm:
