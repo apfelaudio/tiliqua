@@ -263,6 +263,8 @@ class MidiVoiceTracker(wiring.Component):
                 # Cull any voice that matches the MIDI payload note #
                 # by walking the voice memory.
 
+                # TODO: how to preserve freq_inc when pitch bending?
+
                 with m.If(cull_rport.addr == self.max_voices - 1):
                     m.d.sync += cull_rport.addr.eq(0)
                     m.next = 'NOTE-OFF-LAST'
@@ -279,6 +281,7 @@ class MidiVoiceTracker(wiring.Component):
                     m.d.comb += voice_wport.en.eq(1),
 
             with m.State('NOTE-OFF-LAST'):
+                # TODO: cleanup/combine with last state
                 m.d.comb += voice_wport.data.gate.eq(0),
                 if self.zero_velocity_gate:
                     m.d.comb += voice_wport.data.velocity.eq(0),
