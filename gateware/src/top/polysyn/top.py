@@ -126,6 +126,8 @@ class PolySynth(wiring.Component):
 
         for n in range(n_voices):
 
+            m.d.comb += voice_tracker.o[n].ready.eq(1)
+
             # Latch all voice tracker streams into dedicated registers.
             with m.If(voice_tracker.o[n].valid):
                 m.d.sync += [

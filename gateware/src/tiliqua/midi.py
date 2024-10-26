@@ -215,6 +215,7 @@ class MidiVoiceTracker(wiring.Component):
             voice_wport.data.velocity.eq(msg.midi_payload.note_on.velocity),
             voice_wport.data.gate.eq(1),
             voice_wport.data.freq_inc.eq(f_lut_rport.data),
+            voice_wport.addr.eq(voice_ix_write),
             voice_rport.en.eq(1),
         ]
 
@@ -241,15 +242,17 @@ class MidiVoiceTracker(wiring.Component):
                     m.d.sync += msg.eq(self.i.payload)
                     with m.Switch(self.i.payload.midi_type):
                         with m.Case(MessageType.NOTE_ON):
-                            m.next = 'NOTE-ON'
+                            m.next = 'NOTE-ON-WAIT'
                         with m.Case(MessageType.NOTE_OFF):
                             m.next = 'NOTE-OFF'
                         with m.Case(MessageType.CONTROL_CHANGE):
                             m.next = 'CONTROL-CHANGE'
 
+            with m.State('NOTE-ON-WAIT'):
+                m.next = 'NOTE-ON'
+
             with m.State('NOTE-ON'):
                 m.d.comb += voice_wport.en.eq(1)
-                m.d.comb += voice_wport.addr.eq(voice_ix_write)
                 # Simple round robin selection of voice location
                 # TODO: if there is a slot that previously had this note, write
                 # the new velocity there for retriggering.
