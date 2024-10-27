@@ -160,8 +160,18 @@ class MidiVoice(data.Struct):
 class MidiVoiceTracker(wiring.Component):
 
     """
-    Read a stream of MIDI messages. Decode it into `max_voices` independent
-    streams, one stream per voice, with voice culling.
+    Read a stream of MIDI messages. Decode it into :py:`max_voices` independent
+    :py:`MidiVoice` registers, one per voice, with voice culling.
+
+    After each :py:`NOTE_ON` event, a voice is selected, its :py:`MidiVoice.note` is set,
+    the :py:`MidiVoice.gate` attribute is set to 1, and `freq_inc` (linearized
+    frequency used for NCOs) is calculated.
+
+    Pitch bend constantly updates :py:`freq_inc` on all channels. Mod wheel may optionally
+    be used to cap velocity outputs on all channels using :py:`mod_wheel_caps_velocity`.
+
+    After each :py:`NOTE_OFF` event, :py:`MidiVoice.gate` is set to 0. If :py:`zero_velocity_gate`
+    is set, the velocity is also set to 0 (instead of the MIDI release velocity).
     """
 
     def __init__(self, max_voices=8, mod_wheel_caps_velocity=False, zero_velocity_gate=False):
@@ -170,13 +180,13 @@ class MidiVoiceTracker(wiring.Component):
         self.zero_velocity_gate = zero_velocity_gate
         super().__init__({
             "i": In(stream.Signature(MidiMessage)),
-            "o": Out(stream.Signature(MidiVoice)).array(max_voices),
+            "o": Out(MidiVoice).array(max_voices),
         });
 
     def elaborate(self, platform):
         m = Module()
 
-        # MIDI note -> linearized frequency LUT memory
+        # MIDI note -> linearized frequency LUT memory (exponential converter)
 
         lut = []
         sample_rate_hz = 48000
@@ -222,9 +232,6 @@ class MidiVoiceTracker(wiring.Component):
             voice_rport.en.eq(1),
         ]
 
-        # All outgoing voice streams contain the same payloads to reduce
-        # logic usage. Only the stream strobes are iterated over.
-
         # pitch bend logic
         pb_factor = fixed.Const(0.1225, shape=ASQ)
         pb_scaled = Signal(shape=ASQ)
@@ -233,16 +240,11 @@ class MidiVoiceTracker(wiring.Component):
         finc = Signal(shape=ASQ)
         m.d.comb += finc.eq(voice_rport.data.freq_inc)
 
-        for n in range(self.max_voices):
-            m.d.comb += [
-                self.o[n].payload.note.eq(voice_rport.data.note),
-                self.o[n].payload.velocity.eq(voice_rport.data.velocity),
-                self.o[n].payload.gate.eq(voice_rport.data.gate),
-                self.o[n].payload.freq_inc.eq(finc + finc*pb_scaled),
-            ]
-            if self.mod_wheel_caps_velocity:
-                with m.If(last_cc1 < voice_rport.data.velocity):
-                    m.d.comb += self.o[n].payload.velocity.eq(last_cc1)
+        # voice mask
+        voice_mask = Signal(self.max_voices)
+
+        # FSM to process incoming MIDI messages one at a time and update
+        # internal memories based on these messagse.
 
         with m.FSM() as fsm:
 
@@ -252,6 +254,7 @@ class MidiVoiceTracker(wiring.Component):
                     m.d.sync += msg.eq(self.i.payload)
                     with m.Switch(self.i.payload.midi_type):
                         with m.Case(MessageType.NOTE_ON):
+                            m.d.sync += voice_ix_write.eq(0)
                             m.next = 'NOTE-ON-WAIT'
                         with m.Case(MessageType.NOTE_OFF):
                             m.next = 'NOTE-OFF'
@@ -261,18 +264,22 @@ class MidiVoiceTracker(wiring.Component):
                             m.next = 'PITCH-BEND'
 
             with m.State('NOTE-ON-WAIT'):
-                # wait for freq LUT RAM output to update
-                m.next = 'NOTE-ON'
+
+                # warn: need at least 1 clock for freq LUT RAM output to update
+                # so best not to write to voice_wport from this FSM state.
+
+                with m.If(~voice_mask.bit_select(voice_ix_write, 1)):
+                    m.next = 'NOTE-ON'
+                with m.Else():
+                    m.d.sync += voice_ix_write.eq(voice_ix_write + 1)
+
+                with m.If(voice_ix_write == self.max_voices - 1):
+                    # no free note slots
+                    m.next = 'WAIT-VALID'
 
             with m.State('NOTE-ON'):
                 m.d.comb += voice_wport.en.eq(1)
-                # Simple round robin selection of voice location
-                # TODO: if there is a slot that previously had this note, write
-                # the new velocity there for retriggering.
-                with m.If(voice_ix_write == self.max_voices - 1):
-                    m.d.sync += voice_ix_write.eq(0)
-                with m.Else():
-                    m.d.sync += voice_ix_write.eq(voice_ix_write + 1)
+                m.d.sync += voice_mask.bit_select(voice_wport.addr, 1).eq(1)
                 m.next = 'WAIT-VALID'
 
             with m.State('NOTE-OFF'):
@@ -294,7 +301,8 @@ class MidiVoiceTracker(wiring.Component):
                     m.d.comb += voice_wport.addr.eq(cull_rport.addr - 1),
 
                 with m.If((cull_rport.data.note == msg.midi_payload.note_off.note)):
-                    m.d.comb += voice_wport.en.eq(1),
+                    m.d.comb += voice_wport.en.eq(1)
+                    m.d.sync += voice_mask.bit_select(voice_wport.addr, 1).eq(0)
 
             with m.State('NOTE-OFF-LAST'):
                 # TODO: cleanup/combine with last state
@@ -303,7 +311,8 @@ class MidiVoiceTracker(wiring.Component):
                     m.d.comb += voice_wport.data.velocity.eq(0),
                 m.d.comb += voice_wport.addr.eq(self.max_voices - 1),
                 with m.If((cull_rport.data.note == msg.midi_payload.note_off.note)):
-                    m.d.comb += voice_wport.en.eq(1),
+                    m.d.comb += voice_wport.en.eq(1)
+                    m.d.sync += voice_mask.bit_select(voice_wport.addr, 1).eq(0)
                 m.next = 'WAIT-VALID'
 
             with m.State('CONTROL-CHANGE'):
@@ -318,15 +327,25 @@ class MidiVoiceTracker(wiring.Component):
                 m.d.sync += last_pb.raw().eq(pb-(2*8192))
                 m.next = 'WAIT-VALID'
 
+
+        # Round-robin latch voice properties to output registers.
+
         with m.FSM() as fsm:
 
-            with m.State('WAIT-READY'):
+            with m.State('UPDATE'):
                 with m.Switch(voice_rport.addr):
                     for n in range(self.max_voices):
                         with m.Case(n):
-                            m.d.comb += self.o[n].valid.eq(1),
-                            with m.If(self.o[n].ready):
-                                m.next = 'NEXT'
+                            m.d.sync += [
+                                self.o[n].note.eq(voice_rport.data.note),
+                                self.o[n].velocity.eq(voice_rport.data.velocity),
+                                self.o[n].gate.eq(voice_rport.data.gate),
+                                self.o[n].freq_inc.eq(finc + finc*pb_scaled),
+                            ]
+                            if self.mod_wheel_caps_velocity:
+                                with m.If(last_cc1 < voice_rport.data.velocity):
+                                    m.d.sync += self.o[n].velocity.eq(last_cc1)
+                m.next = 'NEXT'
 
             with m.State('NEXT'):
                 with m.If(voice_rport.addr == self.max_voices - 1):
@@ -336,7 +355,8 @@ class MidiVoiceTracker(wiring.Component):
                 m.next = 'WAIT-READ'
 
             with m.State('WAIT-READ'):
-                m.next = 'WAIT-READY'
+                # one clock for voice_rport data to appear
+                m.next = 'UPDATE'
 
 
         return m

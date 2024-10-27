@@ -89,11 +89,7 @@ class PolySynth(wiring.Component):
     drive: In(unsigned(16))
     reso: In(unsigned(16))
 
-    voice_states: Out(data.StructLayout({
-        "note":  unsigned(8),
-        "cutoff": unsigned(8),
-        "freq_inc": ASQ,
-    })).array(8)
+    voice_states: Out(midi.MidiVoice).array(8)
 
     i_touch_control: In(unsigned(1))
 
@@ -126,28 +122,20 @@ class PolySynth(wiring.Component):
 
         for n in range(n_voices):
 
-            m.d.comb += voice_tracker.o[n].ready.eq(1)
-
-            # Latch all voice tracker streams into dedicated registers.
-            with m.If(voice_tracker.o[n].valid):
-                m.d.sync += [
-                    self.voice_states[n].note.eq(voice_tracker.o[n].payload.note),
-                    self.voice_states[n].cutoff.eq(voice_tracker.o[n].payload.velocity),
-                    self.voice_states[n].freq_inc.eq(voice_tracker.o[n].payload.freq_inc),
-                ]
+            m.d.comb += self.voice_states[n].eq(voice_tracker.o[n])
 
             # Connect audio in -> NCO.i
             dsp.connect_remap(m, cv_in.o[0], ncos[n].i, lambda o, i : [
                 # For fun, phase mod on audio in #0
                 i.payload.phase   .eq(o.payload),
-                i.payload.freq_inc.eq(self.voice_states[n].freq_inc)
+                i.payload.freq_inc.eq(voice_tracker.o[n].freq_inc)
             ])
 
             # Connect voice.vel and NCO.o -> SVF.
             dsp.connect_remap(m, ncos[n].o, svfs[n].i, lambda o, i : [
                 i.payload.x                    .eq(o.payload >> 1),
                 i.payload.resonance.raw()      .eq(self.reso),
-                i.payload.cutoff               .eq(self.voice_states[n].cutoff << 4)
+                i.payload.cutoff               .eq(voice_tracker.o[n].velocity << 4)
             ])
 
             # Connect SVF LPF -> merge channel
@@ -289,7 +277,7 @@ class SynthPeripheral(wiring.Component):
         for i, voice in enumerate(self._voices):
             m.d.comb += [
                 voice.f.note.r_data  .eq(self.synth.voice_states[i].note),
-                voice.f.cutoff.r_data.eq(self.synth.voice_states[i].cutoff)
+                voice.f.cutoff.r_data.eq(self.synth.voice_states[i].velocity)
             ]
 
         # matrix coefficient update logic
