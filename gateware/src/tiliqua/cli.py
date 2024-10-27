@@ -21,6 +21,7 @@ from vendor.ila                  import AsyncSerialILAFrontend
 class CliAction(str, enum.Enum):
     Build    = "build"
     Simulate = "sim"
+    Show     = "show"
 
 # TODO: these arguments would likely be cleaner encapsulated in a dataclass that
 # has an instance per-project, that may also contain some bootloader metadata.
@@ -75,6 +76,8 @@ def top_level_cli(
                         help="amaranth: emit debug verilog")
     parser.add_argument('--noflatten', action='store_true',
                         help="yosys: don't flatten heirarchy (useful for checking area usage).")
+    parser.add_argument('--show-top', type=str, default="top.core",
+                        help="show: select fragment from design to plot, e.g. 'top.core.waveshaper0'.")
     if ila_supported:
         parser.add_argument('--ila', action='store_true',
                             help="debug: add ila to design, program bitstream after build, poll UART for data.")
@@ -83,7 +86,7 @@ def top_level_cli(
 
     sim_action = [CliAction.Simulate.value] if simulation_supported else []
     parser.add_argument("action", type=CliAction,
-                        choices=[CliAction.Build.value] + sim_action)
+                        choices=[CliAction.Build.value, CliAction.Show.value] + sim_action)
 
     if argparse_callback:
         argparse_callback(parser)
@@ -122,6 +125,29 @@ def top_level_cli(
     else:
         # Tiliqua R2 with SoldierCrab R2
         hw_platform = TiliquaR2SC2Platform()
+
+    if args.action == CliAction.Show:
+        # Convert the design to RTLIL. Passing no ports is fine as long as we're
+        # inspecting something deeper than the top-level design (common case)
+        from amaranth.back import rtlil
+        rtlil_output = rtlil.convert(fragment, platform=sim.VerilatorPlatform(hw_platform), ports={})
+        # Synthesize RTLIL at the provided --show-top path into .json
+        from amaranth._toolchain.yosys import find_yosys
+        yosys = find_yosys(lambda ver: ver >= (0, 40, 0))
+        script = []
+        script.append("read_ilang <<rtlil\n{}\nrtlil".format(rtlil_output))
+        script.append(f"""
+            hierarchy -top {args.show_top}
+            prep
+            """)
+        filename = f"show.{args.show_top}"
+        netlist_filename = f"{filename}.json"
+        script.append("write_json " + netlist_filename)
+        yosys.run(["-q", "-"], "\n".join(script), src_loc_at=1)
+        # Plot netlist as an SVG and open it.
+        os.system(f"netlistsvg {netlist_filename} -o {filename}.svg")
+        os.system(f"xdg-open {filename}.svg")
+        sys.exit(0)
 
     if isinstance(fragment, TiliquaSoc):
 
