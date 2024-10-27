@@ -62,9 +62,8 @@ macro_rules! impl_polysynth {
                     self.registers.reso().write(|w| unsafe { w.value().bits(value) } );
                 }
 
-                pub fn set_touch_control(&mut self, value: bool)  {
-                    self.registers.touch_control().write(
-                        |w| unsafe { w.value().bit(value) } );
+                pub fn midi_write(&mut self, value: u32)  {
+                    self.registers.midi_write().write(|w| unsafe { w.msg().bits(value) } );
                 }
             }
         )+

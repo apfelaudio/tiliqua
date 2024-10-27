@@ -33,6 +33,7 @@ import math
 from amaranth                  import *
 from amaranth.lib              import wiring, data, stream
 from amaranth.lib.wiring       import In, Out, connect, flipped
+from amaranth.lib.fifo         import SyncFIFOBuffered
 
 from amaranth_soc              import csr
 
@@ -236,8 +237,8 @@ class SynthPeripheral(wiring.Component):
     class MatrixBusy(csr.Register, access="r"):
         busy: csr.Field(csr.action.R, unsigned(1))
 
-    class TouchControl(csr.Register, access="w"):
-        value: csr.Field(csr.action.W, unsigned(1))
+    class MidiWrite(csr.Register, access="w"):
+        msg: csr.Field(csr.action.W, unsigned(32))
 
     def __init__(self, synth=None):
         self.synth = synth
@@ -248,10 +249,11 @@ class SynthPeripheral(wiring.Component):
                                offset=0x8+i*4) for i in range(8)]
         self._matrix        = regs.add("matrix",        self.Matrix(),       offset=0x28)
         self._matrix_busy   = regs.add("matrix_busy",   self.MatrixBusy(),   offset=0x2C)
-        self._touch_control = regs.add("touch_control", self.TouchControl(), offset=0x30)
+        self._midi_write    = regs.add("midi_write",    self.MidiWrite(),    offset=0x30)
         self._bridge = csr.Bridge(regs.as_memory_map())
         super().__init__({
             "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+            "i_midi": In(stream.Signature(midi.MidiMessage))
         })
         self.bus.memory_map = self._bridge.bus.memory_map
 
@@ -265,11 +267,6 @@ class SynthPeripheral(wiring.Component):
             m.d.sync += self.synth.drive.eq(self._drive.f.value.w_data)
         with m.If(self._reso.f.value.w_stb):
             m.d.sync += self.synth.reso.eq(self._reso.f.value.w_data)
-        """
-        # TODO
-        with m.If(self._touch_control.f.value.w_stb):
-            m.d.sync += self.synth.i_touch_control.eq(self._touch_control.f.value.w_data)
-        """
 
         # voice tracking
         for i, voice in enumerate(self._voices):
@@ -295,6 +292,18 @@ class SynthPeripheral(wiring.Component):
                 matrix_busy.eq(0),
                 self.synth.diffuser.matrix.c.valid.eq(0),
             ]
+
+
+        # MIDI injection and arbiter between SoC MIDI and HW MIDI -> synth MIDI.
+        m.submodules.soc_midi_fifo = soc_midi_fifo = SyncFIFOBuffered(
+            width=24, depth=8)
+        m.d.comb += [
+            soc_midi_fifo.w_data.eq(self._midi_write.f.msg.w_data),
+            soc_midi_fifo.w_en.eq(self._midi_write.element.w_stb),
+        ]
+        wiring.connect(m, wiring.flipped(self.i_midi), self.synth.i_midi)
+        with m.If(soc_midi_fifo.r_stream.valid):
+            wiring.connect(m, soc_midi_fifo.r_stream, self.synth.i_midi)
 
         return m
 
@@ -350,9 +359,8 @@ class PolySoc(TiliquaSoc):
             m.submodules.serialrx = serialrx = midi.SerialRx(
                     system_clk_hz=60e6, pins=midi_pins)
             m.submodules.midi_decode = midi_decode = midi.MidiDecode()
-            # TODO: let SoC inject MIDI here for touch sensing
             wiring.connect(m, serialrx.o, midi_decode.i)
-            wiring.connect(m, midi_decode.o, polysynth.i_midi)
+            wiring.connect(m, midi_decode.o, self.synth_periph.i_midi)
 
         # polysynth audio
         wiring.connect(m, astream.istream, polysynth.i)

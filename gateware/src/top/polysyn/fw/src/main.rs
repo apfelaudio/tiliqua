@@ -183,17 +183,14 @@ fn main() -> ! {
         synth.set_matrix_coefficient(2, 6, coeff_wet);
         synth.set_matrix_coefficient(3, 7, coeff_wet);
 
-        synth.set_touch_control(opts.poly.interface.value == ControlInterface::Touch);
+        //synth.set_touch_control(opts.poly.interface.value == ControlInterface::Touch);
+        synth.midi_write(0x923D78);
 
         let notes = synth.voice_notes();
         let cutoffs = synth.voice_cutoffs();
 
         let n_voices = 8usize;
         for ix in 0usize..n_voices {
-            /*
-            draw::draw_voice(&mut display, 100, 100 + (ix as u32) * (V_ACTIVE-200) / n_voices,
-                             notes[ix], cutoffs[ix], opts.xbeam.hue.value).ok();
-            */
             let j = 7-ix;
             draw::draw_voice(&mut display,
                              ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as i32,
