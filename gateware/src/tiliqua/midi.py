@@ -234,6 +234,8 @@ class MidiVoiceTracker(wiring.Component):
                             m.next = 'CONTROL-CHANGE'
                         with m.Case(MessageType.PITCH_BEND):
                             m.next = 'PITCH-BEND'
+                        with m.Case(MessageType.POLY_PRESSURE):
+                            m.next = 'POLY-PRESSURE'
 
             with m.State('NOTE-ON-SELECT'):
                 # find an empty note slot to write to
@@ -276,9 +278,23 @@ class MidiVoiceTracker(wiring.Component):
                             m.d.sync += self.o[n].velocity.eq(msg.midi_payload.note_off.velocity)
                 m.next = 'UPDATE'
 
+            with m.State('POLY-PRESSURE'):
+                # update any voice that matches the MIDI payload note #
+                # TODO: rather than piggybacking on velocity, this should probably be its own field..
+                for n in range(self.max_voices):
+                    with m.If(self.o[n].note == msg.midi_payload.poly_pressure.note):
+                        m.d.sync += self.o[n].velocity.eq(msg.midi_payload.poly_pressure.pressure)
+                m.next = 'UPDATE'
+
             with m.State('CONTROL-CHANGE'):
                 with m.If(msg.midi_payload.control_change.controller_number == 1):
                     m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
+                with m.If(msg.midi_payload.control_change.controller_number == 123):
+                    # all stop
+                    for n in range(self.max_voices):
+                        m.d.sync += self.o[n].gate.eq(0)
+                        if self.zero_velocity_gate:
+                            m.d.sync += self.o[n].velocity.eq(0)
                 m.next = 'UPDATE'
 
             with m.State('PITCH-BEND'):

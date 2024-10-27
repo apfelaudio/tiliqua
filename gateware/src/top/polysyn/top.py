@@ -91,11 +91,6 @@ class PolySynth(wiring.Component):
 
     voice_states: Out(midi.MidiVoice).array(8)
 
-    i_touch_control: In(unsigned(1))
-
-    i_touch: In(8).array(8)
-    i_jack:  In(8)
-
     def elaborate(self, platform):
         m = Module()
 
@@ -124,45 +119,18 @@ class PolySynth(wiring.Component):
 
             m.d.comb += self.voice_states[n].eq(voice_tracker.o[n])
 
-            n_freq_inc = Signal(ASQ)
-            n_velocity = Signal(8)
-
-            # MIDI control by default. Touch control may override these.
-            m.d.comb += [
-                n_freq_inc.eq(voice_tracker.o[n].freq_inc),
-                n_velocity.eq(voice_tracker.o[n].velocity_mod),
-            ]
-
-            with m.If(self.i_touch_control):
-                if n < 6:
-                    with m.If(self.i_jack[n] == 0):
-                        m.d.comb += n_velocity.eq(self.i_touch[n]>>1)
-                    with m.Else():
-                        m.d.comb += n_velocity.eq(0)
-
-                def midi_note_to_linear_freq(note, fs_hz=48000, shape=ASQ):
-                    freq = 440 * 2**((note-69)/12.0)
-                    freq_inc = freq * (1.0 / fs_hz)
-                    return fixed.Const(freq_inc, shape=shape)
-
-                # Connect notes from fixed minor scale for touchsynth
-                # TODO: make this selectable!
-                touch_note_map = [48, 48+7, 48+12, 48+12+3, 48+12+7, 48+24, 0, 0]
-                touch_note_map = [midi_note_to_linear_freq(n) for n in touch_note_map]
-                m.d.comb += n_freq_inc.eq(touch_note_map[n])
-
             # Connect audio in -> NCO.i
             dsp.connect_remap(m, cv_in.o[0], ncos[n].i, lambda o, i : [
                 # For fun, phase mod on audio in #0
                 i.payload.phase   .eq(o.payload),
-                i.payload.freq_inc.eq(n_freq_inc)
+                i.payload.freq_inc.eq(voice_tracker.o[n].freq_inc)
             ])
 
             # Connect voice.vel and NCO.o -> SVF.
             dsp.connect_remap(m, ncos[n].o, svfs[n].i, lambda o, i : [
                 i.payload.x                    .eq(o.payload >> 1),
                 i.payload.resonance.raw()      .eq(self.reso),
-                i.payload.cutoff               .eq(n_velocity << 4)
+                i.payload.cutoff               .eq(voice_tracker.o[n].velocity_mod << 5)
             ])
 
             # Connect SVF LPF -> merge channel
@@ -297,8 +265,11 @@ class SynthPeripheral(wiring.Component):
             m.d.sync += self.synth.drive.eq(self._drive.f.value.w_data)
         with m.If(self._reso.f.value.w_stb):
             m.d.sync += self.synth.reso.eq(self._reso.f.value.w_data)
+        """
+        # TODO
         with m.If(self._touch_control.f.value.w_stb):
             m.d.sync += self.synth.i_touch_control.eq(self._touch_control.f.value.w_data)
+        """
 
         # voice tracking
         for i, voice in enumerate(self._voices):
@@ -379,12 +350,9 @@ class PolySoc(TiliquaSoc):
             m.submodules.serialrx = serialrx = midi.SerialRx(
                     system_clk_hz=60e6, pins=midi_pins)
             m.submodules.midi_decode = midi_decode = midi.MidiDecode()
+            # TODO: let SoC inject MIDI here for touch sensing
             wiring.connect(m, serialrx.o, midi_decode.i)
             wiring.connect(m, midi_decode.o, polysynth.i_midi)
-
-        # hook up touch + jack
-        m.d.comb += polysynth.i_jack.eq(pmod0.jack)
-        m.d.comb += [polysynth.i_touch[n].eq(pmod0.touch[n]) for n in range(0, 8)]
 
         # polysynth audio
         wiring.connect(m, astream.istream, polysynth.i)
