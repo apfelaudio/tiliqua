@@ -103,7 +103,7 @@ class PolySynth(wiring.Component):
         n_voices = 8
 
         m.submodules.voice_tracker = voice_tracker = midi.MidiVoiceTracker(
-            max_voices=n_voices, mod_wheel_caps_velocity=True, zero_velocity_gate=True)
+            max_voices=n_voices, velocity_mod=True, zero_velocity_gate=True)
         # 1 oscillator and filter per oscillator
         ncos = [dsp.SawNCO(shift=0) for _ in range(n_voices)]
         svfs = [dsp.SVF() for _ in range(n_voices)]
@@ -135,7 +135,7 @@ class PolySynth(wiring.Component):
             dsp.connect_remap(m, ncos[n].o, svfs[n].i, lambda o, i : [
                 i.payload.x                    .eq(o.payload >> 1),
                 i.payload.resonance.raw()      .eq(self.reso),
-                i.payload.cutoff               .eq(voice_tracker.o[n].velocity << 4)
+                i.payload.cutoff               .eq(voice_tracker.o[n].velocity_mod << 4)
             ])
 
             # Connect SVF LPF -> merge channel
@@ -277,7 +277,7 @@ class SynthPeripheral(wiring.Component):
         for i, voice in enumerate(self._voices):
             m.d.comb += [
                 voice.f.note.r_data  .eq(self.synth.voice_states[i].note),
-                voice.f.cutoff.r_data.eq(self.synth.voice_states[i].velocity)
+                voice.f.cutoff.r_data.eq(self.synth.voice_states[i].velocity_mod)
             ]
 
         # matrix coefficient update logic

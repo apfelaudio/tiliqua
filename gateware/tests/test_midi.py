@@ -73,20 +73,19 @@ class MidiTests(unittest.TestCase):
 
         async def testbench(ctx):
             """Check that the NOTE_ON / OFF events correspond to voice slots."""
-            for ticks in range(200):
+            for ticks in range(400):
                 for n in range(dut.max_voices):
                     note_in_slot = ctx.get(dut.o[n].note)
                     vel_in_slot  = ctx.get(dut.o[n].velocity)
                     gate_in_slot = ctx.get(dut.o[n].gate)
                     print(f"{ticks} slot{n}: note={note_in_slot} vel={vel_in_slot} gate={gate_in_slot}")
-                    """
                     if n < len(note_range):
-                        if n_o_ticks > 8 and n_o_ticks < 24:
+                        if ticks > 180 and ticks < 200:
                             # Verify NOTE_ON events written to voice slots.
                             self.assertEqual(note_in_slot, note_range[n])
                             self.assertEqual(vel_in_slot,  0x60)
                             self.assertEqual(gate_in_slot, 1)
-                        if n_o_ticks > 48:
+                        if ticks > 380:
                             # Verify NOTE_OFF events removed from voice slots.
                             self.assertEqual(note_in_slot, note_range[n])
                             self.assertEqual(gate_in_slot, 0)
@@ -94,7 +93,6 @@ class MidiTests(unittest.TestCase):
                                 self.assertEqual(vel_in_slot,  0x0)
                             else:
                                 self.assertEqual(vel_in_slot,  0x30)
-                    """
                 await ctx.tick()
 
         sim = Simulator(dut)

@@ -152,10 +152,11 @@ class MidiDecode(wiring.Component):
         return m
 
 class MidiVoice(data.Struct):
-    note:     unsigned(8)
-    velocity: unsigned(8)
-    gate:     unsigned(1)
-    freq_inc: ASQ
+    note:         unsigned(8)
+    velocity:     unsigned(8)
+    gate:         unsigned(1)
+    freq_inc:     ASQ
+    velocity_mod: unsigned(8)
 
 class MidiVoiceTracker(wiring.Component):
 
@@ -168,15 +169,15 @@ class MidiVoiceTracker(wiring.Component):
     frequency used for NCOs) is calculated.
 
     Pitch bend constantly updates :py:`freq_inc` on all channels. Mod wheel may optionally
-    be used to cap velocity outputs on all channels using :py:`mod_wheel_caps_velocity`.
+    be used to cap velocity outputs on all channels using :py:`velocity_mod`.
 
     After each :py:`NOTE_OFF` event, :py:`MidiVoice.gate` is set to 0. If :py:`zero_velocity_gate`
     is set, the velocity is also set to 0 (instead of the MIDI release velocity).
     """
 
-    def __init__(self, max_voices=8, mod_wheel_caps_velocity=False, zero_velocity_gate=False):
+    def __init__(self, max_voices=8, velocity_mod=False, zero_velocity_gate=False):
         self.max_voices = max_voices
-        self.mod_wheel_caps_velocity = mod_wheel_caps_velocity
+        self.velocity_mod = velocity_mod
         self.zero_velocity_gate = zero_velocity_gate
         super().__init__({
             "i": In(stream.Signature(MidiMessage)),
@@ -197,51 +198,22 @@ class MidiVoiceTracker(wiring.Component):
         m.submodules.f_lut_mem = f_lut_mem = Memory(
                 shape=signed(ASQ.as_shape().width), depth=len(lut), init=lut)
         f_lut_rport = f_lut_mem.read_port()
-
-        # Voice state memory
-
-        m.submodules.voice_mem = voice_mem = Memory(
-            shape=MidiVoice,
-            depth=self.max_voices, init=[])
-        voice_rport = voice_mem.read_port()
-        voice_wport = voice_mem.write_port()
-        cull_rport  = voice_mem.read_port()
-
-        m.d.comb += cull_rport.en.eq(1)
+        m.d.comb += f_lut_rport.en.eq(1)
 
         # State captured on each incoming MIDI message
 
-        msg = Signal(MidiMessage)
-        last_cc1 = Signal(8, init=255)
-        # Pitch bend
-        pb = Signal(signed(16))
-        last_pb = Signal(shape=ASQ)
+        msg = Signal(MidiMessage)      # last MIDI message
+        last_cc1 = Signal(8, init=255) # last cc1 (mod wheel) position
+        last_pb = Signal(shape=ASQ)    # last pitch bend position
 
+        # write index for NOTE_ON select + commit
         voice_ix_write = Signal(range(self.max_voices), init=0)
 
-        # Keep as many signals outside of FSM states as possible.
-
-        m.d.comb += [
-            f_lut_rport.en.eq(1),
-            f_lut_rport.addr.eq(msg.midi_payload.note_on.note),
-            voice_wport.data.note.eq(msg.midi_payload.note_on.note),
-            voice_wport.data.velocity.eq(msg.midi_payload.note_on.velocity),
-            voice_wport.data.gate.eq(1),
-            voice_wport.data.freq_inc.eq(f_lut_rport.data),
-            voice_wport.addr.eq(voice_ix_write),
-            voice_rport.en.eq(1),
-        ]
-
-        # pitch bend logic
-        pb_factor = fixed.Const(0.1225, shape=ASQ)
-        pb_scaled = Signal(shape=ASQ)
-        m.d.comb += pb_scaled.eq(pb_factor * last_pb)
-
-        finc = Signal(shape=ASQ)
-        m.d.comb += finc.eq(voice_rport.data.freq_inc)
-
-        # voice mask
+        # voice mask (binary 1 is for an occupied voice slot)
         voice_mask = Signal(self.max_voices)
+
+        # freq / mod / pb update index
+        ix_update = Signal(range(self.max_voices))
 
         # FSM to process incoming MIDI messages one at a time and update
         # internal memories based on these messagse.
@@ -255,7 +227,7 @@ class MidiVoiceTracker(wiring.Component):
                     with m.Switch(self.i.payload.midi_type):
                         with m.Case(MessageType.NOTE_ON):
                             m.d.sync += voice_ix_write.eq(0)
-                            m.next = 'NOTE-ON-WAIT'
+                            m.next = 'NOTE-ON-SELECT'
                         with m.Case(MessageType.NOTE_OFF):
                             m.next = 'NOTE-OFF'
                         with m.Case(MessageType.CONTROL_CHANGE):
@@ -263,100 +235,104 @@ class MidiVoiceTracker(wiring.Component):
                         with m.Case(MessageType.PITCH_BEND):
                             m.next = 'PITCH-BEND'
 
-            with m.State('NOTE-ON-WAIT'):
-
+            with m.State('NOTE-ON-SELECT'):
+                # find an empty note slot to write to
                 # warn: need at least 1 clock for freq LUT RAM output to update
-                # so best not to write to voice_wport from this FSM state.
-
+                # so best not to commit from the same FSM state.
                 with m.If(~voice_mask.bit_select(voice_ix_write, 1)):
-                    m.next = 'NOTE-ON'
+                    m.next = 'NOTE-ON-COMMIT'
                 with m.Else():
                     m.d.sync += voice_ix_write.eq(voice_ix_write + 1)
+                    with m.If(voice_ix_write == self.max_voices - 1):
+                        # no free note slots
+                        m.next = 'WAIT-VALID'
 
-                with m.If(voice_ix_write == self.max_voices - 1):
-                    # no free note slots
-                    m.next = 'WAIT-VALID'
-
-            with m.State('NOTE-ON'):
-                m.d.comb += voice_wport.en.eq(1)
-                m.d.sync += voice_mask.bit_select(voice_wport.addr, 1).eq(1)
-                m.next = 'WAIT-VALID'
+            with m.State('NOTE-ON-COMMIT'):
+                # commit the new note to the found slot
+                with m.Switch(voice_ix_write):
+                    for n in range(self.max_voices):
+                        with m.Case(n):
+                            m.d.sync += [
+                                voice_mask.bit_select(n, 1).eq(1),
+                                self.o[n].note.eq(msg.midi_payload.note_on.note),
+                                self.o[n].velocity.eq(msg.midi_payload.note_on.velocity),
+                                self.o[n].gate.eq(1),
+                            ]
+                            if not self.velocity_mod:
+                                m.d.sync += self.o[n].velocity_mod.eq(msg.midi_payload.note_on.velocity)
+                m.next = 'UPDATE'
 
             with m.State('NOTE-OFF'):
-                # Cull any voice that matches the MIDI payload note #
-                # by walking the voice memory.
-
-                # TODO: how to preserve freq_inc when pitch bending?
-
-                with m.If(cull_rport.addr == self.max_voices - 1):
-                    m.d.sync += cull_rport.addr.eq(0)
-                    m.next = 'NOTE-OFF-LAST'
-                with m.Else():
-                    m.d.sync += cull_rport.addr.eq(cull_rport.addr + 1)
-
-                m.d.comb += voice_wport.data.gate.eq(0),
-                if self.zero_velocity_gate:
-                    m.d.comb += voice_wport.data.velocity.eq(0),
-                with m.If(cull_rport.addr > 0):
-                    m.d.comb += voice_wport.addr.eq(cull_rport.addr - 1),
-
-                with m.If((cull_rport.data.note == msg.midi_payload.note_off.note)):
-                    m.d.comb += voice_wport.en.eq(1)
-                    m.d.sync += voice_mask.bit_select(voice_wport.addr, 1).eq(0)
-
-            with m.State('NOTE-OFF-LAST'):
-                # TODO: cleanup/combine with last state
-                m.d.comb += voice_wport.data.gate.eq(0),
-                if self.zero_velocity_gate:
-                    m.d.comb += voice_wport.data.velocity.eq(0),
-                m.d.comb += voice_wport.addr.eq(self.max_voices - 1),
-                with m.If((cull_rport.data.note == msg.midi_payload.note_off.note)):
-                    m.d.comb += voice_wport.en.eq(1)
-                    m.d.sync += voice_mask.bit_select(voice_wport.addr, 1).eq(0)
-                m.next = 'WAIT-VALID'
+                # cull any voice that matches the MIDI payload note #
+                for n in range(self.max_voices):
+                    with m.If(self.o[n].note == msg.midi_payload.note_off.note):
+                        m.d.sync += [
+                            voice_mask.bit_select(n, 1).eq(0),
+                            self.o[n].gate.eq(0),
+                        ]
+                        if self.zero_velocity_gate:
+                            m.d.sync += self.o[n].velocity.eq(0)
+                        else:
+                            m.d.sync += self.o[n].velocity.eq(msg.midi_payload.note_off.velocity)
+                m.next = 'UPDATE'
 
             with m.State('CONTROL-CHANGE'):
                 with m.If(msg.midi_payload.control_change.controller_number == 1):
                     m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
-                m.next = 'WAIT-VALID'
+                m.next = 'UPDATE'
 
             with m.State('PITCH-BEND'):
                 # convert 14-bit pitch bend to 16-bit signed ASQ -1 .. 1
+                pb = Signal(signed(16))
                 m.d.comb += pb.eq(Cat(msg.midi_payload.pitch_bend.lsb,
                                       msg.midi_payload.pitch_bend.msb))
                 m.d.sync += last_pb.raw().eq(pb-(2*8192))
-                m.next = 'WAIT-VALID'
-
-
-        # Round-robin latch voice properties to output registers.
-
-        with m.FSM() as fsm:
-
-            with m.State('UPDATE'):
-                with m.Switch(voice_rport.addr):
-                    for n in range(self.max_voices):
-                        with m.Case(n):
-                            m.d.sync += [
-                                self.o[n].note.eq(voice_rport.data.note),
-                                self.o[n].velocity.eq(voice_rport.data.velocity),
-                                self.o[n].gate.eq(voice_rport.data.gate),
-                                self.o[n].freq_inc.eq(finc + finc*pb_scaled),
-                            ]
-                            if self.mod_wheel_caps_velocity:
-                                with m.If(last_cc1 < voice_rport.data.velocity):
-                                    m.d.sync += self.o[n].velocity.eq(last_cc1)
-                m.next = 'NEXT'
-
-            with m.State('NEXT'):
-                with m.If(voice_rport.addr == self.max_voices - 1):
-                    m.d.sync += voice_rport.addr.eq(0)
-                with m.Else():
-                    m.d.sync += voice_rport.addr.eq(voice_rport.addr + 1)
-                m.next = 'WAIT-READ'
-
-            with m.State('WAIT-READ'):
-                # one clock for voice_rport data to appear
                 m.next = 'UPDATE'
 
+            with m.State('UPDATE'):
+                # set LUT not address so we can calculate frequency from it
+                with m.Switch(ix_update):
+                    for n in range(self.max_voices):
+                        with m.Case(n):
+                            m.d.comb += f_lut_rport.addr.eq(self.o[n].note),
+                m.next = 'UPDATE-FREQ-VEL'
+
+            with m.State('UPDATE-FREQ-VEL'):
+
+                # Update linear frequency and velocity based on note values,
+                # pitch bend and (optionally) mod wheel.
+
+                # pitch bend factor
+                pb_factor = fixed.Const(0.1225, shape=ASQ)
+                pb_scaled = Signal(shape=ASQ)
+                m.d.comb += pb_scaled.eq(pb_factor * last_pb)
+
+                # linearized frequency from LUT * pitch bend
+                calculated_freq = Signal(ASQ)
+                f_inc_base = Signal(ASQ)
+                m.d.comb += [
+                    f_inc_base.raw().eq(f_lut_rport.data),
+                    calculated_freq.eq(f_inc_base + f_inc_base*pb_scaled),
+                ]
+
+                # latch to correct output register
+                with m.Switch(ix_update):
+                    for n in range(self.max_voices):
+                        with m.Case(n):
+                            # latch linear frequency + pitch bend
+                            m.d.sync += self.o[n].freq_inc.eq(calculated_freq)
+                            # optional mod wheel caps `velocity_mod` field.
+                            if self.velocity_mod:
+                                with m.If(last_cc1 < self.o[n].velocity):
+                                    m.d.sync += self.o[n].velocity_mod.eq(last_cc1)
+                                with m.Else():
+                                    m.d.sync += self.o[n].velocity_mod.eq(self.o[n].velocity)
+
+                # Check if we've updated every slot.
+                m.d.sync += ix_update.eq(ix_update + 1)
+                with m.If(ix_update == self.max_voices - 1):
+                    m.next = 'WAIT-VALID'
+                with m.Else():
+                    m.next = 'UPDATE'
 
         return m
