@@ -19,15 +19,15 @@ pub enum Screen {
 
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "kebab-case")]
-pub enum ControlInterface {
-    Touch,
-    MidiCV,
+pub enum TouchControl {
+    On,
+    Off,
 }
 
 #[derive(Clone)]
 pub struct PolyOptions {
     pub selected: Option<usize>,
-    pub interface: EnumOption<ControlInterface>,
+    pub interface: EnumOption<TouchControl>,
     pub drive:     NumOption<u16>,
     pub reso:      NumOption<u16>,
     pub diffuse:   NumOption<u16>,
@@ -88,8 +88,8 @@ impl Options {
             poly: PolyOptions {
                 selected: None,
                 interface: EnumOption{
-                    name: String::from_str("control").unwrap(),
-                    value: ControlInterface::Touch,
+                    name: String::from_str("touch").unwrap(),
+                    value: TouchControl::On,
                 },
                 drive: NumOption{
                     name: String::from_str("overdrive").unwrap(),
