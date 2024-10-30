@@ -20,6 +20,8 @@ heapless = "0.8.0"
 strum_macros = "0.26.4"
 strum = {version = "0.25.0", features = ["derive"], default-features=false}
 fixed = "1.28.0"
+midi-types = "0.1.7"
+midi-convert = "0.2.0"
 
 [profile.release]
 codegen-units = 1

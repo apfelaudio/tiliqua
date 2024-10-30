@@ -2,7 +2,7 @@ use crate::opt::OptionPage;
 
 const PCA9635_BAR_GREEN: [usize; 6] = [0, 2, 14, 12, 6, 4];
 const PCA9635_BAR_RED:   [usize; 6] = [1, 3, 15, 13, 7, 5];
-const _PCA9635_MIDI:     [usize; 2] = [8, 9];
+const PCA9635_MIDI:      [usize; 2] = [8, 9];
 
 pub fn mobo_pca9635_set_bargraph<T: OptionPage>(
     opts: &T, leds: &mut [u8; 16], toggle: bool) {
@@ -33,4 +33,9 @@ pub fn mobo_pca9635_set_bargraph<T: OptionPage>(
             }
         }
     }
+}
+
+pub fn mobo_pca9635_set_midi(leds: &mut [u8; 16], red: u8, green: u8) {
+    leds[PCA9635_MIDI[0]] = green;
+    leds[PCA9635_MIDI[1]] = red;
 }

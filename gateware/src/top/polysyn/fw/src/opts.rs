@@ -20,8 +20,8 @@ pub enum Screen {
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "kebab-case")]
 pub enum ControlInterface {
-    Touch,
-    MidiCV,
+    TouchMidi,
+    MidiOnly,
 }
 
 #[derive(Clone)]
@@ -89,7 +89,7 @@ impl Options {
                 selected: None,
                 interface: EnumOption{
                     name: String::from_str("control").unwrap(),
-                    value: ControlInterface::Touch,
+                    value: ControlInterface::TouchMidi,
                 },
                 drive: NumOption{
                     name: String::from_str("overdrive").unwrap(),

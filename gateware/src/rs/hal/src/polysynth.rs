@@ -65,6 +65,10 @@ macro_rules! impl_polysynth {
                 pub fn midi_write(&mut self, value: u32)  {
                     self.registers.midi_write().write(|w| unsafe { w.msg().bits(value) } );
                 }
+
+                pub fn midi_read(&mut self) -> u32  {
+                    self.registers.midi_read().read().bits()
+                }
             }
         )+
     };

@@ -35,6 +35,10 @@ use fixed::{FixedI32, types::extra::U16};
 
 use micromath::F32Ext;
 
+use midi_types::*;
+
+use midi_convert::render_slice::MidiRenderSlice;
+
 /// Fixed point DSP below should use 32-bit integers with a 16.16 split.
 /// This could be made generic below, but isn't to reduce noise...
 pub type Fix = FixedI32<U16>;
@@ -53,6 +57,53 @@ impl OnePoleSmoother {
     fn proc(&mut self, x_k: Fix) -> Fix {
         self.y_k1 = self.y_k1 * Fix::from_num(0.95f32) + x_k * Fix::from_num(0.05f32);
         self.y_k1
+    }
+}
+
+const N_TOUCH: usize = 8;
+
+struct MidiTouchController {
+    notes:   [Note; N_TOUCH],
+    l_touch: [u8; N_TOUCH],
+}
+
+impl MidiTouchController {
+    fn new() -> Self {
+        MidiTouchController {
+            // Notes hard-coded for now, should be switchable at
+            // runtime as long as we do a KILLALL before switching.
+            notes:   [Note::C2,
+                      Note::G2,
+                      Note::C3,
+                      Note::Ds3,
+                      Note::G3,
+                      Note::C4,
+                      Note::C0, // last 2 notes are the output jacks
+                      Note::C0],
+            l_touch: [0u8; N_TOUCH],
+        }
+    }
+
+    fn update(&mut self, touch: &[u8; N_TOUCH], jack: u8) -> [MidiMessage; N_TOUCH] {
+        let mut out: [MidiMessage; N_TOUCH] = [MidiMessage::Stop; N_TOUCH];
+        let channel = Channel::C1;
+        for i in 0..N_TOUCH {
+            let v = Value7::new(touch[i]>>1);
+            // warn: note off logic currently assumes note ids don't change
+            out[i] = MidiMessage::NoteOff(channel, self.notes[i], v);
+            // if jack is not inserted
+            if ((1 << i) & !jack) != 0 {
+                // emit NOTE_ON once after the touch starts, and
+                // POLY_PRESSURE for all cycles afterward.
+                if self.l_touch[i] == 0 && touch[i] > 0 {
+                    out[i] = MidiMessage::NoteOn(channel, self.notes[i], v);
+                } else if touch[i] != 0 {
+                    out[i] = MidiMessage::KeyPressure(channel, self.notes[i], v);
+                }
+            }
+        }
+        self.l_touch = *touch;
+        out
     }
 }
 
@@ -121,6 +172,8 @@ fn main() -> ! {
 
     let mut diffusion_smoother = OnePoleSmoother::new();
 
+    let mut touch_controller = MidiTouchController::new();
+
     // Write default palette setting
     write_palette(&mut video, opts.beam.palette.value);
     let mut last_palette = opts.beam.palette.value;
@@ -183,8 +236,19 @@ fn main() -> ! {
         synth.set_matrix_coefficient(2, 6, coeff_wet);
         synth.set_matrix_coefficient(3, 7, coeff_wet);
 
-        //synth.set_touch_control(opts.poly.interface.value == ControlInterface::Touch);
-        synth.midi_write(0x923D78);
+        // Touch controller logic (sends MIDI to internal polysynth)
+        if opts.poly.interface.value == ControlInterface::TouchMidi {
+            let touch = pmod.touch();
+            let msgs = touch_controller.update(&touch, pmod.jack());
+            for msg in msgs {
+                let mut bytes = [0u8; 3];
+                msg.render_slice(&mut bytes);
+                let v: u32 = (bytes[0] as u32) << 16 |
+                             (bytes[1] as u32) << 8 |
+                             (bytes[2] as u32) << 0;
+                synth.midi_write(v);
+            }
+        }
 
         let notes = synth.voice_notes();
         let cutoffs = synth.voice_cutoffs();
@@ -209,6 +273,12 @@ fn main() -> ! {
         leds::mobo_pca9635_set_bargraph(&opts, &mut pca9635.leds,
                                         toggle_encoder_leds);
 
+        if synth.midi_read() != 0 {
+            leds::mobo_pca9635_set_midi(&mut pca9635.leds, 0xff, 0xff);
+        } else {
+            leds::mobo_pca9635_set_midi(&mut pca9635.leds, 0x0, 0x0);
+        }
+
         if opts.modify() {
             if toggle_encoder_leds {
                 if let Some(n) = opts.view().selected() {
@@ -229,7 +299,7 @@ fn main() -> ! {
                 pmod.led_all_auto();
 
                 // output touches on 4/5  aren't automatically routed to LEDs by eurorack-pmod gateware.
-                if opts.poly.interface.value == ControlInterface::Touch {
+                if opts.poly.interface.value == ControlInterface::TouchMidi {
                     let touch = pmod.touch();
                     pmod.led_set_manual(4,(touch[4]>>2) as i8);
                     pmod.led_set_manual(5,(touch[5]>>2) as i8);

@@ -240,6 +240,9 @@ class SynthPeripheral(wiring.Component):
     class MidiWrite(csr.Register, access="w"):
         msg: csr.Field(csr.action.W, unsigned(32))
 
+    class MidiRead(csr.Register, access="r"):
+        msg: csr.Field(csr.action.R, unsigned(32))
+
     def __init__(self, synth=None):
         self.synth = synth
         regs = csr.Builder(addr_width=6, data_width=8)
@@ -250,6 +253,7 @@ class SynthPeripheral(wiring.Component):
         self._matrix        = regs.add("matrix",        self.Matrix(),       offset=0x28)
         self._matrix_busy   = regs.add("matrix_busy",   self.MatrixBusy(),   offset=0x2C)
         self._midi_write    = regs.add("midi_write",    self.MidiWrite(),    offset=0x30)
+        self._midi_read     = regs.add("midi_read",     self.MidiRead(),     offset=0x34)
         self._bridge = csr.Bridge(regs.as_memory_map())
         super().__init__({
             "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
@@ -304,6 +308,22 @@ class SynthPeripheral(wiring.Component):
         wiring.connect(m, wiring.flipped(self.i_midi), self.synth.i_midi)
         with m.If(soc_midi_fifo.r_stream.valid):
             wiring.connect(m, soc_midi_fifo.r_stream, self.synth.i_midi)
+
+        # Pipe TRS MIDI -> SoC read FIFO so SoC can inspect external
+        # MIDI traffic
+        m.submodules.read_midi_fifo = read_midi_fifo = SyncFIFOBuffered(
+            width=24, depth=8)
+        m.d.comb += [
+            read_midi_fifo.w_data.eq(self.i_midi.payload),
+            read_midi_fifo.w_en.eq(self.i_midi.valid & self.i_midi.ready),
+            read_midi_fifo.r_en.eq(self._midi_read.element.r_stb),
+        ]
+
+        with m.If(read_midi_fifo.r_level != 0):
+            m.d.comb += self._midi_read.f.msg.r_data.eq(read_midi_fifo.r_data)
+        with m.Else():
+            m.d.comb += self._midi_read.f.msg.r_data.eq(0)
+
 
         return m
 
