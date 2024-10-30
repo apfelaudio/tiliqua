@@ -164,6 +164,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3c8dda44ff03a2f238717214da50f65d5a53b45cd213a7370424ffdb6fae815"
 
 [[package]]
+name = "midi-convert"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18f4776f9d450d481dc41e3dce9c10b11a9ec5955aca7c13215e94fe9477f2f7"
+dependencies = [
+ "midi-types",
+]
+
+[[package]]
+name = "midi-types"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef0bbe5256e5c434947d790788426bb65773502784aed7b23408f7e7fb4d8eb5"
+
+[[package]]
 name = "nb"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -313,6 +328,8 @@ dependencies = [
  "heapless",
  "log",
  "micromath",
+ "midi-convert",
+ "midi-types",
  "panic-halt",
  "riscv",
  "riscv-rt",

@@ -7,7 +7,7 @@ use tiliqua_hal as hal;
 use hal::hal::delay::DelayNs;
 
 use tiliqua_fw::*;
-use tiliqua_fw::opts::ControlInterface;
+use tiliqua_fw::opts::TouchControl;
 
 use log::info;
 
@@ -35,24 +35,88 @@ use fixed::{FixedI32, types::extra::U16};
 
 use micromath::F32Ext;
 
+use midi_types::*;
+
+use midi_convert::render_slice::MidiRenderSlice;
+
 /// Fixed point DSP below should use 32-bit integers with a 16.16 split.
 /// This could be made generic below, but isn't to reduce noise...
 pub type Fix = FixedI32<U16>;
 
+#[derive(Copy, Clone)]
 struct OnePoleSmoother {
+    alpha: Fix,
     y_k1: Fix,
 }
 
+// TODO move OnePoleSmoother into dedicated library
+
 impl OnePoleSmoother {
-    fn new() -> Self {
+    fn new(alpha: f32) -> Self {
         OnePoleSmoother {
-            y_k1: Fix::from_num(0),
+            alpha: Fix::from_num(alpha),
+            y_k1:  Fix::from_num(0),
         }
     }
 
     fn proc(&mut self, x_k: Fix) -> Fix {
-        self.y_k1 = self.y_k1 * Fix::from_num(0.95f32) + x_k * Fix::from_num(0.05f32);
+        self.y_k1 = self.y_k1 * (Fix::from_num(1.0f32) -  self.alpha) + x_k * self.alpha;
         self.y_k1
+    }
+}
+
+// TODO move MidiTouchController into dedicated library
+
+const N_TOUCH: usize = 8;
+
+struct MidiTouchController {
+    notes:     [Note; N_TOUCH],
+    l_touch:   [u8; N_TOUCH],
+    smoothers: [OnePoleSmoother; N_TOUCH],
+}
+
+impl MidiTouchController {
+    fn new() -> Self {
+        MidiTouchController {
+            // Notes hard-coded for now, should be switchable at
+            // runtime as long as we do a KILLALL before switching.
+            notes:   [Note::C2,
+                      Note::G2,
+                      Note::C3,
+                      Note::Ds3,
+                      Note::G3,
+                      Note::C4,
+                      Note::C0, // last 2 notes are the output jacks
+                      Note::C0],
+            // Last touch value for tracking ON/OFF events
+            l_touch: [0u8; N_TOUCH],
+            // Smoothers to de-noise touch values
+            smoothers: [OnePoleSmoother::new(0.2); N_TOUCH]
+        }
+    }
+
+    fn update(&mut self, touch: &[u8; N_TOUCH], jack: u8) -> [MidiMessage; N_TOUCH] {
+        let mut out: [MidiMessage; N_TOUCH] = [MidiMessage::Stop; N_TOUCH];
+        let channel = Channel::C1;
+        for i in 0..N_TOUCH {
+            let sm = self.smoothers[i].proc(Fix::from_bits(touch[i] as i32));
+            let pressure = Value7::new((sm.to_bits() as u8)>>1);
+            // if jack is not inserted
+            if ((1 << i) & !jack) != 0 {
+                // emit NOTE_ON once after the touch starts, and
+                // POLY_PRESSURE for all cycles afterward.
+                if self.l_touch[i] == 0 && touch[i] > 0 {
+                    out[i] = MidiMessage::NoteOn(channel, self.notes[i], pressure);
+                } else if touch[i] != 0 {
+                    out[i] = MidiMessage::KeyPressure(channel, self.notes[i], pressure);
+                } else if self.l_touch[i] != 0 && touch[i] == 0 {
+                    // warn: note off logic currently assumes note ids don't change
+                    out[i] = MidiMessage::NoteOff(channel, self.notes[i], pressure);
+                }
+            }
+        }
+        self.l_touch = *touch;
+        out
     }
 }
 
@@ -115,11 +179,13 @@ fn main() -> ! {
 
     let mut time_since_encoder_touched: u32 = 0;
 
-    let mut drive_smoother = OnePoleSmoother::new();
+    let mut drive_smoother = OnePoleSmoother::new(0.05f32);
 
-    let mut reso_smoother = OnePoleSmoother::new();
+    let mut reso_smoother = OnePoleSmoother::new(0.05f32);
 
-    let mut diffusion_smoother = OnePoleSmoother::new();
+    let mut diffusion_smoother = OnePoleSmoother::new(0.05f32);
+
+    let mut touch_controller = MidiTouchController::new();
 
     // Write default palette setting
     write_palette(&mut video, opts.beam.palette.value);
@@ -183,17 +249,29 @@ fn main() -> ! {
         synth.set_matrix_coefficient(2, 6, coeff_wet);
         synth.set_matrix_coefficient(3, 7, coeff_wet);
 
-        synth.set_touch_control(opts.poly.interface.value == ControlInterface::Touch);
+        // Touch controller logic (sends MIDI to internal polysynth)
+        if opts.poly.interface.value == TouchControl::On {
+            let touch = pmod.touch();
+            let msgs = touch_controller.update(&touch, pmod.jack());
+            for msg in msgs {
+                if msg != MidiMessage::Stop {
+                    // TODO move MidiMessage rendering into HAL, perhaps
+                    // even inside synth.midi_write.
+                    let mut bytes = [0u8; 3];
+                    msg.render_slice(&mut bytes);
+                    let v: u32 = (bytes[0] as u32) << 16 |
+                                 (bytes[1] as u32) << 8 |
+                                 (bytes[2] as u32) << 0;
+                    synth.midi_write(v);
+                }
+            }
+        }
 
         let notes = synth.voice_notes();
         let cutoffs = synth.voice_cutoffs();
 
         let n_voices = 8usize;
         for ix in 0usize..n_voices {
-            /*
-            draw::draw_voice(&mut display, 100, 100 + (ix as u32) * (V_ACTIVE-200) / n_voices,
-                             notes[ix], cutoffs[ix], opts.xbeam.hue.value).ok();
-            */
             let j = 7-ix;
             draw::draw_voice(&mut display,
                              ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as i32,
@@ -211,6 +289,12 @@ fn main() -> ! {
 
         leds::mobo_pca9635_set_bargraph(&opts, &mut pca9635.leds,
                                         toggle_encoder_leds);
+
+        if synth.midi_read() != 0 {
+            leds::mobo_pca9635_set_midi(&mut pca9635.leds, 0xff, 0xff);
+        } else {
+            leds::mobo_pca9635_set_midi(&mut pca9635.leds, 0x0, 0x0);
+        }
 
         if opts.modify() {
             if toggle_encoder_leds {
@@ -232,7 +316,7 @@ fn main() -> ! {
                 pmod.led_all_auto();
 
                 // output touches on 4/5  aren't automatically routed to LEDs by eurorack-pmod gateware.
-                if opts.poly.interface.value == ControlInterface::Touch {
+                if opts.poly.interface.value == TouchControl::On {
                     let touch = pmod.touch();
                     pmod.led_set_manual(4,(touch[4]>>2) as i8);
                     pmod.led_set_manual(5,(touch[5]>>2) as i8);

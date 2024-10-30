@@ -33,6 +33,7 @@ import math
 from amaranth                  import *
 from amaranth.lib              import wiring, data, stream
 from amaranth.lib.wiring       import In, Out, connect, flipped
+from amaranth.lib.fifo         import SyncFIFOBuffered
 
 from amaranth_soc              import csr
 
@@ -89,15 +90,7 @@ class PolySynth(wiring.Component):
     drive: In(unsigned(16))
     reso: In(unsigned(16))
 
-    voice_states: Out(data.StructLayout({
-        "note":  unsigned(8),
-        "cutoff": unsigned(8),
-    })).array(8)
-
-    i_touch_control: In(unsigned(1))
-
-    i_touch: In(8).array(8)
-    i_jack:  In(8)
+    voice_states: Out(midi.MidiVoice).array(8)
 
     def elaborate(self, platform):
         m = Module()
@@ -105,45 +98,18 @@ class PolySynth(wiring.Component):
         # supported simultaneous voices
         n_voices = 8
 
-        # Create LUTs from midi note to freq_inc (ASQ tuning into NCO).
-        # Store it in memories where the address is the midi note,
-        # and the data coming out is directly routed to NCO freq_inc.
-        lut = []
-        sample_rate_hz = 48000
-        for i in range(128):
-            freq = 440 * 2**((i-69)/12.0)
-            freq_inc = freq * (1.0 / sample_rate_hz)
-            lut.append(fixed.Const(freq_inc, shape=ASQ)._value)
-        # TODO: port to lib.memory (for amaranth ~= 0.5)
-        mems = [Memory(width=ASQ.as_shape().width, depth=len(lut), init=lut)
-                for _ in range(n_voices)]
-        rports = [mems[n].read_port(transparent=True) for n in range(n_voices)]
-        dsp.named_submodules(m.submodules, mems)
-
-        m.submodules.voice_tracker = voice_tracker = midi.MidiVoiceTracker(max_voices=n_voices)
-        # 1 smoother per oscillator for filter cutoff, to prevent pops.
-        boxcars = [dsp.Boxcar(n=16) for _ in range(n_voices)]
+        m.submodules.voice_tracker = voice_tracker = midi.MidiVoiceTracker(
+            max_voices=n_voices, velocity_mod=True, zero_velocity_gate=True)
         # 1 oscillator and filter per oscillator
         ncos = [dsp.SawNCO(shift=0) for _ in range(n_voices)]
         svfs = [dsp.SVF() for _ in range(n_voices)]
         m.submodules.merge = merge = dsp.Merge(n_channels=n_voices)
 
-        dsp.named_submodules(m.submodules, boxcars)
         dsp.named_submodules(m.submodules, ncos)
         dsp.named_submodules(m.submodules, svfs)
 
         # Connect MIDI stream -> voice tracker
         wiring.connect(m, wiring.flipped(self.i_midi), voice_tracker.i)
-
-        # Use CC1 (mod wheel) as upper bound on filter cutoff.
-        last_cc1 = Signal(8, reset=255)
-        with m.If(self.i_midi.valid):
-            msg = self.i_midi.payload
-            with m.Switch(msg.midi_type):
-                with m.Case(midi.MessageType.CONTROL_CHANGE):
-                    # mod wheel is CC 1
-                    with m.If(msg.midi_payload.control_change.controller_number == 1):
-                        m.d.sync += last_cc1.eq(msg.midi_payload.control_change.data)
 
         # analog ins
         m.submodules.cv_in = cv_in = dsp.Split(
@@ -152,63 +118,35 @@ class PolySynth(wiring.Component):
 
         for n in range(n_voices):
 
-            m.d.comb += [
-                self.voice_states[n].note.eq(rports[n].addr),
-                self.voice_states[n].cutoff.eq(boxcars[n].i.payload.as_value() >> 3),
-            ]
+            m.d.comb += self.voice_states[n].eq(voice_tracker.o[n])
 
-            with m.If(~self.i_touch_control):
-                # Filter cutoff on all channels is min(mod wheel, note velocity)
-                # Cutoff itself is smoothed by boxcars before being sent to SVF cutoff.
-                with m.If(last_cc1 < voice_tracker.o[n].payload.velocity):
-                    m.d.comb += boxcars[n].i.payload.raw().eq(last_cc1 << 4)
-                with m.Else():
-                    m.d.comb += boxcars[n].i.payload.raw().eq(
-                            voice_tracker.o[n].payload.velocity << 4)
-                # Connect MIDI voice.note -> note to frequency LUT
-                m.d.comb += [
-                    rports[n].en.eq(1),
-                    rports[n].addr.eq(voice_tracker.o[n].payload.note),
-                ]
-            with m.Else():
-                # only first 6 channels touch sensitive
-                if n < 6:
-                    with m.If(self.i_jack[n] == 0):
-                        m.d.comb += boxcars[n].i.payload.raw().eq(self.i_touch[n] << 3)
-                    with m.Else():
-                        m.d.comb += boxcars[n].i.payload.eq(0)
-                # Connect notes from fixed scale for touchsynth
-                touch_note_map = [48, 48+7, 48+12, 48+12+3, 48+12+7, 48+24, 0, 0]
-                m.d.comb += [
-                    rports[n].en.eq(1),
-                    rports[n].addr.eq(touch_note_map[n]),
-                ]
-
-
-            # Connect LUT output -> NCO.i (clocked at i.valid for normal sample rate)
+            # Connect audio in -> NCO.i
             dsp.connect_remap(m, cv_in.o[0], ncos[n].i, lambda o, i : [
                 # For fun, phase mod on audio in #0
                 i.payload.phase   .eq(o.payload),
-                i.payload.freq_inc.eq(rports[n].data) # ok, always valid
+                i.payload.freq_inc.eq(voice_tracker.o[n].freq_inc)
             ])
 
-            # Connect voice.vel and NCO.o -> SVF.i
+            # Simple counting smoother for the filter cutoff.
+            follower = dsp.CountingFollower(bits=8)
+            m.submodules += follower
+            m.d.comb += [
+                follower.i.valid.eq(cv_in.o[0].valid), # hack to clock at audio rate
+                follower.i.payload.eq(voice_tracker.o[n].velocity_mod),
+                follower.o.ready.eq(1)
+            ]
+
+            # Connect voice.vel and NCO.o -> SVF.
             dsp.connect_remap(m, ncos[n].o, svfs[n].i, lambda o, i : [
                 i.payload.x                    .eq(o.payload >> 1),
                 i.payload.resonance.raw()      .eq(self.reso),
-                i.payload.cutoff               .eq(boxcars[n].o.payload) # hack
+                i.payload.cutoff               .eq(follower.o.payload << 5)
             ])
 
             # Connect SVF LPF -> merge channel
             dsp.connect_remap(m, svfs[n].o, merge.i[n], lambda o, i : [
                 i.payload.eq(o.payload.lp),
             ])
-
-            # HACK: Boxcar synchronization
-            m.d.comb += [
-                boxcars[n].i.valid.eq(ncos[n].o.valid),
-                boxcars[n].o.ready.eq(svfs[n].i.ready),
-            ]
 
         # Voice mixdown to stereo. Alternate left/right
         o_channels = 2
@@ -308,8 +246,11 @@ class SynthPeripheral(wiring.Component):
     class MatrixBusy(csr.Register, access="r"):
         busy: csr.Field(csr.action.R, unsigned(1))
 
-    class TouchControl(csr.Register, access="w"):
-        value: csr.Field(csr.action.W, unsigned(1))
+    class MidiWrite(csr.Register, access="w"):
+        msg: csr.Field(csr.action.W, unsigned(32))
+
+    class MidiRead(csr.Register, access="r"):
+        msg: csr.Field(csr.action.R, unsigned(32))
 
     def __init__(self, synth=None):
         self.synth = synth
@@ -320,10 +261,12 @@ class SynthPeripheral(wiring.Component):
                                offset=0x8+i*4) for i in range(8)]
         self._matrix        = regs.add("matrix",        self.Matrix(),       offset=0x28)
         self._matrix_busy   = regs.add("matrix_busy",   self.MatrixBusy(),   offset=0x2C)
-        self._touch_control = regs.add("touch_control", self.TouchControl(), offset=0x30)
+        self._midi_write    = regs.add("midi_write",    self.MidiWrite(),    offset=0x30)
+        self._midi_read     = regs.add("midi_read",     self.MidiRead(),     offset=0x34)
         self._bridge = csr.Bridge(regs.as_memory_map())
         super().__init__({
             "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+            "i_midi": In(stream.Signature(midi.MidiMessage))
         })
         self.bus.memory_map = self._bridge.bus.memory_map
 
@@ -337,14 +280,12 @@ class SynthPeripheral(wiring.Component):
             m.d.sync += self.synth.drive.eq(self._drive.f.value.w_data)
         with m.If(self._reso.f.value.w_stb):
             m.d.sync += self.synth.reso.eq(self._reso.f.value.w_data)
-        with m.If(self._touch_control.f.value.w_stb):
-            m.d.sync += self.synth.i_touch_control.eq(self._touch_control.f.value.w_data)
 
         # voice tracking
         for i, voice in enumerate(self._voices):
             m.d.comb += [
                 voice.f.note.r_data  .eq(self.synth.voice_states[i].note),
-                voice.f.cutoff.r_data.eq(self.synth.voice_states[i].cutoff)
+                voice.f.cutoff.r_data.eq(self.synth.voice_states[i].velocity_mod)
             ]
 
         # matrix coefficient update logic
@@ -364,6 +305,34 @@ class SynthPeripheral(wiring.Component):
                 matrix_busy.eq(0),
                 self.synth.diffuser.matrix.c.valid.eq(0),
             ]
+
+
+        # MIDI injection and arbiter between SoC MIDI and HW MIDI -> synth MIDI.
+        m.submodules.soc_midi_fifo = soc_midi_fifo = SyncFIFOBuffered(
+            width=24, depth=8)
+        m.d.comb += [
+            soc_midi_fifo.w_data.eq(self._midi_write.f.msg.w_data),
+            soc_midi_fifo.w_en.eq(self._midi_write.element.w_stb),
+        ]
+        wiring.connect(m, wiring.flipped(self.i_midi), self.synth.i_midi)
+        with m.If(soc_midi_fifo.r_stream.valid):
+            wiring.connect(m, soc_midi_fifo.r_stream, self.synth.i_midi)
+
+        # Pipe TRS MIDI -> SoC read FIFO so SoC can inspect external
+        # MIDI traffic
+        m.submodules.read_midi_fifo = read_midi_fifo = SyncFIFOBuffered(
+            width=24, depth=8)
+        m.d.comb += [
+            read_midi_fifo.w_data.eq(self.i_midi.payload),
+            read_midi_fifo.w_en.eq(self.i_midi.valid & self.i_midi.ready),
+            read_midi_fifo.r_en.eq(self._midi_read.element.r_stb),
+        ]
+
+        with m.If(read_midi_fifo.r_level != 0):
+            m.d.comb += self._midi_read.f.msg.r_data.eq(read_midi_fifo.r_data)
+        with m.Else():
+            m.d.comb += self._midi_read.f.msg.r_data.eq(0)
+
 
         return m
 
@@ -420,11 +389,7 @@ class PolySoc(TiliquaSoc):
                     system_clk_hz=60e6, pins=midi_pins)
             m.submodules.midi_decode = midi_decode = midi.MidiDecode()
             wiring.connect(m, serialrx.o, midi_decode.i)
-            wiring.connect(m, midi_decode.o, polysynth.i_midi)
-
-        # hook up touch + jack
-        m.d.comb += polysynth.i_jack.eq(pmod0.jack)
-        m.d.comb += [polysynth.i_touch[n].eq(pmod0.touch[n]) for n in range(0, 8)]
+            wiring.connect(m, midi_decode.o, self.synth_periph.i_midi)
 
         # polysynth audio
         wiring.connect(m, astream.istream, polysynth.i)
