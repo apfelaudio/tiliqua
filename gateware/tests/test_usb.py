@@ -25,7 +25,7 @@ class UsbTests(unittest.TestCase):
                 while ctx.get(~dut.utmi.tx_valid):
                     await ctx.tick()
                 while ctx.get(dut.utmi.tx_valid):
-                    data.append(ctx.get(dut.utmi.tx_data))
+                    data.append(hex(ctx.get(dut.utmi.tx_data)))
                     await ctx.tick()
                 ctx.set(dut.utmi.tx_ready, 0)
                 print("[packet]", data)

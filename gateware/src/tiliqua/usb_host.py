@@ -17,7 +17,7 @@ class USBSOFPacketGenerator(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        frame_number = Signal(11)
+        frame_number = Signal(11, reset=227)
         sof_timer = Signal(32)
         send_sof = Signal()
 
@@ -52,8 +52,10 @@ class USBSOFPacketGenerator(Elaboratable):
                     m.next = 'SEND_PAYLOAD1'
 
             with m.State('SEND_PAYLOAD1'):
+                crc5 = Signal(5)
                 m.d.comb += [
-                    self.tx.data       .eq(Cat(frame_number[8:], Const(0, 5))),
+                    crc5.eq(USBTokenDetector.generate_crc_for_token(frame_number)),
+                    self.tx.data       .eq(Cat(crc5, frame_number[8:11])),
                     self.tx.valid      .eq(1),
                 ]
                 with m.If(self.tx.ready):
