@@ -22,11 +22,11 @@ class UsbTests(unittest.TestCase):
             for _ in range(5):
                 data = []
                 ctx.set(dut.utmi.tx_ready, 1)
-                ctx.tick()
-                await ctx.tick().until(dut.utmi.tx_valid)
+                while ctx.get(~dut.utmi.tx_valid):
+                    await ctx.tick()
                 while ctx.get(dut.utmi.tx_valid):
                     data.append(ctx.get(dut.utmi.tx_data))
-                    ctx.tick()
+                    await ctx.tick()
                 ctx.set(dut.utmi.tx_ready, 0)
                 print("[packet]", data)
 
