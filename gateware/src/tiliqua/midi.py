@@ -280,9 +280,9 @@ class MidiVoiceTracker(wiring.Component):
 
             with m.State('POLY-PRESSURE'):
                 # update any voice that matches the MIDI payload note #
-                # TODO: rather than piggybacking on velocity, this should probably be its own field..
+                # TODO: rather than piggybacking on velocity, this should probably be its own field?
                 for n in range(self.max_voices):
-                    with m.If(self.o[n].note == msg.midi_payload.poly_pressure.note):
+                    with m.If((self.o[n].note == msg.midi_payload.poly_pressure.note) & self.o[n].gate):
                         m.d.sync += self.o[n].velocity.eq(msg.midi_payload.poly_pressure.pressure)
                 m.next = 'UPDATE'
 
