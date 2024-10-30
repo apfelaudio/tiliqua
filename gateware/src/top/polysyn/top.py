@@ -127,11 +127,20 @@ class PolySynth(wiring.Component):
                 i.payload.freq_inc.eq(voice_tracker.o[n].freq_inc)
             ])
 
+            # Simple counting smoother for the filter cutoff.
+            follower = dsp.CountingFollower(bits=8)
+            m.submodules += follower
+            m.d.comb += [
+                follower.i.valid.eq(cv_in.o[0].valid), # hack to clock at audio rate
+                follower.i.payload.eq(voice_tracker.o[n].velocity_mod),
+                follower.o.ready.eq(1)
+            ]
+
             # Connect voice.vel and NCO.o -> SVF.
             dsp.connect_remap(m, ncos[n].o, svfs[n].i, lambda o, i : [
                 i.payload.x                    .eq(o.payload >> 1),
                 i.payload.resonance.raw()      .eq(self.reso),
-                i.payload.cutoff               .eq(voice_tracker.o[n].velocity_mod << 5)
+                i.payload.cutoff               .eq(follower.o.payload << 5)
             ])
 
             # Connect SVF LPF -> merge channel
