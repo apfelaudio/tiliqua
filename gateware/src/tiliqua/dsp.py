@@ -1242,6 +1242,32 @@ class Boxcar(wiring.Component):
 
         return m
 
+class CountingFollower(wiring.Component):
+    """
+    Simple unsigned counting follower.
+
+    Output follows the input, getting closer to it by 1 count per :py:`valid` strobe.
+
+    This is quite a cheap way to avoid pops on envelopes.
+    """
+
+    def __init__(self, bits=8):
+        super().__init__({
+            "i": In(stream.Signature(unsigned(bits))),
+            "o": Out(stream.Signature(unsigned(bits))),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+        m.d.comb += self.i.ready.eq(self.o.ready)
+        m.d.comb += self.o.valid.eq(self.i.valid)
+        with m.If(self.i.valid & self.o.ready):
+            with m.If(self.o.payload < self.i.payload):
+                m.d.sync += self.o.payload.eq(self.o.payload + 1)
+            with m.Elif(self.o.payload > self.i.payload):
+                m.d.sync += self.o.payload.eq(self.o.payload - 1)
+        return m
+
 def named_submodules(m_submodules, elaboratables, override_name=None):
     """
     Normally, using constructs like:
