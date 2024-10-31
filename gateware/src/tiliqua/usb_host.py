@@ -18,16 +18,22 @@ class USBSOFPacketGenerator(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
+        sof_timer = Signal(16)
         frame_number = Signal(11, reset=0)
 
         with m.FSM(domain="usb"):
 
             with m.State('SOF-OFF'):
+                m.d.usb += [
+                    sof_timer.eq(0),
+                    frame_number.eq(0),
+                ]
                 with m.If(self.en_sof):
                     m.next = 'IDLE'
 
+            # Emit a SOF packet every 1ms
             with m.State('IDLE'):
-                sof_timer = Signal(16)
+
                 with m.If(sof_timer == (60000 - 1)):
                     m.d.usb += sof_timer.eq(0)
                     m.d.usb += frame_number.eq(frame_number + 1)
@@ -110,8 +116,8 @@ class SimpleUSBHost(Elaboratable):
 
 
         cnt = Signal(64)
-        m.d.sync += cnt.eq(cnt+1)
-        # 100ms bus reset
+        m.d.usb += cnt.eq(cnt+1)
+        # 100ms bus reset, then enter FS NORMAL and start generating SOF packets
         bus_reset = cnt < 6000000
         with m.If(bus_reset):
             m.d.comb += [
