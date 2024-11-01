@@ -31,14 +31,14 @@ class UsbTests(unittest.TestCase):
         return _sof
 
     @parameterized.expand([
-        ["setup00", _setup_token(TokenPID.SETUP, 0, 0), testp.token_packet(testp.PID.SETUP, 0, 0)],
-        ["out00", _setup_token(TokenPID.OUT, 0, 0), testp.token_packet(testp.PID.OUT, 0, 0)],
-        ["in00", _setup_token(TokenPID.IN, 0, 0), testp.token_packet(testp.PID.IN, 0, 0)],
-        ["in01", _setup_token(TokenPID.IN, 0, 1), testp.token_packet(testp.PID.IN, 0, 1)],
-        ["in10", _setup_token(TokenPID.IN, 1, 0), testp.token_packet(testp.PID.IN, 1, 0)],
-        ["in7a", _setup_token(TokenPID.IN, 0x70, 0xa), testp.token_packet(testp.PID.IN, 0x70, 0xa)],
-        ["sof_min", _setup_sof_token(1),       testp.sof_packet(1)],
-        ["sof_max", _setup_sof_token(2**11-1), testp.sof_packet(2**11-1)],
+        ["setup00", _setup_token(TokenPID.SETUP, 0, 0),   testp.token_packet(testp.PID.SETUP, 0, 0)],
+        ["out00",   _setup_token(TokenPID.OUT, 0, 0),     testp.token_packet(testp.PID.OUT, 0, 0)],
+        ["in00",    _setup_token(TokenPID.IN, 0, 0),      testp.token_packet(testp.PID.IN, 0, 0)],
+        ["in01",    _setup_token(TokenPID.IN, 0, 1),      testp.token_packet(testp.PID.IN, 0, 1)],
+        ["in10",    _setup_token(TokenPID.IN, 1, 0),      testp.token_packet(testp.PID.IN, 1, 0)],
+        ["in7a",    _setup_token(TokenPID.IN, 0x70, 0xa), testp.token_packet(testp.PID.IN, 0x70, 0xa)],
+        ["sof_min", _setup_sof_token(1),                  testp.sof_packet(1)],
+        ["sof_max", _setup_sof_token(2**11-1),            testp.sof_packet(2**11-1)],
     ])
     def test_usb_tokens(self, name, test_payload, test_ref):
 
@@ -73,13 +73,18 @@ class UsbTests(unittest.TestCase):
         with sim.write_vcd(vcd_file=open(f"test_usb_token_{name}.vcd", "w")):
             sim.run()
 
-    def test_usb_host(self):
+    def test_usb_integration(self):
+
+        """
+        Integration test to inspect what packets are spat out
+        by SimpleUSBHost.
+        """
 
         dut = DomainRenamer({"usb": "sync"})(
                 SimpleUSBHost(sim=True))
 
         async def testbench(ctx):
-            for i in range(1, 5):
+            for i in range(0, 10):
                 data = []
                 ctx.set(dut.utmi.tx_ready, 1)
                 while ctx.get(~dut.utmi.tx_valid):
@@ -89,15 +94,9 @@ class UsbTests(unittest.TestCase):
                     await ctx.tick()
                 ctx.set(dut.utmi.tx_ready, 0)
                 print("[packet]", [hex(d) for d in data])
-                bs = ("{0:08b}".format(data[0])[::-1] +
-                      "{0:08b}".format(data[1])[::-1] +
-                      "{0:08b}".format(data[2])[::-1])
-                print("[ref]", sof_packet(i))
-                print("[got]", bs)
-                self.assertEqual(bs, sof_packet(i))
 
         sim = Simulator(dut)
         sim.add_clock(1e-6)
         sim.add_testbench(testbench)
-        with sim.write_vcd(vcd_file=open("test_usb_host.vcd", "w")):
+        with sim.write_vcd(vcd_file=open("test_usb_integration.vcd", "w")):
             sim.run()

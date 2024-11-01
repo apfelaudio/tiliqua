@@ -20,9 +20,11 @@ class USB2HostTest(Elaboratable):
         m = Module()
 
         m.submodules.car = car = platform.clock_domain_generator()
+        """
         m.submodules.reboot = reboot = RebootProvider(car.clocks_hz["sync"])
         m.submodules.btn = FFSynchronizer(
                 platform.request("encoder").s.i, reboot.button)
+        """
 
         ulpi = platform.request(platform.default_usb_connection)
         m.submodules.usb = usb = SimpleUSBHost(bus=ulpi)

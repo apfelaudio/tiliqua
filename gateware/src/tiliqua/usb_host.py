@@ -36,7 +36,8 @@ class USBTokenPacketGenerator(wiring.Component):
     def __init__(self):
         self.tx = UTMITransmitInterface()
         super().__init__({
-            "i": In(stream.Signature(TokenPayload))
+            "txd": Out(1),
+            "i": In(stream.Signature(TokenPayload)),
         })
 
     def elaborate(self, platform):
@@ -85,6 +86,14 @@ class USBTokenPacketGenerator(wiring.Component):
                     self.tx.valid.eq(1),
                 ]
                 with m.If(self.tx.ready):
+                    m.next = 'WAIT'
+
+            with m.State('WAIT'):
+                delay = Signal(16)
+                m.d.usb += delay.eq(delay + 1)
+                with m.If(delay == 12000):
+                    m.d.usb += delay.eq(0)
+                    m.d.comb += self.txd.eq(1)
                     m.next = 'IDLE'
 
         return m
@@ -164,8 +173,6 @@ class SimpleUSBHost(Elaboratable):
         m.submodules.token_generator = token_generator = USBTokenPacketGenerator()
         m.submodules.sof_controller = sof_controller = USBSOFController()
 
-        wiring.connect(m, sof_controller.o, token_generator.i)
-
         data_crc.add_interface(transmitter.crc)
 
         m.submodules.tx_multiplexer = tx_multiplexer = UTMIInterfaceMultiplexer()
@@ -185,7 +192,6 @@ class SimpleUSBHost(Elaboratable):
             self.utmi.dp_pulldown.eq(1),
         ]
 
-
         cnt = Signal(64)
         m.d.usb += cnt.eq(cnt+1)
         # 100ms bus reset, then enter FS NORMAL and start generating SOF packets
@@ -194,8 +200,8 @@ class SimpleUSBHost(Elaboratable):
             m.d.comb += [
                 sof_controller.enable.eq(0),
                 self.utmi.op_mode.eq(UTMIOperatingMode.RAW_DRIVE),
-                self.utmi.xcvr_select.eq(USBSpeed.HIGH),
-                self.utmi.term_select.eq(UTMITerminationSelect.HS_NORMAL),
+                self.utmi.xcvr_select.eq(USBSpeed.FULL),
+                self.utmi.term_select.eq(UTMITerminationSelect.LS_FS_NORMAL),
             ]
         with m.Else():
             m.d.comb += [
@@ -204,6 +210,98 @@ class SimpleUSBHost(Elaboratable):
                 self.utmi.xcvr_select.eq(USBSpeed.FULL),
                 self.utmi.term_select.eq(UTMITerminationSelect.LS_FS_NORMAL),
             ]
+
+        wiring.connect(m, sof_controller.o, token_generator.i)
+
+        mod = Signal(16)
+
+        with m.If(~platform.request("encoder").s.i):
+            m.d.usb += cnt.eq(0)
+            m.d.usb += mod.eq(0)
+
+        with m.FSM(domain="usb"):
+
+            with m.State('BUS-RESET'):
+                with m.If(~bus_reset):
+                    m.next = 'WAIT-SOF'
+
+            with m.State('WAIT-SOF'):
+
+                with m.If(bus_reset):
+                    m.next = 'BUS-RESET'
+
+                with m.If(token_generator.txd):
+                    m.d.usb += mod.eq(mod+1)
+                    with m.If(mod == 1024):
+                        m.next = 'SETUP-TOKEN'
+
+            with m.State('SETUP-TOKEN'):
+                m.d.comb += [
+                    token_generator.i.valid.eq(1),
+                    token_generator.i.payload.pid.eq(TokenPID.SETUP),
+                    token_generator.i.payload.data.addr.eq(0),
+                    token_generator.i.payload.data.endp.eq(0),
+                ]
+                with m.If(token_generator.txd):
+                    m.next = 'WAIT-SETUP-DATA0'
+
+            with m.State('WAIT-SETUP-DATA0'):
+                delay = Signal(16)
+                m.d.usb += delay.eq(delay + 1)
+                with m.If(delay == 2048):
+                    m.d.usb += delay.eq(0)
+                    m.next = 'SETUP-DATA0'
+
+            with m.State('SETUP-DATA0'):
+
+                data = Array([
+                    Const(0x80, shape=8),
+                    Const(0x06, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x01, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x40, shape=8),
+                    Const(0x00, shape=8),
+                ])
+                ix = Signal(range(len(data)))
+
+                m.d.comb += [
+                    transmitter.data_pid.eq(0), # DATA0
+                    transmitter.stream.valid.eq(1),
+                    transmitter.stream.payload.eq(data[ix]),
+                ]
+
+                with m.If(ix == 0):
+                    m.d.comb += transmitter.stream.first.eq(1)
+                with m.If(ix == len(data) - 1):
+                    m.d.comb += transmitter.stream.last.eq(1)
+
+                with m.If(transmitter.stream.ready):
+                    m.d.usb += ix.eq(ix+1)
+                    with m.If(ix == len(data) - 1):
+                        m.next = 'WAIT-ACK'
+
+            with m.State('WAIT-ACK'):
+                delay = Signal(16)
+                m.d.usb += delay.eq(delay + 1)
+                with m.If(delay == 1024):
+                    m.d.usb += delay.eq(0)
+                    m.next = 'WAIT-SOF2'
+
+            with m.State('WAIT-SOF2'):
+                with m.If(token_generator.txd):
+                    m.next = 'IN-TOKEN'
+
+            with m.State('IN-TOKEN'):
+                m.d.comb += [
+                    token_generator.i.valid.eq(1),
+                    token_generator.i.payload.pid.eq(TokenPID.IN),
+                    token_generator.i.payload.data.addr.eq(0),
+                    token_generator.i.payload.data.endp.eq(0),
+                ]
+                with m.If(token_generator.txd):
+                    m.next = 'WAIT-SOF'
 
         return m
 
