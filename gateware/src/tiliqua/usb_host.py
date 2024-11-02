@@ -192,47 +192,55 @@ class SimpleUSBHost(Elaboratable):
             self.utmi.dp_pulldown.eq(1),
         ]
 
-        cnt = Signal(64)
-        m.d.usb += cnt.eq(cnt+1)
-        # 100ms bus reset, then enter FS NORMAL and start generating SOF packets
-        bus_reset = cnt < 6000
-        with m.If(bus_reset):
-            m.d.comb += [
-                sof_controller.enable.eq(0),
-                self.utmi.op_mode.eq(UTMIOperatingMode.RAW_DRIVE),
-                self.utmi.xcvr_select.eq(USBSpeed.FULL),
-                self.utmi.term_select.eq(UTMITerminationSelect.LS_FS_NORMAL),
-            ]
-        with m.Else():
-            m.d.comb += [
-                sof_controller.enable.eq(1),
-                self.utmi.op_mode.eq(UTMIOperatingMode.NORMAL),
-                self.utmi.xcvr_select.eq(USBSpeed.FULL),
-                self.utmi.term_select.eq(UTMITerminationSelect.LS_FS_NORMAL),
-            ]
+        # HS EOP from spec:
+        """
+        Most of the HS USB packets that are generated consist of an 8-bit EOP. Only when a SOF has to be sent on the USB
+        bus, the EOP must be 40 bits. To generate the correct packets on the USB bus, the transceiver must check the PID value
+        of every packet that is transmitted in HS mode. When the PID is equal to SOF, the transceiver must generate a 40-bit
+        EOP. In all other HS cases the transceiver generates an 8-bit EOP on the USB bus
+        """
 
         wiring.connect(m, sof_controller.o, token_generator.i)
 
         mod = Signal(16)
 
-        with m.If(~platform.request("encoder").s.i):
-            m.d.usb += cnt.eq(0)
-            m.d.usb += mod.eq(0)
+        m.d.comb += [
+            sof_controller.enable.eq(1),
+            self.utmi.op_mode.eq(UTMIOperatingMode.NORMAL),
+            self.utmi.xcvr_select.eq(USBSpeed.FULL),
+            self.utmi.term_select.eq(UTMITerminationSelect.LS_FS_NORMAL),
+        ]
 
         with m.FSM(domain="usb"):
 
+            with m.State('IDLE'):
+                m.d.comb += sof_controller.enable.eq(0),
+                with m.If(platform.request("encoder").s.i):
+                    m.next = 'BUS-RESET'
+
             with m.State('BUS-RESET'):
-                with m.If(~bus_reset):
+                cnt = Signal(64)
+                m.d.usb += cnt.eq(cnt+1)
+                # SE0
+                m.d.comb += [
+                    sof_controller.enable.eq(0),
+                    self.utmi.op_mode.eq(UTMIOperatingMode.RAW_DRIVE),
+                    self.utmi.xcvr_select.eq(USBSpeed.HIGH),
+                    self.utmi.term_select.eq(UTMITerminationSelect.HS_NORMAL),
+                ]
+                # 20ms
+                with m.If(cnt > 1200000):
+                    m.d.usb += cnt.eq(0)
+                    m.d.usb += mod.eq(0)
                     m.next = 'WAIT-SOF'
 
             with m.State('WAIT-SOF'):
 
-                with m.If(bus_reset):
-                    m.next = 'BUS-RESET'
-
                 with m.If(token_generator.txd):
                     m.d.usb += mod.eq(mod+1)
                     with m.If(mod == 1024):
+                        m.d.usb += mod.eq(0)
+                    with m.If(mod == 66):
                         m.next = 'SETUP-TOKEN'
 
             with m.State('SETUP-TOKEN'):
@@ -301,7 +309,7 @@ class SimpleUSBHost(Elaboratable):
                     token_generator.i.payload.data.endp.eq(0),
                 ]
                 with m.If(token_generator.txd):
-                    m.next = 'WAIT-SOF'
+                    m.next = 'IDLE'
 
         return m
 
