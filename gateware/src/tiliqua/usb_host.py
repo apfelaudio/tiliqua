@@ -91,7 +91,7 @@ class USBTokenPacketGenerator(wiring.Component):
             with m.State('WAIT'):
                 delay = Signal(16)
                 m.d.usb += delay.eq(delay + 1)
-                with m.If(delay == 12000):
+                with m.If(delay == 200):
                     m.d.usb += delay.eq(0)
                     m.d.comb += self.txd.eq(1)
                     m.next = 'IDLE'
@@ -238,13 +238,19 @@ class SimpleUSBHost(Elaboratable):
                     m.next = 'WAIT-SOF'
 
             with m.State('WAIT-SOF'):
-
                 with m.If(token_generator.txd):
                     m.d.usb += mod.eq(mod+1)
                     with m.If(mod == 1024):
                         m.d.usb += mod.eq(0)
                     with m.If(mod == 66):
-                        m.next = 'SETUP-TOKEN'
+                        m.next = 'WAIT-SETUP-TOKEN'
+
+            with m.State('WAIT-SETUP-TOKEN'):
+                cnt = Signal(64)
+                m.d.usb += cnt.eq(cnt+1)
+                with m.If(cnt == 7*6000): #0.7ms
+                    m.next = 'SETUP-TOKEN'
+                    m.d.usb += cnt.eq(0)
 
             with m.State('SETUP-TOKEN'):
                 m.d.comb += [
@@ -254,13 +260,7 @@ class SimpleUSBHost(Elaboratable):
                     token_generator.i.payload.data.endp.eq(0),
                 ]
                 with m.If(token_generator.txd):
-                    m.next = 'WAIT-SETUP-DATA0'
-
-            with m.State('WAIT-SETUP-DATA0'):
-                delay = Signal(16)
-                m.d.usb += delay.eq(delay + 1)
-                with m.If(delay == 2048):
-                    m.d.usb += delay.eq(0)
+                    m.d.comb += token_generator.i.valid.eq(0),
                     m.next = 'SETUP-DATA0'
 
             with m.State('SETUP-DATA0'):
