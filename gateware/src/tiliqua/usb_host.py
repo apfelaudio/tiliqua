@@ -246,6 +246,9 @@ class SimpleUSBHost(Elaboratable):
             self.utmi.term_select.eq(UTMITerminationSelect.LS_FS_NORMAL),
         ]
 
+        midi_toggle = Signal()
+        m.d.comb += platform.request("led_a").o.eq(midi_toggle)
+
         with m.FSM(domain="usb"):
 
             with m.State('IDLE'):
@@ -429,7 +432,84 @@ class SimpleUSBHost(Elaboratable):
             with m.State('SETUP1-DATA1-ACK'):
                 with m.If(receiver.ready_for_response):
                     m.d.comb += handshake_generator.issue_ack.eq(1)
+                    m.next = 'SOF-SETUP2'
+
+            # HENCEFORTH ADDR=18
+
+            with m.State('SOF-SETUP2'):
+                with m.If(sof_controller.done):
+                    m.next = 'SETUP2-TOKEN'
+
+            send_token('SETUP2-TOKEN', TokenPID.SETUP, 18, 0, 'SETUP2-DATA0')
+
+            with m.State('SETUP2-DATA0'):
+
+                data = Array([
+                    Const(0x00, shape=8),
+                    Const(0x09, shape=8),
+                    Const(0x01, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x00, shape=8),
+                ])
+                ix = Signal(range(len(data)))
+
+                m.d.comb += [
+                    transmitter.data_pid.eq(0), # DATA0
+                    transmitter.stream.valid.eq(1),
+                    transmitter.stream.payload.eq(data[ix]),
+                ]
+
+                with m.If(ix == 0):
+                    m.d.comb += transmitter.stream.first.eq(1)
+                with m.If(ix == len(data) - 1):
+                    m.d.comb += transmitter.stream.last.eq(1)
+
+                with m.If(transmitter.stream.ready):
+                    m.d.usb += ix.eq(ix+1)
+                    with m.If(ix == len(data) - 1):
+                        m.next = 'SETUP2-WAIT-ACK'
+
+            with m.State('SETUP2-WAIT-ACK'):
+                with m.If(handshake_detector.detected.ack):
+                    m.next = 'SOF-SETUP2-IN'
+                with m.If(token_generator.timer.rx_timeout):
+                    m.next = 'SOF-SETUP2'
+
+            with m.State('SOF-SETUP2-IN'):
+                with m.If(sof_controller.done):
+                    m.next = 'SETUP2-IN-TOKEN'
+
+            send_token('SETUP2-IN-TOKEN', TokenPID.IN, 18, 0, 'SETUP2-DATA1-IN')
+
+            with m.State('SETUP2-DATA1-IN'):
+                with m.If(receiver.packet_complete):
+                    m.next = 'SETUP2-DATA1-ACK'
+                """ TODO
+                with m.If(receiver.timer.rx_timeout):
                     m.next = 'SOF-TOKEN'
+                """
+
+            with m.State('SETUP2-DATA1-ACK'):
+                with m.If(receiver.ready_for_response):
+                    m.d.comb += handshake_generator.issue_ack.eq(1)
+                    m.next = 'SOF-MIDI'
+
+            with m.State('SOF-MIDI'):
+                with m.If(sof_controller.done):
+                    m.next = 'BULK-IN-TOKEN'
+
+            send_token('BULK-IN-TOKEN', TokenPID.IN, 18, 1, 'MIDI-BULK-IN')
+
+            with m.State('MIDI-BULK-IN'):
+                with m.If(receiver.ready_for_response):
+                    m.d.comb += handshake_generator.issue_ack.eq(1)
+                    m.d.usb += midi_toggle.eq(~midi_toggle)
+                    m.next = 'SOF-MIDI'
+                with m.If(handshake_detector.detected.nak):
+                    m.next = 'SOF-MIDI'
 
         return m
 
