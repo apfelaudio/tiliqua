@@ -368,8 +368,67 @@ class SimpleUSBHost(Elaboratable):
 
             with m.State('ZLP-WAIT-ACK'):
                 with m.If(handshake_detector.detected.ack):
-                    m.next = 'SOF-TOKEN'
+                    m.next = 'SOF-SETUP1'
+
+            with m.State('SOF-SETUP1'):
+                with m.If(sof_controller.done):
+                    m.next = 'SETUP1-TOKEN'
+
+            send_token('SETUP1-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP1-DATA0')
+
+            with m.State('SETUP1-DATA0'):
+
+                data = Array([
+                    Const(0x00, shape=8),
+                    Const(0x05, shape=8),
+                    Const(0x12, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x00, shape=8),
+                    Const(0x00, shape=8),
+                ])
+                ix = Signal(range(len(data)))
+
+                m.d.comb += [
+                    transmitter.data_pid.eq(0), # DATA0
+                    transmitter.stream.valid.eq(1),
+                    transmitter.stream.payload.eq(data[ix]),
+                ]
+
+                with m.If(ix == 0):
+                    m.d.comb += transmitter.stream.first.eq(1)
+                with m.If(ix == len(data) - 1):
+                    m.d.comb += transmitter.stream.last.eq(1)
+
+                with m.If(transmitter.stream.ready):
+                    m.d.usb += ix.eq(ix+1)
+                    with m.If(ix == len(data) - 1):
+                        m.next = 'SETUP1-WAIT-ACK'
+
+            with m.State('SETUP1-WAIT-ACK'):
+                with m.If(handshake_detector.detected.ack):
+                    m.next = 'SOF-SETUP1-IN'
                 with m.If(token_generator.timer.rx_timeout):
+                    m.next = 'SOF-TOKEN'
+
+            with m.State('SOF-SETUP1-IN'):
+                with m.If(sof_controller.done):
+                    m.next = 'SETUP1-IN-TOKEN'
+
+            send_token('SETUP1-IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP1-DATA1-IN')
+
+            with m.State('SETUP1-DATA1-IN'):
+                with m.If(receiver.packet_complete):
+                    m.next = 'SETUP1-DATA1-ACK'
+                """ TODO
+                with m.If(receiver.timer.rx_timeout):
+                    m.next = 'SOF-TOKEN'
+                """
+
+            with m.State('SETUP1-DATA1-ACK'):
+                with m.If(receiver.ready_for_response):
+                    m.d.comb += handshake_generator.issue_ack.eq(1)
                     m.next = 'SOF-TOKEN'
 
         return m
