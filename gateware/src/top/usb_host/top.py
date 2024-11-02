@@ -39,7 +39,17 @@ class USB2HostTest(Elaboratable):
                 test_signal,
                 usb.translator.tx_valid,
                 usb.translator.tx_data,
+                usb.translator.tx_ready,
+                usb.translator.rx_valid,
+                usb.translator.rx_data,
+                usb.translator.rx_active,
                 usb.translator.busy,
+                usb.receiver.packet_complete,
+                usb.receiver.crc_mismatch,
+                usb.handshake_detector.detected.ack,
+                usb.handshake_detector.detected.nak,
+                usb.handshake_detector.detected.stall,
+                usb.handshake_detector.detected.nyet,
             ]
 
             self.ila = AsyncSerialILA(signals=ila_signals,

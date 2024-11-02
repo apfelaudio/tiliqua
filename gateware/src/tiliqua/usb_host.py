@@ -35,9 +35,10 @@ class USBTokenPacketGenerator(wiring.Component):
 
     def __init__(self):
         self.tx = UTMITransmitInterface()
+        self.timer = InterpacketTimerInterface()
         super().__init__({
-            "txd": Out(1),
             "i": In(stream.Signature(TokenPayload)),
+            "done": Out(1),
         })
 
     def elaborate(self, platform):
@@ -86,14 +87,25 @@ class USBTokenPacketGenerator(wiring.Component):
                     self.tx.valid.eq(1),
                 ]
                 with m.If(self.tx.ready):
-                    m.next = 'WAIT'
+                    m.d.comb += self.timer.start.eq(1)
+                    with m.If(pkt.pid == TokenPID.IN):
+                        m.d.comb += self.done.eq(1)
+                        m.next = 'IDLE'
+                    with m.Else():
+                        m.next = 'WAIT'
 
             with m.State('WAIT'):
-                delay = Signal(16)
-                m.d.usb += delay.eq(delay + 1)
-                with m.If(delay == 200):
-                    m.d.usb += delay.eq(0)
-                    m.d.comb += self.txd.eq(1)
+                txad = Signal()
+                with m.If(self.timer.tx_allowed):
+                    m.d.usb += txad.eq(1)
+                cnt = Signal(16)
+                m.d.usb += cnt.eq(cnt+1)
+                with m.If(txad & (cnt > 200)):
+                    m.d.comb += self.done.eq(1)
+                    m.d.usb += [
+                        cnt.eq(0),
+                        txad.eq(0),
+                    ]
                     m.next = 'IDLE'
 
         return m
@@ -105,6 +117,8 @@ class USBSOFController(wiring.Component):
     """
 
     enable: In(1)
+    txa:    In(1)
+    done:   Out(1)
     o: Out(stream.Signature(TokenPayload))
 
     # LS: emit a SOF packet every 1ms
@@ -144,6 +158,20 @@ class USBSOFController(wiring.Component):
             with m.State('SEND'):
                 m.d.comb += self.o.valid.eq(1)
                 with m.If(self.o.ready):
+                    m.next = 'WAIT-TX-ALLOWED'
+
+            with m.State('WAIT-TX-ALLOWED'):
+                txad = Signal()
+                with m.If(self.txa):
+                    m.d.usb += txad.eq(1)
+                cnt = Signal(16)
+                m.d.usb += cnt.eq(cnt+1)
+                with m.If(txad & (cnt > 7*6000)):
+                    m.d.comb += self.done.eq(1)
+                    m.d.usb += [
+                        cnt.eq(0),
+                        txad.eq(0),
+                    ]
                     m.next = 'IDLE'
 
         return m
@@ -159,6 +187,8 @@ class SimpleUSBHost(Elaboratable):
         else:
             self.utmi = UTMITranslator(ulpi=bus, handle_clocking=handle_clocking)
             self.translator = self.utmi
+            self.receiver   = USBDataPacketReceiver(utmi=self.utmi)
+            self.handshake_detector  = USBHandshakeDetector(utmi=self.utmi)
 
     def elaborate(self, platform):
 
@@ -167,13 +197,23 @@ class SimpleUSBHost(Elaboratable):
         if not self.sim:
             m.submodules.translator = self.translator
 
-        m.submodules.transmitter = transmitter = USBDataPacketGenerator()
+        m.submodules.transmitter         = transmitter = USBDataPacketGenerator()
+        m.submodules.receiver            = receiver            = self.receiver
         m.submodules.data_crc = data_crc = USBDataPacketCRC()
         m.submodules.handshake_generator = handshake_generator = USBHandshakeGenerator()
+        m.submodules.handshake_detector  = handshake_detector = self.handshake_detector
         m.submodules.token_generator = token_generator = USBTokenPacketGenerator()
         m.submodules.sof_controller = sof_controller = USBSOFController()
+        m.submodules.timer               = timer = \
+            USBInterpacketTimer(fs_only=True)
 
         data_crc.add_interface(transmitter.crc)
+        data_crc.add_interface(receiver.data_crc)
+
+        # Connect our receiver to our timer.
+        timer.add_interface(receiver.timer)
+        timer.add_interface(token_generator.timer)
+        m.d.comb += timer.speed.eq(USBSpeed.FULL)
 
         m.submodules.tx_multiplexer = tx_multiplexer = UTMIInterfaceMultiplexer()
 
@@ -182,23 +222,18 @@ class SimpleUSBHost(Elaboratable):
         tx_multiplexer.add_input(handshake_generator.tx)
 
         m.d.comb += [
+            sof_controller.txa     .eq(token_generator.timer.tx_allowed),
             tx_multiplexer.output  .attach(self.utmi),
             data_crc.tx_valid      .eq(tx_multiplexer.output.valid & self.utmi.tx_ready),
             data_crc.tx_data       .eq(tx_multiplexer.output.data),
+            data_crc.rx_data        .eq(self.utmi.rx_data),
+            data_crc.rx_valid       .eq(self.utmi.rx_valid),
         ]
 
         m.d.comb += [
             self.utmi.dm_pulldown.eq(1), # enable host pulldowns
             self.utmi.dp_pulldown.eq(1),
         ]
-
-        # HS EOP from spec:
-        """
-        Most of the HS USB packets that are generated consist of an 8-bit EOP. Only when a SOF has to be sent on the USB
-        bus, the EOP must be 40 bits. To generate the correct packets on the USB bus, the transceiver must check the PID value
-        of every packet that is transmitted in HS mode. When the PID is equal to SOF, the transceiver must generate a 40-bit
-        EOP. In all other HS cases the transceiver generates an 8-bit EOP on the USB bus
-        """
 
         wiring.connect(m, sof_controller.o, token_generator.i)
 
@@ -235,33 +270,32 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(cnt > 6*600000):
                     m.d.usb += cnt.eq(0)
                     m.d.usb += mod.eq(0)
-                    m.next = 'WAIT-SOF'
+                    m.next = 'SOF-TOKEN'
 
-            with m.State('WAIT-SOF'):
-                with m.If(token_generator.txd):
+            def send_token(state_id, pid, addr, endp, next_state_id):
+                with m.State(state_id):
+                    enqueued = Signal()
+                    m.d.comb += [
+                        token_generator.i.valid.eq(1),
+                        token_generator.i.payload.pid.eq(pid),
+                        token_generator.i.payload.data.addr.eq(addr),
+                        token_generator.i.payload.data.endp.eq(endp),
+                    ]
+                    with m.If(token_generator.i.ready):
+                        m.d.usb += enqueued.eq(1)
+                    with m.If(enqueued & token_generator.done):
+                        m.d.usb += enqueued.eq(0)
+                        m.next = next_state_id
+
+            with m.State('SOF-TOKEN'):
+                with m.If(sof_controller.done):
                     m.d.usb += mod.eq(mod+1)
                     with m.If(mod == 1024):
                         m.d.usb += mod.eq(0)
-                    with m.If(mod == 66):
-                        m.next = 'WAIT-SETUP-TOKEN'
+                    with m.If(mod == 65):
+                        m.next = 'SETUP-TOKEN'
 
-            with m.State('WAIT-SETUP-TOKEN'):
-                cnt = Signal(64)
-                m.d.usb += cnt.eq(cnt+1)
-                with m.If(cnt == 7*6000): #0.7ms
-                    m.next = 'SETUP-TOKEN'
-                    m.d.usb += cnt.eq(0)
-
-            with m.State('SETUP-TOKEN'):
-                m.d.comb += [
-                    token_generator.i.valid.eq(1),
-                    token_generator.i.payload.pid.eq(TokenPID.SETUP),
-                    token_generator.i.payload.data.addr.eq(0),
-                    token_generator.i.payload.data.endp.eq(0),
-                ]
-                with m.If(token_generator.txd):
-                    m.d.comb += token_generator.i.valid.eq(0),
-                    m.next = 'SETUP-DATA0'
+            send_token('SETUP-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP-DATA0')
 
             with m.State('SETUP-DATA0'):
 
@@ -294,25 +328,29 @@ class SimpleUSBHost(Elaboratable):
                         m.next = 'WAIT-ACK'
 
             with m.State('WAIT-ACK'):
-                delay = Signal(16)
-                m.d.usb += delay.eq(delay + 1)
-                with m.If(delay == 1024):
-                    m.d.usb += delay.eq(0)
-                    m.next = 'WAIT-SOF2'
+                with m.If(handshake_detector.detected.ack):
+                    m.next = 'SOF-IN'
+                with m.If(token_generator.timer.rx_timeout):
+                    m.next = 'SOF-TOKEN'
 
-            with m.State('WAIT-SOF2'):
-                with m.If(token_generator.txd):
+            with m.State('SOF-IN'):
+                with m.If(sof_controller.done):
                     m.next = 'IN-TOKEN'
 
-            with m.State('IN-TOKEN'):
-                m.d.comb += [
-                    token_generator.i.valid.eq(1),
-                    token_generator.i.payload.pid.eq(TokenPID.IN),
-                    token_generator.i.payload.data.addr.eq(0),
-                    token_generator.i.payload.data.endp.eq(0),
-                ]
-                with m.If(token_generator.txd):
-                    m.next = 'WAIT-SOF'
+            send_token('IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP-DATA1-IN')
+
+            with m.State('SETUP-DATA1-IN'):
+                with m.If(receiver.packet_complete):
+                    m.next = 'SETUP-DATA1-ACK'
+                """
+                with m.If(receiver.timer.rx_timeout):
+                    m.next = 'SOF-TOKEN'
+                """
+
+            with m.State('SETUP-DATA1-ACK'):
+                with m.If(receiver.ready_for_response):
+                    m.d.comb += handshake_generator.issue_ack.eq(1)
+                    m.next = 'SOF-TOKEN'
 
         return m
 
