@@ -342,7 +342,7 @@ class SimpleUSBHost(Elaboratable):
             with m.State('SETUP-DATA1-IN'):
                 with m.If(receiver.packet_complete):
                     m.next = 'SETUP-DATA1-ACK'
-                """
+                """ TODO
                 with m.If(receiver.timer.rx_timeout):
                     m.next = 'SOF-TOKEN'
                 """
@@ -350,6 +350,26 @@ class SimpleUSBHost(Elaboratable):
             with m.State('SETUP-DATA1-ACK'):
                 with m.If(receiver.ready_for_response):
                     m.d.comb += handshake_generator.issue_ack.eq(1)
+                    m.next = 'SOF-OUT'
+
+            with m.State('SOF-OUT'):
+                with m.If(sof_controller.done):
+                    m.next = 'SETUP-DATA1-ZLP-OUT'
+
+            send_token('SETUP-DATA1-ZLP-OUT', TokenPID.OUT, 0, 0, 'SETUP-DATA1-ZLP')
+
+            with m.State('SETUP-DATA1-ZLP'):
+                m.d.comb += [
+                    transmitter.data_pid.eq(1), # DATA1
+                    transmitter.stream.last.eq(1),
+                    transmitter.stream.valid.eq(1),
+                ]
+                m.next = 'ZLP-WAIT-ACK'
+
+            with m.State('ZLP-WAIT-ACK'):
+                with m.If(handshake_detector.detected.ack):
+                    m.next = 'SOF-TOKEN'
+                with m.If(token_generator.timer.rx_timeout):
                     m.next = 'SOF-TOKEN'
 
         return m
