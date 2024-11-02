@@ -214,8 +214,11 @@ class SimpleUSBHost(Elaboratable):
         with m.FSM(domain="usb"):
 
             with m.State('IDLE'):
+                detect = Signal(64)
                 m.d.comb += sof_controller.enable.eq(0),
-                with m.If(platform.request("encoder").s.i):
+                with m.If(self.utmi.line_state != 0):
+                    m.d.usb += detect.eq(detect+1)
+                with m.If(detect > 13*600000):
                     m.next = 'BUS-RESET'
 
             with m.State('BUS-RESET'):
@@ -228,8 +231,8 @@ class SimpleUSBHost(Elaboratable):
                     self.utmi.xcvr_select.eq(USBSpeed.HIGH),
                     self.utmi.term_select.eq(UTMITerminationSelect.HS_NORMAL),
                 ]
-                # 20ms
-                with m.If(cnt > 1200000):
+                # 60ms
+                with m.If(cnt > 6*600000):
                     m.d.usb += cnt.eq(0)
                     m.d.usb += mod.eq(0)
                     m.next = 'WAIT-SOF'
@@ -309,7 +312,7 @@ class SimpleUSBHost(Elaboratable):
                     token_generator.i.payload.data.endp.eq(0),
                 ]
                 with m.If(token_generator.txd):
-                    m.next = 'IDLE'
+                    m.next = 'WAIT-SOF'
 
         return m
 
