@@ -356,7 +356,7 @@ class SimpleUSBHost(Elaboratable):
             # HELPERS FOR CONSTRUCTING FSM STATES
             #
 
-            def send_token(state_id, pid, addr, endp, next_state_id):
+            def fsm_tx_token(state_id, pid, addr, endp, next_state_id):
                 """
                 Create an FSM state that emits a token packet
                 with the provided payload and does not move to
@@ -376,11 +376,12 @@ class SimpleUSBHost(Elaboratable):
                         m.d.usb += enqueued.eq(0)
                         m.next = next_state_id
 
-            def send_setup_data_stage(state_id, data_pid, setup_payload, next_state_id):
+            def fsm_tx_data_stage(state_id, data_shape, data_pid, data_payload, next_state_id):
                 with m.State(state_id):
-                    data_view = Signal(data.ArrayLayout(unsigned(8), 8))
-                    payload = Const(setup_payload, shape=SetupPayload)
-                    ix = Signal(range(8))
+                    data_length = data_shape.as_shape().size // 8
+                    payload = Const(data_payload, shape=data_shape)
+                    data_view = Signal(data.ArrayLayout(unsigned(8), data_length))
+                    ix = Signal(range(data_length))
                     m.d.comb += [
                         data_view.eq(payload),
                         transmitter.data_pid.eq(data_pid), # DATA0/DATA1 etc
@@ -447,10 +448,13 @@ class SimpleUSBHost(Elaboratable):
                     with m.If(sof_counter == _SETUP_ON_SOF_INDEX):
                         m.next = 'SETUP-TOKEN'
 
-            send_token('SETUP-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP-DATA0')
+            fsm_tx_token('SETUP-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP-DATA0')
 
-            send_setup_data_stage('SETUP-DATA0', 0, SetupPayload.init_get_descriptor(0x0100, 0x0040),
-                                  'WAIT-ACK')
+            fsm_tx_data_stage('SETUP-DATA0',
+                              data_shape=SetupPayload,
+                              data_pid=0, # DATA0
+                              data_payload=SetupPayload.init_get_descriptor(0x0100, 0x0040),
+                              next_state_id='WAIT-ACK')
 
             with m.State('WAIT-ACK'):
                 with m.If(handshake_detector.detected.ack):
@@ -462,7 +466,7 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(sof_controller.txa):
                     m.next = 'IN-TOKEN'
 
-            send_token('IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP-DATA1-IN')
+            fsm_tx_token('IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP-DATA1-IN')
 
             with m.State('SETUP-DATA1-IN'):
                 with m.If(receiver.packet_complete):
@@ -481,7 +485,7 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(sof_controller.txa):
                     m.next = 'SETUP-DATA1-ZLP-OUT'
 
-            send_token('SETUP-DATA1-ZLP-OUT', TokenPID.OUT, 0, 0, 'SETUP-DATA1-ZLP')
+            fsm_tx_token('SETUP-DATA1-ZLP-OUT', TokenPID.OUT, 0, 0, 'SETUP-DATA1-ZLP')
 
             with m.State('SETUP-DATA1-ZLP'):
                 m.d.comb += [
@@ -499,10 +503,13 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(sof_controller.txa):
                     m.next = 'SETUP1-TOKEN'
 
-            send_token('SETUP1-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP1-DATA0')
+            fsm_tx_token('SETUP1-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP1-DATA0')
 
-            send_setup_data_stage('SETUP1-DATA0', 0, SetupPayload.init_set_address(0x0012),
-                                  'SETUP1-WAIT-ACK')
+            fsm_tx_data_stage('SETUP1-DATA0',
+                              data_shape=SetupPayload,
+                              data_pid=0, # DATA0
+                              data_payload=SetupPayload.init_set_address(0x0012),
+                              next_state_id='SETUP1-WAIT-ACK')
 
             with m.State('SETUP1-WAIT-ACK'):
                 with m.If(handshake_detector.detected.ack):
@@ -514,7 +521,7 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(sof_controller.txa):
                     m.next = 'SETUP1-IN-TOKEN'
 
-            send_token('SETUP1-IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP1-DATA1-IN')
+            fsm_tx_token('SETUP1-IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP1-DATA1-IN')
 
             with m.State('SETUP1-DATA1-IN'):
                 with m.If(receiver.packet_complete):
@@ -535,10 +542,13 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(sof_controller.txa):
                     m.next = 'SETUP2-TOKEN'
 
-            send_token('SETUP2-TOKEN', TokenPID.SETUP, 18, 0, 'SETUP2-DATA0')
+            fsm_tx_token('SETUP2-TOKEN', TokenPID.SETUP, 18, 0, 'SETUP2-DATA0')
 
-            send_setup_data_stage('SETUP2-DATA0', 0, SetupPayload.init_set_configuration(0x0001),
-                                  'SETUP2-WAIT-ACK')
+            fsm_tx_data_stage('SETUP2-DATA0',
+                              data_shape=SetupPayload,
+                              data_pid=0, # DATA0
+                              data_payload=SetupPayload.init_set_configuration(0x0001),
+                              next_state_id='SETUP2-WAIT-ACK')
 
             with m.State('SETUP2-WAIT-ACK'):
                 with m.If(handshake_detector.detected.ack):
@@ -550,7 +560,7 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(sof_controller.txa):
                     m.next = 'SETUP2-IN-TOKEN'
 
-            send_token('SETUP2-IN-TOKEN', TokenPID.IN, 18, 0, 'SETUP2-DATA1-IN')
+            fsm_tx_token('SETUP2-IN-TOKEN', TokenPID.IN, 18, 0, 'SETUP2-DATA1-IN')
 
             with m.State('SETUP2-DATA1-IN'):
                 with m.If(receiver.packet_complete):
@@ -569,7 +579,7 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(sof_controller.txa):
                     m.next = 'BULK-IN-TOKEN'
 
-            send_token('BULK-IN-TOKEN', TokenPID.IN, 18, 1, 'MIDI-BULK-IN')
+            fsm_tx_token('BULK-IN-TOKEN', TokenPID.IN, 18, 1, 'MIDI-BULK-IN')
 
             with m.State('MIDI-BULK-IN'):
                 with m.If(receiver.ready_for_response):
