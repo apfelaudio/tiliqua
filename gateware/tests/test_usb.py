@@ -95,7 +95,8 @@ class UsbTests(unittest.TestCase):
 
         """
         Integration test to inspect what packets are spat out
-        by SimpleUSBHost.
+        by SimpleUSBMIDIHost, and that things are sufficiently
+        wired together for a functioning system.
         """
 
         dut = DomainRenamer({"usb": "sync"})(

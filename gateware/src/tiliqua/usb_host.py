@@ -1,6 +1,10 @@
 # Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
 # SPDX-License-Identifier: BSD-3-Clause
+"""
+Extremely bare-bones USB host logic intended for using Tiliqua as a USB MIDI host.
+Consider this EXPERIMENTAL. Error handling / retries are not finished.
+"""
 
 from amaranth                      import *
 from amaranth.lib                  import data, enum, wiring, stream
@@ -116,9 +120,11 @@ class USBTokenPacketGenerator(wiring.Component):
     be ready for the wire (UTMI). This is calculated here.
     """
 
+    #
     # IN tokens use InterPacketTimer to determine when `txa`
     # (Tx Allowed) is permitted, other tokens need more time.
     # This is that time in cycles.
+    #
     _LONG_TXA_POST_TRANSMIT = 200
 
     def __init__(self):
@@ -266,6 +272,25 @@ class USBSOFController(wiring.Component):
 
 
 class SimpleUSBMIDIHost(Elaboratable):
+
+    """
+    Extremely bare-bones USB MIDI host that uses an ULPI PHY interface.
+    For now, full-speed only (most MIDI devices are).
+
+    This does the bare minimum to enumerate a device, set the correct configuration
+    and poll it for MIDI information on a BULK IN endpoint.
+
+    Proper error handling and retries are not complete yet. This controller
+    currently walks the happy path of a few MIDI devices I have fine, however
+    still requires extensive testing.
+
+    The USB configuration ID and MIDI endpoint are currently hard-coded, that is,
+    the descriptors themselves are not inspected to find the correct interface,
+    and you must provide them before elaboration.
+
+    This should not be so hard to add. Goal of this core initially is just
+    to verify the Tiliqua hardware design can function as a USB host.
+    """
 
     # Address that is assigned to the connected device during the SETUP phase.
     # The host is free to choose whatever it wants for this.

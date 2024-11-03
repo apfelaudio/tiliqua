@@ -1,6 +1,15 @@
-# Copyright (c) 2024 Seb Holzapfel <me@sebholzapfel.com>
+# Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
-# SPDX-License-Identifier: BSD--3-Clause
+# SPDX-License-Identifier: CERN-OHL-S-2.0
+"""
+Extremely bare-bones USB MIDI host demo. EXPERIMENTAL.
+
+***WARN*** This demo hardwires the VBUS output to ON !!! ***WARN***
+
+At the moment this is only used for Tiliqua hardware validation.
+NOTE: the MIDI USB configuration and endpoint IDs are hard-coded below.
+"""
+
 
 from amaranth                     import *
 from amaranth.build               import *
@@ -12,6 +21,21 @@ from tiliqua.tiliqua_platform     import RebootProvider
 from vendor.ila                   import AsyncSerialILA
 
 class USB2HostTest(Elaboratable):
+
+    #
+    # FIXME: hardcoded device properties
+    #
+    # You can get this by looking at the device descriptors
+    # on a PC --> Find an 'Interface descriptor' with subclass
+    # 0x03 (MIDI Streaming). The parent configuration ID is the
+    # correct configuration ID. The IN (bulk) endpoint ID is the
+    # MIDI BULK endpoint ID.
+    #
+    # These will not be hardcoded when this demo is finished.
+    #
+
+    _HARDCODE_DEVICE_CONFIGURATION_ID = 1
+    _HARDCODE_MIDI_BULK_ENDPOINT_ID   = 1
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -25,9 +49,13 @@ class USB2HostTest(Elaboratable):
                 platform.request("encoder").s.i, reboot.button)
 
         ulpi = platform.request(platform.default_usb_connection)
-        m.submodules.usb = usb = SimpleUSBMIDIHost(bus=ulpi)
+        m.submodules.usb = usb = SimpleUSBMIDIHost(
+                bus=ulpi,
+                hardcoded_configuration_id=self._HARDCODE_DEVICE_CONFIGURATION_ID,
+                hardcoded_midi_endpoint=self._HARDCODE_MIDI_BULK_ENDPOINT_ID,
+        )
 
-        # WARN: enable VBUS output
+        # XXX: this demo enables VBUS output
         m.d.comb += platform.request("usb_vbus_en").o.eq(1)
 
         if platform.ila:
