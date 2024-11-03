@@ -199,7 +199,6 @@ class SimpleUSBHost(Elaboratable):
 
         if not self.sim:
             m.submodules.translator = self.translator
-
         m.submodules.transmitter         = transmitter = USBDataPacketGenerator()
         m.submodules.receiver            = receiver            = self.receiver
         m.submodules.data_crc            = data_crc = USBDataPacketCRC()
@@ -209,75 +208,66 @@ class SimpleUSBHost(Elaboratable):
         m.submodules.sof_controller      = sof_controller = USBSOFController()
         m.submodules.timer               = timer = \
             USBInterpacketTimer(fs_only  = True)
+        m.submodules.tx_multiplexer      = tx_multiplexer = UTMIInterfaceMultiplexer()
 
+        # Data CRC interfaces
         data_crc.add_interface(transmitter.crc)
         data_crc.add_interface(receiver.data_crc)
 
-        # Connect our receiver to our timer.
+        # Inter-packet timer interfaces.
         timer.add_interface(receiver.timer)
         timer.add_interface(token_generator.timer)
-        m.d.comb += timer.speed.eq(USBSpeed.FULL)
 
-        m.submodules.tx_multiplexer = tx_multiplexer = UTMIInterfaceMultiplexer()
-
+        # UTMI transmission interfaces
         tx_multiplexer.add_input(token_generator.tx)
         tx_multiplexer.add_input(transmitter.tx)
         tx_multiplexer.add_input(handshake_generator.tx)
 
+        # Unless a particular state below is sending tokens, token
+        # generator is always hooked up to the SOF generator.
+        wiring.connect(m, sof_controller.o, token_generator.i)
+
         m.d.comb += [
+            # Enable host pulldowns
+            self.utmi.dm_pulldown.eq(1),
+            self.utmi.dp_pulldown.eq(1),
+
+            # By default, put transceiver in normal FS mode
+            # (non-driving unless we actively send packets)
+            self.utmi.op_mode.eq(UTMIOperatingMode.NORMAL),
+            self.utmi.xcvr_select.eq(USBSpeed.FULL),
+            self.utmi.term_select.eq(UTMITerminationSelect.LS_FS_NORMAL),
+
+            # Wire up respective LUNA components
+            timer.speed.eq(USBSpeed.FULL),
             tx_multiplexer.output .attach(self.utmi),
             data_crc.tx_valid     .eq(tx_multiplexer.output.valid & self.utmi.tx_ready),
             data_crc.tx_data      .eq(tx_multiplexer.output.data),
             data_crc.rx_data      .eq(self.utmi.rx_data),
             data_crc.rx_valid     .eq(self.utmi.rx_valid),
-        ]
 
-        m.d.comb += [
-            self.utmi.dm_pulldown.eq(1), # enable host pulldowns
-            self.utmi.dp_pulldown.eq(1),
-        ]
-
-        wiring.connect(m, sof_controller.o, token_generator.i)
-
-        mod = Signal(16)
-
-        m.d.comb += [
+            # Enable SOF transmission by default.
             sof_controller.enable.eq(1),
-            self.utmi.op_mode.eq(UTMIOperatingMode.NORMAL),
-            self.utmi.xcvr_select.eq(USBSpeed.FULL),
-            self.utmi.term_select.eq(UTMITerminationSelect.LS_FS_NORMAL),
         ]
 
         midi_toggle = Signal()
         m.d.comb += platform.request("led_a").o.eq(midi_toggle)
 
+        _CONNECT_UNTIL_RESET_CYCLES = 13*600000 # 130ms
+        _BUS_RESET_HOLD_CYCLES      = 6*600000  # 60ms
+
         with m.FSM(domain="usb"):
 
-            with m.State('IDLE'):
-                detect = Signal(64)
-                m.d.comb += sof_controller.enable.eq(0),
-                with m.If(self.utmi.line_state != 0):
-                    m.d.usb += detect.eq(detect+1)
-                with m.If(detect > 13*600000):
-                    m.next = 'BUS-RESET'
-
-            with m.State('BUS-RESET'):
-                cnt = Signal(64)
-                m.d.usb += cnt.eq(cnt+1)
-                # SE0
-                m.d.comb += [
-                    sof_controller.enable.eq(0),
-                    self.utmi.op_mode.eq(UTMIOperatingMode.RAW_DRIVE),
-                    self.utmi.xcvr_select.eq(USBSpeed.HIGH),
-                    self.utmi.term_select.eq(UTMITerminationSelect.HS_NORMAL),
-                ]
-                # 60ms
-                with m.If(cnt > 6*600000):
-                    m.d.usb += cnt.eq(0)
-                    m.d.usb += mod.eq(0)
-                    m.next = 'SOF-TOKEN'
+            #
+            # HELPERS FOR CONSTRUCTING FSM STATES
+            #
 
             def send_token(state_id, pid, addr, endp, next_state_id):
+                """
+                Create an FSM state that emits a token packet
+                with the provided payload and does not move to
+                the next state until transmissions are allowed again.
+                """
                 with m.State(state_id):
                     enqueued = Signal()
                     m.d.comb += [
@@ -291,8 +281,48 @@ class SimpleUSBHost(Elaboratable):
                     with m.If(enqueued & token_generator.txa):
                         m.d.usb += enqueued.eq(0)
                         m.next = next_state_id
+            #
+            # BUS RESET LOGIC
+            #
 
+            # TODO: move bus reset logic to dedicated component
+
+            # Wait for an FS device to be connected
+            # If it remains connected for 130ms, issue a bus reset.
+            with m.State('IDLE'):
+                _LINE_STATE_FS_HS_J = 0b01
+                # Do not drive bus. Disable SOF transmission
+                m.d.comb += sof_controller.enable.eq(0),
+                connected_for_cycles = Signal(32)
+                with m.If(self.utmi.line_state == _LINE_STATE_FS_HS_J):
+                    m.d.usb += connected_for_cycles.eq(connected_for_cycles+1)
+                with m.Else():
+                    m.d.usb += connected_for_cycles.eq(0)
+                with m.If(connected_for_cycles == _CONNECT_UNTIL_RESET_CYCLES):
+                    m.next = 'BUS-RESET'
+
+            # Bus reset: issue an SE0 for 60ms
+            with m.State('BUS-RESET'):
+                # Drive SE0 on bus. Disable SOF transmission
+                m.d.comb += [
+                    sof_controller.enable.eq(0),
+                    self.utmi.op_mode.eq(UTMIOperatingMode.RAW_DRIVE),
+                    self.utmi.xcvr_select.eq(USBSpeed.HIGH),
+                    self.utmi.term_select.eq(UTMITerminationSelect.HS_NORMAL),
+                ]
+                se0_cycles = Signal(64)
+                m.d.usb += se0_cycles.eq(se0_cycles+1)
+                with m.If(se0_cycles == _BUS_RESET_HOLD_CYCLES):
+                    m.d.usb += se0_cycles.eq(0)
+                    m.next = 'SOF-TOKEN'
+
+            #
+            # HOST PACKET STATE MACHINE
+            #
+
+            # Send SOFs, and once every N SOFs, try the setup sequence.
             with m.State('SOF-TOKEN'):
+                mod = Signal(16)
                 with m.If(sof_controller.txa):
                     m.d.usb += mod.eq(mod+1)
                     with m.If(mod == 1024):
