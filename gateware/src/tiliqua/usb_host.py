@@ -33,12 +33,17 @@ class USBTokenPacketGenerator(wiring.Component):
     be ready for the wire (UTMI). This is calculated here.
     """
 
+    # IN tokens use InterPacketTimer to determine when `txa`
+    # (Tx Allowed) is permitted, other tokens need more time.
+    # This is that time in cycles.
+    _LONG_TXA_POST_TRANSMIT = 200
+
     def __init__(self):
         self.tx = UTMITransmitInterface()
         self.timer = InterpacketTimerInterface()
         super().__init__({
             "i": In(stream.Signature(TokenPayload)),
-            "done": Out(1),
+            "txa": Out(1),
         })
 
     def elaborate(self, platform):
@@ -89,23 +94,21 @@ class USBTokenPacketGenerator(wiring.Component):
                 with m.If(self.tx.ready):
                     m.d.comb += self.timer.start.eq(1)
                     with m.If(pkt.pid == TokenPID.IN):
-                        m.d.comb += self.done.eq(1)
-                        m.next = 'IDLE'
+                        m.d.comb += self.txa.eq(1)
+                        m.next = 'WAIT-SHORT-TXA'
                     with m.Else():
-                        m.next = 'WAIT'
+                        m.next = 'WAIT-LONG-TXA'
 
-            with m.State('WAIT'):
-                txad = Signal()
+            with m.State('WAIT-SHORT-TXA'):
                 with m.If(self.timer.tx_allowed):
-                    m.d.usb += txad.eq(1)
-                cnt = Signal(16)
+                    m.next = 'IDLE'
+
+            with m.State('WAIT-LONG-TXA'):
+                cnt = Signal(range(self._LONG_TXA_POST_TRANSMIT))
                 m.d.usb += cnt.eq(cnt+1)
-                with m.If(txad & (cnt > 200)):
-                    m.d.comb += self.done.eq(1)
-                    m.d.usb += [
-                        cnt.eq(0),
-                        txad.eq(0),
-                    ]
+                with m.If(cnt == (self._LONG_TXA_POST_TRANSMIT - 1)):
+                    m.d.comb += self.txa.eq(1)
+                    m.d.usb += cnt.eq(0)
                     m.next = 'IDLE'
 
         return m
@@ -114,15 +117,21 @@ class USBSOFController(wiring.Component):
 
     """
     If :py:`enable == 1`, emit a single SOF TokenPayload every 1ms.
+
+    :py:`txa` is strobed when transmissions are allowed after a SOF is sent.
     """
 
     enable: In(1)
-    txa:    In(1)
-    done:   Out(1)
+    txa:    Out(1)
     o: Out(stream.Signature(TokenPayload))
 
-    # LS: emit a SOF packet every 1ms
+    # FS: emit a SOF packet every 1ms
     _SOF_CYCLES = 60000
+
+    # FS: delay from SOF packet being enqueued and this controller
+    # strobing `txa` to indicate the next packet may be sent.
+    # TODO: reduce this number? 0.7msec just taken from traces.
+    _SOF_TX_TO_TX_MIN = 7*6000
 
     def elaborate(self, platform):
         m = Module()
@@ -161,17 +170,11 @@ class USBSOFController(wiring.Component):
                     m.next = 'WAIT-TX-ALLOWED'
 
             with m.State('WAIT-TX-ALLOWED'):
-                txad = Signal()
-                with m.If(self.txa):
-                    m.d.usb += txad.eq(1)
-                cnt = Signal(16)
+                cnt = Signal(range(self._SOF_TX_TO_TX_MIN))
                 m.d.usb += cnt.eq(cnt+1)
-                with m.If(txad & (cnt > 7*6000)):
-                    m.d.comb += self.done.eq(1)
-                    m.d.usb += [
-                        cnt.eq(0),
-                        txad.eq(0),
-                    ]
+                with m.If(cnt == (self._SOF_TX_TO_TX_MIN - 1)):
+                    m.d.comb += self.txa.eq(1)
+                    m.d.usb += cnt.eq(0)
                     m.next = 'IDLE'
 
         return m
@@ -199,13 +202,13 @@ class SimpleUSBHost(Elaboratable):
 
         m.submodules.transmitter         = transmitter = USBDataPacketGenerator()
         m.submodules.receiver            = receiver            = self.receiver
-        m.submodules.data_crc = data_crc = USBDataPacketCRC()
+        m.submodules.data_crc            = data_crc = USBDataPacketCRC()
         m.submodules.handshake_generator = handshake_generator = USBHandshakeGenerator()
         m.submodules.handshake_detector  = handshake_detector = self.handshake_detector
-        m.submodules.token_generator = token_generator = USBTokenPacketGenerator()
-        m.submodules.sof_controller = sof_controller = USBSOFController()
+        m.submodules.token_generator     = token_generator = USBTokenPacketGenerator()
+        m.submodules.sof_controller      = sof_controller = USBSOFController()
         m.submodules.timer               = timer = \
-            USBInterpacketTimer(fs_only=True)
+            USBInterpacketTimer(fs_only  = True)
 
         data_crc.add_interface(transmitter.crc)
         data_crc.add_interface(receiver.data_crc)
@@ -222,12 +225,11 @@ class SimpleUSBHost(Elaboratable):
         tx_multiplexer.add_input(handshake_generator.tx)
 
         m.d.comb += [
-            sof_controller.txa     .eq(token_generator.timer.tx_allowed),
-            tx_multiplexer.output  .attach(self.utmi),
-            data_crc.tx_valid      .eq(tx_multiplexer.output.valid & self.utmi.tx_ready),
-            data_crc.tx_data       .eq(tx_multiplexer.output.data),
-            data_crc.rx_data        .eq(self.utmi.rx_data),
-            data_crc.rx_valid       .eq(self.utmi.rx_valid),
+            tx_multiplexer.output .attach(self.utmi),
+            data_crc.tx_valid     .eq(tx_multiplexer.output.valid & self.utmi.tx_ready),
+            data_crc.tx_data      .eq(tx_multiplexer.output.data),
+            data_crc.rx_data      .eq(self.utmi.rx_data),
+            data_crc.rx_valid     .eq(self.utmi.rx_valid),
         ]
 
         m.d.comb += [
@@ -286,12 +288,12 @@ class SimpleUSBHost(Elaboratable):
                     ]
                     with m.If(token_generator.i.ready):
                         m.d.usb += enqueued.eq(1)
-                    with m.If(enqueued & token_generator.done):
+                    with m.If(enqueued & token_generator.txa):
                         m.d.usb += enqueued.eq(0)
                         m.next = next_state_id
 
             with m.State('SOF-TOKEN'):
-                with m.If(sof_controller.done):
+                with m.If(sof_controller.txa):
                     m.d.usb += mod.eq(mod+1)
                     with m.If(mod == 1024):
                         m.d.usb += mod.eq(0)
@@ -337,7 +339,7 @@ class SimpleUSBHost(Elaboratable):
                     m.next = 'SOF-TOKEN'
 
             with m.State('SOF-IN'):
-                with m.If(sof_controller.done):
+                with m.If(sof_controller.txa):
                     m.next = 'IN-TOKEN'
 
             send_token('IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP-DATA1-IN')
@@ -356,7 +358,7 @@ class SimpleUSBHost(Elaboratable):
                     m.next = 'SOF-OUT'
 
             with m.State('SOF-OUT'):
-                with m.If(sof_controller.done):
+                with m.If(sof_controller.txa):
                     m.next = 'SETUP-DATA1-ZLP-OUT'
 
             send_token('SETUP-DATA1-ZLP-OUT', TokenPID.OUT, 0, 0, 'SETUP-DATA1-ZLP')
@@ -374,7 +376,7 @@ class SimpleUSBHost(Elaboratable):
                     m.next = 'SOF-SETUP1'
 
             with m.State('SOF-SETUP1'):
-                with m.If(sof_controller.done):
+                with m.If(sof_controller.txa):
                     m.next = 'SETUP1-TOKEN'
 
             send_token('SETUP1-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP1-DATA0')
@@ -416,7 +418,7 @@ class SimpleUSBHost(Elaboratable):
                     m.next = 'SOF-TOKEN'
 
             with m.State('SOF-SETUP1-IN'):
-                with m.If(sof_controller.done):
+                with m.If(sof_controller.txa):
                     m.next = 'SETUP1-IN-TOKEN'
 
             send_token('SETUP1-IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP1-DATA1-IN')
@@ -437,7 +439,7 @@ class SimpleUSBHost(Elaboratable):
             # HENCEFORTH ADDR=18
 
             with m.State('SOF-SETUP2'):
-                with m.If(sof_controller.done):
+                with m.If(sof_controller.txa):
                     m.next = 'SETUP2-TOKEN'
 
             send_token('SETUP2-TOKEN', TokenPID.SETUP, 18, 0, 'SETUP2-DATA0')
@@ -479,7 +481,7 @@ class SimpleUSBHost(Elaboratable):
                     m.next = 'SOF-SETUP2'
 
             with m.State('SOF-SETUP2-IN'):
-                with m.If(sof_controller.done):
+                with m.If(sof_controller.txa):
                     m.next = 'SETUP2-IN-TOKEN'
 
             send_token('SETUP2-IN-TOKEN', TokenPID.IN, 18, 0, 'SETUP2-DATA1-IN')
@@ -498,7 +500,7 @@ class SimpleUSBHost(Elaboratable):
                     m.next = 'SOF-MIDI'
 
             with m.State('SOF-MIDI'):
-                with m.If(sof_controller.done):
+                with m.If(sof_controller.txa):
                     m.next = 'BULK-IN-TOKEN'
 
             send_token('BULK-IN-TOKEN', TokenPID.IN, 18, 1, 'MIDI-BULK-IN')
