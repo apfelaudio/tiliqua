@@ -311,6 +311,9 @@ class SimpleUSBMIDIHost(Elaboratable):
         self.receiver   = USBDataPacketReceiver(utmi=self.utmi)
         self.handshake_detector  = USBHandshakeDetector(utmi=self.utmi)
 
+        # kept HIGH whenever we expect received packets to be MIDI information
+        self.midi_bulk_in     = Signal()
+
     def elaborate(self, platform):
 
         m = Module()
@@ -367,10 +370,6 @@ class SimpleUSBMIDIHost(Elaboratable):
             # Enable SOF transmission by default.
             sof_controller.enable.eq(1),
         ]
-
-        midi_toggle = Signal()
-        if not self.sim:
-            m.d.comb += platform.request("led_a").o.eq(midi_toggle)
 
         _CONNECT_UNTIL_RESET_CYCLES = 13*600000 # 130ms
         _BUS_RESET_HOLD_CYCLES      = 6*600000  # 60ms
@@ -620,9 +619,9 @@ class SimpleUSBMIDIHost(Elaboratable):
                          self.midi_endpoint_id, 'MIDI-BULK-IN')
 
             with m.State('MIDI-BULK-IN'):
+                m.d.comb += self.midi_bulk_in.eq(1)
                 with m.If(receiver.ready_for_response):
                     m.d.comb += handshake_generator.issue_ack.eq(1)
-                    m.d.usb += midi_toggle.eq(~midi_toggle)
                     m.next = 'MIDI-IDLE-SOF'
                 with m.If(handshake_detector.detected.nak):
                     m.next = 'MIDI-IDLE-SOF'
