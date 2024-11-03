@@ -1,6 +1,6 @@
 # Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
 #
-# SPDX-License-Identifier: CERN-OHL-S-2.0
+# SPDX-License-Identifier: BSD-3-Clause
 
 import math
 import sys
@@ -82,6 +82,11 @@ class UsbTests(unittest.TestCase):
                               [0x00, 0x09, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]],
     ])
     def test_setup_payload(self, name, payload, ref):
+
+        """
+        Verify SetupPayload produces the same bits measured using Cynthion on the wire.
+        """
+
         v = Signal(SetupPayload, init=payload)
         for n in range(len(ref)):
             self.assertEqual(ref[n], (v.as_value().init >> (n*8)) & 0xFF)

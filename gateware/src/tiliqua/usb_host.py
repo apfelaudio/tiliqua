@@ -275,8 +275,8 @@ class SimpleUSBHost(Elaboratable):
         else:
             self.utmi = UTMITranslator(ulpi=bus, handle_clocking=handle_clocking)
             self.translator = self.utmi
-            self.receiver   = USBDataPacketReceiver(utmi=self.utmi)
-            self.handshake_detector  = USBHandshakeDetector(utmi=self.utmi)
+        self.receiver   = USBDataPacketReceiver(utmi=self.utmi)
+        self.handshake_detector  = USBHandshakeDetector(utmi=self.utmi)
 
     def elaborate(self, platform):
 
@@ -336,10 +336,19 @@ class SimpleUSBHost(Elaboratable):
         ]
 
         midi_toggle = Signal()
-        m.d.comb += platform.request("led_a").o.eq(midi_toggle)
+        if not self.sim:
+            m.d.comb += platform.request("led_a").o.eq(midi_toggle)
 
         _CONNECT_UNTIL_RESET_CYCLES = 13*600000 # 130ms
         _BUS_RESET_HOLD_CYCLES      = 6*600000  # 60ms
+        _SOF_COUNTER_MAX            = 1024
+
+        # Index after every SOF_COUNTER_MAX rolls over at which
+        # to attempt a setup request to enter BULK_IN poll mode.
+        if self.sim:
+            _SETUP_ON_SOF_INDEX     = 1
+        else:
+            _SETUP_ON_SOF_INDEX     = 65
 
         with m.FSM(domain="usb"):
 
@@ -366,40 +375,63 @@ class SimpleUSBHost(Elaboratable):
                     with m.If(enqueued & token_generator.txa):
                         m.d.usb += enqueued.eq(0)
                         m.next = next_state_id
-            #
-            # BUS RESET LOGIC
-            #
 
-            # TODO: move bus reset logic to dedicated component
+            def send_setup_data_stage(state_id, data_pid, setup_payload, next_state_id):
+                with m.State(state_id):
+                    data_view = Signal(data.ArrayLayout(unsigned(8), 8))
+                    payload = Const(setup_payload, shape=SetupPayload)
+                    ix = Signal(range(8))
+                    m.d.comb += [
+                        data_view.eq(payload),
+                        transmitter.data_pid.eq(data_pid), # DATA0/DATA1 etc
+                        transmitter.stream.valid.eq(1),
+                        transmitter.stream.payload.eq(data_view[ix]),
+                    ]
+                    with m.If(ix == 0):
+                        m.d.comb += transmitter.stream.first.eq(1)
+                    with m.If(ix == len(data_view) - 1):
+                        m.d.comb += transmitter.stream.last.eq(1)
+                    with m.If(transmitter.stream.ready):
+                        m.d.usb += ix.eq(ix+1)
+                        with m.If(ix == len(data_view) - 1):
+                            m.next = next_state_id
 
-            # Wait for an FS device to be connected
-            # If it remains connected for 130ms, issue a bus reset.
-            with m.State('IDLE'):
-                _LINE_STATE_FS_HS_J = 0b01
-                # Do not drive bus. Disable SOF transmission
-                m.d.comb += sof_controller.enable.eq(0),
-                connected_for_cycles = Signal(32)
-                with m.If(self.utmi.line_state == _LINE_STATE_FS_HS_J):
-                    m.d.usb += connected_for_cycles.eq(connected_for_cycles+1)
-                with m.Else():
-                    m.d.usb += connected_for_cycles.eq(0)
-                with m.If(connected_for_cycles == _CONNECT_UNTIL_RESET_CYCLES):
-                    m.next = 'BUS-RESET'
+            if not self.sim:
 
-            # Bus reset: issue an SE0 for 60ms
-            with m.State('BUS-RESET'):
-                # Drive SE0 on bus. Disable SOF transmission
-                m.d.comb += [
-                    sof_controller.enable.eq(0),
-                    self.utmi.op_mode.eq(UTMIOperatingMode.RAW_DRIVE),
-                    self.utmi.xcvr_select.eq(USBSpeed.HIGH),
-                    self.utmi.term_select.eq(UTMITerminationSelect.HS_NORMAL),
-                ]
-                se0_cycles = Signal(64)
-                m.d.usb += se0_cycles.eq(se0_cycles+1)
-                with m.If(se0_cycles == _BUS_RESET_HOLD_CYCLES):
-                    m.d.usb += se0_cycles.eq(0)
-                    m.next = 'SOF-TOKEN'
+                #
+                # BUS RESET LOGIC
+                #
+
+                # TODO: move bus reset logic to dedicated component
+
+                # Wait for an FS device to be connected
+                # If it remains connected for 130ms, issue a bus reset.
+                with m.State('IDLE'):
+                    _LINE_STATE_FS_HS_J = 0b01
+                    # Do not drive bus. Disable SOF transmission
+                    m.d.comb += sof_controller.enable.eq(0),
+                    connected_for_cycles = Signal(32)
+                    with m.If(self.utmi.line_state == _LINE_STATE_FS_HS_J):
+                        m.d.usb += connected_for_cycles.eq(connected_for_cycles+1)
+                    with m.Else():
+                        m.d.usb += connected_for_cycles.eq(0)
+                    with m.If(connected_for_cycles == _CONNECT_UNTIL_RESET_CYCLES):
+                        m.next = 'BUS-RESET'
+
+                # Bus reset: issue an SE0 for 60ms
+                with m.State('BUS-RESET'):
+                    # Drive SE0 on bus. Disable SOF transmission
+                    m.d.comb += [
+                        sof_controller.enable.eq(0),
+                        self.utmi.op_mode.eq(UTMIOperatingMode.RAW_DRIVE),
+                        self.utmi.xcvr_select.eq(USBSpeed.HIGH),
+                        self.utmi.term_select.eq(UTMITerminationSelect.HS_NORMAL),
+                    ]
+                    se0_cycles = Signal(64)
+                    m.d.usb += se0_cycles.eq(se0_cycles+1)
+                    with m.If(se0_cycles == _BUS_RESET_HOLD_CYCLES):
+                        m.d.usb += se0_cycles.eq(0)
+                        m.next = 'SOF-TOKEN'
 
             #
             # HOST PACKET STATE MACHINE
@@ -407,45 +439,18 @@ class SimpleUSBHost(Elaboratable):
 
             # Send SOFs, and once every N SOFs, try the setup sequence.
             with m.State('SOF-TOKEN'):
-                mod = Signal(16)
+                sof_counter = Signal(range(_SOF_COUNTER_MAX))
                 with m.If(sof_controller.txa):
-                    m.d.usb += mod.eq(mod+1)
-                    with m.If(mod == 1024):
-                        m.d.usb += mod.eq(0)
-                    with m.If(mod == 65):
+                    m.d.usb += sof_counter.eq(sof_counter+1)
+                    with m.If(sof_counter == (_SOF_COUNTER_MAX-1)):
+                        m.d.usb += sof_counter.eq(0)
+                    with m.If(sof_counter == _SETUP_ON_SOF_INDEX):
                         m.next = 'SETUP-TOKEN'
 
             send_token('SETUP-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP-DATA0')
 
-            with m.State('SETUP-DATA0'):
-
-                data = Array([
-                    Const(0x80, shape=8),
-                    Const(0x06, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x01, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x40, shape=8),
-                    Const(0x00, shape=8),
-                ])
-                ix = Signal(range(len(data)))
-
-                m.d.comb += [
-                    transmitter.data_pid.eq(0), # DATA0
-                    transmitter.stream.valid.eq(1),
-                    transmitter.stream.payload.eq(data[ix]),
-                ]
-
-                with m.If(ix == 0):
-                    m.d.comb += transmitter.stream.first.eq(1)
-                with m.If(ix == len(data) - 1):
-                    m.d.comb += transmitter.stream.last.eq(1)
-
-                with m.If(transmitter.stream.ready):
-                    m.d.usb += ix.eq(ix+1)
-                    with m.If(ix == len(data) - 1):
-                        m.next = 'WAIT-ACK'
+            send_setup_data_stage('SETUP-DATA0', 0, SetupPayload.init_get_descriptor(0x0100, 0x0040),
+                                  'WAIT-ACK')
 
             with m.State('WAIT-ACK'):
                 with m.If(handshake_detector.detected.ack):
@@ -496,35 +501,8 @@ class SimpleUSBHost(Elaboratable):
 
             send_token('SETUP1-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP1-DATA0')
 
-            with m.State('SETUP1-DATA0'):
-
-                data = Array([
-                    Const(0x00, shape=8),
-                    Const(0x05, shape=8),
-                    Const(0x12, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x00, shape=8),
-                ])
-                ix = Signal(range(len(data)))
-
-                m.d.comb += [
-                    transmitter.data_pid.eq(0), # DATA0
-                    transmitter.stream.valid.eq(1),
-                    transmitter.stream.payload.eq(data[ix]),
-                ]
-
-                with m.If(ix == 0):
-                    m.d.comb += transmitter.stream.first.eq(1)
-                with m.If(ix == len(data) - 1):
-                    m.d.comb += transmitter.stream.last.eq(1)
-
-                with m.If(transmitter.stream.ready):
-                    m.d.usb += ix.eq(ix+1)
-                    with m.If(ix == len(data) - 1):
-                        m.next = 'SETUP1-WAIT-ACK'
+            send_setup_data_stage('SETUP1-DATA0', 0, SetupPayload.init_set_address(0x0012),
+                                  'SETUP1-WAIT-ACK')
 
             with m.State('SETUP1-WAIT-ACK'):
                 with m.If(handshake_detector.detected.ack):
@@ -559,35 +537,8 @@ class SimpleUSBHost(Elaboratable):
 
             send_token('SETUP2-TOKEN', TokenPID.SETUP, 18, 0, 'SETUP2-DATA0')
 
-            with m.State('SETUP2-DATA0'):
-
-                data = Array([
-                    Const(0x00, shape=8),
-                    Const(0x09, shape=8),
-                    Const(0x01, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x00, shape=8),
-                    Const(0x00, shape=8),
-                ])
-                ix = Signal(range(len(data)))
-
-                m.d.comb += [
-                    transmitter.data_pid.eq(0), # DATA0
-                    transmitter.stream.valid.eq(1),
-                    transmitter.stream.payload.eq(data[ix]),
-                ]
-
-                with m.If(ix == 0):
-                    m.d.comb += transmitter.stream.first.eq(1)
-                with m.If(ix == len(data) - 1):
-                    m.d.comb += transmitter.stream.last.eq(1)
-
-                with m.If(transmitter.stream.ready):
-                    m.d.usb += ix.eq(ix+1)
-                    with m.If(ix == len(data) - 1):
-                        m.next = 'SETUP2-WAIT-ACK'
+            send_setup_data_stage('SETUP2-DATA0', 0, SetupPayload.init_set_configuration(0x0001),
+                                  'SETUP2-WAIT-ACK')
 
             with m.State('SETUP2-WAIT-ACK'):
                 with m.If(handshake_detector.detected.ack):
