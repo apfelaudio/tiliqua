@@ -24,6 +24,39 @@ class TokenPayload(data.Struct):
         "endp": unsigned(4),
     })
 
+class SetupPayload(data.Struct):
+
+    class Recipient(enum.Enum, shape=unsigned(5)):
+        DEVICE    = 0
+        INTERFACE = 1
+        ENDPOINT  = 2
+        OTHER     = 3
+
+    class Type(enum.Enum, shape=unsigned(2)):
+        STANDARD  = 0
+        CLASS     = 1
+        ENDPOINT  = 2
+        RESERVED  = 3
+
+    class Direction(enum.Enum, shape=unsigned(1)):
+        HOST_TO_DEVICE = 0
+        DEVICE_TO_HOST = 1
+
+    class StandardRequest(enum.Enum, shape=unsigned(8)):
+        SET_ADDRESS       = 0x05
+        GET_DESCRIPTOR    = 0x06
+        SET_CONFIGURATION = 0x09
+
+    bmRequestType: data.StructLayout({
+        'bmRecipient': Recipient,
+        'bmType':      Type,
+        'bmDirection': Direction,
+    })
+    bRequest:      StandardRequest
+    wValue:        unsigned(16)
+    wIndex:        unsigned(16)
+    wLength:       unsigned(16)
+
 class USBTokenPacketGenerator(wiring.Component):
 
     """

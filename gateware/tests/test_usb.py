@@ -73,6 +73,46 @@ class UsbTests(unittest.TestCase):
         with sim.write_vcd(vcd_file=open(f"test_usb_token_{name}.vcd", "w")):
             sim.run()
 
+    @parameterized.expand([
+        ["get_descriptor", {
+                'bmRequestType': {
+                    'bmRecipient': SetupPayload.Recipient.DEVICE,
+                    'bmType':      SetupPayload.Type.STANDARD,
+                    'bmDirection': SetupPayload.Direction.DEVICE_TO_HOST,
+                },
+                'bRequest': SetupPayload.StandardRequest.GET_DESCRIPTOR,
+                'wValue':   0x0100,
+                'wIndex':   0x0000,
+                'wLength':  0x0040,
+            }, [0x80, 0x06, 0x00, 0x01, 0x00, 0x00, 0x40, 0x00]],
+        ["set_address_h12", {
+                'bmRequestType': {
+                    'bmRecipient': SetupPayload.Recipient.DEVICE,
+                    'bmType':      SetupPayload.Type.STANDARD,
+                    'bmDirection': SetupPayload.Direction.HOST_TO_DEVICE,
+                },
+                'bRequest': SetupPayload.StandardRequest.SET_ADDRESS,
+                'wValue':   0x0012,
+                'wIndex':   0x0000,
+                'wLength':  0x0000,
+            }, [0x00, 0x05, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00]],
+        ["set_configuration_h01", {
+                'bmRequestType': {
+                    'bmRecipient': SetupPayload.Recipient.DEVICE,
+                    'bmType':      SetupPayload.Type.STANDARD,
+                    'bmDirection': SetupPayload.Direction.HOST_TO_DEVICE,
+                },
+                'bRequest': SetupPayload.StandardRequest.SET_CONFIGURATION,
+                'wValue':   0x0001,
+                'wIndex':   0x0000,
+                'wLength':  0x0000,
+            }, [0x00, 0x09, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00]],
+    ])
+    def test_setup_payload(self, name, payload, ref):
+        v = Signal(SetupPayload, init=payload)
+        for n in range(len(ref)):
+            self.assertEqual(ref[n], (v.as_value().init >> (n*8)) & 0xFF)
+
     def test_usb_integration(self):
 
         """
