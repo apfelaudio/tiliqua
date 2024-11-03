@@ -35,7 +35,7 @@ class USB2HostTest(Elaboratable):
     #
 
     _HARDCODE_DEVICE_CONFIGURATION_ID = 1
-    _HARDCODE_MIDI_BULK_ENDPOINT_ID   = 2
+    _HARDCODE_MIDI_BULK_ENDPOINT_ID   = 1
 
     def __init__(self, **kwargs):
         super().__init__()
