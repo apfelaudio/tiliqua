@@ -459,7 +459,7 @@ class SimpleUSBMIDIHost(Elaboratable):
                     with m.If(handshake_detector.detected.ack):
                         m.next = next_state_id
 
-            def fsm_sequence_rx_in_stage_ignore(state_id, next_state_id, addr=0, endp=0):
+            def fsm_sequence_rx_in_stage_ignore(state_id, state_ok, state_err, addr=0, endp=0):
                 """
                 Wait for next SOF.
                 Emit an IN token, verify we got data and acknowledge it.
@@ -476,11 +476,13 @@ class SimpleUSBMIDIHost(Elaboratable):
                     # FIXME: tolerate rx timeout
                     with m.If(receiver.packet_complete):
                         m.next = f'{state_id}-ACK-PKT'
+                    with m.If(handshake_detector.detected.nak):
+                        m.next = state_err
 
                 with m.State(f'{state_id}-ACK-PKT'):
                     with m.If(receiver.ready_for_response):
                         m.d.comb += handshake_generator.issue_ack.eq(1)
-                        m.next = next_state_id
+                        m.next = state_ok
 
             def fsm_sequence_setup(state_id, state_ok, state_err, setup_payload, addr=0, endp=0):
                 """
@@ -502,7 +504,8 @@ class SimpleUSBMIDIHost(Elaboratable):
                 with m.State(f'{state_id}-WAIT-ACK'):
                     with m.If(handshake_detector.detected.ack):
                         m.next = state_ok
-                    with m.If(token_generator.timer.rx_timeout):
+                    with m.If(token_generator.timer.rx_timeout |
+                              handshake_detector.detected.nak):
                         m.next = state_err
 
             if not self.sim:
@@ -572,7 +575,7 @@ class SimpleUSBMIDIHost(Elaboratable):
                                addr=0,
                                endp=0)
 
-            fsm_sequence_rx_in_stage_ignore('SETUP0-IN', 'SETUP0-ZLP-OUT')
+            fsm_sequence_rx_in_stage_ignore('SETUP0-IN', state_ok='SETUP0-ZLP-OUT', state_err='SETUP0-IN')
 
             fsm_sequence_zlp_out('SETUP0-ZLP-OUT', 'SETUP1')
 
@@ -587,7 +590,7 @@ class SimpleUSBMIDIHost(Elaboratable):
                                addr=0,
                                endp=0)
 
-            fsm_sequence_rx_in_stage_ignore('SETUP1-IN', 'SETUP2')
+            fsm_sequence_rx_in_stage_ignore('SETUP1-IN', state_ok='SETUP2', state_err='SETUP1-IN')
 
             #
             # SETUP2: SET_CONFIGURATION
@@ -602,7 +605,8 @@ class SimpleUSBMIDIHost(Elaboratable):
                                addr=self._DEFAULT_DEVICE_ADDR,
                                endp=0)
 
-            fsm_sequence_rx_in_stage_ignore('SETUP2-IN', 'MIDI-IDLE-SOF', self._DEFAULT_DEVICE_ADDR)
+            fsm_sequence_rx_in_stage_ignore('SETUP2-IN', state_ok='MIDI-IDLE-SOF',
+                                            state_err='SETUP2-IN', addr=self._DEFAULT_DEVICE_ADDR)
 
             #
             # MIDI BULK IN (continuous polling)
