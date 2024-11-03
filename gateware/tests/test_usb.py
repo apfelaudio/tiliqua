@@ -99,7 +99,7 @@ class UsbTests(unittest.TestCase):
         """
 
         dut = DomainRenamer({"usb": "sync"})(
-                SimpleUSBHost(sim=True))
+                SimpleUSBMIDIHost(sim=True))
 
         async def testbench(ctx):
             for i in range(0, 10):

@@ -265,10 +265,18 @@ class USBSOFController(wiring.Component):
         return m
 
 
-class SimpleUSBHost(Elaboratable):
+class SimpleUSBMIDIHost(Elaboratable):
 
-    def __init__(self, *, bus=None, handle_clocking=True, sim=False):
+    # Address that is assigned to the connected device during the SETUP phase.
+    # The host is free to choose whatever it wants for this.
+    _DEFAULT_DEVICE_ADDR = 0x12
 
+    def __init__(self, *, bus=None, handle_clocking=True, sim=False,
+                 hardcoded_configuration_id=0x0001,
+                 hardcoded_midi_endpoint=1):
+        # FIXME: for now, the configuration and endpoint ID for the MIDI interface is hardcoded.
+        self.configuration_id = hardcoded_configuration_id
+        self.midi_endpoint_id = hardcoded_midi_endpoint
         self.sim = sim
         if self.sim:
             self.utmi = UTMIInterface()
@@ -449,6 +457,29 @@ class SimpleUSBHost(Elaboratable):
                         m.d.comb += handshake_generator.issue_ack.eq(1)
                         m.next = next_state_id
 
+            def fsm_sequence_setup(state_id, state_ok, state_err, setup_payload, addr=0, endp=0):
+                """
+                Wait for next SOF.
+                Emit a SETUP token, followed by a DATA0 payload and check it is acknowledged.
+                """
+                with m.State(state_id):
+                    with m.If(sof_controller.txa):
+                        m.next = f'{state_id}-TOKEN'
+
+                fsm_tx_token(f'{state_id}-TOKEN', TokenPID.SETUP, addr, endp, f'{state_id}-DATA0')
+
+                fsm_tx_data_stage(f'{state_id}-DATA0',
+                                  data_shape=SetupPayload,
+                                  data_pid=0, # DATA0
+                                  data_payload=setup_payload,
+                                  next_state_id=f'{state_id}-WAIT-ACK')
+
+                with m.State(f'{state_id}-WAIT-ACK'):
+                    with m.If(handshake_detector.detected.ack):
+                        m.next = state_ok
+                    with m.If(token_generator.timer.rx_timeout):
+                        m.next = state_err
+
             if not self.sim:
 
                 #
@@ -484,95 +515,88 @@ class SimpleUSBHost(Elaboratable):
                     m.d.usb += se0_cycles.eq(se0_cycles+1)
                     with m.If(se0_cycles == _BUS_RESET_HOLD_CYCLES):
                         m.d.usb += se0_cycles.eq(0)
-                        m.next = 'SOF-TOKEN'
+                        m.next = 'SOF-IDLE'
 
             #
             # HOST PACKET STATE MACHINE
             #
 
+            #
+            # SOF IDLE LOOP
+            #
             # Send SOFs, and once every N SOFs, try the setup sequence.
-            with m.State('SOF-TOKEN'):
+            #
+
+            with m.State('SOF-IDLE'):
                 sof_counter = Signal(range(_SOF_COUNTER_MAX))
                 with m.If(sof_controller.txa):
                     m.d.usb += sof_counter.eq(sof_counter+1)
                     with m.If(sof_counter == (_SOF_COUNTER_MAX-1)):
                         m.d.usb += sof_counter.eq(0)
                     with m.If(sof_counter == _SETUP_ON_SOF_INDEX):
-                        m.next = 'SETUP-TOKEN'
+                        m.next = 'SETUP0'
 
-            fsm_tx_token('SETUP-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP-DATA0')
+            #
+            # SETUP0: GET_DESCRIPTOR
+            #
 
-            fsm_tx_data_stage('SETUP-DATA0',
-                              data_shape=SetupPayload,
-                              data_pid=0, # DATA0
-                              data_payload=SetupPayload.init_get_descriptor(0x0100, 0x0040),
-                              next_state_id='WAIT-ACK')
+            fsm_sequence_setup('SETUP0',
+                               state_ok='SETUP0-IN',
+                               state_err='SOF-IDLE',
+                               setup_payload=SetupPayload.init_get_descriptor(0x0100, 0x0040),
+                               addr=0,
+                               endp=0)
 
-            with m.State('WAIT-ACK'):
-                with m.If(handshake_detector.detected.ack):
-                    m.next = 'IN-TOKEN'
-                with m.If(token_generator.timer.rx_timeout):
-                    m.next = 'SOF-TOKEN'
+            fsm_sequence_rx_in_stage_ignore('SETUP0-IN', 'SETUP0-ZLP-OUT')
 
-            fsm_sequence_rx_in_stage_ignore('IN-TOKEN', 'SETUP-DATA1-ZLP-OUT')
+            fsm_sequence_zlp_out('SETUP0-ZLP-OUT', 'SETUP1')
 
-            fsm_sequence_zlp_out('SETUP-DATA1-ZLP-OUT', 'SOF-SETUP1')
+            #
+            # SETUP1: SET_ADDRESS
+            #
 
-            with m.State('SOF-SETUP1'):
-                with m.If(sof_controller.txa):
-                    m.next = 'SETUP1-TOKEN'
+            fsm_sequence_setup('SETUP1',
+                               state_ok='SETUP1-IN',
+                               state_err='SOF-IDLE',
+                               setup_payload=SetupPayload.init_set_address(self._DEFAULT_DEVICE_ADDR),
+                               addr=0,
+                               endp=0)
 
-            fsm_tx_token('SETUP1-TOKEN', TokenPID.SETUP, 0, 0, 'SETUP1-DATA0')
+            fsm_sequence_rx_in_stage_ignore('SETUP1-IN', 'SETUP2')
 
-            fsm_tx_data_stage('SETUP1-DATA0',
-                              data_shape=SetupPayload,
-                              data_pid=0, # DATA0
-                              data_payload=SetupPayload.init_set_address(0x0012),
-                              next_state_id='SETUP1-WAIT-ACK')
+            #
+            # SETUP2: SET_CONFIGURATION
+            #
 
-            with m.State('SETUP1-WAIT-ACK'):
-                with m.If(handshake_detector.detected.ack):
-                    m.next = 'SOF-SETUP1-IN'
-                with m.If(token_generator.timer.rx_timeout):
-                    m.next = 'SOF-TOKEN'
+            # NOTE: device address is now set! Token addr must always be set to match.
 
-            fsm_sequence_rx_in_stage_ignore('SOF-SETUP1-IN', 'SOF-SETUP2')
+            fsm_sequence_setup('SETUP2',
+                               state_ok='SETUP2-IN',
+                               state_err='SOF-IDLE',
+                               setup_payload=SetupPayload.init_set_configuration(self.configuration_id),
+                               addr=self._DEFAULT_DEVICE_ADDR,
+                               endp=0)
 
-            # DEVICE ADDR IS NOW  0x12
+            fsm_sequence_rx_in_stage_ignore('SETUP2-IN', 'MIDI-IDLE-SOF', self._DEFAULT_DEVICE_ADDR)
 
-            with m.State('SOF-SETUP2'):
-                with m.If(sof_controller.txa):
-                    m.next = 'SETUP2-TOKEN'
+            #
+            # MIDI BULK IN (continuous polling)
+            #
 
-            fsm_tx_token('SETUP2-TOKEN', TokenPID.SETUP, 18, 0, 'SETUP2-DATA0')
-
-            fsm_tx_data_stage('SETUP2-DATA0',
-                              data_shape=SetupPayload,
-                              data_pid=0, # DATA0
-                              data_payload=SetupPayload.init_set_configuration(0x0001),
-                              next_state_id='SETUP2-WAIT-ACK')
-
-            with m.State('SETUP2-WAIT-ACK'):
-                with m.If(handshake_detector.detected.ack):
-                    m.next = 'SOF-SETUP2-IN'
-                with m.If(token_generator.timer.rx_timeout):
-                    m.next = 'SOF-SETUP2'
-
-            fsm_sequence_rx_in_stage_ignore('SOF-SETUP2-IN', 'SOF-MIDI', addr=0x12)
-
-            with m.State('SOF-MIDI'):
+            with m.State('MIDI-IDLE-SOF'):
                 with m.If(sof_controller.txa):
                     m.next = 'BULK-IN-TOKEN'
 
-            fsm_tx_token('BULK-IN-TOKEN', TokenPID.IN, 18, 1, 'MIDI-BULK-IN')
+            fsm_tx_token('BULK-IN-TOKEN', TokenPID.IN, self._DEFAULT_DEVICE_ADDR,
+                         self.midi_endpoint_id, 'MIDI-BULK-IN')
 
             with m.State('MIDI-BULK-IN'):
                 with m.If(receiver.ready_for_response):
                     m.d.comb += handshake_generator.issue_ack.eq(1)
                     m.d.usb += midi_toggle.eq(~midi_toggle)
-                    m.next = 'SOF-MIDI'
+                    m.next = 'MIDI-IDLE-SOF'
                 with m.If(handshake_detector.detected.nak):
-                    m.next = 'SOF-MIDI'
+                    m.next = 'MIDI-IDLE-SOF'
 
         return m
 
