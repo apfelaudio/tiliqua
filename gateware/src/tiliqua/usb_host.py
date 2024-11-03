@@ -358,7 +358,7 @@ class SimpleUSBHost(Elaboratable):
 
             def fsm_tx_token(state_id, pid, addr, endp, next_state_id):
                 """
-                Create an FSM state that emits a token packet
+                Single FSM state that emits a token packet
                 with the provided payload and does not move to
                 the next state until transmissions are allowed again.
                 """
@@ -377,6 +377,10 @@ class SimpleUSBHost(Elaboratable):
                         m.next = next_state_id
 
             def fsm_tx_data_stage(state_id, data_shape, data_pid, data_payload, next_state_id):
+                """
+                Single FSM state that emits a DATA0/DATA1 packet. and does not move
+                to the next state until the packet is enqueued for transmission.
+                """
                 with m.State(state_id):
                     data_length = data_shape.as_shape().size // 8
                     payload = Const(data_payload, shape=data_shape)
@@ -398,8 +402,14 @@ class SimpleUSBHost(Elaboratable):
                             m.next = next_state_id
 
             def fsm_sequence_zlp_out(state_id, next_state_id, data_pid=1):
+                """
+                Wait for next SOF, emit an OUT token followed by ZLP and check it is acknowledged.
+                """
+                with m.State(state_id):
+                    with m.If(sof_controller.txa):
+                        m.next = f'{state_id}-TOKEN'
 
-                fsm_tx_token(state_id, TokenPID.OUT, 0, 0, f'{state_id}-TX-ZLP')
+                fsm_tx_token(f'{state_id}-TOKEN', TokenPID.OUT, 0, 0, f'{state_id}-TX-ZLP')
 
                 with m.State(f'{state_id}-TX-ZLP'):
                     m.d.comb += [
@@ -414,6 +424,29 @@ class SimpleUSBHost(Elaboratable):
                 with m.State(f'{state_id}-WAIT-ACK'):
                     # FIXME: detect ZLP ACK failure
                     with m.If(handshake_detector.detected.ack):
+                        m.next = next_state_id
+
+            def fsm_sequence_rx_in_stage_ignore(state_id, next_state_id, addr=0, endp=0):
+                """
+                Wait for next SOF.
+                Emit an IN token, verify we got data and acknowledge it.
+                The data itself is simply ignored for now.
+                """
+
+                with m.State(state_id):
+                    with m.If(sof_controller.txa):
+                        m.next = f'{state_id}-TOKEN'
+
+                fsm_tx_token(f'{state_id}-TOKEN', TokenPID.IN, addr, endp, f'{state_id}-WAIT-PKT')
+
+                with m.State(f'{state_id}-WAIT-PKT'):
+                    # FIXME: tolerate rx timeout
+                    with m.If(receiver.packet_complete):
+                        m.next = f'{state_id}-ACK-PKT'
+
+                with m.State(f'{state_id}-ACK-PKT'):
+                    with m.If(receiver.ready_for_response):
+                        m.d.comb += handshake_generator.issue_ack.eq(1)
                         m.next = next_state_id
 
             if not self.sim:
@@ -477,32 +510,11 @@ class SimpleUSBHost(Elaboratable):
 
             with m.State('WAIT-ACK'):
                 with m.If(handshake_detector.detected.ack):
-                    m.next = 'SOF-IN'
+                    m.next = 'IN-TOKEN'
                 with m.If(token_generator.timer.rx_timeout):
                     m.next = 'SOF-TOKEN'
 
-            with m.State('SOF-IN'):
-                with m.If(sof_controller.txa):
-                    m.next = 'IN-TOKEN'
-
-            fsm_tx_token('IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP-DATA1-IN')
-
-            with m.State('SETUP-DATA1-IN'):
-                with m.If(receiver.packet_complete):
-                    m.next = 'SETUP-DATA1-ACK'
-                """ TODO
-                with m.If(receiver.timer.rx_timeout):
-                    m.next = 'SOF-TOKEN'
-                """
-
-            with m.State('SETUP-DATA1-ACK'):
-                with m.If(receiver.ready_for_response):
-                    m.d.comb += handshake_generator.issue_ack.eq(1)
-                    m.next = 'SOF-OUT'
-
-            with m.State('SOF-OUT'):
-                with m.If(sof_controller.txa):
-                    m.next = 'SETUP-DATA1-ZLP-OUT'
+            fsm_sequence_rx_in_stage_ignore('IN-TOKEN', 'SETUP-DATA1-ZLP-OUT')
 
             fsm_sequence_zlp_out('SETUP-DATA1-ZLP-OUT', 'SOF-SETUP1')
 
@@ -524,26 +536,9 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(token_generator.timer.rx_timeout):
                     m.next = 'SOF-TOKEN'
 
-            with m.State('SOF-SETUP1-IN'):
-                with m.If(sof_controller.txa):
-                    m.next = 'SETUP1-IN-TOKEN'
+            fsm_sequence_rx_in_stage_ignore('SOF-SETUP1-IN', 'SOF-SETUP2')
 
-            fsm_tx_token('SETUP1-IN-TOKEN', TokenPID.IN, 0, 0, 'SETUP1-DATA1-IN')
-
-            with m.State('SETUP1-DATA1-IN'):
-                with m.If(receiver.packet_complete):
-                    m.next = 'SETUP1-DATA1-ACK'
-                """ TODO
-                with m.If(receiver.timer.rx_timeout):
-                    m.next = 'SOF-TOKEN'
-                """
-
-            with m.State('SETUP1-DATA1-ACK'):
-                with m.If(receiver.ready_for_response):
-                    m.d.comb += handshake_generator.issue_ack.eq(1)
-                    m.next = 'SOF-SETUP2'
-
-            # HENCEFORTH ADDR=18
+            # DEVICE ADDR IS NOW  0x12
 
             with m.State('SOF-SETUP2'):
                 with m.If(sof_controller.txa):
@@ -563,24 +558,7 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(token_generator.timer.rx_timeout):
                     m.next = 'SOF-SETUP2'
 
-            with m.State('SOF-SETUP2-IN'):
-                with m.If(sof_controller.txa):
-                    m.next = 'SETUP2-IN-TOKEN'
-
-            fsm_tx_token('SETUP2-IN-TOKEN', TokenPID.IN, 18, 0, 'SETUP2-DATA1-IN')
-
-            with m.State('SETUP2-DATA1-IN'):
-                with m.If(receiver.packet_complete):
-                    m.next = 'SETUP2-DATA1-ACK'
-                """ TODO
-                with m.If(receiver.timer.rx_timeout):
-                    m.next = 'SOF-TOKEN'
-                """
-
-            with m.State('SETUP2-DATA1-ACK'):
-                with m.If(receiver.ready_for_response):
-                    m.d.comb += handshake_generator.issue_ack.eq(1)
-                    m.next = 'SOF-MIDI'
+            fsm_sequence_rx_in_stage_ignore('SOF-SETUP2-IN', 'SOF-MIDI', addr=0x12)
 
             with m.State('SOF-MIDI'):
                 with m.If(sof_controller.txa):
