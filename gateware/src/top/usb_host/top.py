@@ -58,6 +58,9 @@ class USB2HostTest(Elaboratable):
                 hardcoded_midi_endpoint=self._HARDCODE_MIDI_BULK_ENDPOINT_ID,
         )
 
+        # Unblock MIDI out stream
+        m.d.comb += usb.o_midi_bytes.ready.eq(1)
+
         # XXX: this demo enables VBUS output
         m.d.comb += platform.request("usb_vbus_en").o.eq(1)
 
@@ -75,6 +78,8 @@ class USB2HostTest(Elaboratable):
                 usb.translator.busy,
                 usb.receiver.packet_complete,
                 usb.receiver.crc_mismatch,
+                usb.o_midi_bytes.valid,
+                usb.o_midi_bytes.payload,
                 usb.handshake_detector.detected.ack,
                 usb.handshake_detector.detected.nak,
                 usb.handshake_detector.detected.stall,

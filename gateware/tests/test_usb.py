@@ -103,7 +103,7 @@ class UsbTests(unittest.TestCase):
                 SimpleUSBMIDIHost(sim=True))
 
         async def testbench(ctx):
-            for i in range(0, 4):
+            for i in range(0, 10):
                 data = []
                 ctx.set(dut.utmi.tx_ready, 1)
                 while ctx.get(~dut.utmi.tx_valid):

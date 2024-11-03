@@ -7,7 +7,7 @@ Consider this EXPERIMENTAL. Error handling / retries are not finished.
 """
 
 from amaranth                      import *
-from amaranth.lib                  import data, enum, wiring, stream
+from amaranth.lib                  import data, enum, wiring, stream, fifo
 from amaranth.lib.wiring           import In, Out
 
 from luna.usb2                     import USBDevice
@@ -227,6 +227,11 @@ class USBSOFController(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
+        if platform is None:
+            # Reduce delays in simulation testcases
+            self._SOF_CYCLES //= 10
+            self._SOF_TX_TO_TX_MIN //= 10
+
         sof_timer = Signal(16)
         frame_number = Signal(11, reset=0)
 
@@ -310,6 +315,8 @@ class SimpleUSBMIDIHost(Elaboratable):
             self.translator = self.utmi
         self.receiver   = USBDataPacketReceiver(utmi=self.utmi)
         self.handshake_detector  = USBHandshakeDetector(utmi=self.utmi)
+        # TODO: Out() member
+        self.o_midi_bytes = stream.Signature(unsigned(8)).create()
 
     def elaborate(self, platform):
 
@@ -382,6 +389,21 @@ class SimpleUSBMIDIHost(Elaboratable):
             _SETUP_ON_SOF_INDEX     = 1
         else:
             _SETUP_ON_SOF_INDEX     = 65
+
+        #
+        # FIFO to store MIDI data as it arrives.
+        #
+        # If it ends up storing a healthy MIDI packet, its
+        # r_stream is hooked up to the external interface until
+        # this FIFO is drained.
+        #
+
+        m.submodules.midi_fifo = midi_fifo = fifo.SyncFIFOBuffered(
+            width=8, depth=16)
+        m.d.comb += [
+            # w_en only strobed in MIDI-BULK-IN phase
+            midi_fifo.w_data.eq(receiver.stream.payload),
+        ]
 
         with m.FSM(domain="usb"):
 
@@ -613,6 +635,8 @@ class SimpleUSBMIDIHost(Elaboratable):
             #
 
             with m.State('MIDI-IDLE-SOF'):
+                # always drain MIDI FIFO before we poll the endpoint
+                m.d.comb += midi_fifo.r_en.eq(1)
                 with m.If(sof_controller.txa):
                     m.next = 'BULK-IN-TOKEN'
 
@@ -620,12 +644,26 @@ class SimpleUSBMIDIHost(Elaboratable):
                          self.midi_endpoint_id, 'MIDI-BULK-IN')
 
             with m.State('MIDI-BULK-IN'):
+                # send incoming packet to MIDI FIFO
+                m.d.comb += midi_fifo.w_en.eq(receiver.stream.valid)
+                # it may or may not contain useful data (potentially just a NAK)
+                # if it is not useful, the FIFO is drained in MIDI-IDLE-SOF.
                 with m.If(receiver.ready_for_response):
                     m.d.comb += handshake_generator.issue_ack.eq(1)
-                    m.d.usb += midi_toggle.eq(~midi_toggle)
-                    m.next = 'MIDI-IDLE-SOF'
+                    m.next = 'MIDI-CONSUME'
                 with m.If(handshake_detector.detected.nak):
                     m.next = 'MIDI-IDLE-SOF'
+                # TODO: no response for too long -> disconnect?
+
+            with m.State('MIDI-CONSUME'):
+                # the FIFO contains valid MIDI data. Wait here until its consumed.
+                wiring.connect(m, midi_fifo.r_stream, wiring.flipped(self.o_midi_bytes))
+                with m.If(midi_fifo.r_level == 0):
+                    m.next = 'MIDI-IDLE-SOF'
+
+            #
+            # TODO: Disconnect logic -> go back to before BUS RESET
+            #
 
         return m
 
