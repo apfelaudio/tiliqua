@@ -18,6 +18,9 @@ class TokenPID(enum.Enum, shape=unsigned(4)):
     SETUP = USBPacketID.SETUP
 
 class TokenPayload(data.Struct):
+    # Lightweight storage for token contents,
+    # excluding crc5 and pid nibble that are
+    # added before this is sent on the wire.
     pid:  TokenPID
     data: data.StructLayout({
         "addr": unsigned(7),
@@ -56,6 +59,53 @@ class SetupPayload(data.Struct):
     wValue:        unsigned(16)
     wIndex:        unsigned(16)
     wLength:       unsigned(16)
+
+    #
+    # Some helpers to quickly create standard request types.
+    # These can be passed directly to the `init` field of signals
+    # of shape SetupPayload.
+    #
+
+    def init_get_descriptor(value, length):
+        return {
+            'bmRequestType': {
+                'bmRecipient': SetupPayload.Recipient.DEVICE,
+                'bmType':      SetupPayload.Type.STANDARD,
+                'bmDirection': SetupPayload.Direction.DEVICE_TO_HOST,
+            },
+            'bRequest': SetupPayload.StandardRequest.GET_DESCRIPTOR,
+            'wValue':   value,
+            'wIndex':   0x0000,
+            'wLength':  length,
+        }
+
+    def init_set_address(address):
+        return {
+            'bmRequestType': {
+                'bmRecipient': SetupPayload.Recipient.DEVICE,
+                'bmType':      SetupPayload.Type.STANDARD,
+                'bmDirection': SetupPayload.Direction.HOST_TO_DEVICE,
+            },
+            'bRequest': SetupPayload.StandardRequest.SET_ADDRESS,
+            'wValue':   address,
+            'wIndex':   0x0000,
+            'wLength':  0x0000,
+        }
+
+
+    def init_set_configuration(configuration):
+        return {
+            'bmRequestType': {
+                'bmRecipient': SetupPayload.Recipient.DEVICE,
+                'bmType':      SetupPayload.Type.STANDARD,
+                'bmDirection': SetupPayload.Direction.HOST_TO_DEVICE,
+            },
+            'bRequest': SetupPayload.StandardRequest.SET_CONFIGURATION,
+            'wValue':   configuration,
+            'wIndex':   0x0000,
+            'wLength':  0x0000,
+        }
+
 
 class USBTokenPacketGenerator(wiring.Component):
 
@@ -152,6 +202,8 @@ class USBSOFController(wiring.Component):
     If :py:`enable == 1`, emit a single SOF TokenPayload every 1ms.
 
     :py:`txa` is strobed when transmissions are allowed after a SOF is sent.
+
+    TODO: microframes for HS links.
     """
 
     enable: In(1)
@@ -233,7 +285,7 @@ class SimpleUSBHost(Elaboratable):
         if not self.sim:
             m.submodules.translator = self.translator
         m.submodules.transmitter         = transmitter = USBDataPacketGenerator()
-        m.submodules.receiver            = receiver            = self.receiver
+        m.submodules.receiver            = receiver = self.receiver
         m.submodules.data_crc            = data_crc = USBDataPacketCRC()
         m.submodules.handshake_generator = handshake_generator = USBHandshakeGenerator()
         m.submodules.handshake_detector  = handshake_detector = self.handshake_detector
