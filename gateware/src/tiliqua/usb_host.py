@@ -397,6 +397,25 @@ class SimpleUSBHost(Elaboratable):
                         with m.If(ix == len(data_view) - 1):
                             m.next = next_state_id
 
+            def fsm_sequence_zlp_out(state_id, next_state_id, data_pid=1):
+
+                fsm_tx_token(state_id, TokenPID.OUT, 0, 0, f'{state_id}-TX-ZLP')
+
+                with m.State(f'{state_id}-TX-ZLP'):
+                    m.d.comb += [
+                        transmitter.data_pid.eq(data_pid),
+                        transmitter.stream.last.eq(1),
+                        transmitter.stream.valid.eq(1),
+                    ]
+                    # FIXME: cannot gate on transmitter.stream.ready because
+                    # ZLP never strobes that signal! need another way..
+                    m.next = f'{state_id}-WAIT-ACK'
+
+                with m.State(f'{state_id}-WAIT-ACK'):
+                    # FIXME: detect ZLP ACK failure
+                    with m.If(handshake_detector.detected.ack):
+                        m.next = next_state_id
+
             if not self.sim:
 
                 #
@@ -485,19 +504,7 @@ class SimpleUSBHost(Elaboratable):
                 with m.If(sof_controller.txa):
                     m.next = 'SETUP-DATA1-ZLP-OUT'
 
-            fsm_tx_token('SETUP-DATA1-ZLP-OUT', TokenPID.OUT, 0, 0, 'SETUP-DATA1-ZLP')
-
-            with m.State('SETUP-DATA1-ZLP'):
-                m.d.comb += [
-                    transmitter.data_pid.eq(1), # DATA1
-                    transmitter.stream.last.eq(1),
-                    transmitter.stream.valid.eq(1),
-                ]
-                m.next = 'ZLP-WAIT-ACK'
-
-            with m.State('ZLP-WAIT-ACK'):
-                with m.If(handshake_detector.detected.ack):
-                    m.next = 'SOF-SETUP1'
+            fsm_sequence_zlp_out('SETUP-DATA1-ZLP-OUT', 'SOF-SETUP1')
 
             with m.State('SOF-SETUP1'):
                 with m.If(sof_controller.txa):
