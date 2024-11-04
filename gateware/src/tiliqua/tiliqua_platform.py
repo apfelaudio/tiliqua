@@ -132,7 +132,7 @@ class _TiliquaR2Mobo:
     resources   = [
 
         # TODO: this pin is N/C, remove it
-        Resource("rst", 0, PinsN("6", dir="i", conn=("m2", 0)), Attrs(IO_TYPE="LVCMOS33")),
+        # Resource("rst", 0, PinsN("6", dir="i", conn=("m2", 0)), Attrs(IO_TYPE="LVCMOS33")),
 
         # Quadrature rotary encoder and switch. These are already debounced by an RC filter.
         Resource("encoder", 0,
@@ -153,11 +153,11 @@ class _TiliquaR2Mobo:
         Resource("mobo_leds_oe", 0, PinsN("11", dir="o", conn=("m2", 0))),
 
         # DVI: Hotplug Detect
-        Resource("dvi_hpd", 0, Pins("8", dir="i", conn=("m2", 0)),
+        Resource("dvi_hpd", 0, Pins("37", dir="i", conn=("m2", 0)),
                  Attrs(IO_TYPE="LVCMOS33")),
 
         # TRS MIDI RX
-        Resource("midi", 0, Subsignal("rx", Pins("8", dir="i", conn=("m2", 0)),
+        Resource("midi", 0, Subsignal("rx", Pins("6", dir="i", conn=("m2", 0)),
                                       Attrs(IO_TYPE="LVCMOS33"))),
 
         # Motherboard PCBA I2C bus. Includes:
@@ -181,10 +181,10 @@ class _TiliquaR2Mobo:
             Subsignal("sdout1",  Pins("46", dir="i",  conn=("m2", 0))),
             Subsignal("lrck",    Pins("48", dir="o",  conn=("m2", 0))),
             Subsignal("bick",    Pins("50", dir="o",  conn=("m2", 0))),
-            Subsignal("mclk",    Pins("52", dir="o",  conn=("m2", 0))),
-            Subsignal("pdn",     Pins("54", dir="o",  conn=("m2", 0))),
-            Subsignal("i2c_sda", Pins("56", dir="io", conn=("m2", 0))),
-            Subsignal("i2c_scl", Pins("58", dir="io", conn=("m2", 0))),
+            Subsignal("mclk",    Pins("67", dir="o",  conn=("m2", 0))),
+            Subsignal("pdn",     Pins("65", dir="o",  conn=("m2", 0))),
+            Subsignal("i2c_sda", Pins("71", dir="io", conn=("m2", 0))),
+            Subsignal("i2c_scl", Pins("69", dir="io", conn=("m2", 0))),
             Attrs(IO_TYPE="LVCMOS33")
         ),
 
@@ -192,18 +192,18 @@ class _TiliquaR2Mobo:
         # Note: technically DVI outputs are supposed to be open-drain, but
         # compatibility with cheap AliExpress screens seems better with push/pull outputs.
         Resource("dvi", 0,
-            Subsignal("d0", Pins("13", dir="o", conn=("m2", 0))),
-            Subsignal("d1", Pins("34", dir="o", conn=("m2", 0))),
-            Subsignal("d2", Pins("20", dir="o", conn=("m2", 0))),
-            Subsignal("ck", Pins("38", dir="o", conn=("m2", 0))),
+            Subsignal("d0", Pins("60", dir="o", conn=("m2", 0))),
+            Subsignal("d1", Pins("62", dir="o", conn=("m2", 0))),
+            Subsignal("d2", Pins("68", dir="o", conn=("m2", 0))),
+            Subsignal("ck", Pins("52", dir="o", conn=("m2", 0))),
             Attrs(IO_TYPE="LVCMOS33D", DRIVE="8", SLEWRATE="FAST")
          ),
     ]
 
     # Expansion connectors ex0 and ex1
     connectors  = [
-        Connector("pmod", 0, "55 62 66 68 - - 57 60 64 70 - -", conn=("m2", 0)),
-        Connector("pmod", 1, "59 63 67 71 - - 61 65 69 73 - -", conn=("m2", 0)),
+        Connector("pmod", 0, "55 38 66 41 - - 57 35 34 70 - -", conn=("m2", 0)),
+        Connector("pmod", 1, "59 63 14 20 - - 61 15 13 22 - -", conn=("m2", 0)),
     ]
 
 class TiliquaR2SC2Platform(SoldierCrabR2Platform, LUNAPlatform):

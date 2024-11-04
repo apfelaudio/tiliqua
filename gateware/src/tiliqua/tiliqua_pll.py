@@ -107,7 +107,7 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
         m.domains.raw48  = ClockDomain()
 
         clk48 = platform.request(platform.default_clk, dir='i').i
-        reset  = platform.request(platform.default_rst, dir='i').i
+        reset  = Signal(init=0)
 
         # ecppll -i 48 --clkout0 60 --clkout1 120 --clkout2 50 --reset -f pll60.v
         # 60MHz for USB (currently also sync domain. fast is for DQS)
