@@ -66,7 +66,9 @@ def top_level_cli(
                             help="SoC designs: stop after rust FW compilation")
 
     parser.add_argument('--sc3', action='store_true',
-                        help="Assume Tiliqua R2 with a SoldierCrab R3 (default: R2)")
+                        help="platform override: Tiliqua R2 with a SoldierCrab R3")
+    parser.add_argument('--hw3', action='store_true',
+                        help="platform override: Tiliqua R3 with a SoldierCrab R3")
     parser.add_argument('--bootaddr', type=str, default="0x0",
                         help="'bootaddr' argument of ecppack (default: 0x0).")
     parser.add_argument('--verbose', action='store_true',
@@ -116,12 +118,18 @@ def top_level_cli(
     assert callable(fragment)
     fragment = fragment(**kwargs)
 
-    if args.sc3:
-        # Tiliqua R2 with SoldierCrab R3
-        hw_platform = TiliquaR2SC3Platform()
+    if args.hw3:
+        # Tiliqua R3 with SoldierCrab R3
+        hw_platform = TiliquaR3SC3Platform()
     else:
-        # Tiliqua R2 with SoldierCrab R2
-        hw_platform = TiliquaR2SC2Platform()
+        if args.sc3:
+            # Tiliqua R2 with SoldierCrab R3
+            hw_platform = TiliquaR2SC3Platform()
+        else:
+            # DEFAULT: Tiliqua R2 with SoldierCrab R2
+            # default for now as this is the only version
+            # that is actually in the wild.
+            hw_platform = TiliquaR2SC2Platform()
 
     if isinstance(fragment, TiliquaSoc):
 

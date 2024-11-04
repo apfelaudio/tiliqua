@@ -130,10 +130,6 @@ class SoldierCrabR3Platform(_SoldierCrabPlatform):
 
 class _TiliquaR2Mobo:
     resources   = [
-
-        # TODO: this pin is N/C, remove it
-        Resource("rst", 0, PinsN("6", dir="i", conn=("m2", 0)), Attrs(IO_TYPE="LVCMOS33")),
-
         # Quadrature rotary encoder and switch. These are already debounced by an RC filter.
         Resource("encoder", 0,
                  Subsignal("i", PinsN("42", dir="i", conn=("m2", 0))),
@@ -206,6 +202,80 @@ class _TiliquaR2Mobo:
         Connector("pmod", 1, "59 63 67 71 - - 61 65 69 73 - -", conn=("m2", 0)),
     ]
 
+class _TiliquaR3Mobo:
+    resources   = [
+        # Quadrature rotary encoder and switch. These are already debounced by an RC filter.
+        Resource("encoder", 0,
+                 Subsignal("i", PinsN("42", dir="i", conn=("m2", 0))),
+                 Subsignal("q", PinsN("40", dir="i", conn=("m2", 0))),
+                 Subsignal("s", PinsN("43", dir="i", conn=("m2", 0))),
+                 Attrs(IO_TYPE="LVCMOS33")),
+
+        # USB: 5V supply OUT enable (only touch this if you're sure you are a USB host!)
+        Resource("usb_vbus_en", 0, PinsN("32", dir="o", conn=("m2", 0)),
+                 Attrs(IO_TYPE="LVCMOS33")),
+
+        # USB: Interrupt line from TUSB322I
+        Resource("usb_int", 0, PinsN("47", dir="i", conn=("m2", 0)),
+                 Attrs(IO_TYPE="LVCMOS33")),
+
+        # Output enable for LEDs driven by PCA9635 on motherboard PCBA
+        Resource("mobo_leds_oe", 0, PinsN("11", dir="o", conn=("m2", 0))),
+
+        # DVI: Hotplug Detect
+        Resource("dvi_hpd", 0, Pins("37", dir="i", conn=("m2", 0)),
+                 Attrs(IO_TYPE="LVCMOS33")),
+
+        # TRS MIDI RX
+        Resource("midi", 0, Subsignal("rx", Pins("6", dir="i", conn=("m2", 0)),
+                                      Attrs(IO_TYPE="LVCMOS33"))),
+
+        # Motherboard PCBA I2C bus. Includes:
+        # - address 0x05: PCA9635 LED driver
+        # - address 0x47: TUSB322I USB-C controller
+        # - address 0x50: DVI EDID EEPROM (through 3V3 <-> 5V translator)
+        Resource("i2c", 0,
+            Subsignal("sda", Pins("51", dir="io", conn=("m2", 0))),
+            Subsignal("scl", Pins("53", dir="io", conn=("m2", 0))),
+        ),
+
+        # RP2040 UART bridge
+        UARTResource(0,
+            rx="19", tx="17", conn=("m2", 0),
+            attrs=Attrs(IO_TYPE="LVCMOS33", PULLMODE="UP")
+        ),
+
+        # FFC connector to eurorack-pmod on the back.
+        Resource("audio_ffc", 0,
+            Subsignal("sdin1",   Pins("44", dir="o",  conn=("m2", 0))),
+            Subsignal("sdout1",  Pins("46", dir="i",  conn=("m2", 0))),
+            Subsignal("lrck",    Pins("48", dir="o",  conn=("m2", 0))),
+            Subsignal("bick",    Pins("50", dir="o",  conn=("m2", 0))),
+            Subsignal("mclk",    Pins("67", dir="o",  conn=("m2", 0))),
+            Subsignal("pdn",     Pins("65", dir="o",  conn=("m2", 0))),
+            Subsignal("i2c_sda", Pins("71", dir="io", conn=("m2", 0))),
+            Subsignal("i2c_scl", Pins("69", dir="io", conn=("m2", 0))),
+            Attrs(IO_TYPE="LVCMOS33")
+        ),
+
+        # DVI
+        # Note: technically DVI outputs are supposed to be open-drain, but
+        # compatibility with cheap AliExpress screens seems better with push/pull outputs.
+        Resource("dvi", 0,
+            Subsignal("d0", Pins("60", dir="o", conn=("m2", 0))),
+            Subsignal("d1", Pins("62", dir="o", conn=("m2", 0))),
+            Subsignal("d2", Pins("68", dir="o", conn=("m2", 0))),
+            Subsignal("ck", Pins("52", dir="o", conn=("m2", 0))),
+            Attrs(IO_TYPE="LVCMOS33D", DRIVE="8", SLEWRATE="FAST")
+         ),
+    ]
+
+    # Expansion connectors ex0 and ex1
+    connectors  = [
+        Connector("pmod", 0, "55 38 66 41 - - 57 35 34 70 - -", conn=("m2", 0)),
+        Connector("pmod", 1, "59 63 14 20 - - 61 15 13 22 - -", conn=("m2", 0)),
+    ]
+
 class TiliquaR2SC2Platform(SoldierCrabR2Platform, LUNAPlatform):
     name                   = ("Tiliqua R2 / SoldierCrab R2 "
                               f"({SoldierCrabR2Platform.device}/{SoldierCrabR2Platform.psram_id})")
@@ -236,6 +306,22 @@ class TiliquaR2SC3Platform(SoldierCrabR3Platform, LUNAPlatform):
     connectors = [
         *SoldierCrabR3Platform.connectors,
         *_TiliquaR2Mobo.connectors
+    ]
+
+class TiliquaR3SC3Platform(SoldierCrabR3Platform, LUNAPlatform):
+    name                   = ("Tiliqua R3 / SoldierCrab R3 "
+                              f"({SoldierCrabR3Platform.device}/{SoldierCrabR3Platform.psram_id})")
+    clock_domain_generator = tiliqua_pll.TiliquaDomainGenerator2PLLs
+    default_usb_connection = "ulpi"
+
+    resources = [
+        *SoldierCrabR3Platform.resources,
+        *_TiliquaR3Mobo.resources
+    ]
+
+    connectors = [
+        *SoldierCrabR3Platform.connectors,
+        *_TiliquaR3Mobo.connectors
     ]
 
 class RebootProvider(wiring.Component):
