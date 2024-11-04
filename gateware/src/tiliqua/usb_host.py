@@ -317,6 +317,7 @@ class SimpleUSBMIDIHost(Elaboratable):
         self.handshake_detector  = USBHandshakeDetector(utmi=self.utmi)
         # TODO: Out() member
         self.o_midi_bytes = stream.Signature(unsigned(8)).create()
+        self.midi_fifo = fifo.SyncFIFOBuffered(width=8, depth=16)
 
     def elaborate(self, platform):
 
@@ -375,10 +376,6 @@ class SimpleUSBMIDIHost(Elaboratable):
             sof_controller.enable.eq(1),
         ]
 
-        midi_toggle = Signal()
-        if not self.sim:
-            m.d.comb += platform.request("led_a").o.eq(midi_toggle)
-
         _CONNECT_UNTIL_RESET_CYCLES = 13*600000 # 130ms
         _BUS_RESET_HOLD_CYCLES      = 6*600000  # 60ms
         _SOF_COUNTER_MAX            = 1024
@@ -398,8 +395,7 @@ class SimpleUSBMIDIHost(Elaboratable):
         # this FIFO is drained.
         #
 
-        m.submodules.midi_fifo = midi_fifo = fifo.SyncFIFOBuffered(
-            width=8, depth=16)
+        m.submodules.midi_fifo = midi_fifo = self.midi_fifo
         m.d.comb += [
             # w_en only strobed in MIDI-BULK-IN phase
             midi_fifo.w_data.eq(receiver.stream.payload),
@@ -645,7 +641,7 @@ class SimpleUSBMIDIHost(Elaboratable):
 
             with m.State('MIDI-BULK-IN'):
                 # send incoming packet to MIDI FIFO
-                m.d.comb += midi_fifo.w_en.eq(receiver.stream.valid)
+                m.d.comb += midi_fifo.w_en.eq(receiver.stream.next)
                 # it may or may not contain useful data (potentially just a NAK)
                 # if it is not useful, the FIFO is drained in MIDI-IDLE-SOF.
                 with m.If(receiver.ready_for_response):
