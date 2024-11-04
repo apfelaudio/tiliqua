@@ -5,6 +5,7 @@
 import math
 import sys
 import unittest
+from parameterized         import parameterized
 
 from amaranth              import *
 from amaranth.sim          import *
@@ -14,14 +15,22 @@ from tiliqua               import midi, test_util
 from amaranth_soc          import csr
 from amaranth_soc.csr      import wishbone
 
+
 class MidiTests(unittest.TestCase):
 
-    def test_midi(self):
+    @parameterized.expand([
+        ["trs", False], # 3-byte
+        ["usb", True],  # 4-byte
+    ])
+    def test_midi_decode(self, name, is_usb):
 
-        dut = midi.MidiDecode()
+        dut = midi.MidiDecode(usb=is_usb)
 
         async def testbench(ctx):
             ctx.set(dut.i.valid,   1)
+            if is_usb:
+                ctx.set(dut.i.payload, 0x00)
+                await ctx.tick()
             ctx.set(dut.i.payload, 0x92)
             await ctx.tick()
             ctx.set(dut.i.payload, 0x48)
@@ -37,7 +46,7 @@ class MidiTests(unittest.TestCase):
         sim = Simulator(dut)
         sim.add_clock(1e-6)
         sim.add_testbench(testbench)
-        with sim.write_vcd(vcd_file=open("test_midi.vcd", "w")):
+        with sim.write_vcd(vcd_file=open(f"test_midi_decode_{name}.vcd", "w")):
             sim.run()
 
     def test_midi_voice_tracker(self):

@@ -9,8 +9,8 @@ Extremely bare-bones USB MIDI host demo. EXPERIMENTAL.
 At the moment this is only used for Tiliqua hardware validation.
 NOTE: the MIDI USB configuration and endpoint IDs are hard-coded below.
 
-At the moment, all the MIDI traffic does is blink an LED.
-A better demo would run a MIDI/CV conversion as we do for TRS MIDI.
+At the moment, all the MIDI traffic is routed to CV outputs according
+to the existing example (see docstring) in `top/dsp:MidiCVTop`.
 """
 
 
@@ -143,7 +143,7 @@ class USB2HostTest(Elaboratable):
         )
 
 
-        m.submodules.midi_decode = midi_decode = midi.MidiDecode()
+        m.submodules.midi_decode = midi_decode = midi.MidiDecode(usb=True)
         wiring.connect(m, usb.o_midi_bytes, midi_decode.i)
 
         m.submodules.pmod0 = pmod0 = eurorack_pmod.EurorackPmod(
