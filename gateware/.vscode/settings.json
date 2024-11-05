@@ -1,0 +1,5 @@
+{
+    "rtlDebugger.command": [
+        "${workspaceFolder}/build/tb_tiliqua_soc",
+    ],
+}

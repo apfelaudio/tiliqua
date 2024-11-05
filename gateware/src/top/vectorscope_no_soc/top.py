@@ -248,7 +248,7 @@ if __name__ == "__main__":
         VectorScopeTop,
         ila_supported=True,
         sim_ports=simulation_ports,
-        sim_harness="../../src/top/vectorscope_no_soc/sim/sim.cpp",
+        sim_harness="src/top/vectorscope_no_soc/sim/tb-cxxrtl.cpp",
         argparse_callback=argparse_callback,
         argparse_fragment=argparse_fragment
     )
