@@ -16,10 +16,10 @@ from luna.gateware.interface.utmi  import *
 from luna.gateware.usb.usb2.packet import *
 
 class TokenPID(enum.Enum, shape=unsigned(4)):
-    OUT   = USBPacketID.OUT
-    IN    = USBPacketID.IN
-    SOF   = USBPacketID.SOF
-    SETUP = USBPacketID.SETUP
+    OUT   = int(USBPacketID.OUT)
+    IN    = int(USBPacketID.IN)
+    SOF   = int(USBPacketID.SOF)
+    SETUP = int(USBPacketID.SETUP)
 
 class TokenPayload(data.Struct):
     # Lightweight storage for token contents,

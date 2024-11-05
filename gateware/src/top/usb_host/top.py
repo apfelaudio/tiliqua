@@ -13,6 +13,7 @@ At the moment, all the MIDI traffic is routed to CV outputs according
 to the existing example (see docstring) in `top/dsp:MidiCVTop`.
 """
 
+import sys
 
 from amaranth                     import *
 from amaranth.build               import *
@@ -26,24 +27,30 @@ from tiliqua.cli                  import top_level_cli
 from tiliqua.tiliqua_platform     import RebootProvider
 from vendor.ila                   import AsyncSerialILA
 
+#
+# FIXME: hardcoded device properties
+#
+# You can get this by looking at the device descriptors
+# on a PC --> Find an 'Interface descriptor' with subclass
+# 0x03 (MIDI Streaming). The parent configuration ID is the
+# correct configuration ID. The IN (bulk) endpoint ID is the
+# MIDI BULK endpoint ID.
+#
+# These will not be hardcoded when this demo is finished.
+#
+
+# These can be selected at top-level CLI.
+MIDI_DEVICES = {
+    # (name):         (usb configuration_id, usb_midi_endpoint_id)
+    "yamaha-cp73":    (1, 2),
+    "keylab-49":      (1, 1),
+}
+
 class USB2HostTest(Elaboratable):
 
-    #
-    # FIXME: hardcoded device properties
-    #
-    # You can get this by looking at the device descriptors
-    # on a PC --> Find an 'Interface descriptor' with subclass
-    # 0x03 (MIDI Streaming). The parent configuration ID is the
-    # correct configuration ID. The IN (bulk) endpoint ID is the
-    # MIDI BULK endpoint ID.
-    #
-    # These will not be hardcoded when this demo is finished.
-    #
-
-    _HARDCODE_DEVICE_CONFIGURATION_ID = 1
-    _HARDCODE_MIDI_BULK_ENDPOINT_ID   = 1
-
-    def __init__(self, **kwargs):
+    def __init__(self, usb_device_config_id, usb_midi_bulk_endp_id):
+        self.usb_device_config_id = usb_device_config_id
+        self.usb_midi_bulk_endp_id = usb_midi_bulk_endp_id
         super().__init__()
 
     def elaborate(self, platform):
@@ -57,8 +64,8 @@ class USB2HostTest(Elaboratable):
         ulpi = platform.request(platform.default_usb_connection)
         m.submodules.usb = usb = SimpleUSBMIDIHost(
                 bus=ulpi,
-                hardcoded_configuration_id=self._HARDCODE_DEVICE_CONFIGURATION_ID,
-                hardcoded_midi_endpoint=self._HARDCODE_MIDI_BULK_ENDPOINT_ID,
+                hardcoded_configuration_id=self.usb_device_config_id,
+                hardcoded_midi_endpoint=self.usb_midi_bulk_endp_id,
         )
 
 
@@ -117,5 +124,27 @@ class USB2HostTest(Elaboratable):
 
         return m
 
+def argparse_callback(parser):
+    parser.add_argument('--midi-device', type=str, default=None,
+                        help=f"One of {list(MIDI_DEVICES)}")
+
+def argparse_fragment(args):
+    # Additional arguments to be provided to CoreTop
+    if args.midi_device not in MIDI_DEVICES:
+        print(f"provided '--midi-device {args.midi_device}' is not one of {list(MIDI_DEVICES)}")
+        sys.exit(-1)
+
+    config_id, endp_id = MIDI_DEVICES[args.midi_device]
+    return {
+        "usb_device_config_id": config_id,
+        "usb_midi_bulk_endp_id": endp_id,
+    }
+
 if __name__ == "__main__":
-    top_level_cli(USB2HostTest, video_core=False, ila_supported=True)
+    top_level_cli(
+        USB2HostTest,
+        video_core=False,
+        ila_supported=True,
+        argparse_callback=argparse_callback,
+        argparse_fragment=argparse_fragment,
+    )
