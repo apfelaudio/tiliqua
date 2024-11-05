@@ -11,6 +11,10 @@ NOTE: the MIDI USB configuration and endpoint IDs are hard-coded below.
 
 At the moment, all the MIDI traffic is routed to CV outputs according
 to the existing example (see docstring) in `top/dsp:MidiCVTop`.
+
+State machine currently requires bitstream to boot with the USB device
+disconnected. Once you connect it, it will issue a bus reset and eventually
+start initating bulk transfers.
 """
 
 import sys
@@ -41,9 +45,9 @@ from vendor.ila                   import AsyncSerialILA
 
 # These can be selected at top-level CLI.
 MIDI_DEVICES = {
-    # (name):         (usb configuration_id, usb_midi_endpoint_id)
-    "yamaha-cp73":    (1, 2),
-    "keylab-49":      (1, 1),
+    # (name):                 (usb configuration_id, usb_midi_endpoint_id)
+    "yamaha-cp73":            (1, 2),
+    "arturia-keylab49-mkii":  (1, 1),
 }
 
 class USB2HostTest(Elaboratable):
