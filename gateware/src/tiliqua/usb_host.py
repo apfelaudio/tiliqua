@@ -526,30 +526,13 @@ class SimpleUSBMIDIHost(Elaboratable):
                               handshake_detector.detected.nak):
                         m.next = state_err
 
-            if not self.sim:
-
-                #
-                # BUS RESET LOGIC
-                #
-
-                # TODO: move bus reset logic to dedicated component
-
-                # Wait for an FS device to be connected
-                # If it remains connected for 130ms, issue a bus reset.
-                with m.State('IDLE'):
-                    _LINE_STATE_FS_HS_J = 0b01
-                    # Do not drive bus. Disable SOF transmission
-                    m.d.comb += sof_controller.enable.eq(0),
-                    connected_for_cycles = Signal(32)
-                    with m.If(self.utmi.line_state == _LINE_STATE_FS_HS_J):
-                        m.d.usb += connected_for_cycles.eq(connected_for_cycles+1)
-                    with m.Else():
-                        m.d.usb += connected_for_cycles.eq(0)
-                    with m.If(connected_for_cycles == _CONNECT_UNTIL_RESET_CYCLES):
-                        m.next = 'BUS-RESET'
-
+            def fsm_state_bus_reset(state_id, state_next):
+                """
+                State to issue a bus reset.
+                This can be used to reset the device state or wake it from suspend.
+                """
                 # Bus reset: issue an SE0 for 60ms
-                with m.State('BUS-RESET'):
+                with m.State(state_id):
                     # Drive SE0 on bus. Disable SOF transmission
                     m.d.comb += [
                         sof_controller.enable.eq(0),
@@ -561,7 +544,36 @@ class SimpleUSBMIDIHost(Elaboratable):
                     m.d.usb += se0_cycles.eq(se0_cycles+1)
                     with m.If(se0_cycles == _BUS_RESET_HOLD_CYCLES):
                         m.d.usb += se0_cycles.eq(0)
-                        m.next = 'SOF-IDLE'
+                        m.next = state_next
+
+            if not self.sim:
+
+                #
+                # BUS RESET LOGIC
+                #
+
+                # TODO: move bus reset logic to dedicated component
+
+                # Issue a reset on boot in case a device is already connected
+                # but is suspended and needs to be woken up again.
+                fsm_state_bus_reset('BUS-RESET-PRE-CONNECT', 'WAIT-CONNECT')
+
+                # Wait for an FS device to be connected
+                # If it remains connected for 130ms, issue a bus reset.
+                with m.State('WAIT-CONNECT'):
+                    _LINE_STATE_FS_HS_J = 0b01
+                    # Do not drive bus. Disable SOF transmission
+                    m.d.comb += sof_controller.enable.eq(0),
+                    connected_for_cycles = Signal(32)
+                    with m.If(self.utmi.line_state == _LINE_STATE_FS_HS_J):
+                        m.d.usb += connected_for_cycles.eq(connected_for_cycles+1)
+                    with m.Else():
+                        m.d.usb += connected_for_cycles.eq(0)
+                    with m.If(connected_for_cycles == _CONNECT_UNTIL_RESET_CYCLES):
+                        m.next = 'BUS-RESET-POST-CONNECT'
+
+                # Bus reset to bring device into a known state.
+                fsm_state_bus_reset('BUS-RESET-POST-CONNECT', 'SOF-IDLE')
 
             #
             # HOST PACKET STATE MACHINE

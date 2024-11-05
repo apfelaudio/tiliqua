@@ -11,10 +11,6 @@ NOTE: the MIDI USB configuration and endpoint IDs are hard-coded below.
 
 At the moment, all the MIDI traffic is routed to CV outputs according
 to the existing example (see docstring) in `top/dsp:MidiCVTop`.
-
-State machine currently requires bitstream to boot with the USB device
-disconnected. Once you connect it, it will issue a bus reset and eventually
-start initating bulk transfers.
 """
 
 import sys
