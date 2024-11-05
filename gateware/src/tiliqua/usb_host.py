@@ -285,9 +285,13 @@ class SimpleUSBMIDIHost(Elaboratable):
     This does the bare minimum to enumerate a device, set the correct configuration
     and poll it for MIDI information on a BULK IN endpoint.
 
-    Proper error handling and retries are not complete yet. This controller
+    Proper error handling and retries are not in place. This controller
     currently walks the happy path of a few MIDI devices I have fine, however
-    still requires extensive testing.
+    still requires extensive testing. To deal with this absence of error handling,
+    this core has an internal watchdog - if the device does not respond to any
+    of the setup or MIDI transfer sequences for too long, the bus is reset
+    and the enumeration process restarts again. This means you can still hot-plug
+    devices fine, regardless of where you are in the state machine.
 
     The USB configuration ID and MIDI endpoint are currently hard-coded, that is,
     the descriptors themselves are not inspected to find the correct interface,
@@ -376,9 +380,16 @@ class SimpleUSBMIDIHost(Elaboratable):
             sof_controller.enable.eq(1),
         ]
 
+        # Watchdog is kicked to 0 whenever we get MIDI responses
+        # ACK/NAK. This is used to detect gross failures or
+        # disconnects and restart the state machine / re-enumerate.
+        watchdog = Signal(32)
+        m.d.usb += watchdog.eq(watchdog + 1)
+
         _CONNECT_UNTIL_RESET_CYCLES = 13*600000 # 130ms
         _BUS_RESET_HOLD_CYCLES      = 6*600000  # 60ms
         _SOF_COUNTER_MAX            = 1024
+        _WATCHDOG_CYCLES            = 2*60000000  # 2 seconds
 
         # Index after every SOF_COUNTER_MAX rolls over at which
         # to attempt a setup request to enter BULK_IN poll mode.
@@ -657,11 +668,14 @@ class SimpleUSBMIDIHost(Elaboratable):
                 # it may or may not contain useful data (potentially just a NAK)
                 # if it is not useful, the FIFO is drained in MIDI-IDLE-SOF.
                 with m.If(receiver.ready_for_response):
+                    # device is responding to us, kick watchdog
+                    m.d.usb += watchdog.eq(0)
                     m.d.comb += handshake_generator.issue_ack.eq(1)
                     m.next = 'MIDI-CONSUME'
                 with m.If(handshake_detector.detected.nak):
+                    # device is responding to us, kick watchdog
+                    m.d.usb += watchdog.eq(0)
                     m.next = 'MIDI-IDLE-SOF'
-                # TODO: no response for too long -> disconnect?
 
             with m.State('MIDI-CONSUME'):
                 # the FIFO contains valid MIDI data. Wait here until its consumed.
@@ -669,9 +683,9 @@ class SimpleUSBMIDIHost(Elaboratable):
                 with m.If(midi_fifo.r_level == 0):
                     m.next = 'MIDI-IDLE-SOF'
 
-            #
-            # TODO: Disconnect logic -> go back to before BUS RESET
-            #
-
-        return m
+        # If device does not respond to MIDI-BULK-IN polls for a long
+        # time, use the watchdog sledgehammer. Issue a bus reset and re-enumerate
+        # the device. This is a dirty way to support hot-plugging without
+        # needing to add error handling to every single state.
+        return ResetInserter({"usb": watchdog == (_WATCHDOG_CYCLES - 1)})(m)
 
