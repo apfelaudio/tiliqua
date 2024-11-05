@@ -29,38 +29,38 @@ class MessageType(enum.Enum, shape=unsigned(4)):
     SYSEX            = 0xF
 
 class MidiMessage(data.Struct):
-    midi_payload: data.UnionLayout({
-        "note_off": data.StructLayout({
-            "velocity": unsigned(8),
-            "note": unsigned(8),
-        }),
-        "note_on": data.StructLayout({
-            "velocity": unsigned(8),
-            "note": unsigned(8),
-        }),
-        "poly_pressure": data.StructLayout({
-            "pressure": unsigned(8),
-            "note": unsigned(8),
-        }),
-        "control_change": data.StructLayout({
-            "data": unsigned(8),
-            "controller_number": unsigned(8),
-        }),
-        "program_change": data.StructLayout({
-            "_unused": unsigned(8),
-            "program_number": unsigned(8),
-        }),
-        "channel_pressure": data.StructLayout({
-            "_unused": unsigned(8),
-            "pressure": unsigned(8),
-        }),
-        "pitch_bend": data.StructLayout({
-            "msb": unsigned(8),
-            "lsb": unsigned(8),
-        }),
-    })
     midi_channel: unsigned(4) # 4 bit midi channel
     midi_type:    MessageType # 4 bit message type
+    midi_payload: data.UnionLayout({
+        "note_off": data.StructLayout({
+            "note": unsigned(8),
+            "velocity": unsigned(8),
+        }),
+        "note_on": data.StructLayout({
+            "note": unsigned(8),
+            "velocity": unsigned(8),
+        }),
+        "poly_pressure": data.StructLayout({
+            "note": unsigned(8),
+            "pressure": unsigned(8),
+        }),
+        "control_change": data.StructLayout({
+            "controller_number": unsigned(8),
+            "data": unsigned(8),
+        }),
+        "program_change": data.StructLayout({
+            "program_number": unsigned(8),
+            "_unused": unsigned(8),
+        }),
+        "channel_pressure": data.StructLayout({
+            "pressure": unsigned(8),
+            "_unused": unsigned(8),
+        }),
+        "pitch_bend": data.StructLayout({
+            "lsb": unsigned(8),
+            "msb": unsigned(8),
+        }),
+    })
 
 class SerialRx(wiring.Component):
 
@@ -98,10 +98,20 @@ class SerialRx(wiring.Component):
 
 class MidiDecode(wiring.Component):
 
-    """Convert raw MIDI bytes into a stream of MIDI messages."""
+    """
+    Convert raw MIDI bytes into a stream of MIDI messages.
+
+    By default, this core expects 3-byte RS232-style MIDI
+    byte streams. If :py:`usb == True`, this core expects
+    4-byte USB-style MIDI byte streams.
+    """
 
     i: In(stream.Signature(unsigned(8)))
     o: Out(stream.Signature(MidiMessage))
+
+    def __init__(self, usb=False):
+        self.usb = usb
+        super().__init__()
 
     def elaborate(self, platform):
         m = Module()
@@ -116,12 +126,25 @@ class MidiDecode(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 # all valid command messages have highest bit set
-                with m.If(self.i.valid & self.i.payload[7]):
-                    m.d.sync += timeout.eq(timeout_cycles)
-                    m.d.sync += self.o.payload.as_value()[16:24].eq(self.i.payload)
-                    # TODO: handle 0-byte payload messages
+                if self.usb:
+                    # 4-byte sequence
+                    with m.If(self.i.valid):
+                        m.d.sync += timeout.eq(timeout_cycles)
+                        m.next = 'READU'
+                else:
+                    # 3-byte sequence
+                    with m.If(self.i.valid & self.i.payload[7]):
+                        m.d.sync += timeout.eq(timeout_cycles)
+                        m.d.sync += self.o.payload.as_value()[:8].eq(self.i.payload)
+                        m.next = 'READ0'
+
+            with m.State('READU'):
+                m.d.comb += self.i.ready.eq(1),
+                with m.If(timeout == 0):
+                    m.next = 'WAIT-VALID'
+                with m.Elif(self.i.valid):
+                    m.d.sync += self.o.payload.as_value()[:8].eq(self.i.payload)
                     m.next = 'READ0'
-                    # skip anything that doesn't look like a command message
             with m.State('READ0'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(timeout == 0):
@@ -141,7 +164,7 @@ class MidiDecode(wiring.Component):
                 with m.If(timeout == 0):
                     m.next = 'WAIT-VALID'
                 with m.Elif(self.i.valid):
-                    m.d.sync += self.o.payload.as_value()[:8].eq(self.i.payload)
+                    m.d.sync += self.o.payload.as_value()[16:24].eq(self.i.payload)
                     m.next = 'WAIT-READY'
             with m.State('WAIT-READY'):
                 # TODO: skip if it's a command we don't know how to parse.
@@ -352,3 +375,85 @@ class MidiVoiceTracker(wiring.Component):
                     m.next = 'UPDATE'
 
         return m
+
+class MonoMidiCV(wiring.Component):
+
+    """
+    Simple monophonic MIDI stream to CV conversion.
+
+    in (midi stream): midi data for conversion
+    in (audio): not used
+    out0: Gate
+    out1: V/oct CV
+    out2: Velocity
+    out3: Mod Wheel (CC1)
+    """
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    # Note: MIDI is valid at a much lower rate than audio streams
+    i_midi: In(stream.Signature(MidiMessage))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [
+            # Always forward our audio payload
+            self.i.ready.eq(1),
+            self.o.valid.eq(1),
+
+            # Always ready for MIDI messages
+            self.i_midi.ready.eq(1),
+        ]
+
+        # Create a LUT from midi note to voltage (output ASQ).
+        lut = []
+        for i in range(128):
+            volts_per_note = 1.0/12.0
+            volts = i*volts_per_note - 5
+            # convert volts to audio sample
+            x = volts/(2**15/4000)
+            lut.append(fixed.Const(x, shape=ASQ)._value)
+
+        # Store it in a memory where the address is the midi note,
+        # and the data coming out is directly routed to V/Oct out.
+        m.submodules.mem = mem = Memory(
+            shape=signed(ASQ.as_shape().width), depth=len(lut), init=lut)
+        rport = mem.read_port()
+        m.d.comb += [
+            rport.en.eq(1),
+        ]
+
+        # Route memory straight out to our note payload.
+        m.d.sync += self.o.payload[1].as_value().eq(rport.data),
+
+        with m.If(self.i_midi.valid):
+            msg = self.i_midi.payload
+            with m.Switch(msg.midi_type):
+                with m.Case(MessageType.NOTE_ON):
+                    m.d.sync += [
+                        # Gate output on
+                        self.o.payload[0].eq(fixed.Const(0.5, shape=ASQ)),
+                        # Set velocity output
+                        self.o.payload[2].as_value().eq(
+                            msg.midi_payload.note_on.velocity << 8),
+                        # Set note index in LUT
+                        rport.addr.eq(msg.midi_payload.note_on.note),
+                    ]
+                with m.Case(MessageType.NOTE_OFF):
+                    # Zero gate and velocity on NOTE_OFF
+                    m.d.sync += [
+                        self.o.payload[0].eq(0),
+                        self.o.payload[2].eq(0),
+                    ]
+                with m.Case(MessageType.CONTROL_CHANGE):
+                    # mod wheel is CC 1
+                    with m.If(msg.midi_payload.control_change.controller_number == 1):
+                        m.d.sync += [
+                            self.o.payload[3].as_value().eq(
+                                msg.midi_payload.control_change.data << 8),
+                        ]
+
+        return m
+

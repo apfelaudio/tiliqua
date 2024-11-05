@@ -544,7 +544,11 @@ class ILAFrontend(metaclass=ABCMeta):
 
             # Dump the each of our samples into the VCD.
             clock_time = 0
+            l_timestamp = 0
             for timestamp, sample in self.enumerate_samples():
+                if timestamp < l_timestamp:
+                    continue
+                l_timestamp = timestamp
                 for signal_name, signal_value in sample.items():
 
                     # If we're adding a clock signal, add any changes necessary since
