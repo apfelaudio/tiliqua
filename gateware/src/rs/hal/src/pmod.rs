@@ -47,7 +47,7 @@ macro_rules! impl_eurorack_pmod {
                         6 => self.registers.led6().write(|w| unsafe { w.led().bits(value as u8) } ),
                         7 => self.registers.led7().write(|w| unsafe { w.led().bits(value as u8) } ),
                         _ => panic!("bad index")
-                    }
+                    };
 
                     self.led_mode &= !(1 << index);
                     self.registers.led_mode().write(|w| unsafe { w.led().bits(self.led_mode) } );
