@@ -2,6 +2,7 @@
 rustflags = [
   "-C", "link-arg=-Tmemory.x",
   "-C", "link-arg=-Tlink.x",
+  "-Z", "macro-backtrace",
 ]
 
 [build]
