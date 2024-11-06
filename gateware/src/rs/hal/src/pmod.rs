@@ -74,5 +74,5 @@ macro_rules! impl_eurorack_pmod {
                 }
             }
         )+
-    };
+    }
 }
