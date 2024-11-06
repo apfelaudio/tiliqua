@@ -2,6 +2,9 @@ name: build & test
 
 on: [push]
 
+env:
+  RUSTC_VERSION: 1.82.0
+
 jobs:
 
   unit-tests:
@@ -120,7 +123,7 @@ jobs:
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
+            toolchain: $RUSTC_VERSION
             override: True
             components: rustfmt, clippy, llvm-tools
             target: riscv32imac-unknown-none-elf
@@ -146,7 +149,7 @@ jobs:
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
+            toolchain: $RUSTC_VERSION
             override: True
             components: rustfmt, clippy, llvm-tools
             target: riscv32imac-unknown-none-elf
@@ -172,7 +175,7 @@ jobs:
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
+            toolchain: $RUSTC_VERSION
             override: True
             components: rustfmt, clippy, llvm-tools
             target: riscv32imac-unknown-none-elf
@@ -214,7 +217,7 @@ jobs:
       - uses: YosysHQ/setup-oss-cad-suite@v3
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
+            toolchain: $RUSTC_VERSION
             override: True
             components: rustfmt, clippy, llvm-tools
             target: riscv32imac-unknown-none-elf
