@@ -43,7 +43,7 @@ from amaranth.lib.wiring                         import Component, In, Out, flip
 from amaranth_soc                                import csr, gpio, wishbone
 from amaranth_soc.csr.wishbone                   import WishboneCSRBridge
 
-from vendor.soc.cores                            import sram, timer, uart
+from vendor.soc.cores                            import sram, timer, uart, spiflash
 from vendor.soc.cpu                              import InterruptController, VexRiscv
 from vendor.soc                                  import readbin
 from vendor.soc.generate                         import GenerateSVD
@@ -151,14 +151,17 @@ class TiliquaSoc(Component):
 
         self.mainram_base         = 0x00000000
         self.mainram_size         = 0x00008000
+        self.spiflash_base        = 0x10000000
+        self.spiflash_size        = 0x01000000 # 128Mbit / 16MiB
         self.psram_base           = 0x20000000
-        self.psram_size           = 16*1024*1024
+        self.psram_size           = 0x02000000 # 256Mbit / 32MiB
         self.csr_base             = 0xf0000000
-        # (gap) leds/gpio0
+        # offsets from csr_base
+        self.spiflash_ctrl_base   = 0x00000100
         self.uart0_base           = 0x00000200
         self.timer0_base          = 0x00000300
         self.timer0_irq           = 0
-        # (gap) timer1
+        # (gap) was: timer1
         self.i2c0_base            = 0x00000500
         self.encoder0_base        = 0x00000600
         self.pmod0_periph_base    = 0x00000700
@@ -209,6 +212,14 @@ class TiliquaSoc(Component):
         self.timer0 = timer.Peripheral(width=32)
         self.csr_decoder.add(self.timer0.bus, addr=self.timer0_base, name="timer0")
         self.interrupt_controller.add(self.timer0, number=self.timer0_irq, name="timer0")
+
+        # spiflash peripheral
+        self.spi0_bus        = spiflash.ECP5ConfigurationFlashInterface()
+        self.spi0_phy        = spiflash.SPIPHYController(provider=self.spi0_bus, domain="sync", divisor=0)
+        self.spiflash_periph = spiflash.Peripheral(phy=self.spi0_phy, mmap_size=self.spiflash_size,
+                                                   mmap_name="spiflash")
+        self.wb_decoder.add(self.spiflash_periph.bus, addr=self.spiflash_base, name="spiflash")
+        self.csr_decoder.add(self.spiflash_periph.csr, addr=self.spiflash_ctrl_base, name="spiflash_ctrl")
 
         # psram peripheral
         self.psram_periph = psram_peripheral.Peripheral(size=self.psram_size)
@@ -318,6 +329,11 @@ class TiliquaSoc(Component):
 
         # psram
         m.submodules.psram_periph = self.psram_periph
+
+        # spiflash
+        m.submodules.spi0_bus = self.spi0_bus
+        m.submodules.spi0_phy = self.spi0_phy
+        m.submodules.spiflash_periph = self.spiflash_periph
 
         # video PHY
         m.submodules.video = self.video
