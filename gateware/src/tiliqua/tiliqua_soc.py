@@ -153,6 +153,8 @@ class TiliquaSoc(Component):
         self.mainram_size         = mainram_size
         self.spiflash_base        = 0x10000000
         self.spiflash_size        = 0x01000000 # 128Mbit / 16MiB
+        self.spiflash_fw_base     = 0x10100000
+        self.spiflash_fw_size     = 0x00080000
         self.psram_base           = 0x20000000
         self.psram_size           = 0x02000000 # 256Mbit / 32MiB
         self.csr_base             = 0xf0000000
@@ -171,7 +173,7 @@ class TiliquaSoc(Component):
         # cpu
         self.cpu = VexRiscv(
             variant="cynthion",
-            reset_addr=self.mainram_base
+            reset_addr=self.spiflash_fw_base
         )
 
         # interrupt controller
@@ -414,8 +416,8 @@ class TiliquaSoc(Component):
         with open(dst_mem, "w") as f:
             f.write(memory_x.format(mainram_base=hex(self.mainram_base),
                                     mainram_size=hex(self.mainram.size),
-                                    spiflash_base=hex(self.spiflash_base),
-                                    spiflash_size=hex(self.spiflash_size),
+                                    spiflash_base=hex(self.spiflash_fw_base),
+                                    spiflash_size=hex(self.spiflash_fw_size),
                                     ))
 
     def genconst(self, dst):

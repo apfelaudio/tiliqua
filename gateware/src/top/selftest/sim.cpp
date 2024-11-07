@@ -13,6 +13,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#include <fstream>
+
 int main(int argc, char** argv) {
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
@@ -51,7 +53,14 @@ int main(int argc, char** argv) {
     tfp->dump(contextp->time());
 #endif
 
-    uint32_t psram_size_bytes = 1024*1024*16;
+    uint32_t spiflash_size_bytes = 1024*1024*32;
+    uint32_t spiflash_offset = 0x00100000; // fw base
+    char *spiflash_data = (char*)malloc(spiflash_size_bytes);
+    memset(spiflash_data, 0, spiflash_size_bytes);
+    std::ifstream fin("src/top/macro_osc/fw/firmware.bin", std::ios::in | std::ios::binary);
+    fin.read(spiflash_data + spiflash_offset, spiflash_size_bytes);
+
+    uint32_t psram_size_bytes = 1024*1024*32;
     uint8_t *psram_data = (uint8_t*)malloc(psram_size_bytes);
     memset(psram_data, 0, psram_size_bytes);
 
@@ -64,6 +73,8 @@ int main(int argc, char** argv) {
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
 
         uint64_t timestamp_ns = contextp->time() / 1000;
+
+        top->spiflash_data = ((uint32_t*)spiflash_data)[top->spiflash_addr];
 
         // DVI clock domain (PHY output simulation to bitmap image)
         if (timestamp_ns % (ns_in_dvi_cycle/2) == 0) {

@@ -96,6 +96,8 @@ def soc_simulation_ports(fragment):
         "write_data":     (fragment.psram_periph.simif.write_data,     None),
         "read_ready":     (fragment.psram_periph.simif.read_ready,     None),
         "write_ready":    (fragment.psram_periph.simif.write_ready,    None),
+        "spiflash_addr":  (fragment.spiflash_periph.spi_mmap.simif_addr,None),
+        "spiflash_data":  (fragment.spiflash_periph.spi_mmap.simif_data,None),
         "dvi_x":          (fragment.video.dvi_tgen.x,                  None),
         "dvi_y":          (fragment.video.dvi_tgen.y,                  None),
         "dvi_r":          (fragment.video.phy_r,                       None),
