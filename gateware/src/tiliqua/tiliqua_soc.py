@@ -214,8 +214,7 @@ class TiliquaSoc(Component):
         self.interrupt_controller.add(self.timer0, number=self.timer0_irq, name="timer0")
 
         # spiflash peripheral
-        self.spi0_bus        = spiflash.ECP5ConfigurationFlashInterface()
-        self.spi0_phy        = spiflash.SPIPHYController(provider=self.spi0_bus, domain="sync", divisor=0)
+        self.spi0_phy        = spiflash.SPIPHYController(domain="sync", divisor=0)
         self.spiflash_periph = spiflash.Peripheral(phy=self.spi0_phy, mmap_size=self.spiflash_size,
                                                    mmap_name="spiflash")
         self.wb_decoder.add(self.spiflash_periph.bus, addr=self.spiflash_base, name="spiflash")
@@ -331,7 +330,10 @@ class TiliquaSoc(Component):
         m.submodules.psram_periph = self.psram_periph
 
         # spiflash
-        m.submodules.spi0_bus = self.spi0_bus
+        if sim.is_hw(platform):
+            spi0_provider = spiflash.ECP5ConfigurationFlashProvider()
+            m.submodules.spi0_provider = spi0_provider
+            wiring.connect(m, self.spi0_phy.pins, spi0_provider.pins)
         m.submodules.spi0_phy = self.spi0_phy
         m.submodules.spiflash_periph = self.spiflash_periph
 

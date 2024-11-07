@@ -17,7 +17,7 @@ from .utils             import WaitTimer
 class SPIPinSignature(wiring.Signature):
     def __init__(self):
         super().__init__({
-            "dq" : In(
+            "dq" : Out(
                 wiring.Signature({
                     "i"  :  In  (unsigned(4)),
                     "o"  :  Out (unsigned(4)),
@@ -36,24 +36,54 @@ class SPIPinSignature(wiring.Signature):
             ),
         })
 
+class ECP5ConfigurationFlashProvider(wiring.Component):
+    """ Gateware that creates a connection to an MSPI configuration flash.
+
+    Automatically uses appropriate platform resources; this abstracts away details
+    necessary to e.g. drive the MCLK lines on an ECP5, which has special handling.
+    """
+    def __init__(self):
+        super().__init__({
+            "pins": In(SPIPinSignature())
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        spi = platform.request("qspi_flash")
+        m.d.comb += [
+            self.pins.dq.i.eq(spi.dq.i),
+            spi.dq.o.eq(self.pins.dq.o),
+            spi.dq.oe.eq(self.pins.dq.oe),
+            spi.cs.o.eq(self.pins.cs.o),
+        ]
+
+        # Get the ECP5 block that's responsible for driving the MCLK pin,
+        # and drive it using our SCK line.
+        user_mclk = Instance('USRMCLK', i_USRMCLKI=self.pins.sck.o, i_USRMCLKTS=0)
+        m.submodules += user_mclk
+
+        return m
 
 class SPIPHYController(wiring.Component):
     """Provides a generic PHY that can be used by a SPI flash controller.
 
     It supports single/dual/quad/octal output reads from the flash chips.
     """
-    def __init__(self, provider, data_width=32, divisor=0, domain="sync"):
-        super().__init__(SPIControlPort(data_width).flip())
-        self.divisor = divisor  # SPI frequency is clk / (2*(1+divisor))
-        self.provider = provider
+    def __init__(self, data_width=32, divisor=0, domain="sync"):
+        super().__init__({
+            "ctrl": In(SPIControlPort(data_width)),
+            "pins": Out(SPIPinSignature()),
+        })
+        self.divisor = divisor
         self._domain = domain
 
     def elaborate(self, platform):
         m = Module()
 
-        pads   = self.provider.pins
-        sink   = self.sink
-        source = self.source
+        pads   = self.pins
+        sink   = self.ctrl.sink
+        source = self.ctrl.source
 
         # Clock Generator.
         m.submodules.clkgen = clkgen = SPIClockGenerator(self.divisor, domain=self._domain)
@@ -65,11 +95,11 @@ class SPIPHYController(wiring.Component):
         if cs_delay > 0:
             m.submodules.cs_timer = cs_timer  = WaitTimer(cs_delay + 1, domain=self._domain)
             m.d.comb += [
-                cs_timer.wait    .eq(self.cs),
+                cs_timer.wait    .eq(self.ctrl.cs),
                 cs_enable        .eq(cs_timer.done),
             ]
         else:
-            m.d.comb += cs_enable.eq(self.cs)
+            m.d.comb += cs_enable.eq(self.ctrl.cs)
 
         # I/Os.
         dq_o  = Signal.like(pads.dq.o)
@@ -234,36 +264,5 @@ class SPIClockGenerator(Elaboratable):
         # Convert our sync domain to the domain requested by the user, if necessary.
         if self._domain != "sync":
             m = DomainRenamer({"sync": self._domain})(m)
-
-        return m
-
-
-
-class ECP5ConfigurationFlashInterface(wiring.Component):
-    """ Gateware that creates a connection to an MSPI configuration flash.
-
-    Automatically uses appropriate platform resources; this abstracts away details
-    necessary to e.g. drive the MCLK lines on an ECP5, which has special handling.
-    """
-    def __init__(self):
-        super().__init__({
-            "pins": In(SPIPinSignature())
-        })
-
-    def elaborate(self, platform):
-        m = Module()
-
-        spi = platform.request("qspi_flash")
-        m.d.comb += [
-            self.pins.dq.i.eq(spi.dq.i),
-            spi.dq.o.eq(self.pins.dq.o),
-            spi.dq.oe.eq(self.pins.dq.oe),
-            spi.cs.o.eq(self.pins.cs.o),
-        ]
-
-        # Get the ECP5 block that's responsible for driving the MCLK pin,
-        # and drive it using our SCK line.
-        user_mclk = Instance('USRMCLK', i_USRMCLKI=self.pins.sck.o, i_USRMCLKTS=0)
-        m.submodules += user_mclk
 
         return m

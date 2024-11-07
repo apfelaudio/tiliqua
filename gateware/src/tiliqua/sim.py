@@ -162,6 +162,7 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
                            "-Wno-TIMESCALEMOD",
                            "-Wno-PINMISSING",
                            "-Wno-ASCRANGE",
+                           "-Wno-UNSIGNED",
                            "-cc"] + tracing_flags + [
                            "--exe",
                            "--Mdir", f"{verilator_dst}",

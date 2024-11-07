@@ -13,9 +13,9 @@ from amaranth.lib.wiring    import connect, In, Out
 from .port                  import SPIControlPortCDC, SPIControlPortCrossbar
 from .mmap                  import SPIFlashMemoryMap
 from .controller            import SPIController
-from .phy                   import SPIPHYController, ECP5ConfigurationFlashInterface
+from .phy                   import SPIPHYController, ECP5ConfigurationFlashProvider
 
-__all__ = ["PinSignature", "Peripheral", "ECP5ConfigurationFlashInterface", "SPIPHYController"]
+__all__ = ["PinSignature", "Peripheral", "ECP5ConfigurationFlashProvider", "SPIPHYController"]
 
 class Peripheral(wiring.Component):
     """SPI Flash peripheral main module.
@@ -90,8 +90,8 @@ class Peripheral(wiring.Component):
             connect(m, phy_controller, cdc.a)
             connect(m, cdc.b, phy)
         else:
-            connect(m, phy_controller.source, phy.source)
-            connect(m, phy_controller.sink, phy.sink)
-            m.d.comb += phy.cs .eq(phy_controller.cs)
+            connect(m, phy_controller.source, phy.ctrl.source)
+            connect(m, phy_controller.sink, phy.ctrl.sink)
+            m.d.comb += phy.ctrl.cs.eq(phy_controller.cs)
 
         return m
