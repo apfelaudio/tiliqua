@@ -39,7 +39,7 @@ tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
 fn psram_memtest(timer: &mut Timer0) {
 
-    info!("PSRAM memtest (this will be slow if video is also active)...");
+    info!("*** PSRAM memtest (slow if video is active) ***");
 
     // WARN: assume framebuffer is at the start of PSRAM - don't try memtesting that section.
 
@@ -83,8 +83,44 @@ fn psram_memtest(timer: &mut Timer0) {
     info!("PASS: PSRAM memtest");
 }
 
+fn spiflash_memtest(timer: &mut Timer0) {
+
+    info!("*** SPIFLASH memtest ***");
+
+    let spiflash_ptr = SPIFLASH_BASE as *mut u32;
+    let spiflash_sz_test = 1024;
+
+    timer.enable();
+    timer.set_timeout_ticks(0xFFFFFFFF);
+
+    let start = timer.counter();
+
+    let mut first_words: [u32; 8] = [0u32; 8];
+
+    unsafe {
+        for i in 0..spiflash_sz_test {
+            let value = spiflash_ptr.offset(i as isize).read_volatile();
+            if i < first_words.len() {
+                first_words[i] = value
+            }
+        }
+    }
+
+    let read_ticks = start-timer.counter();
+
+    let sysclk = pac::clock::sysclk();
+    info!("speed {} KByte/sec", ((sysclk as u64) * (spiflash_sz_test/1024) as u64) / (read_ticks as u64));
+
+    // TODO: verify there is actually a bitstream header in first N words?
+    for i in 0..first_words.len() {
+        info!("read @ {:#x} at {:#x}", first_words[i], i);
+    }
+
+    info!("PASS: SPIFLASH memtest");
+}
+
 fn tusb322i_id_test(i2cdev: &mut I2c0) {
-    info!("Read TUSB322I Device ID...");
+    info!("*** TUSB322I ID test ***");
 
     // Read TUSB322I device ID
     let mut tusb322i_id: [u8; 8] = [0; 8];
@@ -264,6 +300,8 @@ fn main() -> ! {
     let i2cdev2 = I2c0::new(unsafe { pac::I2C0::steal() } );
 
     psram_memtest(&mut timer);
+
+    spiflash_memtest(&mut timer);
 
     tusb322i_id_test(&mut i2cdev);
 
