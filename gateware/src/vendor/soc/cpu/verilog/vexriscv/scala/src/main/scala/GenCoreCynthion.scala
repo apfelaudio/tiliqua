@@ -16,6 +16,8 @@ import spinal.lib.sim.Phase
 
 import scala.collection.mutable.ArrayBuffer
 
+import vexriscv.ip.fpu.{FpuCore, FpuParameter}
+
 object GenCoreCynthion {
   def main(args: Array[String]) {
     val outputFile = "vexriscv_cynthion"
@@ -91,6 +93,12 @@ object GenCoreCynthion {
         new YamlPlugin(outputFile + ".yaml"),
         new MulPlugin,
         new DivPlugin,
+        new FpuPlugin(
+          externalFpu = false,
+          p = FpuParameter(
+            withDouble = false
+          )
+        ),
         new ExternalInterruptArrayPlugin(
           machineMaskCsrId = 0xbc0,
           machinePendingsCsrId = 0xfc0,

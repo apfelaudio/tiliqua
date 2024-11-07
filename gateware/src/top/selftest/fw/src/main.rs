@@ -282,6 +282,27 @@ where
     .draw(d).ok();
 }
 
+fn fpu_bench(timer: &mut Timer0) {
+    let mut od = fpu_bench::Overdrive::new();
+    let mut data: [f32; 512] = [0.5f32; 512];
+    let n_blocks: usize = 16;
+
+    timer.enable();
+    timer.set_timeout_ticks(0xFFFFFFFF);
+
+    let start = timer.counter();
+
+    for _ in 0..n_blocks {
+        od.process(1.0f32, &mut data);
+    }
+
+    let ticks = start-timer.counter();
+    let sysclk = pac::clock::sysclk();
+    // pointless, just use above array so above isn't optimized out.
+    info!("sum {}", data.into_iter().sum::<f32>());
+    info!("fpu_bench: {} samples/sec", ((sysclk as f32) * (data.len()*n_blocks) as f32) / (ticks as f32));
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
@@ -298,6 +319,8 @@ fn main() -> ! {
     let mut i2cdev = I2c0::new(peripherals.I2C0);
     // FIXME: use proper atomic bus sharing!!
     let i2cdev2 = I2c0::new(unsafe { pac::I2C0::steal() } );
+
+    fpu_bench(&mut timer);
 
     psram_memtest(&mut timer);
 

@@ -22,3 +22,4 @@ tiliqua_hal::impl_encoder! {
 
 pub mod handlers;
 pub mod opts;
+pub mod fpu_bench;
