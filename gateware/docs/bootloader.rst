@@ -44,6 +44,39 @@ First-time setup
     - Currently :code:`apfelbug` only works correctly with the DBG connector DISCONNECTED or with the UART port open on Linux and CONNECTED. Do not have the USB DBG connected without the UART0 open with :code:`picocom` or so.
 - Now when Tiliqua boots you will enter the bootloader. Use the encoder to select an image. Hold the encoder for >3sec in any image to go back to the bootloader.
 
+Bitstream Manifest
+^^^^^^^^^^^^^^^^^^
+
+By default the bootloader screen will report all bitstream names as :code:`<unknown>`. The :code:`bootloader` bitstream can optionally read from a JSON manifest stored at the end of SPI flash called a 'Bitstream Manifest'. Such a :code:`manifest.json` file looks like this:
+
+.. code-block:: json
+
+    {
+        "magic": 3735928559,
+        "names": [
+            "polysyn",
+            "xbeam",
+            "usb_audio",
+            "usb_host",
+            "vectorscope",
+            "dsp_quadnco",
+            "dsp_midicv",
+            "dsp_diffusion"
+        ]
+    }
+
+An example file can be copied from :code:`gateware/src/top/bootloader/fw/example-manifest.json`. You can flash this to the end of the SPI flash so the bootloader knows what each bitstream should be called.
+
+.. code-block:: bash
+
+    sudo openFPGALoader -c dirtyJtag -f -o 0xfff000 --file-type raw manifest.json
+
+Note: this address :code:`0xfff000` comes from :code:`src/tiliqua/tiliqua_soc.py`.
+
+Assuming the bootloader bitstream is correctly already flashed to 0x0, this command will also reset the FPGA, re-enter the bootloader, and display the updated bitstream manifest.
+
+At the moment, the bootloader itself does no verification that there are actually bitstreams flashed to each slot corresponding to the names. If a bitstream is not actually in a designated slot or is corrupt, selecting the bad slot will simply reboot the FPGA and re-enter the bootloader.
+
 ECP5 implementation
 ^^^^^^^^^^^^^^^^^^^
 
