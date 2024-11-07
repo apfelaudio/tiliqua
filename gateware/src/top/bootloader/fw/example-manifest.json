@@ -1,0 +1,13 @@
+{
+    "magic": 3735928559,
+    "names": [
+        "polysyn",
+        "xbeam",
+        "usb_audio",
+        "usb_host",
+        "vectorscope",
+        "dsp_quadnco",
+        "dsp_midicv",
+        "dsp_diffusion"
+    ]
+}

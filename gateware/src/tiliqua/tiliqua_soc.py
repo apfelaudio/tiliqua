@@ -137,7 +137,7 @@ class VideoPeripheral(wiring.Component):
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_bin_path, dvi_timings, audio_192=False,
                  audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
-                 video_rotate_90=False):
+                 video_rotate_90=False, mainram_size=0x8000):
 
         super().__init__({})
 
@@ -150,7 +150,7 @@ class TiliquaSoc(Component):
         self.clock_sync_hz = TILIQUA_CLOCK_SYNC_HZ
 
         self.mainram_base         = 0x00000000
-        self.mainram_size         = 0x00008000
+        self.mainram_size         = mainram_size
         self.spiflash_base        = 0xB0000000
         self.spiflash_size        = 0x01000000 # 128Mbit / 16MiB
         self.psram_base           = 0x20000000
@@ -430,6 +430,9 @@ class TiliquaSoc(Component):
             f.write(f"pub const PSRAM_FB_BASE: usize     = 0x{self.video.fb_base:x};\n")
             f.write(f"pub const PX_HUE_MAX: i32          = 16;\n")
             f.write(f"pub const PX_INTENSITY_MAX: i32    = 16;\n")
+            f.write(f"pub const N_BITSTREAMS: usize      = 8;\n")
+            f.write(f"pub const MANIFEST_BASE: usize     = SPIFLASH_BASE + SPIFLASH_SZ_BYTES - 4096;\n")
+            f.write(f"pub const MANIFEST_SZ_BYTES: usize = 512;\n")
 
     def regenerate_pac_from_svd(svd_path):
         """

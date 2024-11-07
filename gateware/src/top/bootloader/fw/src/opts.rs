@@ -5,6 +5,7 @@ use tiliqua_lib::impl_option_page;
 use heapless::String;
 
 use core::str::FromStr;
+use crate::manifest;
 
 use strum_macros::{EnumIter, IntoStaticStr};
 
@@ -49,7 +50,7 @@ impl_option_page!(Options,
                   (Screen::Boot, boot));
 
 impl Options {
-    pub fn new() -> Options {
+    pub fn new(manifest: &manifest::BitstreamManifest) -> Options {
         Options {
             modify: false,
             screen: EnumOption {
@@ -59,56 +60,56 @@ impl Options {
             boot: BootOptions {
                 selected: Some(0),
                 bitstream0: NumOption{
-                    name: String::from_str("bitstream0").unwrap(),
+                    name: manifest.names[0].clone(),
                     value: 0,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream1: NumOption{
-                    name: String::from_str("bitstream1").unwrap(),
+                    name: manifest.names[1].clone(),
                     value: 1,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream2: NumOption{
-                    name: String::from_str("bitstream2").unwrap(),
+                    name: manifest.names[2].clone(),
                     value: 2,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream3: NumOption{
-                    name: String::from_str("bitstream3").unwrap(),
+                    name: manifest.names[3].clone(),
                     value: 3,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream4: NumOption{
-                    name: String::from_str("bitstream4").unwrap(),
+                    name: manifest.names[4].clone(),
                     value: 4,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream5: NumOption{
-                    name: String::from_str("bitstream5").unwrap(),
+                    name: manifest.names[5].clone(),
                     value: 5,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream6: NumOption{
-                    name: String::from_str("bitstream6").unwrap(),
+                    name: manifest.names[6].clone(),
                     value: 6,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream7: NumOption{
-                    name: String::from_str("bitstream7").unwrap(),
+                    name: manifest.names[7].clone(),
                     value: 7,
                     step: 0,
                     min: 0,

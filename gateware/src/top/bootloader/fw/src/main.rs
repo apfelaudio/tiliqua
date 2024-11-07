@@ -27,6 +27,7 @@ use tiliqua_lib::*;
 use tiliqua_lib::opt::*;
 use tiliqua_lib::generated_constants::*;
 
+
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
 fn print_rebooting<D>(d: &mut D, rng: &mut fastrand::Rng)
@@ -85,13 +86,21 @@ fn main() -> ! {
 
     let mut time_since_encoder_touched: u32 = 0;
 
-    let mut opts = opts::Options::new();
-
     let mut logo_coord_ix = 0u32;
 
     let mut video = Video0::new(peripherals.VIDEO_PERIPH);
 
     video.set_persist(2048);
+
+    let manifest = manifest::BitstreamManifest::find().unwrap_or(
+        manifest::BitstreamManifest::unknown_manifest());
+
+    info!("BitstreamManifest created with:");
+    for name in &manifest.names {
+        info!("- '{}'", name);
+    }
+
+    let mut opts = opts::Options::new(&manifest);
 
     loop {
 
