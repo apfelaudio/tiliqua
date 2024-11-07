@@ -151,7 +151,7 @@ class TiliquaSoc(Component):
 
         self.mainram_base         = 0x00000000
         self.mainram_size         = mainram_size
-        self.spiflash_base        = 0xB0000000
+        self.spiflash_base        = 0x10000000
         self.spiflash_size        = 0x01000000 # 128Mbit / 16MiB
         self.psram_base           = 0x20000000
         self.psram_size           = 0x02000000 # 256Mbit / 32MiB
@@ -278,8 +278,9 @@ class TiliquaSoc(Component):
 
         m = Module()
 
-        self.mainram.init = readbin.get_mem_data(self.firmware_bin_path, data_width=32, endianness="little")
-        assert self.mainram.init
+        # TODO: FIXME: spiflash hard-written!
+        #self.mainram.init = readbin.get_mem_data(self.firmware_bin_path, data_width=32, endianness="little")
+        #assert self.mainram.init
 
         # bus
         m.submodules.wb_arbiter = self.wb_arbiter
@@ -400,9 +401,10 @@ class TiliquaSoc(Component):
         memory_x = (
             "MEMORY {{\n"
             "    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}\n"
+            "    spiflash : ORIGIN = {spiflash_base}, LENGTH = {spiflash_size}\n"
             "}}\n"
-            "REGION_ALIAS(\"REGION_TEXT\", mainram);\n"
-            "REGION_ALIAS(\"REGION_RODATA\", mainram);\n"
+            "REGION_ALIAS(\"REGION_TEXT\", spiflash);\n"
+            "REGION_ALIAS(\"REGION_RODATA\", spiflash);\n"
             "REGION_ALIAS(\"REGION_DATA\", mainram);\n"
             "REGION_ALIAS(\"REGION_BSS\", mainram);\n"
             "REGION_ALIAS(\"REGION_HEAP\", mainram);\n"
@@ -411,7 +413,10 @@ class TiliquaSoc(Component):
         print("Generating (rust) memory.x ...", dst_mem)
         with open(dst_mem, "w") as f:
             f.write(memory_x.format(mainram_base=hex(self.mainram_base),
-                                    mainram_size=hex(self.mainram.size)))
+                                    mainram_size=hex(self.mainram.size),
+                                    spiflash_base=hex(self.spiflash_base),
+                                    spiflash_size=hex(self.spiflash_size),
+                                    ))
 
     def genconst(self, dst):
         """Generate some high-level constants used by application code."""

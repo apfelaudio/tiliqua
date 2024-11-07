@@ -1,0 +1,3 @@
+*.bin
+*.svd
+fw/memory.x

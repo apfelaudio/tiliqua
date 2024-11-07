@@ -38,6 +38,7 @@ polysyn            = "src/top/polysyn/top.py"
 usb_audio          = "src/top/usb_audio/top.py"
 usb_host           = "src/top/usb_host/top.py"
 xbeam              = "src/top/xbeam/top.py"
+macro_osc          = "src/top/macro_osc/top.py"
 # Additional utilities
 test               = { cmd = "pytest" }
 colors_vectorscope = { call = "example_vectorscope.top:colors()" }
