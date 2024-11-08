@@ -139,12 +139,10 @@ fn main() -> ! {
 
     info!("MacroOsc: heap usage {} KiB", HEAP.used()/1024);
 
-    /*
     let mut out = [0.0f32; BLOCK_SIZE];
     let mut aux = [0.0f32; BLOCK_SIZE];
     osc.voice
        .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
-    */
 
     loop {
 
