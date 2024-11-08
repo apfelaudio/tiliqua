@@ -28,7 +28,7 @@ use tiliqua_lib::generated_constants::*;
 use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
 
 const SAMPLE_RATE: u32 = 48000;
-const BLOCK_SIZE: usize = 1024;
+const BLOCK_SIZE: usize = 128;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
@@ -37,7 +37,7 @@ use embedded_alloc::LlffHeap as Heap;
 static HEAP: Heap = Heap::empty();
 
 const HEAP_START: usize = (PSRAM_BASE + (PSRAM_SZ_BYTES / 2));
-const HEAP_SIZE: usize = (PSRAM_SZ_BYTES / 2);
+const HEAP_SIZE: usize = 128*1024;
 
 pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
     for i in 0..PX_INTENSITY_MAX {
@@ -172,12 +172,19 @@ fn main() -> ! {
     loop {
 
         osc.patch.engine    = opts.osc.engine.value as usize;
+        osc.patch.note      = opts.osc.note.value as f32;
         osc.patch.harmonics = (opts.osc.harmonics.value as f32) / 256.0f32;
         osc.patch.timbre    = (opts.osc.timbre.value as f32) / 256.0f32;
         osc.patch.morph     = (opts.osc.morph.value as f32) / 256.0f32;
 
         info!("fifo {}", audio_fifo.fifo_len().read().bits());
-        if (audio_fifo.fifo_len().read().bits() as usize) < BLOCK_SIZE {
+        let mut n_attempts = 0;
+        while (audio_fifo.fifo_len().read().bits() as usize) < 4096 - 256 {
+            n_attempts += 1;
+            if n_attempts > 30 {
+                info!("underrun!");
+                break
+            }
             for _ in 0..first {
                 osc.voice
                    .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
@@ -193,12 +200,12 @@ fn main() -> ! {
             first = 1;
         }
 
-        /*
         if opts.beam.palette.value != last_palette {
             write_palette(&mut video, opts.beam.palette.value);
             last_palette = opts.beam.palette.value;
         }
 
+        /*
         if time_since_encoder_touched < 1000 || opts.modify() {
 
             draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.beam.hue.value).ok();

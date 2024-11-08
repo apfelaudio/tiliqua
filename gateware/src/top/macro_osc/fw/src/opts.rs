@@ -12,10 +12,10 @@ use strum_macros::{EnumIter, IntoStaticStr};
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
 pub enum Screen {
-    Osc,
-    Vector,
-    Beam,
     Scope,
+    Osc,
+    Beam,
+    Vector,
 }
 
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
@@ -29,13 +29,14 @@ pub enum TriggerMode {
 pub struct OscOptions {
     pub selected: Option<usize>,
     pub engine:    NumOption<u8>,
+    pub note:      NumOption<u8>,
     pub harmonics: NumOption<u8>,
     pub timbre:    NumOption<u8>,
     pub morph:     NumOption<u8>,
 }
 
 impl_option_view!(OscOptions,
-                  engine, harmonics, timbre, morph);
+                  engine, note, harmonics, timbre, morph);
 
 #[derive(Clone)]
 pub struct VectorOptions {
@@ -90,10 +91,10 @@ pub struct Options {
 }
 
 impl_option_page!(Options,
+                  (Screen::Scope,  scope),
                   (Screen::Osc,    osc),
-                  (Screen::Vector, vector),
-                  (Screen::Beam,     beam),
-                  (Screen::Scope,   scope)
+                  (Screen::Beam,   beam),
+                  (Screen::Vector, vector)
                   );
 
 impl Options {
@@ -102,7 +103,7 @@ impl Options {
             modify: false,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
-                value: Screen::Osc,
+                value: Screen::Scope,
             },
             osc: OscOptions {
                 selected: None,
@@ -112,6 +113,13 @@ impl Options {
                     step: 1,
                     min: 0,
                     max: 24,
+                },
+                note: NumOption{
+                    name: String::from_str("note").unwrap(),
+                    value: 48,
+                    step: 1,
+                    min: 0,
+                    max: 128,
                 },
                 harmonics: NumOption{
                     name: String::from_str("harmonics").unwrap(),

@@ -121,7 +121,7 @@ class MacroOscSoc(TiliquaSoc):
 
         pmod0 = self.pmod0_periph.pmod
 
-        m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0, fifo_depth=2048)
+        m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0, fifo_depth=4096)
 
         self.scope_periph.source = astream.istream
 
@@ -130,12 +130,6 @@ class MacroOscSoc(TiliquaSoc):
         with m.Else():
             wiring.connect(m, astream.istream, self.vector_periph.i)
 
-        """
-        m.d.comb += [
-            astream.ostream.valid.eq(astream.istream.valid & astream.istream.ready),
-            astream.ostream.payload.eq(astream.istream.payload),
-        ]
-        """
 
         wiring.connect(m, self.audio_fifo.stream, astream.ostream)
         m.d.comb += self.audio_fifo.fifo_len.eq(astream.dac_fifo.w_level)
