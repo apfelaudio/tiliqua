@@ -37,7 +37,7 @@ object GenCoreCynthion {
           config = InstructionCacheConfig(
             cacheSize = 2048,
             bytePerLine = 32,
-            wayCount = 2,
+            wayCount = 1,
             addressWidth = 32,
             cpuDataWidth = 32,
             memDataWidth = 32,
@@ -56,7 +56,7 @@ object GenCoreCynthion {
           config = new DataCacheConfig(
             cacheSize = 2048,
             bytePerLine = 32,
-            wayCount = 2,
+            wayCount = 1,
             addressWidth = 32,
             cpuDataWidth = 32,
             memDataWidth = 32,
