@@ -88,14 +88,14 @@ macro_rules! impl_timer {
                 }
             }
 
-            // TODO interrupts
-            /*
             impl $TIMERX {
                 /// Start listening for [`Event`]
                 pub fn listen(&mut self, event: $crate::timer::Event) {
                     match event {
                         $crate::timer::Event::TimeOut => {
-                            self.registers.ev_enable().write(|w| w.enable().bit(true));
+                            unsafe {
+                                self.registers.ev_enable().write(|w| w.mask().bits(0x3));
+                            }
                         }
                     }
                 }
@@ -104,23 +104,26 @@ macro_rules! impl_timer {
                 pub fn unlisten(&mut self, event: $crate::timer::Event) {
                     match event {
                         $crate::timer::Event::TimeOut => {
-                            self.registers.ev_enable().write(|w| w.enable().bit(false));
+                            unsafe {
+                                self.registers.ev_enable().write(|w| w.mask().bits(0x0));
+                            }
                         }
                     }
                 }
 
                 /// Check if the interrupt flag is pending
                 pub fn is_pending(&self) -> bool {
-                    self.registers.ev_pending().read().pending().bit_is_set()
+                    self.registers.ev_pending().read().mask().bits() != 0
                 }
 
                 /// Clear the interrupt flag
                 pub fn clear_pending(&self) {
-                    let pending = self.registers.ev_pending().read().pending().bit();
-                    self.registers.ev_pending().write(|w| w.pending().bit(pending));
+                    let pending = self.registers.ev_pending().read().mask().bits();
+                    unsafe {
+                        self.registers.ev_pending().write(|w| w.mask().bits(pending));
+                    }
                 }
             }
-            */
 
             // trait: hal::delay::DelayNs
             impl $crate::hal::delay::DelayNs for $TIMERX {

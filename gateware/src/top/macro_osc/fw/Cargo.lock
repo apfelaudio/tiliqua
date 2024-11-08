@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "amaranth-soc-isr"
+version = "0.1.0"
+
+[[package]]
 name = "autocfg"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -146,6 +150,12 @@ name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+
+[[package]]
+name = "irq"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fde4043982dac20deb036c56edf2b1928614509334ee6c392f7d8caffa999a3"
 
 [[package]]
 name = "libc"
@@ -354,6 +364,7 @@ dependencies = [
 name = "tiliqua-fw"
 version = "0.1.0"
 dependencies = [
+ "amaranth-soc-isr",
  "colorsys",
  "critical-section",
  "embedded-alloc",
@@ -361,6 +372,7 @@ dependencies = [
  "embedded-hal",
  "fastrand",
  "heapless",
+ "irq",
  "log",
  "mi-plaits-dsp",
  "micromath",

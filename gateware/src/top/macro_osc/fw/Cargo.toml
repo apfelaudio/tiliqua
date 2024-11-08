@@ -23,6 +23,8 @@ colorsys = { version = "*", default-features = false }
 mi-plaits-dsp = { git = "https://github.com/sourcebox/mi-plaits-dsp-rs" }
 critical-section = "1.2.0"
 embedded-alloc = "0.6.0"
+amaranth-soc-isr = { path="../../../rs/isr", default-features = false }
+irq = "0.2.3"
 
 [profile.release]
 codegen-units = 1
