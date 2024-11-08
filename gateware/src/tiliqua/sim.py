@@ -89,6 +89,8 @@ def soc_simulation_ports(fragment):
         "rst_sync":       (ResetSignal("sync"),                        None),
         "clk_dvi":        (ClockSignal("dvi"),                         None),
         "rst_dvi":        (ResetSignal("dvi"),                         None),
+        "clk_audio":      (ClockSignal("audio"),                       None),
+        "rst_audio":      (ResetSignal("audio"),                       None),
         "uart0_w_data":   (fragment.uart0._tx_data.f.data.w_data,      None),
         "uart0_w_stb":    (fragment.uart0._tx_data.f.data.w_stb,       None),
         "address_ptr":    (fragment.psram_periph.simif.address_ptr,    None),
@@ -103,6 +105,7 @@ def soc_simulation_ports(fragment):
         "dvi_r":          (fragment.video.phy_r,                       None),
         "dvi_g":          (fragment.video.phy_g,                       None),
         "dvi_b":          (fragment.video.phy_b,                       None),
+        "fs_strobe":      (fragment.sim_fs_strobe,                     None),
     }
 
 def simulate(fragment, ports, harness, hw_platform, tracing=False):
@@ -150,7 +153,7 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
         psram_cflags = []
 
     clock_sync_hz = 60000000
-    audio_clk_hz = 48000000
+    audio_clk_hz = 12000000
 
     verilator_dst = "build/obj_dir"
     shutil.rmtree(verilator_dst, ignore_errors=True)

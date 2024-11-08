@@ -12,6 +12,7 @@ use strum_macros::{EnumIter, IntoStaticStr};
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
 pub enum Screen {
+    Osc,
     Vector,
     Beam,
     Scope,
@@ -23,6 +24,18 @@ pub enum TriggerMode {
     Always,
     Rising,
 }
+
+#[derive(Clone)]
+pub struct OscOptions {
+    pub selected: Option<usize>,
+    pub engine:    NumOption<u8>,
+    pub harmonics: NumOption<u8>,
+    pub timbre:    NumOption<u8>,
+    pub morph:     NumOption<u8>,
+}
+
+impl_option_view!(OscOptions,
+                  engine, harmonics, timbre, morph);
 
 #[derive(Clone)]
 pub struct VectorOptions {
@@ -70,12 +83,14 @@ pub struct Options {
     pub modify: bool,
     pub screen: EnumOption<Screen>,
 
+    pub osc:    OscOptions,
     pub vector: VectorOptions,
     pub beam:   BeamOptions,
     pub scope:  ScopeOptions,
 }
 
 impl_option_page!(Options,
+                  (Screen::Osc,    osc),
                   (Screen::Vector, vector),
                   (Screen::Beam,     beam),
                   (Screen::Scope,   scope)
@@ -87,7 +102,38 @@ impl Options {
             modify: false,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
-                value: Screen::Vector,
+                value: Screen::Osc,
+            },
+            osc: OscOptions {
+                selected: None,
+                engine: NumOption{
+                    name: String::from_str("engine").unwrap(),
+                    value: 0,
+                    step: 1,
+                    min: 0,
+                    max: 24,
+                },
+                harmonics: NumOption{
+                    name: String::from_str("harmonics").unwrap(),
+                    value: 128,
+                    step: 8,
+                    min: 0,
+                    max: 240,
+                },
+                timbre: NumOption{
+                    name: String::from_str("timbre").unwrap(),
+                    value: 128,
+                    step: 8,
+                    min: 0,
+                    max: 240,
+                },
+                morph: NumOption{
+                    name: String::from_str("morph").unwrap(),
+                    value: 128,
+                    step: 8,
+                    min: 0,
+                    max: 240,
+                },
             },
             vector: VectorOptions {
                 selected: None,

@@ -32,12 +32,15 @@ int main(int argc, char** argv) {
     uint64_t ns_in_s = 1e9;
     uint64_t ns_in_sync_cycle   = ns_in_s /  SYNC_CLK_HZ;
     uint64_t  ns_in_dvi_cycle   = ns_in_s /   DVI_CLK_HZ;
+    uint64_t  ns_in_audio_cycle = ns_in_s / AUDIO_CLK_HZ;
     printf("sync domain is: %i KHz (%i ns/cycle)\n",  SYNC_CLK_HZ/1000,  ns_in_sync_cycle);
     printf("pixel clock is: %i KHz (%i ns/cycle)\n",   DVI_CLK_HZ/1000,   ns_in_dvi_cycle);
+    printf("audio clock is: %i KHz (%i ns/cycle)\n", AUDIO_CLK_HZ/1000, ns_in_audio_cycle);
 
     contextp->timeInc(1);
     top->rst_sync = 1;
     top->rst_dvi  = 1;
+    top->rst_audio = 1;
     top->eval();
 
 #if VM_TRACE_FST == 1
@@ -47,6 +50,7 @@ int main(int argc, char** argv) {
     contextp->timeInc(1);
     top->rst_sync = 0;
     top->rst_dvi = 0;
+    top->rst_audio = 0;
     top->eval();
 
 #if VM_TRACE_FST == 1
@@ -69,6 +73,9 @@ int main(int argc, char** argv) {
     memset(image_data, 0, DVI_H_ACTIVE*DVI_V_ACTIVE*im_stride);
 
     uint32_t frames = 0;
+
+    uint32_t mod_pmod;
+    uint32_t pmod_clocks = 0;
 
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
 
@@ -124,6 +131,30 @@ int main(int argc, char** argv) {
                 if (top->uart0_w_stb) {
                     putchar(top->uart0_w_data);
                 }
+            }
+        }
+
+        // Audio clock domain (Audio stimulation)
+        if (timestamp_ns % (ns_in_audio_cycle/2) == 0) {
+            top->clk_audio = !top->clk_audio;
+            if (top->clk_audio) {
+                // 256x I2S clock divider
+                if (mod_pmod % 256 == 0) {
+                    ++pmod_clocks;
+                    top->fs_strobe = 1;
+                    /*
+                    // audio signals
+                    top->fs_inject0 = (int16_t)20000.0*sin((float)pmod_clocks / 6000.0);
+                    top->fs_inject1 = (int16_t)20000.0*cos((float)pmod_clocks /  300.0);
+                    // color
+                    top->fs_inject3 = (int16_t)20000.0*cos((float)pmod_clocks /  600.0);
+                    */
+                } else {
+                    if (top->fs_strobe) {
+                        top->fs_strobe = 0;
+                    }
+                }
+                mod_pmod += 1;
             }
         }
 

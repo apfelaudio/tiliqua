@@ -141,6 +141,8 @@ class TiliquaSoc(Component):
 
         super().__init__({})
 
+        self.sim_fs_strobe = Signal()
+
         self.firmware_bin_path = firmware_bin_path
         self.touch = touch
         self.audio_192 = audio_192
@@ -374,6 +376,7 @@ class TiliquaSoc(Component):
         else:
             m.submodules.car = sim.FakeTiliquaDomainGenerator()
             self.pmod0_periph.pmod = sim.FakeEurorackPmod()
+            m.d.comb += self.pmod0_periph.pmod.fs_strobe.eq(self.sim_fs_strobe)
 
         # wishbone csr bridge
         m.submodules.wb_to_csr = self.wb_to_csr

@@ -28,7 +28,7 @@ use tiliqua_lib::generated_constants::*;
 use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
 
 const SAMPLE_RATE: u32 = 48000;
-const BLOCK_SIZE: usize = 512;
+const BLOCK_SIZE: usize = 1024;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
@@ -59,7 +59,7 @@ struct MacroOsc<'a> {
 impl<'a> MacroOsc<'a> {
     pub fn new() -> Self {
         Self {
-            voice: Voice::new(&HEAP, BLOCK_SIZE),
+            voice: Voice::new(&HEAP, BLOCK_SIZE/2),
             patch: Patch::default(),
             modulations: Modulations::default(),
             volume: 1.0,
@@ -140,9 +140,10 @@ fn main() -> ! {
 
     info!("MacroOsc: heap usage {} KiB", HEAP.used()/1024);
 
-    let mut out = [0.0f32; BLOCK_SIZE];
-    let mut aux = [0.0f32; BLOCK_SIZE];
+    let mut out = [0.0f32; BLOCK_SIZE/2];
+    let mut aux = [0.0f32; BLOCK_SIZE/2];
 
+    /*
     for engine in 0..24 {
 
         timer.enable();
@@ -162,9 +163,37 @@ fn main() -> ! {
         let sysclk = pac::clock::sysclk();
         info!("engine {} speed {} samples/sec", engine, ((sysclk as u64) * (2*512) as u64) / (read_ticks as u64));
     }
+    */
+
+    let audio_fifo = peripherals.AUDIO_FIFO;
+
+    let mut first = 2;
 
     loop {
 
+        osc.patch.engine    = opts.osc.engine.value as usize;
+        osc.patch.harmonics = (opts.osc.harmonics.value as f32) / 256.0f32;
+        osc.patch.timbre    = (opts.osc.timbre.value as f32) / 256.0f32;
+        osc.patch.morph     = (opts.osc.morph.value as f32) / 256.0f32;
+
+        info!("fifo {}", audio_fifo.fifo_len().read().bits());
+        if (audio_fifo.fifo_len().read().bits() as usize) < BLOCK_SIZE {
+            for _ in 0..first {
+                osc.voice
+                   .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
+                for i in 0..(BLOCK_SIZE/2) {
+                    let out16 = ((out[i]*16000.0f32) as i16) as u32;
+                    let aux16 = ((aux[i]*16000.0f32) as i16) as u32;
+                    for _ in 0..2 {
+                        audio_fifo.sample().write(|w| unsafe { w.sample().bits(
+                            out16 | (aux16 << 16)) } );
+                    }
+                }
+            }
+            first = 1;
+        }
+
+        /*
         if opts.beam.palette.value != last_palette {
             write_palette(&mut video, opts.beam.palette.value);
             last_palette = opts.beam.palette.value;
@@ -175,8 +204,7 @@ fn main() -> ! {
             draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.beam.hue.value).ok();
 
         }
-
-        pause_flush(&mut timer, &mut uptime_ms, period_ms);
+        */
 
         encoder.update();
 

@@ -38,18 +38,22 @@ class AudioStream(wiring.Component):
         self.stream_domain = stream_domain
         self.fifo_depth = fifo_depth
 
+        self.adc_fifo = adc_fifo = AsyncFIFOBuffered(
+            width=self.eurorack_pmod.sample_i.shape().size, depth=self.fifo_depth,
+            w_domain="audio", r_domain=self.stream_domain)
+
+        self.dac_fifo = AsyncFIFOBuffered(
+            width=self.eurorack_pmod.sample_o.shape().size, depth=self.fifo_depth,
+            w_domain=self.stream_domain, r_domain="audio")
+
         super().__init__()
 
     def elaborate(self, platform) -> Module:
 
         m = Module()
 
-        m.submodules.adc_fifo = adc_fifo = AsyncFIFOBuffered(
-                width=self.eurorack_pmod.sample_i.shape().size, depth=self.fifo_depth,
-                w_domain="audio", r_domain=self.stream_domain)
-        m.submodules.dac_fifo = dac_fifo = AsyncFIFOBuffered(
-                width=self.eurorack_pmod.sample_o.shape().size, depth=self.fifo_depth,
-                w_domain=self.stream_domain, r_domain="audio")
+        m.submodules.adc_fifo = adc_fifo = self.adc_fifo
+        m.submodules.dac_fifo = dac_fifo = self.dac_fifo
 
         wiring.connect(m, adc_fifo.r_stream, wiring.flipped(self.istream))
         wiring.connect(m, wiring.flipped(self.ostream), dac_fifo.w_stream)
