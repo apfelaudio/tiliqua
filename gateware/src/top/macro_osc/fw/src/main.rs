@@ -114,7 +114,6 @@ fn main() -> ! {
     let pause_flush = |timer: &mut Timer0, uptime_ms: &mut u32, period_ms: u32| {
         timer.delay_ms(period_ms);
         *uptime_ms += period_ms;
-        pac::cpu::vexriscv::flush_dcache();
     };
 
     let mut uptime_ms = 0u32;
