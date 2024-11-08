@@ -156,7 +156,7 @@ class TiliquaSoc(Component):
         self.spiflash_fw_base     = 0x10100000
         self.spiflash_fw_size     = 0x00080000
         self.psram_base           = 0x20000000
-        self.psram_size           = 0x02000000 # 256Mbit / 32MiB
+        self.psram_size           = 0x01000000 # 128Mbit / 16MiB
         self.csr_base             = 0xf0000000
         # offsets from csr_base
         self.spiflash_ctrl_base   = 0x00000100
