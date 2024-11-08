@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     tfp->open("simx.fst");
 #endif
 
-    uint64_t sim_time =  500e9;
+    uint64_t sim_time =  5000e9;
 
     uint64_t ns_in_s = 1e9;
     uint64_t ns_in_sync_cycle   = ns_in_s /  SYNC_CLK_HZ;

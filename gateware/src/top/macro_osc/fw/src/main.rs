@@ -143,20 +143,25 @@ fn main() -> ! {
     let mut out = [0.0f32; BLOCK_SIZE];
     let mut aux = [0.0f32; BLOCK_SIZE];
 
-    timer.enable();
-    timer.set_timeout_ticks(0xFFFFFFFF);
+    for engine in 0..24 {
 
-    let start = timer.counter();
+        timer.enable();
+        timer.set_timeout_ticks(0xFFFFFFFF);
 
-    for _ in 0..8 {
-        osc.voice
-           .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
+        let start = timer.counter();
+
+        osc.patch.engine = engine;
+
+        for _ in 0..2 {
+            osc.voice
+               .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
+        }
+
+        let read_ticks = start-timer.counter();
+
+        let sysclk = pac::clock::sysclk();
+        info!("engine {} speed {} samples/sec", engine, ((sysclk as u64) * (2*512) as u64) / (read_ticks as u64));
     }
-
-    let read_ticks = start-timer.counter();
-
-    let sysclk = pac::clock::sysclk();
-    info!("render speed {} samples/sec", ((sysclk as u64) * (8*512) as u64) / (read_ticks as u64));
 
     loop {
 
