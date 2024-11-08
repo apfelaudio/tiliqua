@@ -28,7 +28,7 @@ use tiliqua_lib::generated_constants::*;
 use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
 
 const SAMPLE_RATE: u32 = 48000;
-const BLOCK_SIZE: usize = 128;
+const BLOCK_SIZE: usize = 512;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
@@ -72,6 +72,7 @@ impl<'a> MacroOsc<'a> {
         self.patch.harmonics = 0.5;
         self.patch.timbre = 0.5;
         self.patch.morph = 0.5;
+        self.voice.init();
     }
 }
 
@@ -141,8 +142,21 @@ fn main() -> ! {
 
     let mut out = [0.0f32; BLOCK_SIZE];
     let mut aux = [0.0f32; BLOCK_SIZE];
-    osc.voice
-       .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
+
+    timer.enable();
+    timer.set_timeout_ticks(0xFFFFFFFF);
+
+    let start = timer.counter();
+
+    for _ in 0..8 {
+        osc.voice
+           .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
+    }
+
+    let read_ticks = start-timer.counter();
+
+    let sysclk = pac::clock::sysclk();
+    info!("render speed {} samples/sec", ((sysclk as u64) * (8*512) as u64) / (read_ticks as u64));
 
     loop {
 
