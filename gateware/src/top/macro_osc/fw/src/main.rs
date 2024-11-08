@@ -32,20 +32,12 @@ const BLOCK_SIZE: usize = 128;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
+use embedded_alloc::LlffHeap as Heap;
 
-// use talc::*;
+static HEAP: Heap = Heap::empty();
 
-/*
-const HEAP_START: *mut u8 = (PSRAM_BASE + (PSRAM_SZ_BYTES / 2)) as *mut u8;
-const HEAP_END: *mut u8   = (PSRAM_BASE + PSRAM_SZ_BYTES) as *mut u8;
-
-#[global_allocator]
-static ALLOCATOR: Talck<spin::Mutex<()>, ClaimOnOom> = Talc::new(unsafe {
-    // if we're in a hosted environment, the Rust runtime may allocate before
-    // main() is called, so we need to initialize the arena automatically
-    ClaimOnOom::new(Span::new(HEAP_START, HEAP_END))
-}).lock();
-*/
+const HEAP_START: usize = (PSRAM_BASE + (PSRAM_SZ_BYTES / 2));
+const HEAP_SIZE: usize = (PSRAM_SZ_BYTES / 2);
 
 pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
     for i in 0..PX_INTENSITY_MAX {
@@ -56,7 +48,6 @@ pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
     }
 }
 
-/*
 struct MacroOsc<'a> {
     voice: Voice<'a>,
     patch: Patch,
@@ -68,7 +59,7 @@ struct MacroOsc<'a> {
 impl<'a> MacroOsc<'a> {
     pub fn new() -> Self {
         Self {
-            voice: Voice::new(&ALLOCATOR, BLOCK_SIZE),
+            voice: Voice::new(&HEAP, BLOCK_SIZE),
             patch: Patch::default(),
             modulations: Modulations::default(),
             volume: 1.0,
@@ -83,11 +74,13 @@ impl<'a> MacroOsc<'a> {
         self.patch.morph = 0.5;
     }
 }
-*/
 
 
 #[entry]
 fn main() -> ! {
+    pac::cpu::vexriscv::flush_icache();
+    pac::cpu::vexriscv::flush_dcache();
+
     let peripherals = pac::Peripherals::take().unwrap();
 
     // initialize logging
@@ -136,10 +129,17 @@ fn main() -> ! {
     write_palette(&mut video, opts.beam.palette.value);
     let mut last_palette = opts.beam.palette.value;
 
-    /*
+    {
+        use core::mem::MaybeUninit;
+        unsafe { HEAP.init(HEAP_START, HEAP_SIZE) }
+    }
+
     let mut osc = MacroOsc::new();
     osc.init();
 
+    info!("MacroOsc: heap usage {} KiB", HEAP.used()/1024);
+
+    /*
     let mut out = [0.0f32; BLOCK_SIZE];
     let mut aux = [0.0f32; BLOCK_SIZE];
     osc.voice

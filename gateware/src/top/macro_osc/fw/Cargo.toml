@@ -21,9 +21,8 @@ strum_macros = "0.26.4"
 strum = {version = "0.25.0", features = ["derive"], default-features=false}
 colorsys = { version = "*", default-features = false }
 mi-plaits-dsp = { git = "https://github.com/sourcebox/mi-plaits-dsp-rs" }
-talc = "4.4.2"
 critical-section = "1.2.0"
-spin = "0.9.8"
+embedded-alloc = "0.6.0"
 
 [profile.release]
 codegen-units = 1
