@@ -13,8 +13,6 @@ use riscv_rt::entry;
 use core::cell::RefCell;
 use critical_section::Mutex;
 
-use tiliqua_hal::pca9635::*;
-
 use core::convert::TryInto;
 
 use embedded_graphics::{
@@ -23,7 +21,6 @@ use embedded_graphics::{
 };
 
 use tiliqua_lib::*;
-use tiliqua_lib::opt::*;
 use tiliqua_lib::generated_constants::*;
 
 use irq::{handler, scoped_interrupts};
@@ -33,6 +30,8 @@ use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
 
 const BLOCK_SIZE: usize = 128;
 
+pub const TIMER0_ISR_PERIOD_MS: u32 = 10;
+
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
 use embedded_alloc::LlffHeap as Heap;
@@ -41,7 +40,6 @@ static HEAP: Heap = Heap::empty();
 
 const HEAP_START: usize = PSRAM_BASE + (PSRAM_SZ_BYTES / 2);
 const HEAP_SIZE: usize = 128*1024;
-const TIMER0_ISR_PERIOD_MS: u32 = 10;
 
 scoped_interrupts! {
     #[allow(non_camel_case_types)]
@@ -51,27 +49,30 @@ scoped_interrupts! {
     use #[return_as_is];
 }
 
-struct MacroOsc<'a> {
+struct App<'a> {
     voice: Voice<'a>,
     patch: Patch,
     modulations: Modulations,
+    optif: optif::OptInterface,
 }
 
-impl<'a> MacroOsc<'a> {
+impl<'a> App<'a> {
     pub fn new() -> Self {
-        Self {
-            voice: Voice::new(&HEAP, BLOCK_SIZE),
-            patch: Patch::default(),
-            modulations: Modulations::default(),
-        }
-    }
+        let mut voice = Voice::new(&HEAP, BLOCK_SIZE);
+        let mut patch = Patch::default();
 
-    pub fn init(&mut self) {
-        self.patch.engine = 0;
-        self.patch.harmonics = 0.5;
-        self.patch.timbre = 0.5;
-        self.patch.morph = 0.5;
-        self.voice.init();
+        patch.engine = 0;
+        patch.harmonics = 0.5;
+        patch.timbre = 0.5;
+        patch.morph = 0.5;
+        voice.init();
+
+        Self {
+            voice,
+            patch,
+            modulations: Modulations::default(),
+            optif: optif::OptInterface::new(TIMER0_ISR_PERIOD_MS),
+        }
     }
 }
 
@@ -90,80 +91,20 @@ pub fn f32_to_i32(f: u32) -> i32 {
     }
 }
 
-fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>, osc: &mut MacroOsc, encoder: &mut Encoder0,
-                  time_since_encoder_touched: &mut u32, uptime_ms: &mut u32,
-                  toggle_encoder_leds: &mut bool) {
+fn timer0_handler(app: &Mutex<RefCell<App>>) {
 
     let peripherals = unsafe { pac::Peripherals::steal() };
     let audio_fifo = peripherals.AUDIO_FIFO;
-    let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
-
-    let i2cdev = I2c0::new(peripherals.I2C0);
-    let mut pca9635 = Pca9635Driver::new(i2cdev);
 
     critical_section::with(|cs| {
 
-        let mut opts = opts.borrow_ref_mut(cs);
+        let mut app = app.borrow_ref_mut(cs);
 
         //
-        // Update options
+        // Update UI and options
         //
 
-        encoder.update();
-
-        *time_since_encoder_touched += TIMER0_ISR_PERIOD_MS;
-
-        let ticks = encoder.poke_ticks();
-        if ticks != 0 {
-            opts.consume_ticks(ticks);
-            *time_since_encoder_touched = 0;
-        }
-        if encoder.poke_btn() {
-            opts.toggle_modify();
-            *time_since_encoder_touched = 0;
-        }
-
-        //
-        // Update LEDs
-        //
-
-        if *uptime_ms % (5*TIMER0_ISR_PERIOD_MS) == 0 {
-            *toggle_encoder_leds = !*toggle_encoder_leds;
-        }
-
-        for n in 0..16 {
-            pca9635.leds[n] = 0u8;
-        }
-
-        leds::mobo_pca9635_set_bargraph(&*opts, &mut pca9635.leds,
-                                        *toggle_encoder_leds);
-
-        if opts.modify() {
-            if *toggle_encoder_leds {
-                if let Some(n) = opts.view().selected() {
-                    if n < 8 {
-                        pmod.led_set_manual(n, i8::MAX);
-                    }
-                }
-            } else {
-                pmod.led_all_auto();
-            }
-        } else {
-            if *time_since_encoder_touched < 1000 {
-                for n in 0..8 {
-                    pmod.led_set_manual(n, 0i8);
-                }
-                if let Some(n) = opts.view().selected() {
-                    if n < 8 {
-                        pmod.led_set_manual(n, (((1000-*time_since_encoder_touched) * 120) / 1000) as i8);
-                    }
-                }
-            } else {
-                pmod.led_all_auto();
-            }
-        }
-
-        pca9635.push().ok();
+        app.optif.update();
 
         //
         // Render audio
@@ -172,11 +113,14 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>, osc: &mut MacroOsc, enco
         let mut out = [0.0f32; BLOCK_SIZE];
         let mut aux = [0.0f32; BLOCK_SIZE];
 
-        osc.patch.engine    = opts.osc.engine.value as usize;
-        osc.patch.note      = opts.osc.note.value as f32;
-        osc.patch.harmonics = (opts.osc.harmonics.value as f32) / 256.0f32;
-        osc.patch.timbre    = (opts.osc.timbre.value as f32) / 256.0f32;
-        osc.patch.morph     = (opts.osc.morph.value as f32) / 256.0f32;
+        app.patch.engine    = app.optif.opts.osc.engine.value as usize;
+        app.patch.note      = app.optif.opts.osc.note.value as f32;
+        app.patch.harmonics = (app.optif.opts.osc.harmonics.value as f32) / 256.0f32;
+        app.patch.timbre    = (app.optif.opts.osc.timbre.value as f32) / 256.0f32;
+        app.patch.morph     = (app.optif.opts.osc.morph.value as f32) / 256.0f32;
+
+        let patch = app.patch.clone();
+        let modulations = app.modulations.clone();
 
         let mut n_attempts = 0;
         while (audio_fifo.fifo_len().read().bits() as usize) < 1024 - BLOCK_SIZE {
@@ -185,20 +129,13 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>, osc: &mut MacroOsc, enco
                 // TODO set underrun flag
                 break
             }
-            osc.voice
-               .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
+            app.voice
+               .render(&patch, &modulations, &mut out, &mut aux);
             for i in 0..BLOCK_SIZE {
                 unsafe {
                     let fifo_base = 0xa0000000 as *mut u32;
                     *fifo_base = f32_to_i32((out[i]*16000.0f32).to_bits()) as u32;
                 }
-                /*
-                let aux16 = ((aux[i]*16000.0f32) as i16) as u32;
-                for _ in 0..2 {
-                    audio_fifo.sample().write(|w| unsafe { w.sample().bits(
-                        out16 | (aux16 << 16)) } );
-                }
-                */
             }
         }
 
@@ -247,21 +184,17 @@ fn main() -> ! {
         framebuffer_base: PSRAM_FB_BASE as *mut u32,
     };
 
-    let opts = Mutex::new(RefCell::new(opts::Options::new()));
 
     let vscope  = peripherals.VECTOR_PERIPH;
     let scope  = peripherals.SCOPE_PERIPH;
 
     let mut video = Video0::new(peripherals.VIDEO_PERIPH);
 
-
     unsafe { HEAP.init(HEAP_START, HEAP_SIZE) }
 
-    let mut osc = MacroOsc::new();
-    osc.init();
+    let app = Mutex::new(RefCell::new(App::new()));
 
-
-    info!("MacroOsc: heap usage {} KiB", HEAP.used()/1024);
+    info!("heap usage {} KiB", HEAP.used()/1024);
 
     /*
     {
@@ -293,9 +226,7 @@ fn main() -> ! {
     let mut last_palette = tiliqua_lib::palette::ColorPalette::Exp;
     write_palette(&mut video, last_palette);
 
-    let mut encoder = Encoder0::new(peripherals.ENCODER0);
-
-    handler!(timer0 = || timer0_handler(&opts, &mut osc, &mut encoder, &mut 0u32, &mut 0u32, &mut false));
+    handler!(timer0 = || timer0_handler(&app));
 
     irq::scope(|s| {
 
@@ -319,7 +250,7 @@ fn main() -> ! {
         loop {
 
             let opts = critical_section::with(|cs| {
-                opts.borrow_ref(cs).clone()
+                app.borrow_ref(cs).optif.opts.clone()
             });
 
             if opts.beam.palette.value != last_palette {
