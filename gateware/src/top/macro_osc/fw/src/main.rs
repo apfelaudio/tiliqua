@@ -51,7 +51,6 @@ scoped_interrupts! {
 }
 
 fn timer0_handler() {
-    info!("timer0");
 }
 
 #[export_name = "DefaultHandler"]
@@ -202,7 +201,7 @@ fn main() -> ! {
         use core::time::Duration;
         use crate::hal::timer;
         timer.listen(timer::Event::TimeOut);
-        timer.set_timeout(Duration::from_millis(1));
+        timer.set_timeout(Duration::from_millis(10));
         timer.enable();
         unsafe {
                 pac::csr::interrupt::enable(pac::Interrupt::TIMER0);
