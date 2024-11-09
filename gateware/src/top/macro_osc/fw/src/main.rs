@@ -95,6 +95,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
 
     let peripherals = unsafe { pac::Peripherals::steal() };
     let audio_fifo = peripherals.AUDIO_FIFO;
+    let pmod = peripherals.PMOD0_PERIPH;
 
     critical_section::with(|cs| {
 
@@ -114,14 +115,26 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         let mut aux = [0.0f32; BLOCK_SIZE];
 
         let opts = app.optif.opts.clone();
-        let patch = app.patch.clone();
-        let modulations = app.modulations.clone();
+        let mut patch = app.patch.clone();
 
-        app.patch.engine    = opts.osc.engine.value as usize;
-        app.patch.note      = opts.osc.note.value as f32;
-        app.patch.harmonics = (opts.osc.harmonics.value as f32) / 256.0f32;
-        app.patch.timbre    = (opts.osc.timbre.value as f32) / 256.0f32;
-        app.patch.morph     = (opts.osc.morph.value as f32) / 256.0f32;
+        patch.engine    = opts.osc.engine.value as usize;
+        patch.note      = opts.osc.note.value as f32;
+        patch.harmonics = (opts.osc.harmonics.value as f32) / 256.0f32;
+        patch.timbre    = (opts.osc.timbre.value as f32) / 256.0f32;
+        patch.morph     = (opts.osc.morph.value as f32) / 256.0f32;
+
+        let mut modulations = app.modulations.clone();
+        let jack = pmod.jack().read().bits();
+
+        modulations.frequency_patched = (jack & 0x1) != 0;
+        modulations.trigger_patched   = (jack & 0x2) != 0;
+        modulations.timbre_patched    = (jack & 0x4) != 0;
+        modulations.morph_patched     = (jack & 0x8) != 0;
+
+        modulations.frequency = ((pmod.sample_i0().read().bits() as i16) as f32) / 16384.0f32;
+        modulations.trigger = ((pmod.sample_i1().read().bits() as i16) as f32) / 16384.0f32;
+        modulations.timbre = ((pmod.sample_i2().read().bits() as i16) as f32) / 16384.0f32;
+        modulations.morph = ((pmod.sample_i3().read().bits() as i16) as f32) / 16384.0f32;
 
         let mut n_attempts = 0;
         while (audio_fifo.fifo_len().read().bits() as usize) < 1024 - BLOCK_SIZE {
