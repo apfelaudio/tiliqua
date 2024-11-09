@@ -273,7 +273,7 @@ fn main() -> ! {
                 last_palette = opts.beam.palette.value;
             }
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.beam.hue.value).ok();
+            draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, opts.beam.hue.value).ok();
 
             video.set_persist(opts.beam.persist.value);
             video.set_decay(opts.beam.decay.value);
@@ -302,9 +302,7 @@ fn main() -> ! {
             if opts.screen.value == opts::Screen::Vector {
                 scope.en().write(|w| w.enable().bit(false) );
                 vscope.en().write(|w| w.enable().bit(true) );
-            }
-
-            if opts.screen.value == opts::Screen::Scope {
+            } else {
                 scope.en().write(|w| w.enable().bit(true) );
                 vscope.en().write(|w| w.enable().bit(false) );
             }

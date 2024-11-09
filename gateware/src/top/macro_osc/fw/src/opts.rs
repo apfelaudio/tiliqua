@@ -77,7 +77,7 @@ pub struct ScopeOptions {
 
 impl_option_view!(ScopeOptions,
                   timebase, trigger_mode, trigger_lvl,
-                  ypos0, ypos1, ypos2, ypos3, yscale, xscale);
+                  ypos0, ypos1, yscale, xscale);
 
 #[derive(Clone)]
 pub struct Options {
@@ -178,7 +178,7 @@ impl Options {
                 },
                 intensity: NumOption{
                     name: String::from_str("intensity").unwrap(),
-                    value: 8,
+                    value: 15,
                     step: 1,
                     min: 0,
                     max: 15,
@@ -199,18 +199,18 @@ impl Options {
                 selected: None,
                 timebase: NumOption{
                     name: String::from_str("timebase").unwrap(),
-                    value: 32,
+                    value: 2048,
                     step: 128,
                     min: 32,
                     max: 3872,
                 },
                 trigger_mode: EnumOption {
                     name: String::from_str("trig-mode").unwrap(),
-                    value: TriggerMode::Always,
+                    value: TriggerMode::Rising,
                 },
                 trigger_lvl: NumOption{
                     name: String::from_str("trig-lvl").unwrap(),
-                    value: 0,
+                    value: 512,
                     step: 512,
                     min: -512*32,
                     max: 512*32,
@@ -224,28 +224,28 @@ impl Options {
                 },
                 ypos1: NumOption{
                     name: String::from_str("ypos1").unwrap(),
-                    value: -75,
+                    value: 250,
                     step: 25,
                     min: -500,
                     max: 500,
                 },
                 ypos2: NumOption{
                     name: String::from_str("ypos2").unwrap(),
-                    value: 75,
+                    value: 500,
                     step: 25,
                     min: -500,
                     max: 500,
                 },
                 ypos3: NumOption{
                     name: String::from_str("ypos3").unwrap(),
-                    value: 250,
+                    value: 500,
                     step: 25,
                     min: -500,
                     max: 500,
                 },
                 yscale: NumOption{
                     name: String::from_str("yscale").unwrap(),
-                    value: 8,
+                    value: 6,
                     step: 1,
                     min: 0,
                     max: 15,
