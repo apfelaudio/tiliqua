@@ -31,8 +31,7 @@ use amaranth_soc_isr::return_as_is;
 
 use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
 
-const SAMPLE_RATE: u32 = 48000;
-const BLOCK_SIZE: usize = 256;
+const BLOCK_SIZE: usize = 128;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
@@ -73,6 +72,21 @@ impl<'a> MacroOsc<'a> {
         self.patch.timbre = 0.5;
         self.patch.morph = 0.5;
         self.voice.init();
+    }
+}
+
+#[inline(always)]
+pub fn f32_to_i32(f: u32) -> i32 {
+    let a = f & !0 >> 1; // Remove sign bit.
+    if a < 127 << 23 { // >= 0, < 1
+        0
+    } else if a < 158 << 23 { // >= 1, < max
+        let m = 1 << 31 | a << 8; // Mantissa and the implicit 1-bit.
+        let s = 158 - (a >> 23); // Shift based on the exponent and bias.
+        let u = (m >> s) as i32; // Unsigned result.
+        if (f as i32) < 0 { -u } else { u }
+    } else  { // >= max (incl. inf)
+        if (f as i32) < 0 { i32::MIN } else { i32::MAX }
     }
 }
 
@@ -165,7 +179,7 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>, osc: &mut MacroOsc, enco
         osc.patch.morph     = (opts.osc.morph.value as f32) / 256.0f32;
 
         let mut n_attempts = 0;
-        while (audio_fifo.fifo_len().read().bits() as usize) < 4096 - BLOCK_SIZE {
+        while (audio_fifo.fifo_len().read().bits() as usize) < 1024 - BLOCK_SIZE {
             n_attempts += 1;
             if n_attempts > 30 {
                 // TODO set underrun flag
@@ -174,12 +188,17 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>, osc: &mut MacroOsc, enco
             osc.voice
                .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
             for i in 0..BLOCK_SIZE {
-                let out16 = ((out[i]*16000.0f32) as i16) as u32;
+                unsafe {
+                    let fifo_base = 0xa0000000 as *mut u32;
+                    *fifo_base = f32_to_i32((out[i]*16000.0f32).to_bits()) as u32;
+                }
+                /*
                 let aux16 = ((aux[i]*16000.0f32) as i16) as u32;
                 for _ in 0..2 {
                     audio_fifo.sample().write(|w| unsafe { w.sample().bits(
                         out16 | (aux16 << 16)) } );
                 }
+                */
             }
         }
 
@@ -241,9 +260,10 @@ fn main() -> ! {
     let mut osc = MacroOsc::new();
     osc.init();
 
+
     info!("MacroOsc: heap usage {} KiB", HEAP.used()/1024);
 
-
+    /*
     {
         let mut out = [0.0f32; BLOCK_SIZE];
         let mut aux = [0.0f32; BLOCK_SIZE];
@@ -268,6 +288,7 @@ fn main() -> ! {
             info!("engine {} speed {} samples/sec", engine, ((sysclk as u64) * ((BLOCK_SIZE * 2) as u64) / (read_ticks as u64)));
         }
     }
+    */
 
     let mut last_palette = tiliqua_lib::palette::ColorPalette::Exp;
     write_palette(&mut video, last_palette);
