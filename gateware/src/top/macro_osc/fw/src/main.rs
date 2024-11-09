@@ -32,7 +32,7 @@ use amaranth_soc_isr::return_as_is;
 use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
 
 const SAMPLE_RATE: u32 = 48000;
-const BLOCK_SIZE: usize = 128;
+const BLOCK_SIZE: usize = 256;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
@@ -61,7 +61,7 @@ struct MacroOsc<'a> {
 impl<'a> MacroOsc<'a> {
     pub fn new() -> Self {
         Self {
-            voice: Voice::new(&HEAP, BLOCK_SIZE/2),
+            voice: Voice::new(&HEAP, BLOCK_SIZE),
             patch: Patch::default(),
             modulations: Modulations::default(),
         }
@@ -155,8 +155,8 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>, osc: &mut MacroOsc, enco
         // Render audio
         //
 
-        let mut out = [0.0f32; BLOCK_SIZE/2];
-        let mut aux = [0.0f32; BLOCK_SIZE/2];
+        let mut out = [0.0f32; BLOCK_SIZE];
+        let mut aux = [0.0f32; BLOCK_SIZE];
 
         osc.patch.engine    = opts.osc.engine.value as usize;
         osc.patch.note      = opts.osc.note.value as f32;
@@ -165,7 +165,7 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>, osc: &mut MacroOsc, enco
         osc.patch.morph     = (opts.osc.morph.value as f32) / 256.0f32;
 
         let mut n_attempts = 0;
-        while (audio_fifo.fifo_len().read().bits() as usize) < 4096 - 256 {
+        while (audio_fifo.fifo_len().read().bits() as usize) < 4096 - BLOCK_SIZE {
             n_attempts += 1;
             if n_attempts > 30 {
                 // TODO set underrun flag
@@ -173,7 +173,7 @@ fn timer0_handler(opts: &Mutex<RefCell<opts::Options>>, osc: &mut MacroOsc, enco
             }
             osc.voice
                .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
-            for i in 0..(BLOCK_SIZE/2) {
+            for i in 0..BLOCK_SIZE {
                 let out16 = ((out[i]*16000.0f32) as i16) as u32;
                 let aux16 = ((aux[i]*16000.0f32) as i16) as u32;
                 for _ in 0..2 {
@@ -224,9 +224,6 @@ fn main() -> ! {
 
     info!("Hello from Tiliqua MACRO-OSCILLATOR!");
 
-
-
-
     let mut display = DMADisplay {
         framebuffer_base: PSRAM_FB_BASE as *mut u32,
     };
@@ -247,27 +244,30 @@ fn main() -> ! {
     info!("MacroOsc: heap usage {} KiB", HEAP.used()/1024);
 
 
-    /*
-    for engine in 0..24 {
+    {
+        let mut out = [0.0f32; BLOCK_SIZE];
+        let mut aux = [0.0f32; BLOCK_SIZE];
 
-        timer.enable();
-        timer.set_timeout_ticks(0xFFFFFFFF);
+        for engine in 0..24 {
 
-        let start = timer.counter();
+            timer.enable();
+            timer.set_timeout_ticks(0xFFFFFFFF);
 
-        osc.patch.engine = engine;
+            let start = timer.counter();
 
-        for _ in 0..2 {
-            osc.voice
-               .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
+            osc.patch.engine = engine;
+
+            for _ in 0..2 {
+                osc.voice
+                   .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
+            }
+
+            let read_ticks = start-timer.counter();
+
+            let sysclk = pac::clock::sysclk();
+            info!("engine {} speed {} samples/sec", engine, ((sysclk as u64) * ((BLOCK_SIZE * 2) as u64) / (read_ticks as u64)));
         }
-
-        let read_ticks = start-timer.counter();
-
-        let sysclk = pac::clock::sysclk();
-        info!("engine {} speed {} samples/sec", engine, ((sysclk as u64) * (2*512) as u64) / (read_ticks as u64));
     }
-    */
 
     let mut last_palette = tiliqua_lib::palette::ColorPalette::Exp;
     write_palette(&mut video, last_palette);
