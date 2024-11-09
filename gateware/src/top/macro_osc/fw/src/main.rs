@@ -113,19 +113,20 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         let mut out = [0.0f32; BLOCK_SIZE];
         let mut aux = [0.0f32; BLOCK_SIZE];
 
-        app.patch.engine    = app.optif.opts.osc.engine.value as usize;
-        app.patch.note      = app.optif.opts.osc.note.value as f32;
-        app.patch.harmonics = (app.optif.opts.osc.harmonics.value as f32) / 256.0f32;
-        app.patch.timbre    = (app.optif.opts.osc.timbre.value as f32) / 256.0f32;
-        app.patch.morph     = (app.optif.opts.osc.morph.value as f32) / 256.0f32;
-
+        let opts = app.optif.opts.clone();
         let patch = app.patch.clone();
         let modulations = app.modulations.clone();
+
+        app.patch.engine    = opts.osc.engine.value as usize;
+        app.patch.note      = opts.osc.note.value as f32;
+        app.patch.harmonics = (opts.osc.harmonics.value as f32) / 256.0f32;
+        app.patch.timbre    = (opts.osc.timbre.value as f32) / 256.0f32;
+        app.patch.morph     = (opts.osc.morph.value as f32) / 256.0f32;
 
         let mut n_attempts = 0;
         while (audio_fifo.fifo_len().read().bits() as usize) < 1024 - BLOCK_SIZE {
             n_attempts += 1;
-            if n_attempts > 30 {
+            if n_attempts > 10 {
                 // TODO set underrun flag
                 break
             }
@@ -135,6 +136,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
                 unsafe {
                     let fifo_base = 0xa0000000 as *mut u32;
                     *fifo_base = f32_to_i32((out[i]*16000.0f32).to_bits()) as u32;
+                    *fifo_base.add(1) = f32_to_i32((aux[i]*16000.0f32).to_bits()) as u32;
                 }
             }
         }

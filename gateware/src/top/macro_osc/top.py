@@ -44,6 +44,8 @@ class AudioFIFOPeripheral(wiring.Component):
 
         self._fifo0 = fifo.SyncFIFOBuffered(
             width=ASQ.as_shape().width, depth=elastic_sz)
+        self._fifo1 = fifo.SyncFIFOBuffered(
+            width=ASQ.as_shape().width, depth=elastic_sz)
 
         self._fifo_len = regs.add(f"fifo_len", self.FifoLenReg(), offset=0x4)
 
@@ -69,17 +71,25 @@ class AudioFIFOPeripheral(wiring.Component):
         m.submodules.bridge = self._bridge
 
         m.submodules._fifo0 = self._fifo0
+        m.submodules._fifo1 = self._fifo1
 
         connect(m, flipped(self.csr_bus), self._bridge.bus)
 
-        wstream = self._fifo0.w_stream
+        wstream0 = self._fifo0.w_stream
+        wstream1 = self._fifo1.w_stream
         with m.If(self.wb_bus.cyc & self.wb_bus.stb & self.wb_bus.we):
             with m.Switch(self.wb_bus.adr):
                 with m.Case(0):
                     m.d.comb += [
                         self.wb_bus.ack.eq(1),
-                        wstream.valid.eq(1),
-                        wstream.payload.eq(self.wb_bus.dat_w),
+                        wstream0.valid.eq(1),
+                        wstream0.payload.eq(self.wb_bus.dat_w),
+                    ]
+                with m.Case(1):
+                    m.d.comb += [
+                        self.wb_bus.ack.eq(1),
+                        wstream1.valid.eq(1),
+                        wstream1.payload.eq(self.wb_bus.dat_w),
                     ]
 
         m.d.comb += self._fifo_len.f.fifo_len.r_data.eq(self._fifo0.level)
@@ -87,11 +97,16 @@ class AudioFIFOPeripheral(wiring.Component):
         # Resample 12kHz to 48kHz
         m.submodules.resample_up0 = resample_up0 = dsp.Resample(
                 fs_in=12000, n_up=4, m_down=1)
+        m.submodules.resample_up1 = resample_up1 = dsp.Resample(
+                fs_in=12000, n_up=4, m_down=1)
         wiring.connect(m, self._fifo0.r_stream, resample_up0.i)
+        wiring.connect(m, self._fifo1.r_stream, resample_up1.i)
 
+        # Last 2 outputs
         m.submodules.merge = merge = dsp.Merge(4, wiring.flipped(self.stream))
-        wiring.connect(m, resample_up0.o, merge.i[0])
-        merge.wire_valid(m, [1, 2, 3])
+        merge.wire_valid(m, [0, 1])
+        wiring.connect(m, resample_up0.o, merge.i[2])
+        wiring.connect(m, resample_up1.o, merge.i[3])
 
         return m
 
