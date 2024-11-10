@@ -65,6 +65,8 @@ impl<'a> App<'a> {
         patch.harmonics = 0.5;
         patch.timbre = 0.5;
         patch.morph = 0.5;
+        patch.timbre_modulation_amount = 0.5;
+        patch.morph_modulation_amount  = 0.5;
         voice.init();
 
         Self {
@@ -126,18 +128,23 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         let mut modulations = app.modulations.clone();
         let jack = pmod.jack().read().bits();
 
-        modulations.frequency_patched = (jack & 0x1) != 0;
+        let note_patched = (jack & 0x1) != 0;
         modulations.trigger_patched   = (jack & 0x2) != 0;
         modulations.timbre_patched    = (jack & 0x4) != 0;
         modulations.morph_patched     = (jack & 0x8) != 0;
 
-        modulations.frequency = ((pmod.sample_i0().read().bits() as i16) as f32) / 16384.0f32;
+        if note_patched {
+            // 1V/oct
+            let v_oct = ((pmod.sample_i0().read().bits() as i16) as f32) / 4096.0f32;
+            modulations.note = v_oct * 12.0f32;
+        }
+
         modulations.trigger = ((pmod.sample_i1().read().bits() as i16) as f32) / 16384.0f32;
         modulations.timbre = ((pmod.sample_i2().read().bits() as i16) as f32) / 16384.0f32;
         modulations.morph = ((pmod.sample_i3().read().bits() as i16) as f32) / 16384.0f32;
 
         let mut n_attempts = 0;
-        while (audio_fifo.fifo_len().read().bits() as usize) < 1024 - BLOCK_SIZE {
+        while (audio_fifo.fifo_len().read().bits() as usize) < 512 - BLOCK_SIZE {
             n_attempts += 1;
             if n_attempts > 10 {
                 // TODO set underrun flag
