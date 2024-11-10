@@ -28,7 +28,8 @@ use amaranth_soc_isr::return_as_is;
 
 use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
 
-const BLOCK_SIZE: usize = 64;
+const BLOCK_SIZE: usize = 128;
+const FIFO_ELASTIC_SZ: usize = 384; // FIXME: fetch from `elastic_sz` in RTL.
 
 pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
 
@@ -144,7 +145,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         modulations.morph = ((pmod.sample_i3().read().bits() as i16) as f32) / 16384.0f32;
 
         let mut n_attempts = 0;
-        while (audio_fifo.fifo_len().read().bits() as usize) < 256 - BLOCK_SIZE {
+        while (audio_fifo.fifo_len().read().bits() as usize) < FIFO_ELASTIC_SZ - BLOCK_SIZE {
             n_attempts += 1;
             if n_attempts > 10 {
                 // TODO set underrun flag
@@ -217,33 +218,6 @@ fn main() -> ! {
     let app = Mutex::new(RefCell::new(App::new()));
 
     info!("heap usage {} KiB", HEAP.used()/1024);
-
-    /*
-    {
-        let mut out = [0.0f32; BLOCK_SIZE];
-        let mut aux = [0.0f32; BLOCK_SIZE];
-
-        for engine in 0..24 {
-
-            timer.enable();
-            timer.set_timeout_ticks(0xFFFFFFFF);
-
-            let start = timer.counter();
-
-            osc.patch.engine = engine;
-
-            for _ in 0..2 {
-                osc.voice
-                   .render(&osc.patch, &osc.modulations, &mut out, &mut aux);
-            }
-
-            let read_ticks = start-timer.counter();
-
-            let sysclk = pac::clock::sysclk();
-            info!("engine {} speed {} samples/sec", engine, ((sysclk as u64) * ((BLOCK_SIZE * 2) as u64) / (read_ticks as u64)));
-        }
-    }
-    */
 
     let mut last_palette = tiliqua_lib::palette::ColorPalette::Exp;
     write_palette(&mut video, last_palette);
