@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![feature(allocator_api)]
 
 use tiliqua_pac as pac;
 use tiliqua_hal as hal;
@@ -31,6 +32,9 @@ use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
+extern crate alloc;
+use alloc::boxed::Box;
+
 pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
 const BLOCK_SIZE: usize = 128;
 const FIFO_ELASTIC_SZ: usize = 384; // FIXME: fetch from `elastic_sz` in RTL.
@@ -39,6 +43,8 @@ const FIFO_ELASTIC_SZ: usize = 384; // FIXME: fetch from `elastic_sz` in RTL.
 
 const HEAP_START: usize = PSRAM_BASE + (PSRAM_SZ_BYTES / 2);
 const HEAP_SIZE: usize = 128*1024;
+
+#[global_allocator]
 static HEAP: Heap = Heap::empty();
 
 scoped_interrupts! {
@@ -50,16 +56,16 @@ scoped_interrupts! {
 }
 
 struct App<'a> {
-    voice: Voice<'a>,
-    patch: Patch,
+    voice: Box<Voice<'a>>,
+    patch: Box<Patch>,
     modulations: Modulations,
     optif: optif::OptInterface,
 }
 
 impl<'a> App<'a> {
     pub fn new() -> Self {
-        let mut voice = Voice::new(&HEAP, BLOCK_SIZE);
-        let mut patch = Patch::default();
+        let mut voice = Box::new(Voice::new(&HEAP, BLOCK_SIZE));
+        let mut patch = Box::new(Patch::default());
 
         patch.engine = 0;
         patch.harmonics = 0.5;
@@ -93,7 +99,7 @@ pub fn f32_to_i32(f: u32) -> i32 {
     }
 }
 
-fn timer0_handler(app: &Mutex<RefCell<App>>) {
+fn timer0_handler(app: &Mutex<RefCell<Box<App>>>) {
 
     let peripherals = unsafe { pac::Peripherals::steal() };
     let audio_fifo = peripherals.AUDIO_FIFO;
@@ -229,9 +235,42 @@ fn main() -> ! {
 
     unsafe { HEAP.init(HEAP_START, HEAP_SIZE) }
 
-    let app = Mutex::new(RefCell::new(App::new()));
+    let app = Box::new(App::new());
+    let app = Mutex::new(RefCell::new(app));
 
     info!("heap usage {} KiB", HEAP.used()/1024);
+
+    /*
+    critical_section::with(|cs| {
+        let mut app = app.borrow_ref_mut(cs);
+
+        let mut out = [0.0f32; BLOCK_SIZE];
+        let mut aux = [0.0f32; BLOCK_SIZE];
+
+        let mut patch = app.patch.clone();
+        let modulations = app.modulations.clone();
+
+        for engine in 0..24 {
+
+            timer.enable();
+            timer.set_timeout_ticks(0xFFFFFFFF);
+
+            let start = timer.counter();
+
+            patch.engine = engine;
+
+            for _ in 0..8 {
+                app.voice
+                    .render(&patch, &modulations, &mut out, &mut aux);
+                }
+
+            let read_ticks = start-timer.counter();
+
+            let sysclk = pac::clock::sysclk();
+            info!("engine {} speed {} samples/sec", engine, ((sysclk as u64) * ((BLOCK_SIZE * 8) as u64) / (read_ticks as u64)));
+        }
+    });
+    */
 
     handler!(timer0 = || timer0_handler(&app));
 
