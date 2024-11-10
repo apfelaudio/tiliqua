@@ -26,21 +26,20 @@ use tiliqua_lib::generated_constants::*;
 use irq::{handler, scoped_interrupts};
 use amaranth_soc_isr::return_as_is;
 
+use embedded_alloc::LlffHeap as Heap;
 use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
-
-const BLOCK_SIZE: usize = 128;
-const FIFO_ELASTIC_SZ: usize = 384; // FIXME: fetch from `elastic_sz` in RTL.
-
-pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
-use embedded_alloc::LlffHeap as Heap;
+pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
+const BLOCK_SIZE: usize = 128;
+const FIFO_ELASTIC_SZ: usize = 384; // FIXME: fetch from `elastic_sz` in RTL.
 
-static HEAP: Heap = Heap::empty();
+// PSRAM heap for big audio buffers.
 
 const HEAP_START: usize = PSRAM_BASE + (PSRAM_SZ_BYTES / 2);
 const HEAP_SIZE: usize = 128*1024;
+static HEAP: Heap = Heap::empty();
 
 scoped_interrupts! {
     #[allow(non_camel_case_types)]
@@ -111,11 +110,8 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         app.optif.update();
 
         //
-        // Render audio
+        // Patch settings from UI
         //
-
-        let mut out = [0.0f32; BLOCK_SIZE];
-        let mut aux = [0.0f32; BLOCK_SIZE];
 
         let opts = app.optif.opts.clone();
         let mut patch = app.patch.clone();
@@ -125,6 +121,10 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         patch.harmonics = (opts.osc.harmonics.value as f32) / 256.0f32;
         patch.timbre    = (opts.osc.timbre.value as f32) / 256.0f32;
         patch.morph     = (opts.osc.morph.value as f32) / 256.0f32;
+
+        //
+        // Modulation sources from jacks
+        //
 
         let mut modulations = app.modulations.clone();
         let jack = pmod.jack().read().bits();
@@ -143,6 +143,13 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         modulations.trigger = ((pmod.sample_i1().read().bits() as i16) as f32) / 16384.0f32;
         modulations.timbre = ((pmod.sample_i2().read().bits() as i16) as f32) / 16384.0f32;
         modulations.morph = ((pmod.sample_i3().read().bits() as i16) as f32) / 16384.0f32;
+
+        //
+        // Render audio
+        //
+
+        let mut out = [0.0f32; BLOCK_SIZE];
+        let mut aux = [0.0f32; BLOCK_SIZE];
 
         let mut n_attempts = 0;
         while (audio_fifo.fifo_len().read().bits() as usize) < FIFO_ELASTIC_SZ - BLOCK_SIZE {
@@ -189,6 +196,9 @@ pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
 
 #[entry]
 fn main() -> ! {
+
+    // FIXME: doesn't seem to be needed any more?
+
     pac::cpu::vexriscv::flush_icache();
     pac::cpu::vexriscv::flush_dcache();
 
@@ -207,11 +217,15 @@ fn main() -> ! {
         framebuffer_base: PSRAM_FB_BASE as *mut u32,
     };
 
-
     let vscope  = peripherals.VECTOR_PERIPH;
     let scope  = peripherals.SCOPE_PERIPH;
 
     let mut video = Video0::new(peripherals.VIDEO_PERIPH);
+
+    //
+    // Create application object.
+    // DSP allocates some buffers from the heap (PSRAM)
+    //
 
     unsafe { HEAP.init(HEAP_START, HEAP_SIZE) }
 
@@ -219,19 +233,16 @@ fn main() -> ! {
 
     info!("heap usage {} KiB", HEAP.used()/1024);
 
-    let mut last_palette = tiliqua_lib::palette::ColorPalette::Exp;
-    write_palette(&mut video, last_palette);
-
-    scope.en().write(|w| w.enable().bit(true) );
-    vscope.en().write(|w| w.enable().bit(false) );
-
     handler!(timer0 = || timer0_handler(&app));
 
     irq::scope(|s| {
 
         s.register(Interrupt::TIMER0, timer0);
 
-        /* configure timer ISR */
+        //
+        // Set up timer ISR
+        //
+
         use core::time::Duration;
         use crate::hal::timer;
         timer.listen(timer::Event::TimeOut);
@@ -245,8 +256,28 @@ fn main() -> ! {
                 riscv::interrupt::enable();
         }
 
+        //
+        // Configure initial palette and scope settings.
+        //
+
+        let mut last_palette = tiliqua_lib::palette::ColorPalette::Exp;
+        write_palette(&mut video, last_palette);
+
+        scope.en().write(|w| w.enable().bit(true) );
+        vscope.en().write(|w| w.enable().bit(false) );
+
+
+        //
+        // Everything in this loop is best-effort (mostly UI drawing ops)
+        // Real-time work is done in the timer interrupt.
+        //
 
         loop {
+
+            //
+            // Tiny critical section, prohibit timer ISR when we want
+            // to copy out the current state of application options.
+            //
 
             let opts = critical_section::with(|cs| {
                 app.borrow_ref(cs).optif.opts.clone()
@@ -264,23 +295,25 @@ fn main() -> ! {
             video.set_persist(opts.beam.persist.value);
             video.set_decay(opts.beam.decay.value);
 
-            vscope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value+4) } );
-            vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
-            vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
-            vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
+            unsafe {
+                vscope.hue().write(|w| w.hue().bits(opts.beam.hue.value+4));
+                vscope.intensity().write(|w| w.intensity().bits(opts.beam.intensity.value));
+                vscope.xscale().write(|w| w.xscale().bits(opts.vector.xscale.value));
+                vscope.yscale().write(|w| w.yscale().bits(opts.vector.yscale.value));
 
-            scope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value+6) } );
-            scope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
+                scope.hue().write(|w| w.hue().bits(opts.beam.hue.value+6));
+                scope.intensity().write(|w| w.intensity().bits(opts.beam.intensity.value));
 
-            scope.trigger_lvl().write(|w| unsafe { w.trigger_level().bits(opts.scope.trigger_lvl.value as u16) } );
-            scope.xscale().write(|w| unsafe { w.xscale().bits(opts.scope.xscale.value) } );
-            scope.yscale().write(|w| unsafe { w.yscale().bits(opts.scope.yscale.value) } );
-            scope.timebase().write(|w| unsafe { w.timebase().bits(opts.scope.timebase.value) } );
+                scope.trigger_lvl().write(|w| w.trigger_level().bits(opts.scope.trigger_lvl.value as u16));
+                scope.xscale().write(|w| w.xscale().bits(opts.scope.xscale.value));
+                scope.yscale().write(|w| w.yscale().bits(opts.scope.yscale.value));
+                scope.timebase().write(|w| w.timebase().bits(opts.scope.timebase.value));
 
-            scope.ypos0().write(|w| unsafe { w.ypos().bits(opts.scope.ypos0.value as u16) } );
-            scope.ypos1().write(|w| unsafe { w.ypos().bits(opts.scope.ypos1.value as u16) } );
-            scope.ypos2().write(|w| unsafe { w.ypos().bits(opts.scope.ypos2.value as u16) } );
-            scope.ypos3().write(|w| unsafe { w.ypos().bits(opts.scope.ypos3.value as u16) } );
+                scope.ypos0().write(|w| w.ypos().bits(opts.scope.ypos0.value as u16));
+                scope.ypos1().write(|w| w.ypos().bits(opts.scope.ypos1.value as u16));
+                scope.ypos2().write(|w| w.ypos().bits(opts.scope.ypos2.value as u16));
+                scope.ypos3().write(|w| w.ypos().bits(opts.scope.ypos3.value as u16));
+            }
 
             scope.trigger_always().write(
                 |w| w.trigger_always().bit(opts.scope.trigger_mode.value == opts::TriggerMode::Always) );

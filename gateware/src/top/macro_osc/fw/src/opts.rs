@@ -114,7 +114,7 @@ impl Options {
                     value: 0,
                     step: 1,
                     min: 0,
-                    max: 24,
+                    max: 23,
                 },
                 note: NumOption{
                     name: String::from_str("note").unwrap(),
