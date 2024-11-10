@@ -27,7 +27,7 @@ use log::*;
 
 scoped_interrupts! {
     #[allow(non_camel_case_types)]
-    enum Interrupt {
+    pub enum Interrupt {
         TIMER0,
     }
     use #[return_as_is];

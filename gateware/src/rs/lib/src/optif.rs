@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! impl_optif {
     ($(
-        $OPTIF: ident, $OPTIONS:ty, $OPTIONS_NEW:expr,
+        $OPTIF: ident, $OPTIONS:ty,
         $ENCODER:ty, $PCA9635:ty, $PMOD: ty
     )+) => {
         $(
@@ -18,10 +18,10 @@ macro_rules! impl_optif {
             }
 
             impl $OPTIF {
-                pub fn new(period_ms: u32, encoder: $ENCODER,
+                pub fn new(opts: $OPTIONS, period_ms: u32, encoder: $ENCODER,
                            pca9635: $PCA9635, pmod: $PMOD) -> Self {
                     Self {
-                        opts: $OPTIONS_NEW,
+                        opts,
                         encoder,
                         pca9635,
                         pmod,
