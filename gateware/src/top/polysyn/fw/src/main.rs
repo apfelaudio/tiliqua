@@ -54,6 +54,10 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
 
         app.optif.update();
 
+        if app.synth.midi_read() != 0 {
+            app.optif.midi_activity()
+        }
+
         //
         // Update synthesizer
         //
@@ -83,6 +87,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
 
         // Touch controller logic (sends MIDI to internal polysynth)
         if opts.poly.interface.value == TouchControl::On {
+            app.optif.touch_led_mask(0b00111111);
             let touch = app.optif.pmod.touch();
             let jack = app.optif.pmod.jack();
             let msgs = app.touch_controller.update(&touch, jack);
@@ -99,6 +104,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
                 }
             }
         }
+
     });
 }
 
@@ -156,7 +162,7 @@ fn main() -> ! {
     };
     crate::handlers::logger_init(serial);
 
-    info!("Hello from Tiliqua POLY!");
+    info!("Hello from Tiliqua POLYSYN!");
 
     let opts = opts::Options::new();
     let mut last_palette = opts.beam.palette.value.clone();
@@ -203,7 +209,8 @@ fn main() -> ! {
             }
 
             if opts.draw {
-                draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2, opts.beam.hue.value).ok();
+                draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2,
+                                   opts.beam.hue.value).ok();
             }
 
             video.set_persist(opts.beam.persist.value);
@@ -223,14 +230,6 @@ fn main() -> ! {
                                  ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as u32 - 15,
                                  notes[ix], cutoffs[ix], opts.beam.hue.value).ok();
             }
-
-            /* TODO
-            if synth.midi_read() != 0 {
-                leds::mobo_pca9635_set_midi(&mut pca9635.leds, 0xff, 0xff);
-            } else {
-                leds::mobo_pca9635_set_midi(&mut pca9635.leds, 0x0, 0x0);
-            }
-            */
 
             first = false;
         }
