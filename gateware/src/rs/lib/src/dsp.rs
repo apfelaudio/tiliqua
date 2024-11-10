@@ -10,8 +10,6 @@ pub struct OnePoleSmoother {
     y_k1: Fix,
 }
 
-// TODO move OnePoleSmoother into dedicated library
-
 impl OnePoleSmoother {
     pub fn new(alpha: f32) -> Self {
         OnePoleSmoother {
