@@ -32,11 +32,11 @@ use embedded_graphics::{
 use opts::Options;
 use hal::pca9635::Pca9635Driver;
 
-impl_optif!(OptInterface,
-            Options,
-            Encoder0,
-            Pca9635Driver<I2c0>,
-            EurorackPmod0);
+impl_ui!(UI,
+         Options,
+         Encoder0,
+         Pca9635Driver<I2c0>,
+         EurorackPmod0);
 
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
@@ -52,17 +52,17 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         // Update UI and options
         //
 
-        app.optif.update();
+        app.ui.update();
 
         if app.synth.midi_read() != 0 {
-            app.optif.midi_activity()
+            app.ui.midi_activity()
         }
 
         //
         // Update synthesizer
         //
 
-        let opts = app.optif.opts.clone();
+        let opts = app.ui.opts.clone();
 
         let drive_smooth = app.drive_smoother.proc_u16(opts.poly.drive.value);
         app.synth.set_drive(drive_smooth);
@@ -87,9 +87,9 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
 
         // Touch controller logic (sends MIDI to internal polysynth)
         if opts.poly.interface.value == TouchControl::On {
-            app.optif.touch_led_mask(0b00111111);
-            let touch = app.optif.pmod.touch();
-            let jack = app.optif.pmod.jack();
+            app.ui.touch_led_mask(0b00111111);
+            let touch = app.ui.pmod.touch();
+            let jack = app.ui.pmod.jack();
             let msgs = app.touch_controller.update(&touch, jack);
             for msg in msgs {
                 if msg != MidiMessage::Stop {
@@ -118,7 +118,7 @@ pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
 }
 
 struct App {
-    optif: OptInterface,
+    ui: UI,
     synth: Polysynth0,
     drive_smoother: OnePoleSmoother,
     reso_smoother: OnePoleSmoother,
@@ -139,8 +139,8 @@ impl App {
         let diffusion_smoother = OnePoleSmoother::new(0.05f32);
         let touch_controller = MidiTouchController::new();
         Self {
-            optif: OptInterface::new(opts, TIMER0_ISR_PERIOD_MS,
-                                     encoder, pca9635, pmod),
+            ui: UI::new(opts, TIMER0_ISR_PERIOD_MS,
+                        encoder, pca9635, pmod),
             synth,
             drive_smoother,
             reso_smoother,
@@ -198,7 +198,7 @@ fn main() -> ! {
 
             let (opts, notes, cutoffs) = critical_section::with(|cs| {
                 let app = app.borrow_ref(cs);
-                (app.optif.opts.clone(),
+                (app.ui.opts.clone(),
                  app.synth.voice_notes().clone(),
                  app.synth.voice_cutoffs().clone())
             });

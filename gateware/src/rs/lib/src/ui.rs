@@ -1,11 +1,11 @@
 #[macro_export]
-macro_rules! impl_optif {
+macro_rules! impl_ui {
     ($(
-        $OPTIF: ident, $OPTIONS:ty,
+        $UI: ident, $OPTIONS:ty,
         $ENCODER:ty, $PCA9635:ty, $PMOD: ty
     )+) => {
         $(
-            pub struct $OPTIF {
+            pub struct $UI {
                 pub opts: $OPTIONS,
                 encoder: $ENCODER,
                 pca9635: $PCA9635,
@@ -19,7 +19,7 @@ macro_rules! impl_optif {
                 touch_led_mask: u8,
             }
 
-            impl $OPTIF {
+            impl $UI {
                 pub fn new(opts: $OPTIONS, period_ms: u32, encoder: $ENCODER,
                            pca9635: $PCA9635, pmod: $PMOD) -> Self {
                     Self {

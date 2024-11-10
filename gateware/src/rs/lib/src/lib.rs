@@ -7,6 +7,6 @@ pub mod generated_constants;
 pub mod palette;
 pub mod leds;
 pub mod logo_coords;
-pub mod optif;
+pub mod ui;
 pub mod dsp;
 pub mod midi;

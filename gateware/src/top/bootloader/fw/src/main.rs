@@ -25,11 +25,11 @@ use embedded_graphics::{
 use opts::Options;
 use hal::pca9635::Pca9635Driver;
 
-impl_optif!(OptInterface,
-            Options,
-            Encoder0,
-            Pca9635Driver<I2c0>,
-            EurorackPmod0);
+impl_ui!(UI,
+         Options,
+         Encoder0,
+         Pca9635Driver<I2c0>,
+         EurorackPmod0);
 
 hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE,
                        VIDEO_ROTATE_90);
@@ -37,7 +37,7 @@ hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE,
 pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
 
 struct App {
-    optif: OptInterface,
+    ui: UI,
 }
 
 impl App {
@@ -48,8 +48,8 @@ impl App {
         let pca9635 = Pca9635Driver::new(i2cdev);
         let pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
         Self {
-            optif: OptInterface::new(opts, TIMER0_ISR_PERIOD_MS,
-                                     encoder, pca9635, pmod),
+            ui: UI::new(opts, TIMER0_ISR_PERIOD_MS,
+                        encoder, pca9635, pmod),
         }
     }
 }
@@ -78,7 +78,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         // Update UI and options
         //
 
-        app.optif.update();
+        app.ui.update();
 
     });
 }
@@ -140,7 +140,7 @@ fn main() -> ! {
         loop {
 
             let opts = critical_section::with(|cs| {
-                app.borrow_ref(cs).optif.opts.clone()
+                app.borrow_ref(cs).ui.opts.clone()
             });
 
             draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, 0).ok();
