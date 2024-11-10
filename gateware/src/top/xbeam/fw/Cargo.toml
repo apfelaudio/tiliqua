@@ -20,6 +20,9 @@ heapless = "0.8.0"
 strum_macros = "0.26.4"
 strum = {version = "0.25.0", features = ["derive"], default-features=false}
 colorsys = { version = "*", default-features = false }
+critical-section = "1.2.0"
+amaranth-soc-isr = { path="../../../rs/isr", default-features = false }
+irq = "0.2.3"
 
 [profile.release]
 codegen-units = 1
