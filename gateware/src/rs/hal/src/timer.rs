@@ -123,6 +123,19 @@ macro_rules! impl_timer {
                         self.registers.ev_pending().write(|w| w.mask().bits(pending));
                     }
                 }
+
+                pub fn enable_tick_isr(&mut self, period_ms: u32, isr: pac::Interrupt) {
+                    use core::time::Duration;
+                    use tiliqua_hal::timer::Event;
+                    self.listen(Event::TimeOut);
+                    self.set_timeout(Duration::from_millis(period_ms.into()));
+                    self.enable();
+                    unsafe {
+                            pac::csr::interrupt::enable(isr);
+                            riscv::register::mie::set_mext();
+                            riscv::interrupt::enable();
+                    }
+                }
             }
 
             // trait: hal::delay::DelayNs

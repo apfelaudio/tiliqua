@@ -113,22 +113,8 @@ fn main() -> ! {
 
         s.register(handlers::Interrupt::TIMER0, timer0);
 
-        //
-        // Set up timer ISR
-        //
-
-        use core::time::Duration;
-        use crate::hal::timer;
-        timer.listen(timer::Event::TimeOut);
-        timer.set_timeout(Duration::from_millis(TIMER0_ISR_PERIOD_MS.into()));
-        timer.enable();
-        unsafe {
-                pac::csr::interrupt::enable(pac::Interrupt::TIMER0);
-                riscv::register::mie::set_mext();
-                // WARN: Don't do this before IRQs are registered for this scope,
-                // otherwise you'll hang forever :)
-                riscv::interrupt::enable();
-        }
+        timer.enable_tick_isr(TIMER0_ISR_PERIOD_MS,
+                              pac::Interrupt::TIMER0);
 
         let mut logo_coord_ix = 0u32;
         let mut rng = fastrand::Rng::with_seed(0);
