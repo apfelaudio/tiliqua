@@ -9,7 +9,7 @@ macro_rules! impl_optif {
                 pub opts: $OPTIONS,
                 encoder: $ENCODER,
                 pca9635: $PCA9635,
-                pmod: $PMOD,
+                pub pmod: $PMOD,
                 uptime_ms: u32,
                 time_since_encoder_touched: u32,
                 toggle_leds: bool,

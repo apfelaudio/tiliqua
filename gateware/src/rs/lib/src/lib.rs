@@ -8,3 +8,5 @@ pub mod palette;
 pub mod leds;
 pub mod logo_coords;
 pub mod optif;
+pub mod dsp;
+pub mod midi;

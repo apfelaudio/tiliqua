@@ -22,6 +22,9 @@ strum = {version = "0.25.0", features = ["derive"], default-features=false}
 fixed = "1.28.0"
 midi-types = "0.1.7"
 midi-convert = "0.2.0"
+critical-section = "1.2.0"
+amaranth-soc-isr = { path="../../../rs/isr", default-features = false }
+irq = "0.2.3"
 
 [profile.release]
 codegen-units = 1

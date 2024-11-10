@@ -411,4 +411,5 @@ class PolySoc(TiliquaSoc):
 
 if __name__ == "__main__":
     this_path = os.path.dirname(os.path.realpath(__file__))
-    top_level_cli(PolySoc, path=this_path)
+    top_level_cli(PolySoc, path=this_path,
+                  argparse_fragment=lambda _: {"mainram_size": 0x10000})

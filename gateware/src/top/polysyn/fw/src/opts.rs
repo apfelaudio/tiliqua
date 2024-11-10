@@ -65,6 +65,7 @@ impl_option_view!(BeamOptions,
 #[derive(Clone)]
 pub struct Options {
     pub modify: bool,
+    pub draw: bool,
     pub screen: EnumOption<Screen>,
 
     pub poly:   PolyOptions,
@@ -81,6 +82,7 @@ impl Options {
     pub fn new() -> Options {
         Options {
             modify: false,
+            draw: true,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
                 value: Screen::Poly,
