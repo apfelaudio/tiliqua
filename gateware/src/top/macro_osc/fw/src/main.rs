@@ -57,7 +57,7 @@ scoped_interrupts! {
 
 struct App<'a> {
     voice: Box<Voice<'a>>,
-    patch: Box<Patch>,
+    patch: Patch,
     modulations: Modulations,
     optif: optif::OptInterface,
 }
@@ -65,7 +65,7 @@ struct App<'a> {
 impl<'a> App<'a> {
     pub fn new() -> Self {
         let mut voice = Box::new(Voice::new(&HEAP, BLOCK_SIZE));
-        let mut patch = Box::new(Patch::default());
+        let mut patch = Patch::default();
 
         patch.engine = 0;
         patch.harmonics = 0.5;
@@ -99,7 +99,7 @@ pub fn f32_to_i32(f: u32) -> i32 {
     }
 }
 
-fn timer0_handler(app: &Mutex<RefCell<Box<App>>>) {
+fn timer0_handler(app: &Mutex<RefCell<App>>) {
 
     let peripherals = unsafe { pac::Peripherals::steal() };
     let audio_fifo = peripherals.AUDIO_FIFO;
@@ -235,7 +235,7 @@ fn main() -> ! {
 
     unsafe { HEAP.init(HEAP_START, HEAP_SIZE) }
 
-    let app = Box::new(App::new());
+    let app = App::new();
     let app = Mutex::new(RefCell::new(app));
 
     info!("heap usage {} KiB", HEAP.used()/1024);
