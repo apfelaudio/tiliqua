@@ -7,12 +7,12 @@
 // maybe a macro would work?
 //
 // The difficulty here is that this module depends on
-// Serial0, which is only instantiated in the firmware
+// Serial0/Timer0, which is only instantiated in the firmware
 // images themselves, so it's not so trivial to put these
 // in a reuseable library.
 
 use crate::{hal, pac};
-use crate::Serial0;
+use crate::{Serial0, Timer0};
 
 use core::panic::PanicInfo;
 use core::cell::RefCell;
@@ -20,7 +20,18 @@ use core::fmt::Write;
 
 use tiliqua_lib::logger::WriteLogger;
 
+use irq::{handler, scoped_interrupts};
+use amaranth_soc_isr::return_as_is;
+
 use log::*;
+
+scoped_interrupts! {
+    #[allow(non_camel_case_types)]
+    enum Interrupt {
+        TIMER0,
+    }
+    use #[return_as_is];
+}
 
 static LOGGER: WriteLogger<Serial0> = WriteLogger {
     writer: RefCell::new(None),
@@ -58,7 +69,12 @@ fn exception_handler(trap_frame: &riscv_rt::TrapFrame) -> ! {
 }
 
 #[export_name = "DefaultHandler"]
-fn default_isr_handler() -> ! {
-    error!("default_isr_handler()");
-    loop {}
+fn default_isr_handler() {
+    let peripherals = unsafe { pac::Peripherals::steal() };
+    let sysclk = pac::clock::sysclk();
+    let timer = Timer0::new(peripherals.TIMER0, sysclk);
+    if timer.is_pending() {
+        unsafe { TIMER0(); }
+        timer.clear_pending();
+    }
 }
