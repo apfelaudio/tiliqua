@@ -82,6 +82,7 @@ impl_option_view!(ScopeOptions,
 #[derive(Clone)]
 pub struct Options {
     pub modify: bool,
+    pub draw:   bool,
     pub screen: EnumOption<Screen>,
 
     pub osc:    OscOptions,
@@ -101,9 +102,10 @@ impl Options {
     pub fn new() -> Options {
         Options {
             modify: false,
+            draw:   true,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
-                value: Screen::Scope,
+                value: Screen::Osc,
             },
             osc: OscOptions {
                 selected: None,
@@ -116,7 +118,7 @@ impl Options {
                 },
                 note: NumOption{
                     name: String::from_str("note").unwrap(),
-                    value: 48,
+                    value: 60,
                     step: 1,
                     min: 0,
                     max: 128,
@@ -164,7 +166,7 @@ impl Options {
                 selected: None,
                 persist: NumOption{
                     name: String::from_str("persist").unwrap(),
-                    value: 1024,
+                    value: 2048,
                     step: 256,
                     min: 512,
                     max: 32768,
@@ -217,14 +219,14 @@ impl Options {
                 },
                 ypos0: NumOption{
                     name: String::from_str("ypos0").unwrap(),
-                    value: -250,
+                    value: -200,
                     step: 25,
                     min: -500,
                     max: 500,
                 },
                 ypos1: NumOption{
                     name: String::from_str("ypos1").unwrap(),
-                    value: 250,
+                    value: 200,
                     step: 25,
                     min: -500,
                     max: 500,
@@ -245,7 +247,7 @@ impl Options {
                 },
                 yscale: NumOption{
                     name: String::from_str("yscale").unwrap(),
-                    value: 6,
+                    value: 7,
                     step: 1,
                     min: 0,
                     max: 15,

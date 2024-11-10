@@ -165,13 +165,24 @@ class MacroOscSoc(TiliquaSoc):
 
         self.scope_periph.source = astream.istream
 
-        with m.If(self.scope_periph.soc_en):
-            wiring.connect(m, astream.istream, self.scope_periph.i)
-        with m.Else():
-            wiring.connect(m, astream.istream, self.vector_periph.i)
-
-
         wiring.connect(m, self.audio_fifo.stream, astream.ostream)
+
+        # Extra FIFO between audio out stream and plotting components
+        # This FIFO does not block the audio stream.
+
+        m.submodules.plot_fifo = plot_fifo = fifo.SyncFIFOBuffered(
+            width=data.ArrayLayout(ASQ, 4).as_shape().width, depth=16)
+
+        m.d.comb += [
+            plot_fifo.w_stream.valid.eq(self.audio_fifo.stream.valid & astream.ostream.ready),
+            plot_fifo.w_stream.payload[0:16] .eq(self.audio_fifo.stream.payload[2]),
+            plot_fifo.w_stream.payload[16:32].eq(self.audio_fifo.stream.payload[3]),
+        ]
+
+        with m.If(self.scope_periph.soc_en):
+            wiring.connect(m, plot_fifo.r_stream, self.scope_periph.i)
+        with m.Else():
+            wiring.connect(m, plot_fifo.r_stream, self.vector_periph.i)
 
         # Memory controller hangs if we start making requests to it straight away.
         with m.If(self.permit_bus_traffic):

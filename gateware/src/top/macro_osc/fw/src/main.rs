@@ -241,6 +241,9 @@ fn main() -> ! {
     let mut last_palette = tiliqua_lib::palette::ColorPalette::Exp;
     write_palette(&mut video, last_palette);
 
+    scope.en().write(|w| w.enable().bit(true) );
+    vscope.en().write(|w| w.enable().bit(false) );
+
     handler!(timer0 = || timer0_handler(&app));
 
     irq::scope(|s| {
@@ -273,17 +276,19 @@ fn main() -> ! {
                 last_palette = opts.beam.palette.value;
             }
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, opts.beam.hue.value).ok();
+            if opts.draw {
+                draw::draw_options(&mut display, &opts, H_ACTIVE-175, V_ACTIVE/2-50, opts.beam.hue.value).ok();
+            }
 
             video.set_persist(opts.beam.persist.value);
             video.set_decay(opts.beam.decay.value);
 
-            vscope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
+            vscope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value+4) } );
             vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
             vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
             vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
 
-            scope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
+            scope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value+6) } );
             scope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
 
             scope.trigger_lvl().write(|w| unsafe { w.trigger_level().bits(opts.scope.trigger_lvl.value as u16) } );
@@ -302,7 +307,9 @@ fn main() -> ! {
             if opts.screen.value == opts::Screen::Vector {
                 scope.en().write(|w| w.enable().bit(false) );
                 vscope.en().write(|w| w.enable().bit(true) );
-            } else {
+            }
+
+            if opts.screen.value == opts::Screen::Scope {
                 scope.en().write(|w| w.enable().bit(true) );
                 vscope.en().write(|w| w.enable().bit(false) );
             }
