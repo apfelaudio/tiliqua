@@ -55,11 +55,21 @@ scoped_interrupts! {
     use #[return_as_is];
 }
 
+use opts::Options;
+use hal::pca9635::*;
+
+impl_optif!(OptInterface,
+            Options,
+            Options::new(),
+            Encoder0,
+            Pca9635Driver<I2c0>,
+            EurorackPmod0);
+
 struct App<'a> {
     voice: Box<Voice<'a>>,
     patch: Patch,
     modulations: Modulations,
-    optif: optif::OptInterface,
+    optif: OptInterface,
 }
 
 impl<'a> App<'a> {
@@ -75,11 +85,18 @@ impl<'a> App<'a> {
         patch.morph_modulation_amount  = 0.5;
         voice.init();
 
+        let peripherals = unsafe { pac::Peripherals::steal() };
+        let encoder = Encoder0::new(peripherals.ENCODER0);
+        let i2cdev = I2c0::new(peripherals.I2C0);
+        let pca9635 = Pca9635Driver::new(i2cdev);
+        let pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);
+
         Self {
             voice,
             patch,
             modulations: Modulations::default(),
-            optif: optif::OptInterface::new(TIMER0_ISR_PERIOD_MS),
+            optif: OptInterface::new(TIMER0_ISR_PERIOD_MS, encoder,
+                                     pca9635, pmod),
         }
     }
 }
