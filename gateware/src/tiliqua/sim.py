@@ -156,7 +156,7 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
         firmware_cflags = [
            "-CFLAGS", f"-DFIRMWARE_BIN_PATH=\\\"{fragment.firmware_bin_path}\\\"",
         ]
-        if hasattr(fragment, "spiflash_fw_base"):
+        if fragment.spiflash_fw_base is not None:
             firmware_cflags += [
                 "-CFLAGS", f"-DSPIFLASH_FW_OFFSET={hex(fragment.spiflash_fw_offset)}",
             ]

@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     char *spiflash_data = (char*)malloc(spiflash_size_bytes);
     memset(spiflash_data, 0, spiflash_size_bytes);
 
-#ifdef FIRMWARE_BIN_PATH
+#ifdef SPIFLASH_FW_OFFSET
     std::ifstream fin(FIRMWARE_BIN_PATH, std::ios::in | std::ios::binary);
     fin.read(spiflash_data + SPIFLASH_FW_OFFSET, spiflash_size_bytes);
 #endif
