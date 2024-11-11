@@ -19,9 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm usb_audio build
@@ -36,9 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm usb_host build --midi-device arturia-keylab49-mkii
@@ -53,9 +49,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm dsp build --dsp-core nco
@@ -70,9 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm dsp build --dsp-core psram_diffuser
@@ -87,9 +79,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm dsp sim --dsp-core nco
@@ -100,9 +90,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm dsp build --dsp-core midicv
@@ -117,18 +105,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - uses: actions-rs/toolchain@v1
         with:
             toolchain: stable
             override: True
             components: rustfmt, clippy, llvm-tools
-            target: riscv32imac-unknown-none-elf
+            target: riscv32im-unknown-none-elf
       - run: cargo install cargo-binutils form
       # https://github.com/rust-embedded/svd2rust/issues/863
       - run: cargo install svd2rust --locked
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm xbeam build
@@ -143,17 +129,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - uses: actions-rs/toolchain@v1
         with:
             toolchain: stable
             override: True
             components: rustfmt, clippy, llvm-tools
-            target: riscv32imac-unknown-none-elf
+            target: riscv32im-unknown-none-elf
       - run: cargo install cargo-binutils form
       - run: cargo install svd2rust --locked
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm selftest build
@@ -169,17 +153,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - uses: actions-rs/toolchain@v1
         with:
             toolchain: stable
             override: True
             components: rustfmt, clippy, llvm-tools
-            target: riscv32imac-unknown-none-elf
+            target: riscv32im-unknown-none-elf
       - run: cargo install cargo-binutils form
       - run: cargo install svd2rust --locked
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm polysyn build
@@ -194,9 +176,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm vectorscope_no_soc build
@@ -211,17 +191,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - uses: actions-rs/toolchain@v1
         with:
             toolchain: stable
             override: True
             components: rustfmt, clippy, llvm-tools
-            target: riscv32imac-unknown-none-elf
+            target: riscv32im-unknown-none-elf
       - run: cargo install cargo-binutils form
       - run: cargo install svd2rust --locked
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm bootloader build
@@ -237,9 +215,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
-      - uses: YosysHQ/setup-oss-cad-suite@v3
       - run: git submodule update --init --recursive
-      - run: yosys --version
       - run: |
           pdm install
           pdm bootstub build --bootaddr 0x100000
