@@ -64,6 +64,8 @@ def top_level_cli(
                             help="SoC designs: stop after rust PAC generation")
         parser.add_argument('--fw-only', action='store_true',
                             help="SoC designs: stop after rust FW compilation")
+        parser.add_argument('--fw-spiflash-offset', type=str, default="0xc0000",
+                            help="SoC designs: firmware must be flashed at this address.")
 
     parser.add_argument('--sc3', action='store_true',
                         help="platform override: Tiliqua R2 with a SoldierCrab R3")
@@ -110,6 +112,8 @@ def top_level_cli(
         rust_fw_bin  = "firmware.bin"
         rust_fw_root = os.path.join(path, "fw")
         kwargs["firmware_bin_path"] = os.path.join(rust_fw_root, rust_fw_bin)
+        if args.fw_spiflash_offset is not None:
+            kwargs["spiflash_fw_offset"] = int(args.fw_spiflash_offset, 16)
 
     if argparse_fragment:
         kwargs = kwargs | argparse_fragment(args)
@@ -203,5 +207,11 @@ def top_level_cli(
             print(f"{AsyncSerialILAFrontend.__name__} listen on {args.ila_port} - destination {vcd_dst} ...")
             frontend = AsyncSerialILAFrontend(args.ila_port, baudrate=115200, ila=fragment.ila)
             frontend.emit_vcd(vcd_dst)
+
+        if args.fw_spiflash_offset is not None:
+            print(f"WARN: this bitstream expects firmware at {args.fw_spiflash_offset}.")
+            print(f"In addition to flashing the bitstream, flash firmware using a command like:")
+            fw_path = kwargs["firmware_bin_path"]
+            print(f"\t$ sudo openFPGALoader -c dirtyJtag -f -o {args.fw_spiflash_offset} --file-type raw {fw_path}")
 
     return fragment

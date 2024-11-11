@@ -137,9 +137,11 @@ class VideoPeripheral(wiring.Component):
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_bin_path, dvi_timings, audio_192=False,
                  audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
-                 video_rotate_90=False, mainram_size=0x8000):
+                 video_rotate_90=False, mainram_size=0x2000, spiflash_fw_offset=None):
 
         super().__init__({})
+
+        self.sim_fs_strobe = Signal()
 
         self.firmware_bin_path = firmware_bin_path
         self.touch = touch
@@ -151,10 +153,10 @@ class TiliquaSoc(Component):
 
         self.mainram_base         = 0x00000000
         self.mainram_size         = mainram_size
-        self.spiflash_base        = 0xB0000000
+        self.spiflash_base        = 0x10000000
         self.spiflash_size        = 0x01000000 # 128Mbit / 16MiB
         self.psram_base           = 0x20000000
-        self.psram_size           = 0x02000000 # 256Mbit / 32MiB
+        self.psram_size           = 0x01000000 # 128Mbit / 16MiB
         self.csr_base             = 0xf0000000
         # offsets from csr_base
         self.spiflash_ctrl_base   = 0x00000100
@@ -168,10 +170,21 @@ class TiliquaSoc(Component):
         self.dtr0_base            = 0x00000800
         self.video_periph_base    = 0x00000900
 
+        # Some settings depend on whether code is in block RAM or SPI flash
+        if spiflash_fw_offset is None:
+            self.reset_addr           = self.mainram_base
+            self.spiflash_fw_base     = None
+        else:
+            self.spiflash_fw_size     = 0x40000 # 256KiB
+            # CLI provides the offset (indexed from 0 on the spiflash), however
+            # on the Vex it is memory mapped from self.spiflash_base onward.
+            self.spiflash_fw_offset   = spiflash_fw_offset
+            self.spiflash_fw_base     = self.spiflash_base + spiflash_fw_offset
+            self.reset_addr           = self.spiflash_fw_base
+
         # cpu
         self.cpu = VexRiscv(
-            variant="cynthion",
-            reset_addr=self.mainram_base
+            reset_addr=self.reset_addr
         )
 
         # interrupt controller
@@ -278,8 +291,9 @@ class TiliquaSoc(Component):
 
         m = Module()
 
-        self.mainram.init = readbin.get_mem_data(self.firmware_bin_path, data_width=32, endianness="little")
-        assert self.mainram.init
+        # TODO: FIXME: spiflash hard-written!
+        #self.mainram.init = readbin.get_mem_data(self.firmware_bin_path, data_width=32, endianness="little")
+        #assert self.mainram.init
 
         # bus
         m.submodules.wb_arbiter = self.wb_arbiter
@@ -371,6 +385,7 @@ class TiliquaSoc(Component):
         else:
             m.submodules.car = sim.FakeTiliquaDomainGenerator()
             self.pmod0_periph.pmod = sim.FakeEurorackPmod()
+            m.d.comb += self.pmod0_periph.pmod.fs_strobe.eq(self.sim_fs_strobe)
 
         # wishbone csr bridge
         m.submodules.wb_to_csr = self.wb_to_csr
@@ -397,21 +412,44 @@ class TiliquaSoc(Component):
 
     def genmem(self, dst_mem):
         """Generate linker regions for Rust (memory.x)."""
-        memory_x = (
-            "MEMORY {{\n"
-            "    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}\n"
-            "}}\n"
-            "REGION_ALIAS(\"REGION_TEXT\", mainram);\n"
-            "REGION_ALIAS(\"REGION_RODATA\", mainram);\n"
-            "REGION_ALIAS(\"REGION_DATA\", mainram);\n"
-            "REGION_ALIAS(\"REGION_BSS\", mainram);\n"
-            "REGION_ALIAS(\"REGION_HEAP\", mainram);\n"
-            "REGION_ALIAS(\"REGION_STACK\", mainram);\n"
-        )
         print("Generating (rust) memory.x ...", dst_mem)
-        with open(dst_mem, "w") as f:
-            f.write(memory_x.format(mainram_base=hex(self.mainram_base),
-                                    mainram_size=hex(self.mainram.size)))
+        if self.spiflash_fw_base is None:
+            # .text is in block RAM
+            memory_x = (
+                "MEMORY {{\n"
+                "    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}\n"
+                "}}\n"
+                "REGION_ALIAS(\"REGION_TEXT\", mainram);\n"
+                "REGION_ALIAS(\"REGION_RODATA\", mainram);\n"
+                "REGION_ALIAS(\"REGION_DATA\", mainram);\n"
+                "REGION_ALIAS(\"REGION_BSS\", mainram);\n"
+                "REGION_ALIAS(\"REGION_HEAP\", mainram);\n"
+                "REGION_ALIAS(\"REGION_STACK\", mainram);\n"
+            )
+            with open(dst_mem, "w") as f:
+                f.write(memory_x.format(mainram_base=hex(self.mainram_base),
+                                        mainram_size=hex(self.mainram.size),
+                                        ))
+        else:
+            # .text is in SPI flash
+            memory_x = (
+                "MEMORY {{\n"
+                "    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}\n"
+                "    spiflash : ORIGIN = {spiflash_base}, LENGTH = {spiflash_size}\n"
+                "}}\n"
+                "REGION_ALIAS(\"REGION_TEXT\", spiflash);\n"
+                "REGION_ALIAS(\"REGION_RODATA\", spiflash);\n"
+                "REGION_ALIAS(\"REGION_DATA\", mainram);\n"
+                "REGION_ALIAS(\"REGION_BSS\", mainram);\n"
+                "REGION_ALIAS(\"REGION_HEAP\", mainram);\n"
+                "REGION_ALIAS(\"REGION_STACK\", mainram);\n"
+            )
+            with open(dst_mem, "w") as f:
+                f.write(memory_x.format(mainram_base=hex(self.mainram_base),
+                                        mainram_size=hex(self.mainram.size),
+                                        spiflash_base=hex(self.spiflash_fw_base),
+                                        spiflash_size=hex(self.spiflash_fw_size),
+                                        ))
 
     def genconst(self, dst):
         """Generate some high-level constants used by application code."""

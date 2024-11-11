@@ -13,6 +13,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#include <fstream>
+
 int main(int argc, char** argv) {
     VerilatedContext* contextp = new VerilatedContext;
     contextp->commandArgs(argc, argv);
@@ -25,17 +27,20 @@ int main(int argc, char** argv) {
     tfp->open("simx.fst");
 #endif
 
-    uint64_t sim_time =  500e9;
+    uint64_t sim_time =  5000e9;
 
     uint64_t ns_in_s = 1e9;
     uint64_t ns_in_sync_cycle   = ns_in_s /  SYNC_CLK_HZ;
     uint64_t  ns_in_dvi_cycle   = ns_in_s /   DVI_CLK_HZ;
+    uint64_t  ns_in_audio_cycle = ns_in_s / AUDIO_CLK_HZ;
     printf("sync domain is: %i KHz (%i ns/cycle)\n",  SYNC_CLK_HZ/1000,  ns_in_sync_cycle);
     printf("pixel clock is: %i KHz (%i ns/cycle)\n",   DVI_CLK_HZ/1000,   ns_in_dvi_cycle);
+    printf("audio clock is: %i KHz (%i ns/cycle)\n", AUDIO_CLK_HZ/1000, ns_in_audio_cycle);
 
     contextp->timeInc(1);
     top->rst_sync = 1;
     top->rst_dvi  = 1;
+    top->rst_audio = 1;
     top->eval();
 
 #if VM_TRACE_FST == 1
@@ -45,13 +50,25 @@ int main(int argc, char** argv) {
     contextp->timeInc(1);
     top->rst_sync = 0;
     top->rst_dvi = 0;
+    top->rst_audio = 0;
     top->eval();
 
 #if VM_TRACE_FST == 1
     tfp->dump(contextp->time());
 #endif
 
-    uint32_t psram_size_bytes = 1024*1024*16;
+
+    uint32_t spiflash_size_bytes = 1024*1024*32;
+    uint32_t spiflash_offset = 0x00100000; // fw base
+    char *spiflash_data = (char*)malloc(spiflash_size_bytes);
+    memset(spiflash_data, 0, spiflash_size_bytes);
+
+#ifdef FIRMWARE_BIN_PATH
+    std::ifstream fin(FIRMWARE_BIN_PATH, std::ios::in | std::ios::binary);
+    fin.read(spiflash_data + SPIFLASH_FW_OFFSET, spiflash_size_bytes);
+#endif
+
+    uint32_t psram_size_bytes = 1024*1024*32;
     uint8_t *psram_data = (uint8_t*)malloc(psram_size_bytes);
     memset(psram_data, 0, psram_size_bytes);
 
@@ -61,9 +78,14 @@ int main(int argc, char** argv) {
 
     uint32_t frames = 0;
 
+    uint32_t mod_pmod;
+    uint32_t pmod_clocks = 0;
+
     while (contextp->time() < sim_time && !contextp->gotFinish()) {
 
         uint64_t timestamp_ns = contextp->time() / 1000;
+
+        top->spiflash_data = ((uint32_t*)spiflash_data)[top->spiflash_addr];
 
         // DVI clock domain (PHY output simulation to bitmap image)
         if (timestamp_ns % (ns_in_dvi_cycle/2) == 0) {
@@ -113,6 +135,30 @@ int main(int argc, char** argv) {
                 if (top->uart0_w_stb) {
                     putchar(top->uart0_w_data);
                 }
+            }
+        }
+
+        // Audio clock domain (Audio stimulation)
+        if (timestamp_ns % (ns_in_audio_cycle/2) == 0) {
+            top->clk_audio = !top->clk_audio;
+            if (top->clk_audio) {
+                // 256x I2S clock divider
+                if (mod_pmod % 256 == 0) {
+                    ++pmod_clocks;
+                    top->fs_strobe = 1;
+                    /*
+                    // audio signals
+                    top->fs_inject0 = (int16_t)20000.0*sin((float)pmod_clocks / 6000.0);
+                    top->fs_inject1 = (int16_t)20000.0*cos((float)pmod_clocks /  300.0);
+                    // color
+                    top->fs_inject3 = (int16_t)20000.0*cos((float)pmod_clocks /  600.0);
+                    */
+                } else {
+                    if (top->fs_strobe) {
+                        top->fs_strobe = 0;
+                    }
+                }
+                mod_pmod += 1;
             }
         }
 
