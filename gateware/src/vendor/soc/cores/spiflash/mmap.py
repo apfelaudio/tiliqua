@@ -17,6 +17,8 @@ from amaranth_soc.memory                import MemoryMap
 from .port                              import SPIControlPort
 from .utils                             import WaitTimer
 
+from tiliqua.sim                        import is_hw
+
 
 class SPIFlashMemoryMap(wiring.Component):
     """Wishbone Memory-mapped SPI Flash controller.
@@ -45,6 +47,9 @@ class SPIFlashMemoryMap(wiring.Component):
         wb_data_width  = data_width
         mm_addr_width  = log2_int(self._size)
         mm_data_width  = granularity
+
+        self.simif_addr = Signal(32)
+        self.simif_data = Signal(32)
 
         # self.bus = wishbone.Interface(
         #     addr_width=wb_addr_width,
@@ -96,6 +101,10 @@ class SPIFlashMemoryMap(wiring.Component):
         burst_timeout = WaitTimer(self.MMAP_DEFAULT_TIMEOUT, domain=self._domain)
         m.submodules.burst_timeout = burst_timeout
 
+        if not is_hw(platform):
+            m.d.comb += [
+                self.simif_addr.eq(bus.adr),
+            ]
 
         with m.FSM(domain=self._domain):
             with m.State("IDLE"):
@@ -199,8 +208,13 @@ class SPIFlashMemoryMap(wiring.Component):
                 m.d.comb += [
                     cs              .eq(1),
                     sink.ready      .eq(1),
-                    bus.dat_r       .eq(word),
                 ]
+
+                if is_hw(platform):
+                    m.d.comb += bus.dat_r       .eq(word),
+                else:
+                    m.d.comb += bus.dat_r       .eq(self.simif_data),
+
                 with m.If(sink.valid):
                     m.d.comb += bus.ack.eq(1)
                     m.d.sync += burst_adr.eq(burst_adr + 1)
