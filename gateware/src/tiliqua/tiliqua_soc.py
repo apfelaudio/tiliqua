@@ -291,9 +291,10 @@ class TiliquaSoc(Component):
 
         m = Module()
 
-        # TODO: FIXME: spiflash hard-written!
-        #self.mainram.init = readbin.get_mem_data(self.firmware_bin_path, data_width=32, endianness="little")
-        #assert self.mainram.init
+        if self.spiflash_fw_base is None:
+            # Init BRAM program memory if we aren't loading from SPI flash.
+            self.mainram.init = readbin.get_mem_data(self.firmware_bin_path, data_width=32, endianness="little")
+            assert self.mainram.init
 
         # bus
         m.submodules.wb_arbiter = self.wb_arbiter
