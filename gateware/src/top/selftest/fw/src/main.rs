@@ -282,6 +282,32 @@ where
     .draw(d).ok();
 }
 
+fn draw_speedtest<D>(d: &mut D, timer: &mut Timer0, rng: &mut fastrand::Rng)
+where
+    D: DrawTarget<Color = Gray8>,
+{
+
+    info!("*** draw speedtest ***");
+
+    timer.enable();
+    timer.set_timeout_ticks(0xFFFFFFFF);
+
+    let start = timer.counter();
+
+    for _ in 0..100 {
+        print_tiliqua(d, rng);
+    }
+
+    let endwrite = timer.counter();
+
+    let ticks = start-endwrite;
+
+    let sysclk = pac::clock::sysclk();
+    info!("draw speed {} Tiliquas/sec", ((sysclk as u64) * (100) as u64) / ticks as u64);
+
+    info!("PASS: draw speedtest");
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
@@ -299,11 +325,13 @@ fn main() -> ! {
     // FIXME: use proper atomic bus sharing!!
     let i2cdev2 = I2c0::new(unsafe { pac::I2C0::steal() } );
 
+    /*
     psram_memtest(&mut timer);
 
     spiflash_memtest(&mut timer);
 
     tusb322i_id_test(&mut i2cdev);
+    */
 
     let mut pca9635 = Pca9635Driver::new(i2cdev2);
 
@@ -316,6 +344,10 @@ fn main() -> ! {
     let mut display = DMADisplay {
         framebuffer_base: PSRAM_FB_BASE as *mut u32,
     };
+
+    let mut rng = fastrand::Rng::with_seed(0);
+    draw_speedtest(&mut display, &mut timer, &mut rng);
+    panic!();
 
     // Must flush the dcache for framebuffer writes to go through
     // TODO: put the framebuffer in the DMA section of Vex address space?
@@ -330,8 +362,6 @@ fn main() -> ! {
 
     let mut encoder_rotation: i16 = 0;
     let mut encoder_toggle: bool = false;
-
-    let mut rng = fastrand::Rng::with_seed(0);
 
     loop {
 
