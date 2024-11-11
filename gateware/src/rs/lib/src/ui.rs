@@ -1,3 +1,11 @@
+// Read encoder state, modify Option suite and display
+// it on Tiliqua LEDs where appropriate, with fade-out
+// to automatic CV LEDs when nothing is touched for a bit.
+//
+// FIXME: does this really need to be a macro? (quickest
+// solution as it depends on a few types that are custom
+// to each example core).
+
 #[macro_export]
 macro_rules! impl_ui {
     ($(
@@ -72,7 +80,7 @@ macro_rules! impl_ui {
                     // Update LEDs
                     //
 
-                    if self.uptime_ms % (10*self.period_ms) == 0 {
+                    if self.uptime_ms % (20*self.period_ms) == 0 {
                         self.toggle_leds = !self.toggle_leds;
                     }
 
