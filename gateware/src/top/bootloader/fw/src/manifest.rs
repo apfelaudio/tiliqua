@@ -42,6 +42,10 @@ impl BitstreamManifest {
             )
         };
 
+        for i in (0..MANIFEST_SZ_BYTES) {
+            info!("{:x}", manifest_slice[i]);
+        }
+
         // Erasing flash should always set bytes to 0xff. Count back from the
         // end of the manifest region to find where there is data. Otherwise,
         // Serde will fail out with a TrailingCharacters error.

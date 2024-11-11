@@ -87,8 +87,12 @@ class Peripheral(wiring.Component):
                 domain_a=self._domain,
                 domain_b=phy._domain,
             )
-            connect(m, phy_controller, cdc.a)
-            connect(m, cdc.b, phy)
+            connect(m, phy_controller.source, cdc.a.source)
+            connect(m, phy_controller.sink, cdc.a.sink)
+            connect(m, cdc.b.source, phy.ctrl.source)
+            connect(m, cdc.b.sink,   phy.ctrl.sink)
+            m.d.comb += phy.ctrl.cs.eq(cdc.b.cs)
+            m.d.comb += cdc.a.cs.eq(phy_controller.cs)
         else:
             connect(m, phy_controller.source, phy.ctrl.source)
             connect(m, phy_controller.sink, phy.ctrl.sink)

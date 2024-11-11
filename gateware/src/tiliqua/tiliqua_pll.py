@@ -104,6 +104,7 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
         m.domains.usb    = ClockDomain()
         m.domains.fast   = ClockDomain()
         m.domains.audio  = ClockDomain()
+        m.domains.spiflash  = ClockDomain()
         m.domains.raw48  = ClockDomain()
 
         clk48 = platform.request(platform.default_clk, dir='i').i
@@ -127,6 +128,7 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
                 o_CLKOP=feedback60,
                 o_CLKOS=ClockSignal("fast"),
                 o_CLKOS2=ClockSignal("audio"),
+                o_CLKOS3=ClockSignal("spiflash"),
 
                 # Status.
                 o_LOCK=locked60,
@@ -153,6 +155,10 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
                 p_CLKOS2_DIV=12 if self.audio_192 else 48, # 50.0MHz (~195kHz) or 12.0MHz (~47kHz)
                 p_CLKOS2_CPHASE=4,
                 p_CLKOS2_FPHASE=0,
+                p_CLKOS3_ENABLE="ENABLED",
+                p_CLKOS3_DIV=6,
+                p_CLKOS3_CPHASE=4,
+                p_CLKOS3_FPHASE=0,
                 p_FEEDBK_PATH="CLKOP",
                 p_CLKFB_DIV=5,
 
@@ -204,6 +210,7 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
             ResetSignal("fast")  .eq(~locked60),
             ResetSignal("usb")   .eq(~locked60),
             ResetSignal("audio") .eq(~locked60),
+            ResetSignal("spiflash") .eq(~locked60),
         ]
 
 

@@ -227,7 +227,7 @@ class TiliquaSoc(Component):
         self.interrupt_controller.add(self.timer0, number=self.timer0_irq, name="timer0")
 
         # spiflash peripheral
-        self.spi0_phy        = spiflash.SPIPHYController(domain="sync", divisor=0)
+        self.spi0_phy        = spiflash.SPIPHYController(domain="spiflash", divisor=0)
         self.spiflash_periph = spiflash.Peripheral(phy=self.spi0_phy, mmap_size=self.spiflash_size,
                                                    mmap_name="spiflash")
         self.wb_decoder.add(self.spiflash_periph.bus, addr=self.spiflash_base, name="spiflash")
