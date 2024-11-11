@@ -137,7 +137,8 @@ class VideoPeripheral(wiring.Component):
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_bin_path, dvi_timings, audio_192=False,
                  audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
-                 video_rotate_90=False, mainram_size=0x2000, spiflash_fw_offset=None):
+                 video_rotate_90=False, mainram_size=0x2000, spiflash_fw_offset=None,
+                 cpu_variant="tiliqua_rv32im"):
 
         super().__init__({})
 
@@ -184,7 +185,8 @@ class TiliquaSoc(Component):
 
         # cpu
         self.cpu = VexRiscv(
-            reset_addr=self.reset_addr
+            variant=self.cpu_variant,
+            reset_addr=self.reset_addr,
         )
 
         # interrupt controller
