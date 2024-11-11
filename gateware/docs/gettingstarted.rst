@@ -40,20 +40,22 @@ Generally, bitstreams are also built in CI - check ``.github/workflows`` if you 
 Flashing example projects
 -------------------------
 
-The built-in RP2040 JTAG debugger is based on the ``dirtyJtag`` project. You can flash the bitstreams above to the SRAM of the FPGA like so (add an ``-f`` to instead flash it to SPI flash permanently):
+The built-in RP2040 JTAG debugger is based on the ``dirtyJtag`` project. For non-SoC projects that don't require extra firmware, you can directly flash bitstreams to the SRAM of the FPGA like so:
 
 .. code-block:: bash
 
    sudo openFPGALoader -c dirtyJtag build/top.bit
 
+When you build a project from the command line, on completion they will usually print some instructions on how to flash them. For SoC bitstreams, there may be multiple steps (e.g. bitstream and firmware, or other artifacts). You can add the :code:`--flash` option to perform these steps automatically.
+
 .. warning::
 
-    If you flash with ``-f`` to the SPI flash, usually you will want to specify
+    If you flash with to the SPI flash, usually you will want to specify
     an offset so you don't overwrite the bootloader. See the *Bootloader* section
     for more information on flash addressing. In any case it's not possible to
     brick the Tiliqua - so don't be too scared to play!
 
-If you are running an SoC, it will give you serial output that you can monitor like so:
+If you are running an SoC, once you have flashed all artifacts it will give you serial output that you can monitor like so:
 
 .. code-block:: bash
 
