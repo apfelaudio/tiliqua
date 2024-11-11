@@ -30,7 +30,7 @@ object GenCoreTiliqua {
           resetVector = null,
           relaxedPcCalculation = false,
           prediction = STATIC,
-          compressedGen = true, // compressed instruction support
+          compressedGen = false, // compressed instruction support
           memoryTranslatorPortConfig = null,
           config = InstructionCacheConfig(
             cacheSize = 2048,
