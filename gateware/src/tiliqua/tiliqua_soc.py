@@ -185,7 +185,7 @@ class TiliquaSoc(Component):
 
         # cpu
         self.cpu = VexRiscv(
-            variant=self.cpu_variant,
+            variant=cpu_variant,
             reset_addr=self.reset_addr,
         )
 

@@ -1,0 +1,9 @@
+[target.riscv32imafc-unknown-none-elf]
+rustflags = [
+  "-C", "link-arg=-Tmemory.x",
+  "-C", "link-arg=-Tlink.x",
+  "-Z", "macro-backtrace",
+]
+
+[build]
+target = "riscv32imafc-unknown-none-elf"
