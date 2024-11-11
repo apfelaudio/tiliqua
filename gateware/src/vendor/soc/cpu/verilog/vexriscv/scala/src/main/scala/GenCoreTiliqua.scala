@@ -12,14 +12,13 @@ import spinal.core.internals.{
   PhaseContext
 }
 import spinal.lib._
-import spinal.lib.cpu.riscv.debug.DebugTransportModuleParameter
 import spinal.lib.sim.Phase
 
 import scala.collection.mutable.ArrayBuffer
 
-object GenCoreCynthionJtag {
+object GenCoreTiliqua {
   def main(args: Array[String]) {
-    val outputFile = "vexriscv_cynthion+jtag"
+    val outputFile = "vexriscv_tiliqua"
     val spinalConfig =
       LunaSpinalConfig.copy(netlistFileName = outputFile + ".v")
 
@@ -31,7 +30,7 @@ object GenCoreCynthionJtag {
           resetVector = null,
           relaxedPcCalculation = false,
           prediction = STATIC,
-          compressedGen = true, // compressed instruction support
+          compressedGen = false, // compressed instruction support
           memoryTranslatorPortConfig = null,
           config = InstructionCacheConfig(
             cacheSize = 2048,
@@ -53,7 +52,7 @@ object GenCoreCynthionJtag {
           dBusRspSlavePipe = false,
           relaxedMemoryTranslationRegister = false,
           config = new DataCacheConfig(
-            cacheSize = 4096,
+            cacheSize = 2048,
             bytePerLine = 32,
             wayCount = 1,
             addressWidth = 32,
@@ -99,7 +98,7 @@ object GenCoreCynthionJtag {
           catchAddressMisaligned = true
         ),
         new CsrPlugin(
-          CsrPluginConfig.all(mtvecInit = null).copy(ebreakGen = true, xtvecModeGen = false, withPrivilegedDebug = true)
+          CsrPluginConfig.all(mtvecInit = null).copy(ebreakGen = true, xtvecModeGen = false)
         ),
         new YamlPlugin(outputFile + ".yaml"),
         new MulPlugin,
@@ -109,16 +108,6 @@ object GenCoreCynthionJtag {
           machinePendingsCsrId = 0xfc0,
           supervisorMaskCsrId = 0x9c0,
           supervisorPendingsCsrId = 0xdc0
-        ),
-        new EmbeddedRiscvJtag(
-          p = DebugTransportModuleParameter(
-            addressWidth = 7,
-            version = 1,
-            idle = 7
-          ),
-          debugCd = ClockDomain.current.copy(reset = Bool().setName("debugReset")),
-          withTunneling = false,
-          withTap = true
         )
       )
 

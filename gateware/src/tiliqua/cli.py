@@ -42,7 +42,7 @@ def top_level_cli(
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--flash', action='store_true',
-                        help="Flash bitstream after building it.")
+                        help="Flash bitstream (and firmware if needed) after building it.")
 
     if video_core:
         parser.add_argument('--resolution', type=str, default="1280x720p60",
@@ -63,7 +63,9 @@ def top_level_cli(
         parser.add_argument('--pac-only', action='store_true',
                             help="SoC designs: stop after rust PAC generation")
         parser.add_argument('--fw-only', action='store_true',
-                            help="SoC designs: stop after rust FW compilation")
+                            help="SoC designs: stop after rust FW compilation (optionally re-flash)")
+        parser.add_argument('--fw-spiflash-offset', type=str, default="0xc0000",
+                            help="SoC designs: expect firmware flashed at this address.")
 
     parser.add_argument('--sc3', action='store_true',
                         help="platform override: Tiliqua R2 with a SoldierCrab R3")
@@ -110,6 +112,8 @@ def top_level_cli(
         rust_fw_bin  = "firmware.bin"
         rust_fw_root = os.path.join(path, "fw")
         kwargs["firmware_bin_path"] = os.path.join(rust_fw_root, rust_fw_bin)
+        if args.fw_spiflash_offset is not None:
+            kwargs["spiflash_fw_offset"] = int(args.fw_spiflash_offset, 16)
 
     if argparse_fragment:
         kwargs = kwargs | argparse_fragment(args)
@@ -131,7 +135,11 @@ def top_level_cli(
             # that is actually in the wild.
             hw_platform = TiliquaR2SC2Platform()
 
+    # (only used if firmware comes from SPI flash)
+    args_flash_firmware = None
+
     if isinstance(fragment, TiliquaSoc):
+
 
         # Generate SVD
         svd_path = os.path.join(rust_fw_root, "soc.svd")
@@ -149,7 +157,22 @@ def top_level_cli(
         fragment.genmem(os.path.join(rust_fw_root, "memory.x"))
         fragment.genconst("src/rs/lib/src/generated_constants.rs")
         TiliquaSoc.compile_firmware(rust_fw_root, rust_fw_bin)
+
+        # Generate firmware flashing arguments
+        if kwargs["spiflash_fw_offset"] is not None:
+            fw_path = kwargs["firmware_bin_path"]
+            args_flash_firmware = [
+                "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", f"{args.fw_spiflash_offset}",
+                "--file-type", "raw", f"{fw_path}"
+            ]
+
+        # Optionally stop here if --fw-only is specified
         if args.fw_only:
+            if args_flash_firmware:
+                print("Flash firmware with:")
+                print("\t$", ' '.join(args_flash_firmware))
+                if args.flash:
+                    subprocess.check_call(args_flash_firmware, env=os.environ)
             sys.exit(0)
 
         # Simulation configuration
@@ -170,7 +193,6 @@ def top_level_cli(
 
     if args.action == CliAction.Build:
 
-
         build_flags = {
             "verbose": args.verbose,
             "debug_verilog": args.debug_verilog,
@@ -190,14 +212,30 @@ def top_level_cli(
 
         hw_platform.build(fragment, **build_flags)
 
+        # Print size information and some flashing instructions
+        bitstream_path = "build/top.bit"
+        args_flash_bitstream = ["sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", bitstream_path]
+        bitstream_size = os.path.getsize(bitstream_path)
+        print(f"Bitstream size (@ offset 0x0): {bitstream_size//1024} KiB")
+        if args_flash_firmware:
+            firmware_size = os.path.getsize(args_flash_firmware[-1])
+            # TODO: relative assert based on 'slot' at which bitstream is flashed, not always zero!
+            fw_offset = kwargs["spiflash_fw_offset"]
+            assert fw_offset > bitstream_size, "firmware address overlaps bitstream!"
+            print(f"Firmware size (@ offset {hex(fw_offset)}): {firmware_size//1024} KiB")
+            print("Flash firmware with:")
+            print("\t$", ' '.join(args_flash_firmware))
+        print("Flash bitstream with:")
+        print("\t$", ' '.join(args_flash_bitstream))
+
         if args.flash or hw_platform.ila:
             # ILA situation always requires flashing, as we want to make sure
             # we aren't getting data from an old bitstream before starting the
             # ILA frontend.
-            subprocess.check_call(["openFPGALoader",
-                                   "-c", "dirtyJtag",
-                                   "build/top.bit"],
-                                  env=os.environ)
+            if args_flash_firmware:
+                subprocess.check_call(args_flash_firmware, env=os.environ)
+            subprocess.check_call(args_flash_bitstream, env=os.environ)
+
         if hw_platform.ila:
             vcd_dst = "out.vcd"
             print(f"{AsyncSerialILAFrontend.__name__} listen on {args.ila_port} - destination {vcd_dst} ...")

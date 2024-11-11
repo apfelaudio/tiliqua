@@ -85,22 +85,27 @@ def is_hw(platform):
 
 def soc_simulation_ports(fragment):
     return {
-        "clk_sync":       (ClockSignal("sync"),                        None),
-        "rst_sync":       (ResetSignal("sync"),                        None),
-        "clk_dvi":        (ClockSignal("dvi"),                         None),
-        "rst_dvi":        (ResetSignal("dvi"),                         None),
-        "uart0_w_data":   (fragment.uart0._tx_data.f.data.w_data,      None),
-        "uart0_w_stb":    (fragment.uart0._tx_data.f.data.w_stb,       None),
-        "address_ptr":    (fragment.psram_periph.simif.address_ptr,    None),
-        "read_data_view": (fragment.psram_periph.simif.read_data_view, None),
-        "write_data":     (fragment.psram_periph.simif.write_data,     None),
-        "read_ready":     (fragment.psram_periph.simif.read_ready,     None),
-        "write_ready":    (fragment.psram_periph.simif.write_ready,    None),
-        "dvi_x":          (fragment.video.dvi_tgen.x,                  None),
-        "dvi_y":          (fragment.video.dvi_tgen.y,                  None),
-        "dvi_r":          (fragment.video.phy_r,                       None),
-        "dvi_g":          (fragment.video.phy_g,                       None),
-        "dvi_b":          (fragment.video.phy_b,                       None),
+        "clk_sync":       (ClockSignal("sync"),                          None),
+        "rst_sync":       (ResetSignal("sync"),                          None),
+        "clk_dvi":        (ClockSignal("dvi"),                           None),
+        "rst_dvi":        (ResetSignal("dvi"),                           None),
+        "clk_audio":      (ClockSignal("audio"),                         None),
+        "rst_audio":      (ResetSignal("audio"),                         None),
+        "uart0_w_data":   (fragment.uart0._tx_data.f.data.w_data,        None),
+        "uart0_w_stb":    (fragment.uart0._tx_data.f.data.w_stb,         None),
+        "address_ptr":    (fragment.psram_periph.simif.address_ptr,      None),
+        "read_data_view": (fragment.psram_periph.simif.read_data_view,   None),
+        "write_data":     (fragment.psram_periph.simif.write_data,       None),
+        "read_ready":     (fragment.psram_periph.simif.read_ready,       None),
+        "write_ready":    (fragment.psram_periph.simif.write_ready,      None),
+        "spiflash_addr":  (fragment.spiflash_periph.spi_mmap.simif_addr, None),
+        "spiflash_data":  (fragment.spiflash_periph.spi_mmap.simif_data, None),
+        "dvi_x":          (fragment.video.dvi_tgen.x,                    None),
+        "dvi_y":          (fragment.video.dvi_tgen.y,                    None),
+        "dvi_r":          (fragment.video.phy_r,                         None),
+        "dvi_g":          (fragment.video.phy_g,                         None),
+        "dvi_b":          (fragment.video.phy_b,                         None),
+        "fs_strobe":      (fragment.sim_fs_strobe,                       None),
     }
 
 def simulate(fragment, ports, harness, hw_platform, tracing=False):
@@ -147,6 +152,17 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
     else:
         psram_cflags = []
 
+    if hasattr(fragment, "firmware_bin_path"):
+        firmware_cflags = [
+           "-CFLAGS", f"-DFIRMWARE_BIN_PATH=\\\"{fragment.firmware_bin_path}\\\"",
+        ]
+        if fragment.spiflash_fw_base is not None:
+            firmware_cflags += [
+                "-CFLAGS", f"-DSPIFLASH_FW_OFFSET={hex(fragment.spiflash_fw_offset)}",
+            ]
+    else:
+        firmware_cflags = []
+
     clock_sync_hz = 60000000
     audio_clk_hz = 48000000
 
@@ -171,7 +187,7 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
                            "-Ibuild",
                            "-CFLAGS", f"-DSYNC_CLK_HZ={clock_sync_hz}",
                            "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
-                          ] + video_cflags + psram_cflags + [
+                          ] + video_cflags + psram_cflags + firmware_cflags + [
                            harness,
                            f"{dst}",
                           ] + [

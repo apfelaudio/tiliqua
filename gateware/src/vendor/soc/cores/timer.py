@@ -50,18 +50,18 @@ class Peripheral(wiring.Component):
         self._counter  = regs.add("counter", self.Counter(width))
         self._bridge   = csr.Bridge(regs.as_memory_map())
 
-        # events
+       # events
         self._sub_0 = event.Source(path=("sub_0",))
+        self._sub_1 = event.Source(path=("sub_1",)) # FIXME rename event names and use 2nd event
         event_map = event.EventMap()
         event_map.add(self._sub_0)
+        event_map.add(self._sub_1)
         self._events = csr.event.EventMonitor(event_map, data_width=8)
 
         # csr decoder
         self._decoder = csr.Decoder(addr_width=5, data_width=8)
         self._decoder.add(self._bridge.bus)
-
-        # FIXME: adding event bus segfaults yosys somehow!
-        # self._decoder.add(self._events.bus, name="ev")
+        self._decoder.add(self._events.bus, name="ev")
 
         super().__init__({
             "bus":    Out(self._decoder.bus.signature),

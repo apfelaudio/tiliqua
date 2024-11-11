@@ -41,6 +41,7 @@ impl_option_view!(BootOptions,
 #[derive(Clone)]
 pub struct Options {
     pub modify: bool,
+    pub draw:bool,
     pub screen: EnumOption<Screen>,
 
     pub boot: BootOptions,
@@ -53,6 +54,7 @@ impl Options {
     pub fn new(manifest: &manifest::BitstreamManifest) -> Options {
         Options {
             modify: false,
+            draw: true,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
                 value: Screen::Boot,

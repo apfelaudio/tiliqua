@@ -16,13 +16,10 @@ import logging
 # Variants --------------------------------------------------------------------
 
 CPU_VARIANTS = {
-    "cynthion":      "vexriscv_cynthion",
-    "cynthion+jtag": "vexriscv_cynthion+jtag",
-    "imac+dcache":   "vexriscv_imac+dcache",
-    "imc":           "vexriscv_imc",
+    "tiliqua": "vexriscv_tiliqua",
 }
 
-JTAG_VARIANTS = [ "cynthion+jtag" ]
+JTAG_VARIANTS = []
 
 # - VexRiscv ------------------------------------------------------------------
 
@@ -32,7 +29,7 @@ class VexRiscv(Component):
     #byteorder  = "little"
     #data_width = 32
 
-    def __init__(self, variant="imac+dcache", reset_addr=0x00000000):
+    def __init__(self, variant="tiliqua", reset_addr=0x00000000):
         self._variant    = variant
         self._reset_addr = reset_addr
 
