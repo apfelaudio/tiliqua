@@ -19,7 +19,6 @@ fastrand = { version = "2.1.0", default-features = false }
 heapless = "0.8.0"
 strum_macros = "0.26.4"
 strum = {version = "0.25.0", features = ["derive"], default-features=false}
-colorsys = { version = "*", default-features = false }
 mi-plaits-dsp = { git = "https://github.com/sourcebox/mi-plaits-dsp-rs" }
 critical-section = "1.2.0"
 embedded-alloc = "0.6.0"
@@ -32,5 +31,5 @@ debug = true
 debug-assertions = false
 incremental = false
 lto = true
-opt-level = "s"
+opt-level = 2
 overflow-checks = false

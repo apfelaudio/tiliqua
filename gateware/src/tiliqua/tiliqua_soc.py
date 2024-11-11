@@ -176,7 +176,7 @@ class TiliquaSoc(Component):
             self.reset_addr           = self.mainram_base
             self.spiflash_fw_base     = None
         else:
-            self.spiflash_fw_size     = 0x40000 # 256KiB
+            self.spiflash_fw_size     = 0x80000 # 512KiB
             # CLI provides the offset (indexed from 0 on the spiflash), however
             # on the Vex it is memory mapped from self.spiflash_base onward.
             self.spiflash_fw_offset   = spiflash_fw_offset
