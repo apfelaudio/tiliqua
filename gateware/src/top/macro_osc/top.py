@@ -64,10 +64,8 @@ from tiliqua.cli                                 import top_level_cli
 from tiliqua.eurorack_pmod                       import ASQ
 
 
+# Simple 2-fifo DMA peripheral for writing glitch-free audio from a softcore.
 class AudioFIFOPeripheral(wiring.Component):
-    """
-    Simple 2-fifo DMA peripheral for writing glitch-free audio from a softcore.
-    """
 
     class FifoLenReg(csr.Register, access="r"):
         fifo_len: csr.Field(csr.action.R, unsigned(16))
