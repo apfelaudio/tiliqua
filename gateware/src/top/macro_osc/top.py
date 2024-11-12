@@ -76,6 +76,7 @@ class AudioFIFOPeripheral(wiring.Component):
         regs = csr.Builder(addr_width=6, data_width=8)
 
         # Out and Aux FIFOs
+        self.elastic_sz = elastic_sz
         self._fifo0 = fifo.SyncFIFOBuffered(
             width=ASQ.as_shape().width, depth=elastic_sz)
         self._fifo1 = fifo.SyncFIFOBuffered(
@@ -183,6 +184,12 @@ class MacroOscSoc(TiliquaSoc):
         self.audio_fifo = AudioFIFOPeripheral()
         self.csr_decoder.add(self.audio_fifo.csr_bus, addr=self.audio_fifo_csr_base, name="audio_fifo")
         self.wb_decoder.add(self.audio_fifo.wb_bus, addr=self.audio_fifo_mem_base, name="audio_fifo")
+
+        # TODO: take this from parsed memory region list
+        self.add_rust_constant(
+            f"pub const AUDIO_FIFO_MEM_BASE: usize = 0x{self.audio_fifo_mem_base:x};\n")
+        self.add_rust_constant(
+            f"pub const AUDIO_FIFO_ELASTIC_SZ: usize = {self.audio_fifo.elastic_sz};\n")
 
         # now we can freeze the memory map
         self.finalize_csr_bridge()

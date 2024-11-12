@@ -276,6 +276,8 @@ class TiliquaSoc(Component):
 
         self.permit_bus_traffic = Signal()
 
+        self.extra_rust_constants = []
+
         if finalize_csr_bridge:
             self.finalize_csr_bridge()
 
@@ -287,6 +289,9 @@ class TiliquaSoc(Component):
 
         self.wb_to_csr = WishboneCSRBridge(self.csr_decoder.bus, data_width=32)
         self.wb_decoder.add(self.wb_to_csr.wb_bus, addr=self.csr_base, sparse=False, name="wb_to_csr")
+
+    def add_rust_constant(self, line):
+        self.extra_rust_constants.append(line)
 
     def elaborate(self, platform):
 
@@ -474,6 +479,9 @@ class TiliquaSoc(Component):
             f.write(f"pub const N_BITSTREAMS: usize      = 8;\n")
             f.write(f"pub const MANIFEST_BASE: usize     = SPIFLASH_BASE + SPIFLASH_SZ_BYTES - 4096;\n")
             f.write(f"pub const MANIFEST_SZ_BYTES: usize = 512;\n")
+            f.write("// Extra constants specified by an SoC subclass:\n")
+            for l in self.extra_rust_constants:
+                f.write(l)
 
     def regenerate_pac_from_svd(svd_path):
         """

@@ -35,7 +35,6 @@ impl_ui!(UI,
 
 pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
 const BLOCK_SIZE: usize = 128;
-const FIFO_ELASTIC_SZ: usize = 384; // FIXME: fetch from `elastic_sz` in RTL.
 // PSRAM heap for big audio buffers.
 const HEAP_START: usize = PSRAM_BASE + (PSRAM_SZ_BYTES / 2);
 const HEAP_SIZE: usize = 128*1024;
@@ -153,7 +152,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         let mut aux = [0.0f32; BLOCK_SIZE];
 
         let mut n_attempts = 0;
-        while (audio_fifo.fifo_len().read().bits() as usize) < FIFO_ELASTIC_SZ - BLOCK_SIZE {
+        while (audio_fifo.fifo_len().read().bits() as usize) < AUDIO_FIFO_ELASTIC_SZ - BLOCK_SIZE {
             n_attempts += 1;
             if n_attempts > 10 {
                 // TODO set underrun flag
@@ -163,7 +162,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
                .render(&patch, &modulations, &mut out, &mut aux);
             for i in 0..BLOCK_SIZE {
                 unsafe {
-                    let fifo_base = 0xa0000000 as *mut u32;
+                    let fifo_base = AUDIO_FIFO_MEM_BASE as *mut u32;
                     *fifo_base = f32_to_i32((out[i]*16000.0f32).to_bits()) as u32;
                     *fifo_base.add(1) = f32_to_i32((aux[i]*16000.0f32).to_bits()) as u32;
                 }
