@@ -72,7 +72,7 @@ class AudioFIFOPeripheral(wiring.Component):
     class FifoLenReg(csr.Register, access="r"):
         fifo_len: csr.Field(csr.action.R, unsigned(16))
 
-    def __init__(self, fifo_sz=4*4, fifo_data_width=32, granularity=8, elastic_sz=384):
+    def __init__(self, fifo_sz=4*4, fifo_data_width=32, granularity=8, elastic_sz=64*3):
         regs = csr.Builder(addr_width=6, data_width=8)
 
         # Out and Aux FIFOs
@@ -154,7 +154,7 @@ class MacroOscSoc(TiliquaSoc):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.
         super().__init__(audio_192=False, audio_out_peripheral=False,
-                         finalize_csr_bridge=False, mainram_size=0x20000,
+                         finalize_csr_bridge=False, mainram_size=0x10000,
                          cpu_variant="tiliqua_rv32imafc", **kwargs)
 
         # scope stroke bridge from audio stream

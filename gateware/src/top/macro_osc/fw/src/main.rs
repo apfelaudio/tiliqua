@@ -34,7 +34,7 @@ impl_ui!(UI,
          EurorackPmod0);
 
 pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
-const BLOCK_SIZE: usize = 128;
+const BLOCK_SIZE: usize = 64;
 // PSRAM heap for big audio buffers.
 const HEAP_START: usize = PSRAM_BASE + (PSRAM_SZ_BYTES / 2);
 const HEAP_SIZE: usize = 128*1024;
