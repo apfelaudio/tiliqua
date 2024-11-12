@@ -25,10 +25,39 @@ pub enum TriggerMode {
     Rising,
 }
 
+#[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
+#[strum(serialize_all = "kebab-case")]
+pub enum Engine {
+    VrtAnlg1,
+    PhaseDst,
+    SixOp1,
+    SixOp2,
+    SixOp3,
+    WvTrrn,
+    String1,
+    Chiptne,
+    VrtAnlg2,
+    WaveShp,
+    FmEngine,
+    Grain,
+    Additive,
+    Wavetbl,
+    Chord,
+    Speech,
+    Swarm,
+    Noise,
+    Prticle,
+    String2,
+    Modal,
+    BassDrm,
+    Snare,
+    Hihat,
+}
+
 #[derive(Clone)]
 pub struct OscOptions {
     pub selected: Option<usize>,
-    pub engine:    NumOption<u8>,
+    pub engine:    EnumOption<Engine>,
     pub note:      NumOption<u8>,
     pub harmonics: NumOption<u8>,
     pub timbre:    NumOption<u8>,
@@ -109,12 +138,9 @@ impl Options {
             },
             osc: OscOptions {
                 selected: None,
-                engine: NumOption{
+                engine: EnumOption{
                     name: String::from_str("engine").unwrap(),
-                    value: 0,
-                    step: 1,
-                    min: 0,
-                    max: 23,
+                    value: Engine::VrtAnlg1,
                 },
                 note: NumOption{
                     name: String::from_str("note").unwrap(),

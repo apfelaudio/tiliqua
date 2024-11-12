@@ -3,13 +3,43 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 
 """
-Vectorscope and 4-channel oscilloscope with menu system.
+'Macro-Oscillator' runs a downsampled version of the DSP code from a
+famous Eurorack module (credits below), on a softcore, to demonstrate the
+compute capabilities available if you do everything in software.
 
-In vectorscope mode, rasterize X/Y (audio channel 0, 1) and
-color (audio channel 3) to a simulated CRT.
+All 24 engines are available for tweaking and patching via the UI.
+A couple of engines use a bit more compute and may cause the UI to
+slow down, however you should never get audio glitches.
+A scope and vectorscope is included and hooked up to the oscillator
+outputs so you can visualize exactly what the softcore is spitting out.
 
-In oscilloscope mode, all 4 input channels are plotted simultaneosly
-in classic oscilloscope fashion.
+The original module was designed to run at 48kHz. Here, we instantiate
+a powerful (rv32imafc) softcore (this one includes an FPU), which
+is enough to run most engines at ~24kHz-48kHz, however with the video
+and menu system running simultaneously, it's necessary to clock
+this down to 12kHz. Surprisingly, most engines still sound reasonable.
+The resampling from 12kHz <-> 48kHz is performed in hardware below.
+
+Jack mapping:
+
+    - In0: frequency modulation
+    - In1: trigger
+    - In2: timbre modulation
+    - In3: morph modulation
+    - Out2: 'out' output
+    - Out3: 'aux' output
+
+There is quite some heavy compute here and RAM usage, as a result,
+the firmware and buffers are too big to fit in BRAM. In this demo,
+the firmware is in memory-mapped SPI flash and the DSP buffers are
+allocated from external PSRAM.
+
+Credits to Emilie Gillet for the original Plaits module and firmware.
+
+Credits to Oliver Rockstedt for the Rust port of said firmware:
+    https://github.com/sourcebox/mi-plaits-dsp-rs
+
+The Rust port is what is running on this softcore.
 """
 
 import logging
@@ -35,6 +65,9 @@ from tiliqua.eurorack_pmod                       import ASQ
 
 
 class AudioFIFOPeripheral(wiring.Component):
+    """
+    Simple 2-fifo DMA peripheral for writing glitch-free audio from a softcore.
+    """
 
     class FifoLenReg(csr.Register, access="r"):
         fifo_len: csr.Field(csr.action.R, unsigned(16))
@@ -42,11 +75,13 @@ class AudioFIFOPeripheral(wiring.Component):
     def __init__(self, fifo_sz=4*4, fifo_data_width=32, granularity=8, elastic_sz=384):
         regs = csr.Builder(addr_width=6, data_width=8)
 
+        # Out and Aux FIFOs
         self._fifo0 = fifo.SyncFIFOBuffered(
             width=ASQ.as_shape().width, depth=elastic_sz)
         self._fifo1 = fifo.SyncFIFOBuffered(
             width=ASQ.as_shape().width, depth=elastic_sz)
 
+        # Amount of elements in fifo0, used by softcore for scheduling.
         self._fifo_len = regs.add(f"fifo_len", self.FifoLenReg(), offset=0x4)
 
         self._bridge = csr.Bridge(regs.as_memory_map())
@@ -62,6 +97,8 @@ class AudioFIFOPeripheral(wiring.Component):
 
         self.csr_bus.memory_map = self._bridge.bus.memory_map
 
+        # Fixed memory region for the audio fifo rather than CSRs, so each 32-bit write
+        # takes a single bus cycle (CSRs take longer).
         wb_memory_map = MemoryMap(addr_width=exact_log2(fifo_sz), data_width=granularity)
         wb_memory_map.add_resource(name=("audio_fifo",), size=fifo_sz, resource=self)
         self.wb_bus.memory_map = wb_memory_map
@@ -75,6 +112,7 @@ class AudioFIFOPeripheral(wiring.Component):
 
         connect(m, flipped(self.csr_bus), self._bridge.bus)
 
+        # Route writes to DMA region to audio FIFOs
         wstream0 = self._fifo0.w_stream
         wstream1 = self._fifo1.w_stream
         with m.If(self.wb_bus.cyc & self.wb_bus.stb & self.wb_bus.we):
@@ -115,7 +153,8 @@ class MacroOscSoc(TiliquaSoc):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.
         super().__init__(audio_192=False, audio_out_peripheral=False,
-                         finalize_csr_bridge=False, **kwargs)
+                         finalize_csr_bridge=False, mainram_size=0x20000,
+                         cpu_variant="tiliqua_rv32imafc", **kwargs)
 
         # scope stroke bridge from audio stream
         fb_size = (self.video.fb_hsize, self.video.fb_vsize)
@@ -124,6 +163,7 @@ class MacroOscSoc(TiliquaSoc):
         self.vector_periph_base  = 0x00001000
         self.scope_periph_base   = 0x00001100
         self.audio_fifo_csr_base = 0x00001200
+        # offset 0x0 is FIFO0, offset 0x4 is FIFO1
         self.audio_fifo_mem_base = 0xa0000000
 
         self.vector_periph = scope.VectorTracePeripheral(
@@ -173,12 +213,14 @@ class MacroOscSoc(TiliquaSoc):
         m.submodules.plot_fifo = plot_fifo = fifo.SyncFIFOBuffered(
             width=data.ArrayLayout(ASQ, 4).as_shape().width, depth=16)
 
+        # Route audio outputs 2/3 to plotting stream (scope / vector)
         m.d.comb += [
             plot_fifo.w_stream.valid.eq(self.audio_fifo.stream.valid & astream.ostream.ready),
             plot_fifo.w_stream.payload[0:16] .eq(self.audio_fifo.stream.payload[2]),
             plot_fifo.w_stream.payload[16:32].eq(self.audio_fifo.stream.payload[3]),
         ]
 
+        # Switch to use scope or vectorscope
         with m.If(self.scope_periph.soc_en):
             wiring.connect(m, plot_fifo.r_stream, self.scope_periph.i)
         with m.Else():
@@ -194,6 +236,4 @@ class MacroOscSoc(TiliquaSoc):
 
 if __name__ == "__main__":
     this_path = os.path.dirname(os.path.realpath(__file__))
-    top_level_cli(MacroOscSoc, path=this_path,
-                  argparse_fragment=lambda _: {"mainram_size": 0x20000,
-                                               "cpu_variant": "tiliqua_rv32imafc"})
+    top_level_cli(MacroOscSoc, path=this_path)

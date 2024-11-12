@@ -21,6 +21,10 @@ selftest
 --------
 .. automodule:: top.selftest.top
 
+macro_osc
+--------
+.. automodule:: top.macro_osc.top
+
 usb_audio
 ---------
 

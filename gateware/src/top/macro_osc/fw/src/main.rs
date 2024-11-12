@@ -1,54 +1,46 @@
+// See top-level comment in 'top.py' for usage information.
+
 #![no_std]
 #![no_main]
 
-use tiliqua_pac as pac;
-use tiliqua_hal as hal;
-
-use tiliqua_fw::*;
-
 use log::info;
-
 use riscv_rt::entry;
-
 use core::cell::RefCell;
 use critical_section::Mutex;
-
 use core::convert::TryInto;
-
+use irq::handler;
+use embedded_alloc::LlffHeap as Heap;
+use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
 use embedded_graphics::{
     pixelcolor::{Gray8, GrayColor},
     prelude::*,
 };
 
+use tiliqua_pac as pac;
+use tiliqua_hal as hal;
+use tiliqua_fw::*;
 use tiliqua_lib::*;
 use tiliqua_lib::generated_constants::*;
-
-use irq::handler;
-
-use embedded_alloc::LlffHeap as Heap;
-use mi_plaits_dsp::dsp::voice::{Modulations, Patch, Voice};
-
-tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
-
-pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
-const BLOCK_SIZE: usize = 128;
-const FIFO_ELASTIC_SZ: usize = 384; // FIXME: fetch from `elastic_sz` in RTL.
-
-// PSRAM heap for big audio buffers.
-
-const HEAP_START: usize = PSRAM_BASE + (PSRAM_SZ_BYTES / 2);
-const HEAP_SIZE: usize = 128*1024;
-
-static HEAP: Heap = Heap::empty();
-
 use opts::Options;
 use hal::pca9635::*;
+
+
+tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
 impl_ui!(UI,
          Options,
          Encoder0,
          Pca9635Driver<I2c0>,
          EurorackPmod0);
+
+pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
+const BLOCK_SIZE: usize = 128;
+const FIFO_ELASTIC_SZ: usize = 384; // FIXME: fetch from `elastic_sz` in RTL.
+// PSRAM heap for big audio buffers.
+const HEAP_START: usize = PSRAM_BASE + (PSRAM_SZ_BYTES / 2);
+const HEAP_SIZE: usize = 128*1024;
+
+static HEAP: Heap = Heap::empty();
 
 struct App<'a> {
     voice: Voice<'a>,
@@ -86,6 +78,7 @@ impl<'a> App<'a> {
     }
 }
 
+// TODO: move this to hardware as it is quite expensive.
 #[inline(always)]
 pub fn f32_to_i32(f: u32) -> i32 {
     let a = f & !0 >> 1; // Remove sign bit.
