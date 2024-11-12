@@ -1,12 +1,8 @@
-[target.riscv32im-unknown-none-elf]
+[target.riscv32imafc-unknown-none-elf]
 rustflags = [
   "-C", "link-arg=-Tmemory.x",
   "-C", "link-arg=-Tlink.x",
-  "-C", "target-feature=+f",
 ]
 
 [build]
-target = "riscv32im-unknown-none-elf"
-
-[unstable]
-build-std = ["core", "compiler_builtins"]
+target = "riscv32imafc-unknown-none-elf"

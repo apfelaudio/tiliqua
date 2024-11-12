@@ -32,7 +32,7 @@ object GenCoreTiliquaFpu {
           resetVector = null,
           relaxedPcCalculation = false,
           prediction = STATIC,
-          compressedGen = false, // compressed instruction support
+          compressedGen = true, // compressed instruction support
           memoryTranslatorPortConfig = null,
           config = InstructionCacheConfig(
             cacheSize = 2048,

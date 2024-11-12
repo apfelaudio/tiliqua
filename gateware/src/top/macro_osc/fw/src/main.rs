@@ -233,6 +233,7 @@ fn main() -> ! {
     info!("heap usage {} KiB", HEAP.used()/1024);
 
     /*
+     * NOTE: uncomment this for some basic benchmarking
     critical_section::with(|cs| {
         let mut app = app.borrow_ref_mut(cs);
 
