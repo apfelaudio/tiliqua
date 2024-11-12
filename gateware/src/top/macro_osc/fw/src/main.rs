@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-#![feature(allocator_api)]
 
 use tiliqua_pac as pac;
 use tiliqua_hal as hal;
