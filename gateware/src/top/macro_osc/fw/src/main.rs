@@ -232,6 +232,7 @@ fn main() -> ! {
 
     info!("heap usage {} KiB", HEAP.used()/1024);
 
+    /*
     critical_section::with(|cs| {
         let mut app = app.borrow_ref_mut(cs);
 
@@ -261,6 +262,7 @@ fn main() -> ! {
             info!("engine {} speed {} samples/sec", engine, ((sysclk as u64) * ((BLOCK_SIZE * 8) as u64) / (read_ticks as u64)));
         }
     });
+    */
 
     handler!(timer0 = || timer0_handler(&app));
 
