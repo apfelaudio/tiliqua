@@ -16,7 +16,8 @@ import logging
 # Variants --------------------------------------------------------------------
 
 CPU_VARIANTS = {
-    "tiliqua": "vexriscv_tiliqua",
+    "tiliqua_rv32im":  "vexriscv_tiliqua",
+    "tiliqua_rv32imafc": "vexriscv_tiliqua_fpu",
 }
 
 JTAG_VARIANTS = []

@@ -142,7 +142,7 @@ class Merge(wiring.Component):
     def wire_valid(self, m, channels):
         """Set in channels as permanently VALID so they don't block progress."""
         for n in channels:
-            wiring.connect(m, ASQ_VALID, self.i[n])
+            wiring.connect(m, stream.Signature(ASQ, always_valid=True).create(), self.i[n])
 
 def connect_remap(m, stream_o, stream_i, mapping):
     """

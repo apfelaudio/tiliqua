@@ -137,7 +137,8 @@ class VideoPeripheral(wiring.Component):
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_bin_path, dvi_timings, audio_192=False,
                  audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
-                 video_rotate_90=False, mainram_size=0x2000, spiflash_fw_offset=None):
+                 video_rotate_90=False, mainram_size=0x2000, spiflash_fw_offset=None,
+                 cpu_variant="tiliqua_rv32im"):
 
         super().__init__({})
 
@@ -175,7 +176,7 @@ class TiliquaSoc(Component):
             self.reset_addr           = self.mainram_base
             self.spiflash_fw_base     = None
         else:
-            self.spiflash_fw_size     = 0x40000 # 256KiB
+            self.spiflash_fw_size     = 0x80000 # 512KiB
             # CLI provides the offset (indexed from 0 on the spiflash), however
             # on the Vex it is memory mapped from self.spiflash_base onward.
             self.spiflash_fw_offset   = spiflash_fw_offset
@@ -184,7 +185,8 @@ class TiliquaSoc(Component):
 
         # cpu
         self.cpu = VexRiscv(
-            reset_addr=self.reset_addr
+            variant=cpu_variant,
+            reset_addr=self.reset_addr,
         )
 
         # interrupt controller
@@ -274,6 +276,8 @@ class TiliquaSoc(Component):
 
         self.permit_bus_traffic = Signal()
 
+        self.extra_rust_constants = []
+
         if finalize_csr_bridge:
             self.finalize_csr_bridge()
 
@@ -285,6 +289,9 @@ class TiliquaSoc(Component):
 
         self.wb_to_csr = WishboneCSRBridge(self.csr_decoder.bus, data_width=32)
         self.wb_decoder.add(self.wb_to_csr.wb_bus, addr=self.csr_base, sparse=False, name="wb_to_csr")
+
+    def add_rust_constant(self, line):
+        self.extra_rust_constants.append(line)
 
     def elaborate(self, platform):
 
@@ -472,6 +479,9 @@ class TiliquaSoc(Component):
             f.write(f"pub const N_BITSTREAMS: usize      = 8;\n")
             f.write(f"pub const MANIFEST_BASE: usize     = SPIFLASH_BASE + SPIFLASH_SZ_BYTES - 4096;\n")
             f.write(f"pub const MANIFEST_SZ_BYTES: usize = 512;\n")
+            f.write("// Extra constants specified by an SoC subclass:\n")
+            for l in self.extra_rust_constants:
+                f.write(l)
 
     def regenerate_pac_from_svd(svd_path):
         """
