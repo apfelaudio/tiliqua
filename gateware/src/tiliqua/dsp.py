@@ -10,7 +10,7 @@ import math
 from amaranth              import *
 from amaranth.lib          import wiring, data, stream
 from amaranth.lib.wiring   import In, Out
-from amaranth.lib.fifo     import SyncFIFOBuffered
+from amaranth.lib.fifo     import SyncFIFOBuffered, AsyncFIFOBuffered
 from amaranth.lib.memory   import Memory
 from amaranth.utils        import exact_log2, ceil_log2
 
@@ -216,6 +216,93 @@ class VCA(wiring.Component):
             self.o.payload[0].eq(self.i.payload[0] * self.i.payload[1]),
             self.o.valid.eq(self.i.valid),
             self.i.ready.eq(self.o.ready),
+        ]
+
+        return m
+
+
+#SQNative = fixed.SQ(2, ASQ.f_width)
+SQNative = ASQ
+
+class FastMul(wiring.Component):
+
+    """
+    Goal: use the DSP tile in the 'fast' domain at 2x the 'sync' domain,
+    from the perspective of the 'sync' domain, we get 2x multiplies / clk.
+
+    'fast' internal pipeline latency (fifo -> fifo) = 4 clocks
+    'sync' E2E pipeline latency (valid -> valid) = 7 clocks
+    """
+
+    def __init__(self, n_rr=2, fifo_depth=4):
+        self.n_rr = n_rr
+        self.fifo_depth=fifo_depth
+        super().__init__({
+            "i": In(stream.Signature(data.ArrayLayout(
+                data.StructLayout({
+                    "a": SQNative,
+                    "b": SQNative
+                }), n_rr))),
+            "o": Out(stream.Signature(data.ArrayLayout(SQNative, n_rr))),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.i_fifo = i_fifo = AsyncFIFOBuffered(
+            width=SQNative.as_shape().width*2*self.n_rr,
+            depth=self.fifo_depth,
+            r_domain='fast',
+            w_domain='sync'
+        )
+
+        m.submodules.o_fifo = o_fifo = AsyncFIFOBuffered(
+            width=SQNative.as_shape().width*1*self.n_rr,
+            depth=self.fifo_depth,
+            r_domain='sync',
+            w_domain='fast'
+        )
+
+        wiring.connect(m, wiring.flipped(self.i), i_fifo.w_stream)
+        wiring.connect(m, o_fifo.r_stream, wiring.flipped(self.o))
+
+        i_payload_fast = Signal.like(self.i.payload)
+        o_payload_fast = Signal.like(self.o.payload)
+        m.d.comb += i_payload_fast.as_value().eq(i_fifo.r_stream.payload)
+        m.d.comb += o_fifo.w_stream.payload.eq(o_payload_fast.as_value())
+
+        i_payload0 = Signal.like(self.i.payload)
+        i_payload1 = Signal.like(self.i.payload[0])
+        m.d.fast += i_payload0.eq(i_payload_fast)
+
+        selector = Signal()
+        m.d.fast += selector.eq(selector+1)
+
+        m.d.fast += i_payload1.eq(Mux(selector, i_payload0[0], i_payload0[1]))
+
+        o_payload1 = Signal.like(self.o.payload[0])
+        o_payloads = Signal.like(self.o.payload[0])
+
+        m.d.fast += o_payload1.eq(i_payload1.a * i_payload1.b)
+        m.d.fast += o_payloads.eq(o_payload1)
+
+        m.d.comb += o_payload_fast[0].eq(o_payload1.as_value())
+        m.d.comb += o_payload_fast[1].eq(o_payloads.as_value())
+
+        # pipeline strobe
+        r_valid = Signal()
+        w_valid = Signal()
+        m.d.comb += r_valid.eq(i_fifo.r_stream.valid & i_fifo.r_stream.ready)
+        w_valid0 = Signal()
+        w_valid1 = Signal()
+        w_valid2 = Signal()
+        m.d.fast += w_valid0.eq(r_valid)
+        m.d.fast += w_valid1.eq(w_valid0)
+        m.d.fast += w_valid2.eq(w_valid1)
+        m.d.fast += w_valid.eq(w_valid2)
+        m.d.fast += [
+            o_fifo.w_stream.valid.eq(w_valid),
+            i_fifo.r_stream.ready.eq(o_fifo.w_stream.ready),
         ]
 
         return m
