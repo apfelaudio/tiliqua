@@ -829,18 +829,17 @@ class RingMulTop(wiring.Component):
         n_clients = 8
         m.submodules.server = server = dsp.RingMACServer()
         for n in range(n_clients):
-            setattr(m.submodules, f"vca{n}", dsp.MacVCA(mac=server.add_client()))
+            setattr(m.submodules, f"svf{n}", dsp.SVF(mac=server.add_client()))
 
         """
         for n in range(n_clients):
-            setattr(m.submodules, f"vca{n}", dsp.MacVCA())
+            setattr(m.submodules, f"svf{n}", dsp.SVF())
         """
 
-
-        vcas = []
+        svfs = []
         for n in range(n_clients):
-            vca = getattr(m.submodules, f"vca{n}")
-            vcas.append(vca)
+            svf = getattr(m.submodules, f"svf{n}")
+            svfs.append(svf)
             m.d.comb += [
                 vca.i.valid.eq(1),
                 vca.i.payload[0].as_value().eq(self.i.payload[0]*(n+1)),

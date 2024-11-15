@@ -102,7 +102,9 @@ class PolySynth(wiring.Component):
             max_voices=n_voices, velocity_mod=True, zero_velocity_gate=True)
         # 1 oscillator and filter per oscillator
         ncos = [dsp.SawNCO(shift=0) for _ in range(n_voices)]
-        svfs = [dsp.SVF() for _ in range(n_voices)]
+        m.submodules.server = server = dsp.RingMACServer()
+        svfs = [dsp.SVF(mac=server.add_client()) for _ in range(n_voices)]
+
         m.submodules.merge = merge = dsp.Merge(n_channels=n_voices)
 
         dsp.named_submodules(m.submodules, ncos)

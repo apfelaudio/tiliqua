@@ -222,7 +222,7 @@ class VCA(wiring.Component):
 
 
 #SQNative = fixed.SQ(2, ASQ.f_width)
-SQNative = ASQ
+SQNative = fixed.SQ(2, ASQ.f_width)
 
 class FastMul(wiring.Component):
 
@@ -360,6 +360,8 @@ class RingClient(wiring.Component):
         ]
 
         wait = Signal()
+
+        # TODO: hold message after strobe until bus free?o
 
         with m.If((ring.i.kind == RingMessage.Kind.INVALID) & self.strobe & ~wait):
             m.d.sync += [
@@ -796,20 +798,29 @@ class SVF(wiring.Component):
     Reference: Fig.3 in https://arxiv.org/pdf/2111.05592
     """
 
-    i: In(stream.Signature(data.StructLayout({
-            "x": ASQ,
-            "cutoff": ASQ,
-            "resonance": ASQ,
-        })))
+    def __init__(self, mac=None):
+        self.mac = mac
+        super().__init__({
+            "i": In(stream.Signature(data.StructLayout({
+                    "x": ASQ,
+                    "cutoff": ASQ,
+                    "resonance": ASQ,
+                }))),
+            "o": Out(stream.Signature(data.StructLayout({
+                    "hp": ASQ,
+                    "lp": ASQ,
+                    "bp": ASQ,
+                }))),
+        })
 
-    o: Out(stream.Signature(data.StructLayout({
-            "hp": ASQ,
-            "lp": ASQ,
-            "bp": ASQ,
-        })))
 
     def elaborate(self, platform):
         m = Module()
+
+        if self.mac is None:
+            m.submodules.mac = self.mac = SimpleMAC()
+
+        mac = self.mac
 
         # is this stable with only 18 bits? (native multiplier width)
         dtype = fixed.SQ(2, ASQ.f_width)
@@ -825,12 +836,14 @@ class SVF(wiring.Component):
         n_oversample = 2
         oversample = Signal(8)
 
+        """
         # shared multiplier for z = a*b+c
         mac_a = Signal(dtype)
         mac_b = Signal(dtype)
         mac_c = Signal(dtype)
         mac_z = Signal(dtype)
         m.d.comb += mac_z.eq(mac_a*mac_b + mac_c)
+        """
 
         with m.FSM() as fsm:
             with m.State('WAIT-VALID'):
@@ -846,33 +859,36 @@ class SVF(wiring.Component):
                    m.next = 'MAC0'
             with m.State('MAC0'):
                 m.d.comb += [
-                    mac_a.eq(abp),
-                    mac_b.eq(kK),
-                    mac_c.eq(alp),
+                    mac.a.eq(abp),
+                    mac.b.eq(kK),
+                    mac.strobe.eq(1),
                 ]
-                m.d.sync += alp.eq(mac_z)
-                m.next = 'MAC1'
+                with m.If(mac.valid):
+                    m.d.sync += alp.eq(mac.z + alp)
+                    m.next = 'MAC1'
             with m.State('MAC1'):
                 m.d.comb += [
-                    mac_a.eq(abp),
-                    mac_b.eq(-kQinv),
-                    mac_c.eq(x - alp),
+                    mac.a.eq(abp),
+                    mac.b.eq(-kQinv),
+                    mac.strobe.eq(1),
                 ]
-                m.d.sync += ahp.eq(mac_z)
-                m.next = 'MAC2'
+                with m.If(mac.valid):
+                    m.d.sync += ahp.eq(mac.z + (x - alp))
+                    m.next = 'MAC2'
             with m.State('MAC2'):
                 m.d.comb += [
-                    mac_a.eq(ahp),
-                    mac_b.eq(kK),
-                    mac_c.eq(abp),
+                    mac.a.eq(ahp),
+                    mac.b.eq(kK),
+                    mac.strobe.eq(1),
                 ]
-                m.d.sync += abp.eq(mac_z)
-                with m.If(oversample != n_oversample - 1):
-                    m.d.sync += oversample.eq(oversample + 1)
-                    m.next = 'MAC0'
-                with m.Else():
-                    # FIXME: average of last N oversamples, instead of last
-                    m.next = 'WAIT-READY'
+                with m.If(mac.valid):
+                    m.d.sync += abp.eq(mac.z + abp)
+                    with m.If(oversample != n_oversample - 1):
+                        m.d.sync += oversample.eq(oversample + 1)
+                        m.next = 'MAC0'
+                    with m.Else():
+                        # FIXME: average of last N oversamples, instead of last
+                        m.next = 'WAIT-READY'
             with m.State('WAIT-READY'):
                 m.d.comb += [
                     self.o.valid.eq(1),
