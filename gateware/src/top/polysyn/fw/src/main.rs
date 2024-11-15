@@ -208,7 +208,7 @@ fn main() -> ! {
             vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
             vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
 
-            let n_voices = 8usize;
+            let n_voices = N_VOICES;
             for ix in 0usize..n_voices {
                 let j = 7-ix;
                 draw::draw_voice(&mut display,

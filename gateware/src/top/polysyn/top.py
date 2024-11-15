@@ -82,6 +82,8 @@ class Diffuser(wiring.Component):
 
 class PolySynth(wiring.Component):
 
+    N_VOICES = 16
+
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
@@ -90,13 +92,13 @@ class PolySynth(wiring.Component):
     drive: In(unsigned(16))
     reso: In(unsigned(16))
 
-    voice_states: Out(midi.MidiVoice).array(8)
+    voice_states: Out(midi.MidiVoice).array(N_VOICES)
 
     def elaborate(self, platform):
         m = Module()
 
         # supported simultaneous voices
-        n_voices = 8
+        n_voices = self.N_VOICES
 
         m.submodules.voice_tracker = voice_tracker = midi.MidiVoiceTracker(
             max_voices=n_voices, velocity_mod=True, zero_velocity_gate=True)
@@ -167,7 +169,7 @@ class PolySynth(wiring.Component):
         # Stereo HPF to remove DC from any voices in 'zero cutoff'
         # Route to audio output channels 2 & 3
 
-        output_hpfs = [dsp.SVF(mac=server.add_client()) for _ in range(o_channels)]
+        output_hpfs = [dsp.SVF() for _ in range(o_channels)]
         dsp.named_submodules(m.submodules, output_hpfs, override_name="output_hpf")
 
         m.submodules.hpf_split2 = hpf_split2 = dsp.Split(n_channels=2, source=matrix_mix.o)
@@ -256,15 +258,15 @@ class SynthPeripheral(wiring.Component):
 
     def __init__(self, synth=None):
         self.synth = synth
-        regs = csr.Builder(addr_width=6, data_width=8)
+        regs = csr.Builder(addr_width=7, data_width=8)
         self._drive         = regs.add("drive",         self.Drive(),        offset=0x0)
         self._reso          = regs.add("reso",          self.Reso(),         offset=0x4)
         self._voices        = [regs.add(f"voices{i}",   self.Voice(),
-                               offset=0x8+i*4) for i in range(8)]
-        self._matrix        = regs.add("matrix",        self.Matrix(),       offset=0x28)
-        self._matrix_busy   = regs.add("matrix_busy",   self.MatrixBusy(),   offset=0x2C)
-        self._midi_write    = regs.add("midi_write",    self.MidiWrite(),    offset=0x30)
-        self._midi_read     = regs.add("midi_read",     self.MidiRead(),     offset=0x34)
+                               offset=0x8+i*4) for i in range(PolySynth.N_VOICES)]
+        self._matrix        = regs.add("matrix",        self.Matrix(),       offset=0x48)
+        self._matrix_busy   = regs.add("matrix_busy",   self.MatrixBusy(),   offset=0x4C)
+        self._midi_write    = regs.add("midi_write",    self.MidiWrite(),    offset=0x50)
+        self._midi_read     = regs.add("midi_read",     self.MidiRead(),     offset=0x54)
         self._bridge = csr.Bridge(regs.as_memory_map())
         super().__init__({
             "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
@@ -363,6 +365,9 @@ class PolySoc(TiliquaSoc):
         # synth controls
         self.synth_periph = SynthPeripheral()
         self.csr_decoder.add(self.synth_periph.bus, addr=self.synth_periph_base, name="synth_periph")
+
+        self.add_rust_constant(
+            f"pub const N_VOICES: usize = {PolySynth.N_VOICES};\n")
 
         # now we can freeze the memory map
         self.finalize_csr_bridge()
