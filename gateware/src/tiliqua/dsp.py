@@ -8,7 +8,7 @@
 import math
 
 from amaranth              import *
-from amaranth.lib          import wiring, data, stream
+from amaranth.lib          import wiring, data, stream, enum
 from amaranth.lib.wiring   import In, Out
 from amaranth.lib.fifo     import SyncFIFOBuffered, AsyncFIFOBuffered
 from amaranth.lib.memory   import Memory
@@ -304,6 +304,223 @@ class FastMul(wiring.Component):
             o_fifo.w_stream.valid.eq(w_valid),
             i_fifo.r_stream.ready.eq(o_fifo.w_stream.ready),
         ]
+
+        return m
+
+class RingMessage(data.Struct):
+
+    class Kind(enum.Enum, shape=unsigned(1)):
+        INVALID     = 0
+        MUL         = 1
+
+    class Source(enum.Enum, shape=unsigned(1)):
+        CLIENT     = 0
+        SERVER     = 1
+
+    class MulClientPayload(data.Struct):
+        a: SQNative
+        b: SQNative
+
+    class MulServerPayload(data.Struct):
+        z: SQNative
+
+    source  : Source
+    kind    : Kind
+    tag     : unsigned(4)
+    payload : data.UnionLayout({
+        "mul_client": MulClientPayload,
+        "mul_server": MulServerPayload,
+    })
+
+class RingSignature(wiring.Signature):
+    def __init__(self):
+        super().__init__({
+            "i":  In(RingMessage),
+            "o":  Out(RingMessage),
+        })
+
+class RingClient(wiring.Component):
+
+    ring:   Out(RingSignature())
+
+    i:      In(RingMessage.MulClientPayload)
+    o:      Out(RingMessage.MulServerPayload)
+
+    tag:    In(4)
+    strobe: In(1)
+    valid:  Out(1)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        ring = self.ring
+
+        m.d.sync += [
+            ring.o.eq(ring.i)
+        ]
+
+        wait = Signal()
+
+        with m.If((ring.i.kind == RingMessage.Kind.INVALID) & self.strobe & ~wait):
+            m.d.sync += [
+                wait.eq(1),
+                ring.o.source.eq(RingMessage.Source.CLIENT),
+                ring.o.kind.eq(RingMessage.Kind.MUL),
+                ring.o.tag.eq(self.tag),
+                ring.o.payload.mul_client.eq(self.i),
+            ]
+
+        with m.If((ring.i.kind == RingMessage.Kind.MUL) &
+                  (ring.i.source == RingMessage.Source.SERVER) &
+                  (ring.i.tag == self.tag) &
+                  wait):
+
+            m.d.comb += [
+                self.valid.eq(1),
+                self.o.eq(ring.i.payload.mul_server),
+            ]
+
+            m.d.sync += [
+                ring.o.kind.eq(RingMessage.Kind.INVALID),
+                wait.eq(0),
+            ]
+
+        return m
+
+class MAC(wiring.Component):
+
+    a: In(SQNative)
+    b: In(SQNative)
+    z: Out(SQNative)
+
+    strobe: Out(1)
+    valid: Out(1)
+
+class SimpleMAC(MAC):
+
+    def elaborate(self, platform):
+        m = Module()
+        m.d.comb += [
+            z.eq(a * b),
+            valid.eq(1),
+        ]
+        return m
+
+class RingMAC(MAC):
+
+    # TODO: add MAC members
+
+    ring: Out(RingSignature())
+    tag:  In(4)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.ring_client = ring_client = RingClient()
+        wiring.connect(m, wiring.flipped(self.ring), ring_client.ring)
+
+        m.d.comb += [
+            ring_client.tag.eq(self.tag),
+            ring_client.i.a.eq(self.a),
+            ring_client.i.b.eq(self.b),
+            ring_client.strobe.eq(self.strobe),
+            self.z.eq(ring_client.o.z),
+            self.valid.eq(ring_client.valid),
+        ]
+
+        return m
+
+class RingMACServer(wiring.Component):
+
+    def __init__(self):
+        self.clients = []
+        super().__init__({
+            "ring": Out(RingSignature())
+        })
+
+    def add_client(self):
+        self.clients.append(RingMAC())
+        return self.clients[-1]
+
+    def elaborate(self, platform):
+        m = Module()
+
+        ring = self.ring
+
+        m.d.sync += [
+            ring.o.eq(ring.i)
+        ]
+
+        # Create the ring (TODO better ordering heuristics?)
+        """
+        wiring.connect(m, wiring.flipped(ring.o), self.clients[0].i)
+        wiring.connect(m, self.clients[-1].o, wiring.flipped(ring.i))
+        for n in range(1, len(self.clients)-1):
+            wiring.connect(m, self.clients[n].o, self.clients[n+1].i)
+        """
+        m.d.comb += [
+            self.clients[0].ring.i.eq(ring.o),
+            ring.i.eq(self.clients[-1].ring.o),
+        ]
+        for n in range(len(self.clients)-1):
+            m.d.comb += self.clients[n+1].ring.i.eq(self.clients[n].ring.o)
+
+        for n in range(len(self.clients)):
+            m.d.comb += self.clients[n].tag.eq(n)
+            setattr(m.submodules, f"client{n}", self.clients[n])
+
+        with m.If((ring.i.kind == RingMessage.Kind.MUL) &
+                  (ring.i.source == RingMessage.Source.CLIENT)):
+            # Only touch the elements we want to touch
+            m.d.sync += [
+                ring.o.source.eq(RingMessage.Source.SERVER),
+                ring.o.payload.mul_server.z.eq(
+                    ring.i.payload.mul_client.a *
+                    ring.i.payload.mul_client.b),
+            ]
+
+        return m
+
+
+# each takes a __init__(self, mac=SimpleMAC()) || RingMac(bus)
+
+class MacVCA(wiring.Component):
+
+    def __init__(self, mac):
+        self.mac = mac
+        super().__init__({
+            "i": In(stream.Signature(data.ArrayLayout(ASQ, 2))),
+            "o": Out(stream.Signature(data.ArrayLayout(ASQ, 1))),
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+
+        mac = self.mac
+
+        m.d.comb += [
+            mac.a.eq(self.i.payload[0]),
+            mac.b.eq(self.i.payload[1])
+        ]
+
+        with m.FSM() as fsm:
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.i.ready.eq(1),
+                with m.If(self.i.valid):
+                    m.d.comb += mac.strobe.eq(1)
+                    m.next = 'WAIT-MAC'
+            with m.State('WAIT-MAC'):
+                with m.If(mac.valid):
+                    m.d.sync += [
+                        self.o.payload.eq(mac.z)
+                    ]
+                    m.next = 'WAIT-READY'
+            with m.State('WAIT-READY'):
+                m.d.comb += [
+                    self.o.valid.eq(1),
+                ]
+                with m.If(self.o.ready):
+                    m.next = 'WAIT-VALID'
 
         return m
 
