@@ -21,20 +21,25 @@ class RingTests(unittest.TestCase):
 
         m = Module()
 
+        n_clients = 10
+
         m.submodules.server = server = dsp.RingMACServer()
-        m.submodules.vca0    = vca0    = dsp.MacVCA(mac=server.add_client())
-        m.submodules.vca1    = vca1    = dsp.MacVCA(mac=server.add_client())
+        for n in range(n_clients):
+            setattr(m.submodules, f"vca{n}", dsp.MacVCA(mac=server.add_client()))
+
+        """
+        for n in range(n_clients):
+            setattr(m.submodules, f"vca{n}", dsp.MacVCA())
+        """
 
         async def testbench(ctx):
             await ctx.tick()
-            ctx.set(vca0.i.valid, 1)
-            ctx.set(vca0.i.payload[0].as_value(), 1024)
-            ctx.set(vca0.i.payload[1].as_value(), 2000)
-            ctx.set(vca0.o.ready, 1)
-            ctx.set(vca1.i.valid, 1)
-            ctx.set(vca1.i.payload[0].as_value(), 512)
-            ctx.set(vca1.i.payload[1].as_value(), 1000)
-            ctx.set(vca1.o.ready, 1)
+            for n in range(n_clients):
+                vca = getattr(m.submodules, f"vca{n}")
+                ctx.set(vca.i.valid, 1)
+                ctx.set(vca.i.payload[0].as_value(), 1024*n)
+                ctx.set(vca.i.payload[1].as_value(), 2000)
+                ctx.set(vca.o.ready, 1)
             for n in range(0, 1000):
                 await ctx.tick()
 

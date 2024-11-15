@@ -818,6 +818,46 @@ class FastMulTop(wiring.Component):
 
         return m
 
+class RingMulTop(wiring.Component):
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        n_clients = 8
+        m.submodules.server = server = dsp.RingMACServer()
+        for n in range(n_clients):
+            setattr(m.submodules, f"vca{n}", dsp.MacVCA(mac=server.add_client()))
+
+        """
+        for n in range(n_clients):
+            setattr(m.submodules, f"vca{n}", dsp.MacVCA())
+        """
+
+
+        vcas = []
+        for n in range(n_clients):
+            vca = getattr(m.submodules, f"vca{n}")
+            vcas.append(vca)
+            m.d.comb += [
+                vca.i.valid.eq(1),
+                vca.i.payload[0].as_value().eq(self.i.payload[0]*(n+1)),
+                vca.i.payload[1].as_value().eq(self.i.payload[1]),
+                vca.o.ready.eq(1),
+            ]
+
+        for n in range(4):
+            m.d.comb += [
+                self.o.payload[n].as_value().eq(
+                    vcas[n*2].o.payload.as_value()+
+                    vcas[n*2+1].o.payload.as_value()),
+                self.o.valid.eq(1),
+            ]
+
+        return m
+
 class CoreTop(Elaboratable):
 
     def __init__(self, dsp_core, enable_touch):
@@ -901,6 +941,7 @@ CORES = {
     "multi_diffuser": (False, PSRAMMultiDiffuser),
     "resampler":      (False, Resampler),
     "fastmul":        (False, FastMulTop),
+    "ringmul":        (False, RingMulTop),
 }
 
 def simulation_ports(fragment):

@@ -401,8 +401,8 @@ class SimpleMAC(MAC):
     def elaborate(self, platform):
         m = Module()
         m.d.comb += [
-            z.eq(a * b),
-            valid.eq(1),
+            self.z.eq(self.a * self.b),
+            self.valid.eq(1),
         ]
         return m
 
@@ -486,7 +486,7 @@ class RingMACServer(wiring.Component):
 
 class MacVCA(wiring.Component):
 
-    def __init__(self, mac):
+    def __init__(self, mac=None):
         self.mac = mac
         super().__init__({
             "i": In(stream.Signature(data.ArrayLayout(ASQ, 2))),
@@ -495,6 +495,9 @@ class MacVCA(wiring.Component):
 
     def elaborate(self, platform):
         m = Module()
+
+        if self.mac is None:
+            m.submodules.mac = self.mac = SimpleMAC()
 
         mac = self.mac
 
