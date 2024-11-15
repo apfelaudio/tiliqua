@@ -785,6 +785,39 @@ class PSRAMMultiDiffuser(wiring.Component):
 
         return m
 
+class FastMulTop(wiring.Component):
+
+    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
+        wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
+
+        m.submodules.fastmul = fastmul = dsp.FastMul()
+        m.submodules.split2 = split2 = dsp.Split(n_channels=2, source=fastmul.o)
+
+        wiring.connect(m, wiring.flipped(self.i), fastmul.i)
+        """
+        # sim full-speed data
+        a = Signal(signed(16), reset=4096)
+        b = Signal(signed(16), reset=1024)
+        m.d.sync += a.eq(a+1024)
+        m.d.sync += b.eq(a+2048)
+        m.d.comb += [
+            fastmul.i.payload[0].a.eq(a),
+            fastmul.i.payload[0].b.eq(a),
+            fastmul.i.valid.eq(1),
+        ]
+        """
+        wiring.connect(m, split2.o[0], merge4.i[0])
+        wiring.connect(m, split2.o[1], merge4.i[1])
+
+        return m
+
 class CoreTop(Elaboratable):
 
     def __init__(self, dsp_core, enable_touch):
@@ -867,6 +900,7 @@ CORES = {
     "sram_diffuser":  (False, SRAMDiffuser),
     "multi_diffuser": (False, PSRAMMultiDiffuser),
     "resampler":      (False, Resampler),
+    "fastmul":        (False, FastMulTop),
 }
 
 def simulation_ports(fragment):
@@ -875,6 +909,8 @@ def simulation_ports(fragment):
         "rst_audio":      (ResetSignal("audio"),                       None),
         "clk_sync":       (ClockSignal("sync"),                        None),
         "rst_sync":       (ResetSignal("sync"),                        None),
+        "clk_fast":       (ClockSignal("fast"),                        None),
+        "rst_fast":       (ResetSignal("fast"),                        None),
         "fs_strobe":      (fragment.fs_strobe,                         None),
         "fs_inject0":     (fragment.inject0,                           None),
         "fs_inject1":     (fragment.inject1,                           None),
