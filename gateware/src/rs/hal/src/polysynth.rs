@@ -17,7 +17,7 @@ macro_rules! impl_polysynth {
 
             impl $POLYSYNTHX {
 
-                pub fn voice_notes(&self) -> [u8; 8] {
+                pub fn voice_notes(&self) -> [u8; 16] {
                     [
                         self.registers.voices0().read().note().bits(),
                         self.registers.voices1().read().note().bits(),
@@ -27,10 +27,18 @@ macro_rules! impl_polysynth {
                         self.registers.voices5().read().note().bits(),
                         self.registers.voices6().read().note().bits(),
                         self.registers.voices7().read().note().bits(),
+                        self.registers.voices8().read().note().bits(),
+                        self.registers.voices9().read().note().bits(),
+                        self.registers.voices10().read().note().bits(),
+                        self.registers.voices11().read().note().bits(),
+                        self.registers.voices12().read().note().bits(),
+                        self.registers.voices13().read().note().bits(),
+                        self.registers.voices14().read().note().bits(),
+                        self.registers.voices15().read().note().bits(),
                     ]
                 }
 
-                pub fn voice_cutoffs(&self) -> [u8; 8] {
+                pub fn voice_cutoffs(&self) -> [u8; 16] {
                     [
                         self.registers.voices0().read().cutoff().bits(),
                         self.registers.voices1().read().cutoff().bits(),
@@ -40,6 +48,14 @@ macro_rules! impl_polysynth {
                         self.registers.voices5().read().cutoff().bits(),
                         self.registers.voices6().read().cutoff().bits(),
                         self.registers.voices7().read().cutoff().bits(),
+                        self.registers.voices8().read().cutoff().bits(),
+                        self.registers.voices9().read().cutoff().bits(),
+                        self.registers.voices10().read().cutoff().bits(),
+                        self.registers.voices11().read().cutoff().bits(),
+                        self.registers.voices12().read().cutoff().bits(),
+                        self.registers.voices13().read().cutoff().bits(),
+                        self.registers.voices14().read().cutoff().bits(),
+                        self.registers.voices15().read().cutoff().bits(),
                     ]
                 }
 

@@ -210,10 +210,10 @@ fn main() -> ! {
 
             let n_voices = N_VOICES;
             for ix in 0usize..n_voices {
-                let j = 7-ix;
+                let j = 15-ix;
                 draw::draw_voice(&mut display,
-                                 ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as i32,
-                                 ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / 8.0f32)) as u32 - 15,
+                                 ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / 16.0f32)) as i32,
+                                 ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / 16.0f32)) as u32 - 15,
                                  notes[ix], cutoffs[ix], opts.beam.hue.value).ok();
             }
 
