@@ -229,10 +229,9 @@ class VCA(wiring.Component):
                    m.next = 'MAC'
 
             with m.State('MAC'):
-                with macp.AwaitMAC(m, dst=self.o.payload[0],
-                                   a=self.i.payload[0],
-                                   b=self.i.payload[1], c=0) as s:
-                    s.next = 'WAIT-READY'
+                with macp.Compute(m, a=self.i.payload[0], b=self.i.payload[1]):
+                    m.d.sync += self.o.payload[0].eq(macp.z)
+                    m.next = 'WAIT-READY'
 
             with m.State('WAIT-READY'):
                 m.d.comb += self.o.valid.eq(1),
@@ -561,15 +560,21 @@ class SVF(wiring.Component):
 
             with m.State('MAC0'):
                 # alp = abp*kK + alp
-                macp.state(m, s_next='MAC1', dst=alp, a=abp, b=kK, c=alp)
+                with macp.Compute(m, a=abp, b=kK):
+                    m.d.sync += alp.eq(macp.z + alp)
+                    m.next = 'MAC1'
 
             with m.State('MAC1'):
                 # ahp = abp*-kQinv + (x - alp)
-                macp.state(m, s_next='MAC2', dst=ahp, a=abp, b=-kQinv, c=x-alp)
+                with macp.Compute(m, a=abp, b=-kQinv):
+                    m.d.sync += ahp.eq(macp.z + (x - alp))
+                    m.next = 'MAC2'
 
             with m.State('MAC2'):
                 # abp = ahp*kK + abp
-                macp.state(m, s_next='OVER', dst=abp, a=ahp, b=kK, c=abp)
+                with macp.Compute(m, a=ahp, b=kK):
+                    m.d.sync += abp.eq(macp.z + abp)
+                    m.next = 'OVER'
 
             with m.State('OVER'):
                 with m.If(oversample != n_oversample - 1):

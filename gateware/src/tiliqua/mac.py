@@ -55,7 +55,7 @@ class MAC(wiring.Component):
 
     """
     Base class for MAC strategies.
-    Users should only need touch through :py:`mac.state(m, ...)`
+    Users should only need touch through :py:`mac.Compute(m, ...)`
     """
 
     a: In(SQNative)
@@ -72,19 +72,9 @@ class MAC(wiring.Component):
         """Default MAC provider if None is specified."""
         return MuxMAC()
 
-    class ComputeObject:
-        def __init__(self, scope):
-            self.scope = scope
-
-        def __enter__(self):
-            return self.scope
-
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            pass
-
-    def AwaitMAC(self, m, dst, a, b, c):
+    def Compute(self, m, a, b):
         """
-        Contents of an FSM state, computing `dst = a*b + c`.
+        Contents of an FSM state, computing `z = a*b`.
         Returns a context object which may be used to perform more
         actions in the same clock the MAC is complete.
         """
@@ -93,9 +83,7 @@ class MAC(wiring.Component):
             self.b.eq(b),
             self.strobe.eq(1),
         ]
-        with m.If(self.valid):
-            m.d.sync += dst.eq(self.z + c)
-            return self.ComputeObject(scope=m)
+        return m.If(self.valid)
 
 class MuxMAC(MAC):
 
