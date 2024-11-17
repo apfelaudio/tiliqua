@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Fast clock domain (Audio stimulation)
+        // Fast clock domain (RAM domain simulation)
         if (timestamp_ns % (ns_in_fast_cycle/2) == 0) {
             top->clk_fast = !top->clk_fast;
         }

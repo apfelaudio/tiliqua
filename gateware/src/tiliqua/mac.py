@@ -57,22 +57,24 @@ class MAC(wiring.Component):
     Base class for MAC strategies.
     Subclasses provide the concrete strategy.
 
-    Users should only need touch through :py:`mac.Multiply(m, ...)`
+    Subclasses use this through :py:`mac.Multiply(m, ...)`
     """
 
     a: In(SQNative)
     b: In(SQNative)
     z: Out(SQNative)
 
-    # Assert strobe when a, b are valid. Keep it
-    # asserted until `valid` is strobed, at which
-    # point z can be considered valid.
+    # Assert strobe when a, b are valid. Keep a, b
+    # valid and strobe asserted until `valid` is strobed,
+    # at which point z can be considered valid.
     strobe: Out(1)
     valid: Out(1)
 
     def Multiply(self, m, a, b):
         """
         Contents of an FSM state, computing `z = a*b`.
+        Ensure a, b will NOT change until the operation completes.
+
         Returns a context object which may be used to perform more
         actions in the same clock the MAC is complete.
         """
@@ -233,7 +235,8 @@ class RingClient(wiring.Component):
 
         wait = Signal()
 
-        # TODO: hold message after strobe until bus free?o
+        # TODO: latch message after strobe until bus free?
+        # => not really needed assuming current contract in MAC() baseclass.
 
         with m.If((ring.i.kind == RingMessage.Kind.INVALID) & self.strobe & ~wait):
             m.d.sync += [
