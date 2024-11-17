@@ -36,7 +36,7 @@ answer by shifting in the question and shifting out the answer.
 Each message is tagged by the generator of the MAC question, so
 clients can identify and consume their own MAC answers.
 
-Assuming each participant asks for a MAC computation on the same
+Assuming all N participants ask for a MAC computation on the same
 clock, the result will arrive at all participants N+1 clocks later,
 with the 'server' DSP tile busy for N out of N+1 of those clocks.
 """

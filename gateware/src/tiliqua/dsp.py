@@ -549,7 +549,7 @@ class SVF(wiring.Component):
 
         # internal oversampling iterations
         n_oversample = 2
-        oversample = Signal(8)
+        oversample = Signal(range(n_oversample))
 
         with m.FSM() as fsm:
 
@@ -584,12 +584,11 @@ class SVF(wiring.Component):
                     m.next = 'OVER'
 
             with m.State('OVER'):
-                with m.If(oversample != n_oversample - 1):
+                with m.If(oversample == n_oversample - 1):
+                    m.next = 'WAIT-READY'
+                with m.Else():
                     m.d.sync += oversample.eq(oversample + 1)
                     m.next = 'MAC0'
-                with m.Else():
-                    # FIXME: average of last N oversamples, instead of last
-                    m.next = 'WAIT-READY'
 
             with m.State('WAIT-READY'):
                 m.d.comb += [
