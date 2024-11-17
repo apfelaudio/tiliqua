@@ -82,7 +82,7 @@ class Diffuser(wiring.Component):
 
 class PolySynth(wiring.Component):
 
-    N_VOICES = 16
+    N_VOICES = 8
 
     i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
@@ -104,6 +104,8 @@ class PolySynth(wiring.Component):
             max_voices=n_voices, velocity_mod=True, zero_velocity_gate=True)
         # 1 oscillator and filter per oscillator
         ncos = [dsp.SawNCO(shift=0) for _ in range(n_voices)]
+
+        # All SVFs share the same multiplier tile through a RingMAC.
         m.submodules.server = server = mac.RingMACServer()
         svfs = [dsp.SVF(macp=server.new_client()) for _ in range(n_voices)]
 
@@ -259,14 +261,15 @@ class SynthPeripheral(wiring.Component):
     def __init__(self, synth=None):
         self.synth = synth
         regs = csr.Builder(addr_width=7, data_width=8)
+        voices_csr_end = 0x8+PolySynth.N_VOICES*4
         self._drive         = regs.add("drive",         self.Drive(),        offset=0x0)
         self._reso          = regs.add("reso",          self.Reso(),         offset=0x4)
         self._voices        = [regs.add(f"voices{i}",   self.Voice(),
                                offset=0x8+i*4) for i in range(PolySynth.N_VOICES)]
-        self._matrix        = regs.add("matrix",        self.Matrix(),       offset=0x48)
-        self._matrix_busy   = regs.add("matrix_busy",   self.MatrixBusy(),   offset=0x4C)
-        self._midi_write    = regs.add("midi_write",    self.MidiWrite(),    offset=0x50)
-        self._midi_read     = regs.add("midi_read",     self.MidiRead(),     offset=0x54)
+        self._matrix        = regs.add("matrix",        self.Matrix(),       offset=voices_csr_end + 0x0)
+        self._matrix_busy   = regs.add("matrix_busy",   self.MatrixBusy(),   offset=voices_csr_end + 0x4)
+        self._midi_write    = regs.add("midi_write",    self.MidiWrite(),    offset=voices_csr_end + 0x8)
+        self._midi_read     = regs.add("midi_read",     self.MidiRead(),     offset=voices_csr_end + 0xC)
         self._bridge = csr.Bridge(regs.as_memory_map())
         super().__init__({
             "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),

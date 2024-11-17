@@ -4,6 +4,8 @@
 pub use tiliqua_pac as pac;
 pub use tiliqua_hal as hal;
 
+use tiliqua_lib::generated_constants::N_VOICES;
+
 tiliqua_hal::impl_serial! {
     Serial0: pac::UART0,
 }
@@ -26,6 +28,7 @@ tiliqua_hal::impl_eurorack_pmod! {
 
 tiliqua_hal::impl_polysynth! {
     Polysynth0: pac::SYNTH_PERIPH,
+    N_VOICES
 }
 
 tiliqua_hal::impl_video! {

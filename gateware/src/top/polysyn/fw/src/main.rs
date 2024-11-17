@@ -208,12 +208,11 @@ fn main() -> ! {
             vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
             vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
 
-            let n_voices = N_VOICES;
-            for ix in 0usize..n_voices {
-                let j = 15-ix;
+            for ix in 0usize..N_VOICES {
+                let j = (N_VOICES-1)-ix;
                 draw::draw_voice(&mut display,
-                                 ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / 16.0f32)) as i32,
-                                 ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / 16.0f32)) as u32 - 15,
+                                 ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / (N_VOICES as f32))) as i32,
+                                 ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / (N_VOICES as f32))) as u32 - 15,
                                  notes[ix], cutoffs[ix], opts.beam.hue.value).ok();
             }
 

@@ -785,78 +785,6 @@ class PSRAMMultiDiffuser(wiring.Component):
 
         return m
 
-class FastMulTop(wiring.Component):
-
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.submodules.merge4 = merge4 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[2])
-        wiring.connect(m, dsp.ASQ_VALID, merge4.i[3])
-
-        m.submodules.fastmul = fastmul = dsp.FastMul()
-        m.submodules.split2 = split2 = dsp.Split(n_channels=2, source=fastmul.o)
-
-        wiring.connect(m, wiring.flipped(self.i), fastmul.i)
-        """
-        # sim full-speed data
-        a = Signal(signed(16), reset=4096)
-        b = Signal(signed(16), reset=1024)
-        m.d.sync += a.eq(a+1024)
-        m.d.sync += b.eq(a+2048)
-        m.d.comb += [
-            fastmul.i.payload[0].a.eq(a),
-            fastmul.i.payload[0].b.eq(a),
-            fastmul.i.valid.eq(1),
-        ]
-        """
-        wiring.connect(m, split2.o[0], merge4.i[0])
-        wiring.connect(m, split2.o[1], merge4.i[1])
-
-        return m
-
-class RingMulTop(wiring.Component):
-
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
-
-    def elaborate(self, platform):
-        m = Module()
-
-        n_clients = 8
-        m.submodules.server = server = dsp.RingMACServer()
-        for n in range(n_clients):
-            setattr(m.submodules, f"svf{n}", dsp.SVF(mac=server.add_client()))
-
-        """
-        for n in range(n_clients):
-            setattr(m.submodules, f"svf{n}", dsp.SVF())
-        """
-
-        svfs = []
-        for n in range(n_clients):
-            svf = getattr(m.submodules, f"svf{n}")
-            svfs.append(svf)
-            m.d.comb += [
-                vca.i.valid.eq(1),
-                vca.i.payload[0].as_value().eq(self.i.payload[0]*(n+1)),
-                vca.i.payload[1].as_value().eq(self.i.payload[1]),
-                vca.o.ready.eq(1),
-            ]
-
-        for n in range(4):
-            m.d.comb += [
-                self.o.payload[n].as_value().eq(
-                    vcas[n*2].o.payload.as_value()+
-                    vcas[n*2+1].o.payload.as_value()),
-                self.o.valid.eq(1),
-            ]
-
-        return m
-
 class CoreTop(Elaboratable):
 
     def __init__(self, dsp_core, enable_touch):
@@ -939,8 +867,6 @@ CORES = {
     "sram_diffuser":  (False, SRAMDiffuser),
     "multi_diffuser": (False, PSRAMMultiDiffuser),
     "resampler":      (False, Resampler),
-    "fastmul":        (False, FastMulTop),
-    "ringmul":        (False, RingMulTop),
 }
 
 def simulation_ports(fragment):
