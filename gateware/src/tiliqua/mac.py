@@ -45,6 +45,9 @@ from amaranth              import *
 from amaranth.lib          import wiring, data, stream, enum
 from amaranth.lib.wiring   import In, Out
 
+from tiliqua.eurorack_pmod import ASQ
+from amaranth_future       import fixed
+
 # Native 18-bit multiplier type.
 SQNative = fixed.SQ(2, ASQ.f_width)
 
@@ -62,7 +65,7 @@ class MAC(wiring.Component):
     strobe: Out(1)
     valid: Out(1)
 
-    def state(self, m, s_i, s_o, dst, a, b, c)
+    def state(self, m, s_i, s_o, dst, a, b, c):
         """ Generate an FSM state, computing `dst = a*b + c` """
         with m.State(s_i):
             m.d.comb += [
@@ -89,49 +92,6 @@ class MuxMAC(MAC):
             self.z.eq(self.a * self.b),
             self.valid.eq(1),
         ]
-        return m
-
-class RingMAC(MAC):
-
-    """
-    A message-ring-backed MAC provider.
-
-    Normally these should only be created from an existing server
-    using :py:`RingMACServer.add_client()`. This automatically
-    hooks up the :py:`ring` and :py:`tag` attributes.
-
-    The common pattern here is that each functional block tends
-    to use a single :py:`RingMAC`, even if it has multiple MAC
-    steps. That is, the :py:`RingMAC` itself is Mux'd, however
-    all requests land on the same shared bus.
-
-    This provides optimal scheduling for message rings composed
-    of components that have the same states.
-
-    Contains no multiplier, :py:`ring` must be hooked up to a
-    message ring on which a :py:`RingMACServer` can be found.
-    :py:`tag` MUST uniquely identify the underlying :py:`RingClient`
-    instantiated inside this :py:`RingMAC`.
-    """
-
-    ring: Out(RingSignature())
-    tag:  In(4)
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.submodules.ring_client = ring_client = RingClient()
-        wiring.connect(m, wiring.flipped(self.ring), ring_client.ring)
-
-        m.d.comb += [
-            ring_client.tag.eq(self.tag),
-            ring_client.i.a.eq(self.a),
-            ring_client.i.b.eq(self.b),
-            ring_client.strobe.eq(self.strobe),
-            self.z.eq(ring_client.o.z),
-            self.valid.eq(ring_client.valid),
-        ]
-
         return m
 
 class RingMessage(data.Struct):
@@ -179,6 +139,49 @@ class RingSignature(wiring.Signature):
             "i":  In(RingMessage),
             "o":  Out(RingMessage),
         })
+
+class RingMAC(MAC):
+
+    """
+    A message-ring-backed MAC provider.
+
+    Normally these should only be created from an existing server
+    using :py:`RingMACServer.add_client()`. This automatically
+    hooks up the :py:`ring` and :py:`tag` attributes.
+
+    The common pattern here is that each functional block tends
+    to use a single :py:`RingMAC`, even if it has multiple MAC
+    steps. That is, the :py:`RingMAC` itself is Mux'd, however
+    all requests land on the same shared bus.
+
+    This provides optimal scheduling for message rings composed
+    of components that have the same states.
+
+    Contains no multiplier, :py:`ring` must be hooked up to a
+    message ring on which a :py:`RingMACServer` can be found.
+    :py:`tag` MUST uniquely identify the underlying :py:`RingClient`
+    instantiated inside this :py:`RingMAC`.
+    """
+
+    ring: Out(RingSignature())
+    tag:  In(4)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.ring_client = ring_client = RingClient()
+        wiring.connect(m, wiring.flipped(self.ring), ring_client.ring)
+
+        m.d.comb += [
+            ring_client.tag.eq(self.tag),
+            ring_client.i.a.eq(self.a),
+            ring_client.i.b.eq(self.b),
+            ring_client.strobe.eq(self.strobe),
+            self.z.eq(ring_client.o.z),
+            self.valid.eq(ring_client.valid),
+        ]
+
+        return m
 
 class RingClient(wiring.Component):
 

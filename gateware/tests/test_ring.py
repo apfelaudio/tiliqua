@@ -13,7 +13,7 @@ from amaranth.sim          import *
 from amaranth.lib          import wiring
 
 from tiliqua.eurorack_pmod import ASQ
-from tiliqua               import dsp
+from tiliqua               import dsp, mac
 
 class RingTests(unittest.TestCase):
 
@@ -23,9 +23,9 @@ class RingTests(unittest.TestCase):
 
         n_clients = 10
 
-        m.submodules.server = server = dsp.RingMACServer()
+        m.submodules.server = server = mac.RingMACServer()
         for n in range(n_clients):
-            setattr(m.submodules, f"vca{n}", dsp.MacVCA(mac=server.add_client()))
+            setattr(m.submodules, f"vca{n}", dsp.VCA(mac=server.add_client()))
 
         """
         for n in range(n_clients):

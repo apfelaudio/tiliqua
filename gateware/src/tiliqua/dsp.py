@@ -17,6 +17,7 @@ from amaranth.utils        import exact_log2, ceil_log2
 from scipy import signal
 
 from amaranth_future       import fixed
+from tiliqua               import mac
 
 from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
 
@@ -206,17 +207,40 @@ class VCA(wiring.Component):
         Output stream, :py:`i.payload[0] * i.payload[1]`.
     """
 
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 2)))
-    o: Out(stream.Signature(data.ArrayLayout(ASQ, 1)))
+
+    def __init__(self, mac=None):
+        self.mac = mac
+        super().__init__({
+            "i": In(stream.Signature(data.ArrayLayout(ASQ, 2))),
+            "o": Out(stream.Signature(data.ArrayLayout(ASQ, 1)))
+        })
+
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += [
-            self.o.payload[0].eq(self.i.payload[0] * self.i.payload[1]),
-            self.o.valid.eq(self.i.valid),
-            self.i.ready.eq(self.o.ready),
-        ]
+        if self.mac is None:
+            m.submodules.mac = self.mac = mac.MuxMAC()
+
+        mac = self.mac
+
+        with m.FSM() as fsm:
+
+            with m.State('WAIT-VALID'):
+                m.d.comb += self.i.ready.eq(1),
+                with m.If(self.i.valid):
+                   m.next = 'MAC0'
+
+            mac.state(m, 'MAC0', 'WAIT-READY',
+                      dst = self.o.payload[0],
+                      a   = self.i.payload[0],
+                      b   = self.i.payload[1],
+                      c   = 0)
+
+            with m.State('WAIT-READY'):
+                m.d.comb += self.o.valid.eq(1),
+                with m.If(self.o.ready):
+                    m.next = 'WAIT-VALID'
 
         return m
 
