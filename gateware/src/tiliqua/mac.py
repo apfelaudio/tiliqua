@@ -55,7 +55,7 @@ class MAC(wiring.Component):
 
     """
     Base class for MAC strategies.
-    Users should only need touch through :py:`mac.Compute(m, ...)`
+    Users should only need touch through :py:`mac.Multiply(m, ...)`
     """
 
     a: In(SQNative)
@@ -68,11 +68,7 @@ class MAC(wiring.Component):
     strobe: Out(1)
     valid: Out(1)
 
-    def default():
-        """Default MAC provider if None is specified."""
-        return MuxMAC()
-
-    def Compute(self, m, a, b):
+    def Multiply(self, m, a, b):
         """
         Contents of an FSM state, computing `z = a*b`.
         Returns a context object which may be used to perform more
@@ -84,6 +80,10 @@ class MAC(wiring.Component):
             self.strobe.eq(1),
         ]
         return m.If(self.valid)
+
+    def default():
+        """Default MAC provider for DSP components if None is specified."""
+        return MuxMAC()
 
 class MuxMAC(MAC):
 

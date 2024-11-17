@@ -219,7 +219,7 @@ class VCA(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.macp = macp = self.macp
+        m.submodules.macp = mp = self.macp
 
         with m.FSM() as fsm:
 
@@ -229,8 +229,8 @@ class VCA(wiring.Component):
                    m.next = 'MAC'
 
             with m.State('MAC'):
-                with macp.Compute(m, a=self.i.payload[0], b=self.i.payload[1]):
-                    m.d.sync += self.o.payload[0].eq(macp.z)
+                with mp.Multiply(m, a=self.i.payload[0], b=self.i.payload[1]):
+                    m.d.sync += self.o.payload[0].eq(mp.z)
                     m.next = 'WAIT-READY'
 
             with m.State('WAIT-READY'):
@@ -418,10 +418,11 @@ class WaveShaper(wiring.Component):
     i: In(stream.Signature(ASQ))
     o: Out(stream.Signature(ASQ))
 
-    def __init__(self, lut_function=None, lut_size=512, continuous=False):
+    def __init__(self, lut_function=None, lut_size=512, continuous=False, macp=None):
         self.lut_size = lut_size
         self.lut_addr_width = exact_log2(lut_size)
         self.continuous = continuous
+        self.macp = macp or mac.MAC.default()
 
         # build LUT such that we can index into it using 2s
         # complement and pluck out results with correct sign.
@@ -440,6 +441,8 @@ class WaveShaper(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
+        m.submodules.macp = mp = self.macp
+
         # TODO (amaranth 0.5+): use native ASQ shape in LUT memory
         m.submodules.mem = mem = Memory(
             shape=signed(ASQ.as_shape().width), depth=self.lut_size, init=self.lut)
@@ -453,12 +456,14 @@ class WaveShaper(wiring.Component):
         trunc = Signal()
 
         with m.FSM() as fsm:
+
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
                     m.d.sync += x.eq(self.i.payload << ltype.i_width)
                     m.d.sync += y.eq(0)
                     m.next = 'READ0'
+
             with m.State('READ0'):
                 m.d.comb += [
                     rport.en.eq(1),
@@ -474,18 +479,20 @@ class WaveShaper(wiring.Component):
                     with m.Else():
                         m.d.comb += rport.addr.eq(x.truncate()+1)
                 m.next = 'MAC0'
+
             with m.State('MAC0'):
-                m.d.sync += y.eq(fixed.Value(ASQ, rport.data) *
-                                 (x - x.truncate()))
-                m.d.comb += [
-                    rport.addr.eq(x.truncate()),
-                    rport.en.eq(1),
-                ]
-                m.next = 'MAC1'
+                with mp.Multiply(m, a=fixed.Value(ASQ, rport.data), b=x-x.truncate()):
+                    m.d.sync += y.eq(mp.z)
+                    m.d.comb += [
+                        rport.addr.eq(x.truncate()),
+                        rport.en.eq(1),
+                    ]
+                    m.next = 'MAC1'
+
             with m.State('MAC1'):
-                m.d.sync += y.eq(y + fixed.Value(ASQ, rport.data) *
-                                 (x.truncate() - x + 1))
-                m.next = 'WAIT-READY'
+                with mp.Multiply(m, a=fixed.Value(ASQ, rport.data), b=(x.truncate()-x+1)):
+                    m.d.sync += y.eq(y + mp.z)
+                    m.next = 'WAIT-READY'
 
             with m.State('WAIT-READY'):
                 m.d.comb += [
@@ -529,7 +536,7 @@ class SVF(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.macp = macp = self.macp
+        m.submodules.macp = mp = self.macp
 
         mtype = mac.SQNative
 
@@ -560,20 +567,20 @@ class SVF(wiring.Component):
 
             with m.State('MAC0'):
                 # alp = abp*kK + alp
-                with macp.Compute(m, a=abp, b=kK):
-                    m.d.sync += alp.eq(macp.z + alp)
+                with mp.Multiply(m, a=abp, b=kK):
+                    m.d.sync += alp.eq(mp.z + alp)
                     m.next = 'MAC1'
 
             with m.State('MAC1'):
                 # ahp = abp*-kQinv + (x - alp)
-                with macp.Compute(m, a=abp, b=-kQinv):
-                    m.d.sync += ahp.eq(macp.z + (x - alp))
+                with mp.Multiply(m, a=abp, b=-kQinv):
+                    m.d.sync += ahp.eq(mp.z + (x - alp))
                     m.next = 'MAC2'
 
             with m.State('MAC2'):
                 # abp = ahp*kK + abp
-                with macp.Compute(m, a=ahp, b=kK):
-                    m.d.sync += abp.eq(macp.z + abp)
+                with mp.Multiply(m, a=ahp, b=kK):
+                    m.d.sync += abp.eq(mp.z + abp)
                     m.next = 'OVER'
 
             with m.State('OVER'):
@@ -632,7 +639,7 @@ class PitchShift(wiring.Component):
     shifters to share a single delay line).
     """
 
-    def __init__(self, tap, xfade=256):
+    def __init__(self, tap, xfade=256, macp=None):
         assert xfade <= (tap.max_delay // 4)
         self.tap        = tap
         self.xfade      = xfade
@@ -640,6 +647,7 @@ class PitchShift(wiring.Component):
         # delay type: integer component is index into delay line
         # +1 is necessary so that we don't overflow on adding grain_sz.
         self.dtype = fixed.SQ(self.tap.addr_width+1, 8)
+        self.macp = macp or mac.MAC.default()
         super().__init__({
             "i": In(stream.Signature(data.StructLayout({
                     "pitch": self.dtype,
@@ -650,6 +658,8 @@ class PitchShift(wiring.Component):
 
     def elaborate(self, platform):
         m = Module()
+
+        m.submodules.macp = mp = self.macp
 
         # Current position in delay line 0, 1 (+= pitch every sample)
         delay0 = Signal(self.dtype)
@@ -718,15 +728,17 @@ class PitchShift(wiring.Component):
                         env0.eq(fixed.Const(0.99, shape=ASQ)),
                         env1.eq(fixed.Const(0, shape=ASQ)),
                     ]
-                m.next = 'WAIT-SOURCE-READY'
-            with m.State('WAIT-SOURCE-READY'):
-                m.d.comb += [
-                    self.o.valid.eq(1),
-                    # FIXME: move these into a MAC loop to save a multiplier.
-                    self.o.payload.eq(
-                        (sample0 * env0) + (sample1 * env1)
-                    )
-                ]
+                m.next = 'MAC0'
+            with m.State('MAC0'):
+                with mp.Multiply(m, a=sample0, b=env0):
+                    m.d.sync += self.o.payload.eq(mp.z)
+                    m.next = 'MAC1'
+            with m.State('MAC1'):
+                with mp.Multiply(m, a=sample1, b=env1):
+                    m.d.sync += self.o.payload.eq(self.o.payload + mp.z)
+                    m.next = 'WAIT-READY'
+            with m.State('WAIT-READY'):
+                m.d.comb += self.o.valid.eq(1),
                 with m.If(self.o.ready):
                     m.next = 'WAIT-VALID'
         return m

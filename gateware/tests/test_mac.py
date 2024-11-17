@@ -15,7 +15,7 @@ from amaranth.lib          import wiring
 from tiliqua.eurorack_pmod import ASQ
 from tiliqua               import dsp, mac
 
-class RingTests(unittest.TestCase):
+class MacTests(unittest.TestCase):
 
     def test_mac_ring(self):
 
