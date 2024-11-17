@@ -229,11 +229,10 @@ class VCA(wiring.Component):
                    m.next = 'MAC'
 
             with m.State('MAC'):
-                macp.state(m, s_next = 'WAIT-READY',
-                           dst = self.o.payload[0],
-                           a   = self.i.payload[0],
-                           b   = self.i.payload[1],
-                           c   = 0)
+                with macp.AwaitMAC(m, dst=self.o.payload[0],
+                                   a=self.i.payload[0],
+                                   b=self.i.payload[1], c=0) as s:
+                    s.next = 'WAIT-READY'
 
             with m.State('WAIT-READY'):
                 m.d.comb += self.o.valid.eq(1),

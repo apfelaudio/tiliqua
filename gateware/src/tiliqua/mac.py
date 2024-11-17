@@ -72,8 +72,22 @@ class MAC(wiring.Component):
         """Default MAC provider if None is specified."""
         return MuxMAC()
 
-    def state(self, m, s_next, dst, a, b, c):
-        """ Contents of an FSM state, computing `dst = a*b + c` """
+    class ComputeObject:
+        def __init__(self, scope):
+            self.scope = scope
+
+        def __enter__(self):
+            return self.scope
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+
+    def AwaitMAC(self, m, dst, a, b, c):
+        """
+        Contents of an FSM state, computing `dst = a*b + c`.
+        Returns a context object which may be used to perform more
+        actions in the same clock the MAC is complete.
+        """
         m.d.comb += [
             self.a.eq(a),
             self.b.eq(b),
@@ -81,7 +95,7 @@ class MAC(wiring.Component):
         ]
         with m.If(self.valid):
             m.d.sync += dst.eq(self.z + c)
-            m.next = s_next
+            return self.ComputeObject(scope=m)
 
 class MuxMAC(MAC):
 
