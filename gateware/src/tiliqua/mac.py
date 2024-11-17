@@ -55,6 +55,8 @@ class MAC(wiring.Component):
 
     """
     Base class for MAC strategies.
+    Subclasses provide the concrete strategy.
+
     Users should only need touch through :py:`mac.Multiply(m, ...)`
     """
 
