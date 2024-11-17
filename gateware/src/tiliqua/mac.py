@@ -72,17 +72,16 @@ class MAC(wiring.Component):
         """Default MAC provider if None is specified."""
         return MuxMAC()
 
-    def state(self, m, s_i, s_o, dst, a, b, c):
-        """ Generate an FSM state, computing `dst = a*b + c` """
-        with m.State(s_i):
-            m.d.comb += [
-                self.a.eq(a),
-                self.b.eq(b),
-                self.strobe.eq(1),
-            ]
-            with m.If(self.valid):
-                m.d.sync += dst.eq(self.z + c)
-                m.next = s_o
+    def state(self, m, s_next, dst, a, b, c):
+        """ Contents of an FSM state, computing `dst = a*b + c` """
+        m.d.comb += [
+            self.a.eq(a),
+            self.b.eq(b),
+            self.strobe.eq(1),
+        ]
+        with m.If(self.valid):
+            m.d.sync += dst.eq(self.z + c)
+            m.next = s_next
 
 class MuxMAC(MAC):
 

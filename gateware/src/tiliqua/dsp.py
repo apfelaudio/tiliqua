@@ -226,13 +226,14 @@ class VCA(wiring.Component):
             with m.State('WAIT-VALID'):
                 m.d.comb += self.i.ready.eq(1),
                 with m.If(self.i.valid):
-                   m.next = 'MAC0'
+                   m.next = 'MAC'
 
-            macp.state(m, 'MAC0', 'WAIT-READY',
-                       dst = self.o.payload[0],
-                       a   = self.i.payload[0],
-                       b   = self.i.payload[1],
-                       c   = 0)
+            with m.State('MAC'):
+                macp.state(m, s_next = 'WAIT-READY',
+                           dst = self.o.payload[0],
+                           a   = self.i.payload[0],
+                           b   = self.i.payload[1],
+                           c   = 0)
 
             with m.State('WAIT-READY'):
                 m.d.comb += self.o.valid.eq(1),
@@ -559,14 +560,17 @@ class SVF(wiring.Component):
                        m.d.sync += kQinv.eq(self.i.payload.resonance)
                    m.next = 'MAC0'
 
-            # alp = abp*kK + alp
-            macp.state(m, 'MAC0', 'MAC1', dst=alp, a=abp, b=kK,     c=alp)
+            with m.State('MAC0'):
+                # alp = abp*kK + alp
+                macp.state(m, s_next='MAC1', dst=alp, a=abp, b=kK, c=alp)
 
-            # ahp = abp*-kQinv + (x - alp)
-            macp.state(m, 'MAC1', 'MAC2', dst=ahp, a=abp, b=-kQinv, c=x-alp)
+            with m.State('MAC1'):
+                # ahp = abp*-kQinv + (x - alp)
+                macp.state(m, s_next='MAC2', dst=ahp, a=abp, b=-kQinv, c=x-alp)
 
-            # abp = ahp*kK + abp
-            macp.state(m, 'MAC2', 'OVER', dst=abp, a=ahp, b=kK,     c=abp)
+            with m.State('MAC2'):
+                # abp = ahp*kK + abp
+                macp.state(m, s_next='OVER', dst=abp, a=ahp, b=kK, c=abp)
 
             with m.State('OVER'):
                 with m.If(oversample != n_oversample - 1):
