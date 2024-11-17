@@ -231,6 +231,19 @@ class EurorackPmod(wiring.Component):
             pmod_pins.i2c_sda.o.eq(0),
         ]
 
+        # PDN clocking
+        pdn_cnt = Signal(unsigned(16))
+        m.d.comb += [
+            pmod_pins.pdn_d.o.eq(1),
+        ]
+        with m.If(pdn_cnt != 60000): # 1ms
+            m.d.sync += pdn_cnt.eq(pdn_cnt+1)
+
+        #m.d.comb += pmod_pins.pdn_clk.o.eq(1)
+
+        with m.If(3000 < pdn_cnt):
+            m.d.comb += pmod_pins.pdn_clk.o.eq(1)
+
         m.submodules.veurorack_pmod = Instance("eurorack_pmod",
             # Parameters
             p_W = WIDTH,
@@ -248,7 +261,7 @@ class EurorackPmod(wiring.Component):
             i_i2c_sda_i = pmod_pins.i2c_sda.i,
 
             # Pads (directly hooked up to pads without extra logic required)
-            o_pdn = pmod_pins.pdn.o,
+            #o_pdn = pmod_pins.pdn.o,
             o_mclk = pmod_pins.mclk.o,
             o_sdin1 = pmod_pins.sdin1.o,
             i_sdout1 = pmod_pins.sdout1.i,

@@ -343,37 +343,31 @@ fn main() -> ! {
         }
 
         print_tiliqua(&mut display, &mut rng);
-        pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_encoder_state(&mut display, encoder_rotation, encoder_toggle);
-        pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_codec_state(&mut display, &pmod);
-        pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_touch_state(&mut display, &pmod);
-        pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_usb_state(&mut display, &mut i2cdev);
-        pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_die_temperature(&mut display, &dtr);
-        pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         // Write something to the CODEC outputs / LEDs
+        /*
         pmod.sample_o0().write(|w| unsafe { w.sample().bits(
-            ((f32::sin((uptime_ms as f32)/200.0f32 + 0.0) * 16000.0f32) as i16) as u16) } );
-        pmod.sample_o1().write(|w| unsafe { w.sample().bits(
-            ((f32::sin((uptime_ms as f32)/200.0f32 + 1.0) * 16000.0f32) as i16) as u16) } );
-        pmod.sample_o2().write(|w| unsafe { w.sample().bits(
-            ((f32::sin((uptime_ms as f32)/200.0f32 + 2.0) * 16000.0f32) as i16) as u16) } );
-        pmod.sample_o3().write(|w| unsafe { w.sample().bits(
-            ((f32::sin((uptime_ms as f32)/200.0f32 + 3.0) * 16000.0f32) as i16) as u16) } );
+            ((f32::sin((uptime_ms as f32)/50.0f32 + 0.0) * 16000.0f32) as i16) as u16) } );
+        */
+
+        pmod.sample_o0().write(|w| unsafe { w.sample().bits(0u16) });
 
         for n in 0..16 {
             pca9635.leds[n] = (f32::sin((uptime_ms as f32)/200.0f32 + (n as f32)) * 255.0f32) as u8;
         }
         pca9635.push().ok();
+
+        uptime_ms += 1;
 
     }
 }
