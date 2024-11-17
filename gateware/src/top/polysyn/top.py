@@ -39,7 +39,7 @@ from amaranth_soc              import csr
 
 from amaranth_future           import fixed
 
-from tiliqua                   import eurorack_pmod, dsp, midi, scope, sim, delay
+from tiliqua                   import eurorack_pmod, dsp, mac, midi, scope, sim, delay
 from tiliqua.delay_line        import DelayLine
 from tiliqua.eurorack_pmod     import ASQ
 from tiliqua.tiliqua_soc       import TiliquaSoc
@@ -104,8 +104,8 @@ class PolySynth(wiring.Component):
             max_voices=n_voices, velocity_mod=True, zero_velocity_gate=True)
         # 1 oscillator and filter per oscillator
         ncos = [dsp.SawNCO(shift=0) for _ in range(n_voices)]
-        m.submodules.server = server = dsp.RingMACServer()
-        svfs = [dsp.SVF(mac=server.add_client()) for _ in range(n_voices)]
+        m.submodules.server = server = mac.RingMACServer()
+        svfs = [dsp.SVF(macp=server.new_client()) for _ in range(n_voices)]
 
         m.submodules.merge = merge = dsp.Merge(n_channels=n_voices)
 

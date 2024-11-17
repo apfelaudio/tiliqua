@@ -194,6 +194,7 @@ def channel_remap(m, stream_o, stream_i, mapping_o_to_i):
         return connections
     return connect_remap(m, stream_o, stream_i, remap)
 
+
 class VCA(wiring.Component):
 
     """
@@ -207,22 +208,18 @@ class VCA(wiring.Component):
         Output stream, :py:`i.payload[0] * i.payload[1]`.
     """
 
-
-    def __init__(self, mac=None):
-        self.mac = mac
+    def __init__(self, dtype=ASQ, macp=None):
+        self.dtype = dtype
+        self.macp = macp or mac.MAC.default()
         super().__init__({
-            "i": In(stream.Signature(data.ArrayLayout(ASQ, 2))),
-            "o": Out(stream.Signature(data.ArrayLayout(ASQ, 1)))
+            "i": In(stream.Signature(data.ArrayLayout(self.dtype, 2))),
+            "o": Out(stream.Signature(data.ArrayLayout(self.dtype, 1)))
         })
-
 
     def elaborate(self, platform):
         m = Module()
 
-        if self.mac is None:
-            m.submodules.mac = self.mac = mac.MuxMAC()
-
-        mac = self.mac
+        m.submodules.macp = macp = self.macp
 
         with m.FSM() as fsm:
 
@@ -231,11 +228,11 @@ class VCA(wiring.Component):
                 with m.If(self.i.valid):
                    m.next = 'MAC0'
 
-            mac.state(m, 'MAC0', 'WAIT-READY',
-                      dst = self.o.payload[0],
-                      a   = self.i.payload[0],
-                      b   = self.i.payload[1],
-                      c   = 0)
+            macp.state(m, 'MAC0', 'WAIT-READY',
+                       dst = self.o.payload[0],
+                       a   = self.i.payload[0],
+                       b   = self.i.payload[1],
+                       c   = 0)
 
             with m.State('WAIT-READY'):
                 m.d.comb += self.o.valid.eq(1),
@@ -513,18 +510,19 @@ class SVF(wiring.Component):
     Reference: Fig.3 in https://arxiv.org/pdf/2111.05592
     """
 
-    def __init__(self, mac=None):
-        self.mac = mac
+    def __init__(self, dtype=ASQ, macp=None):
+        self.dtype = dtype
+        self.macp = macp or mac.MAC.default()
         super().__init__({
             "i": In(stream.Signature(data.StructLayout({
-                    "x": ASQ,
-                    "cutoff": ASQ,
-                    "resonance": ASQ,
+                    "x": dtype,
+                    "cutoff": dtype,
+                    "resonance": dtype,
                 }))),
             "o": Out(stream.Signature(data.StructLayout({
-                    "hp": ASQ,
-                    "lp": ASQ,
-                    "bp": ASQ,
+                    "hp": dtype,
+                    "lp": dtype,
+                    "bp": dtype,
                 }))),
         })
 
@@ -532,20 +530,16 @@ class SVF(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        if self.mac is None:
-            m.submodules.mac = self.mac = SimpleMAC()
+        m.submodules.macp = macp = self.macp
 
-        mac = self.mac
+        mtype = mac.SQNative
 
-        # is this stable with only 18 bits? (native multiplier width)
-        dtype = fixed.SQ(2, ASQ.f_width)
-
-        abp   = Signal(dtype)
-        alp   = Signal(dtype)
-        ahp   = Signal(dtype)
-        x     = Signal(dtype)
-        kK    = Signal(dtype)
-        kQinv = Signal(dtype)
+        abp   = Signal(mtype)
+        alp   = Signal(mtype)
+        ahp   = Signal(mtype)
+        x     = Signal(mtype)
+        kK    = Signal(mtype)
+        kQinv = Signal(mtype)
 
         # internal oversampling iterations
         n_oversample = 2
@@ -565,11 +559,14 @@ class SVF(wiring.Component):
                        m.d.sync += kQinv.eq(self.i.payload.resonance)
                    m.next = 'MAC0'
 
-            mac.state(m, 'MAC0', 'MAC1', alp, abp, kK, alp)
+            # alp = abp*kK + alp
+            macp.state(m, 'MAC0', 'MAC1', dst=alp, a=abp, b=kK,     c=alp)
 
-            mac.state(m, 'MAC1', 'MAC2', ahp, abp, -kQinv, x - alp)
+            # ahp = abp*-kQinv + (x - alp)
+            macp.state(m, 'MAC1', 'MAC2', dst=ahp, a=abp, b=-kQinv, c=x-alp)
 
-            mac.state(m, 'MAC2', 'OVER', abp, ahp, kK, abp)
+            # abp = ahp*kK + abp
+            macp.state(m, 'MAC2', 'OVER', dst=abp, a=ahp, b=kK,     c=abp)
 
             with m.State('OVER'):
                 with m.If(oversample != n_oversample - 1):

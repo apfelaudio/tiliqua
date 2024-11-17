@@ -22,8 +22,8 @@ amount of separate functional blocks is high, sharing DSP tiles is
 essential. Without sharing DSP tiles, multipliers are often the first
 FPGA resource (by far) to be exhausted.
 
-MAC Message Ring (details)
---------------------------
+MAC Message Ring
+----------------
 
 Each node on the message ring nominally shifts its input message
 to its output. Each node is connected in a circular shift register,
@@ -62,8 +62,15 @@ class MAC(wiring.Component):
     b: In(SQNative)
     z: Out(SQNative)
 
+    # Assert strobe when a, b are valid. Keep it
+    # asserted until `valid` is strobed, at which
+    # point z can be considered valid.
     strobe: Out(1)
     valid: Out(1)
+
+    def default():
+        """Default MAC provider if None is specified."""
+        return MuxMAC()
 
     def state(self, m, s_i, s_o, dst, a, b, c):
         """ Generate an FSM state, computing `dst = a*b + c` """
@@ -102,6 +109,8 @@ class RingMessage(data.Struct):
     a server.
     """
 
+    TAG_BITS = 4
+
     class Kind(enum.Enum, shape=unsigned(1)):
         INVALID     = 0
         MUL         = 1
@@ -121,7 +130,7 @@ class RingMessage(data.Struct):
 
     source  : Source
     kind    : Kind
-    tag     : unsigned(4) # TODO parameterize
+    tag     : unsigned(TAG_BITS) # TODO parameterize in __init__
     payload : data.UnionLayout({
         "mul_client": MulClientPayload,
         "mul_server": MulServerPayload,
@@ -146,16 +155,17 @@ class RingMAC(MAC):
     A message-ring-backed MAC provider.
 
     Normally these should only be created from an existing server
-    using :py:`RingMACServer.add_client()`. This automatically
-    hooks up the :py:`ring` and :py:`tag` attributes.
+    using :py:`RingMACServer.new_client()`. This automatically
+    hooks up the :py:`ring` and :py:`tag` attributes, but does
+    NOT add it as a submodule for elaboration (you must do this).
 
     The common pattern here is that each functional block tends
     to use a single :py:`RingMAC`, even if it has multiple MAC
     steps. That is, the :py:`RingMAC` itself is Mux'd, however
     all requests land on the same shared bus.
 
-    This provides optimal scheduling for message rings composed
-    of components that have the same states.
+    This provides near-optimal scheduling for message rings composed
+    of components that have the same state machines.
 
     Contains no multiplier, :py:`ring` must be hooked up to a
     message ring on which a :py:`RingMACServer` can be found.
@@ -164,7 +174,7 @@ class RingMAC(MAC):
     """
 
     ring: Out(RingSignature())
-    tag:  In(4)
+    tag:  In(RingMessage.TAG_BITS)
 
     def elaborate(self, platform):
         m = Module()
@@ -205,7 +215,7 @@ class RingClient(wiring.Component):
     i:      In(RingMessage.MulClientPayload)
     o:      Out(RingMessage.MulServerPayload)
 
-    tag:    In(4)
+    tag:    In(RingMessage.TAG_BITS)
     strobe: In(1)
     valid:  Out(1)
 
@@ -253,7 +263,7 @@ class RingMACServer(wiring.Component):
     """
     MAC message ring server and connections between clients.
 
-    Prior to elaboration, :py:`add_client()` may be used to
+    Prior to elaboration, :py:`new_client()` may be used to
     add additional client nodes to this ring.
 
     During elaboration, all clients (and this server) are
@@ -267,8 +277,9 @@ class RingMACServer(wiring.Component):
             "ring": Out(RingSignature())
         })
 
-    def add_client(self):
+    def new_client(self):
         self.clients.append(RingMAC())
+        assert len(self.clients) <= 2**RingMessage.TAG_BITS
         return self.clients[-1]
 
     def elaborate(self, platform):
@@ -293,7 +304,6 @@ class RingMACServer(wiring.Component):
 
         for n in range(len(self.clients)):
             m.d.comb += self.clients[n].tag.eq(n)
-            setattr(m.submodules, f"client{n}", self.clients[n])
 
         # Respond to MAC requests
 
@@ -311,8 +321,11 @@ class RingMACServer(wiring.Component):
 class FastMul(wiring.Component):
 
     """
+    EXPERIMENT: Double-clocked multipliers / DSP tiles.
+
     Goal: use the DSP tile in the 'fast' domain at 2x the 'sync' domain,
-    from the perspective of the 'sync' domain, we get 2x multiplies / clk.
+    from the perspective of the 'sync' domain, we get 2 multiplies / clk,
+    on a bus that is twice as large as the multiplier bus.
 
     'fast' internal pipeline latency (fifo -> fifo) = 4 clocks
     'sync' E2E pipeline latency (valid -> valid) = 7 clocks
