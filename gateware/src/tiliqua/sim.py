@@ -51,6 +51,7 @@ class FakeTiliquaDomainGenerator(Elaboratable):
         m.domains.sync   = ClockDomain()
         m.domains.audio  = ClockDomain()
         m.domains.dvi    = ClockDomain()
+        m.domains.fast   = ClockDomain()
 
         return m
 
@@ -165,6 +166,7 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
 
     clock_sync_hz = 60000000
     audio_clk_hz = 48000000
+    fast_clk_hz = 120000000
 
     verilator_dst = "build/obj_dir"
     shutil.rmtree(verilator_dst, ignore_errors=True)
@@ -187,6 +189,7 @@ def simulate(fragment, ports, harness, hw_platform, tracing=False):
                            "-Ibuild",
                            "-CFLAGS", f"-DSYNC_CLK_HZ={clock_sync_hz}",
                            "-CFLAGS", f"-DAUDIO_CLK_HZ={audio_clk_hz}",
+                           "-CFLAGS", f"-DFAST_CLK_HZ={fast_clk_hz}",
                           ] + video_cflags + psram_cflags + firmware_cflags + [
                            harness,
                            f"{dst}",

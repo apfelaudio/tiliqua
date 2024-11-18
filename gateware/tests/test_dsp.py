@@ -18,7 +18,7 @@ from scipy                 import signal
 from parameterized         import parameterized
 
 from tiliqua.eurorack_pmod import ASQ
-from tiliqua               import dsp, delay_line
+from tiliqua               import dsp, mac, delay_line
 
 class DSPTests(unittest.TestCase):
 
@@ -175,11 +175,23 @@ class DSPTests(unittest.TestCase):
         with sim.write_vcd(vcd_file=open(f"test_resample_{name}.vcd", "w")):
             sim.run()
 
-    def test_pitch(self):
+    @parameterized.expand([
+        ["mux_mac", mac.MuxMAC],
+        ["ring_mac", mac.RingMAC],
+    ])
+    def test_pitch(self, name, mac_type):
 
         m = Module()
+
+        match mac_type:
+            case mac.RingMAC:
+                m.submodules.server = server = mac.RingMACServer()
+                macp = server.new_client()
+            case _:
+                macp = None
+
         delayln = delay_line.DelayLine(max_delay=256, write_triggers_read=False)
-        pitch_shift = dsp.PitchShift(tap=delayln.add_tap(), xfade=32)
+        pitch_shift = dsp.PitchShift(tap=delayln.add_tap(), xfade=32, macp=macp)
         m.submodules += [delayln, pitch_shift]
 
         def stimulus_values():
@@ -196,9 +208,9 @@ class DSPTests(unittest.TestCase):
 
             s = stimulus_values()
             while True:
+                ctx.set(delayln.i.valid, 1)
                 # First clock a sample into the delay line
                 await ctx.tick().until(delayln.i.ready)
-                ctx.set(delayln.i.valid, 1)
                 ctx.set(delayln.i.payload, next(s))
                 await ctx.tick()
                 ctx.set(delayln.i.valid, 0)
@@ -213,7 +225,7 @@ class DSPTests(unittest.TestCase):
             n_samples_in = 0
             n_samples_out = 0
             ctx.set(pitch_shift.o.ready, 1)
-            for n in range(0, 1000):
+            for n in range(0, 7000):
                 n_samples_in  += ctx.get(delayln.i.valid & delayln.i.ready)
                 n_samples_out += ctx.get(pitch_shift.o.valid & pitch_shift.o.ready)
                 await ctx.tick()
@@ -226,38 +238,48 @@ class DSPTests(unittest.TestCase):
         sim.add_clock(1e-6)
         sim.add_process(stimulus_i)
         sim.add_testbench(testbench)
-        with sim.write_vcd(vcd_file=open("test_pitch.vcd", "w")):
+        with sim.write_vcd(vcd_file=open(f"test_pitch_{name}.vcd", "w")):
             sim.run()
 
 
-    def test_svf(self):
+    @parameterized.expand([
+        ["mux_mac", mac.MuxMAC],
+        ["ring_mac", mac.RingMAC],
+    ])
+    def test_svf(self, name, mac_type):
 
-        svf = dsp.SVF()
+        match mac_type:
+            case mac.RingMAC:
+                m = Module()
+                m.submodules.server = server = mac.RingMACServer()
+                m.submodules.svf = dut = dsp.SVF(macp=server.new_client())
+            case _:
+                m = Module()
+                m.submodules.svf = dut = dsp.SVF()
 
-        async def testbench(ctx):
+        async def stimulus(ctx):
             for n in range(0, 100):
                 x = fixed.Const(0.4*(math.sin(n*0.2) + math.sin(n)), shape=ASQ)
-                ctx.set(svf.i.payload.x, x)
-                ctx.set(svf.i.payload.cutoff, fixed.Const(0.3, shape=ASQ))
-                ctx.set(svf.i.payload.resonance, fixed.Const(0.1, shape=ASQ))
-                ctx.set(svf.i.valid, 1)
-                await ctx.tick()
-                ctx.set(svf.i.valid, 0)
-                await ctx.tick().repeat(8)
-                out0 = ctx.get(svf.o.payload.hp)
-                out1 = ctx.get(svf.o.payload.lp)
-                out2 = ctx.get(svf.o.payload.bp)
-                print(out0, out1, out2)
-                await ctx.tick()
-                ctx.set(svf.o.ready, 1)
-                await ctx.tick()
-                ctx.set(svf.o.ready, 0)
-                await ctx.tick()
+                ctx.set(dut.i.valid, 1)
+                ctx.set(dut.i.payload.x, x)
+                ctx.set(dut.i.payload.cutoff, fixed.Const(0.2, shape=ASQ))
+                ctx.set(dut.i.payload.resonance, fixed.Const(0.1, shape=ASQ))
+                await ctx.tick().until(dut.i.ready)
+                ctx.set(dut.i.valid, 0)
 
-        sim = Simulator(svf)
+        async def testbench(ctx):
+            ctx.set(dut.o.ready, 1)
+            while True:
+                await ctx.tick().until(dut.o.valid)
+                out0 = ctx.get(dut.o.payload.hp)
+                out1 = ctx.get(dut.o.payload.lp)
+                out2 = ctx.get(dut.o.payload.bp)
+
+        sim = Simulator(m)
         sim.add_clock(1e-6)
-        sim.add_testbench(testbench)
-        with sim.write_vcd(vcd_file=open("test_svf.vcd", "w")):
+        sim.add_testbench(stimulus)
+        sim.add_testbench(testbench, background=True)
+        with sim.write_vcd(vcd_file=open(f"test_svf_{name}.vcd", "w")):
             sim.run()
 
     def test_matrix(self):
@@ -298,30 +320,42 @@ class DSPTests(unittest.TestCase):
         self.assertIn("16'sd32767", ASQ.max().__repr__())
         self.assertIn("16'sd-32768", ASQ.min().__repr__())
 
-    def test_waveshaper(self):
+    @parameterized.expand([
+        ["mux_mac", mac.MuxMAC],
+        ["ring_mac", mac.RingMAC],
+    ])
+    def test_waveshaper(self, name, mac_type):
 
         def scaled_tanh(x):
             return math.tanh(3.0*x)
 
-        waveshaper = dsp.WaveShaper(lut_function=scaled_tanh, lut_size=16)
+        match mac_type:
+            case mac.RingMAC:
+                m = Module()
+                m.submodules.server = server = mac.RingMACServer()
+                m.submodules.waveshaper = dut = dsp.WaveShaper(
+                    lut_function=scaled_tanh, lut_size=16, macp=server.new_client())
+            case _:
+                m = Module()
+                m.submodules.waveshaper = dut = dsp.WaveShaper(lut_function=scaled_tanh, lut_size=16)
 
         async def testbench(ctx):
             await ctx.tick()
             for n in range(0, 100):
                 x = fixed.Const(math.sin(n*0.10), shape=ASQ)
-                ctx.set(waveshaper.i.payload, x)
-                ctx.set(waveshaper.i.valid, 1)
-                ctx.set(waveshaper.o.ready, 1)
+                ctx.set(dut.i.payload, x)
+                ctx.set(dut.i.valid, 1)
+                ctx.set(dut.o.ready, 1)
                 await ctx.tick()
-                ctx.set(waveshaper.i.valid, 0)
-                while ctx.get(waveshaper.o.valid) != 1:
+                ctx.set(dut.i.valid, 0)
+                while ctx.get(dut.o.valid) != 1:
                     await ctx.tick()
                 await ctx.tick()
 
-        sim = Simulator(waveshaper)
+        sim = Simulator(m)
         sim.add_clock(1e-6)
         sim.add_testbench(testbench)
-        with sim.write_vcd(vcd_file=open("test_waveshaper.vcd", "w")):
+        with sim.write_vcd(vcd_file=open(f"test_waveshaper_{name}.vcd", "w")):
             sim.run()
 
     def test_gainvca(self):

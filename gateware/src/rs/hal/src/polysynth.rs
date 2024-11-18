@@ -2,6 +2,7 @@
 macro_rules! impl_polysynth {
     ($(
         $POLYSYNTHX:ident: $PACPOLYSYNTHX:ty,
+        $N_VOICES: expr
     )+) => {
         $(
             #[derive(Debug)]
@@ -17,7 +18,7 @@ macro_rules! impl_polysynth {
 
             impl $POLYSYNTHX {
 
-                pub fn voice_notes(&self) -> [u8; 8] {
+                pub fn voice_notes(&self) -> [u8; $N_VOICES] {
                     [
                         self.registers.voices0().read().note().bits(),
                         self.registers.voices1().read().note().bits(),
@@ -27,10 +28,11 @@ macro_rules! impl_polysynth {
                         self.registers.voices5().read().note().bits(),
                         self.registers.voices6().read().note().bits(),
                         self.registers.voices7().read().note().bits(),
+                        // TODO: proper register block. Add them yourself :)
                     ]
                 }
 
-                pub fn voice_cutoffs(&self) -> [u8; 8] {
+                pub fn voice_cutoffs(&self) -> [u8; $N_VOICES] {
                     [
                         self.registers.voices0().read().cutoff().bits(),
                         self.registers.voices1().read().cutoff().bits(),
@@ -40,6 +42,7 @@ macro_rules! impl_polysynth {
                         self.registers.voices5().read().cutoff().bits(),
                         self.registers.voices6().read().cutoff().bits(),
                         self.registers.voices7().read().cutoff().bits(),
+                        // TODO: proper register block. Add them yourself :)
                     ]
                 }
 

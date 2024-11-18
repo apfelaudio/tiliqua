@@ -875,6 +875,8 @@ def simulation_ports(fragment):
         "rst_audio":      (ResetSignal("audio"),                       None),
         "clk_sync":       (ClockSignal("sync"),                        None),
         "rst_sync":       (ResetSignal("sync"),                        None),
+        "clk_fast":       (ClockSignal("fast"),                        None),
+        "rst_fast":       (ResetSignal("fast"),                        None),
         "fs_strobe":      (fragment.fs_strobe,                         None),
         "fs_inject0":     (fragment.inject0,                           None),
         "fs_inject1":     (fragment.inject1,                           None),

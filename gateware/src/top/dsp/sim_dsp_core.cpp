@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
     contextp->timeInc(1);
     top->rst_sync = 1;
     top->rst_audio = 1;
+    top->rst_fast = 1;
     top->eval();
 
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
@@ -40,6 +41,7 @@ int main(int argc, char** argv) {
     contextp->timeInc(1);
     top->rst_sync = 0;
     top->rst_audio = 0;
+    top->rst_fast = 0;
     top->eval();
 
 #if defined VM_TRACE_FST && VM_TRACE_FST == 1
@@ -49,9 +51,11 @@ int main(int argc, char** argv) {
     uint64_t ns_in_s = 1e9;
     uint64_t ns_in_sync_cycle   = ns_in_s /  SYNC_CLK_HZ;
     uint64_t  ns_in_audio_cycle = ns_in_s / AUDIO_CLK_HZ;
+    uint64_t  ns_in_fast_cycle  = ns_in_s / FAST_CLK_HZ;
 
     printf("sync domain is: %i KHz (%i ns/cycle)\n",  SYNC_CLK_HZ/1000,  ns_in_sync_cycle);
     printf("audio clock is: %i KHz (%i ns/cycle)\n", AUDIO_CLK_HZ/1000, ns_in_audio_cycle);
+    printf("fast clock is: %i KHz (%i ns/cycle)\n", FAST_CLK_HZ/1000, ns_in_fast_cycle);
 
 #ifdef PSRAM_SIM
     uint32_t psram_size_bytes = 1024*1024*16;
@@ -114,6 +118,8 @@ int main(int argc, char** argv) {
                     // audio signals
                     top->fs_inject0 = (int16_t)10000.0*sin((float)pmod_clocks / 50.0);
                     top->fs_inject1 = (int16_t)10000.0*cos((float)pmod_clocks / 10.0);
+                    top->fs_inject2 = (int16_t)10000.0*sin((float)pmod_clocks / 30.0);
+                    top->fs_inject3 = (int16_t)10000.0*cos((float)pmod_clocks / 5.0);
                 } else {
                     if (top->fs_strobe) {
                         top->fs_strobe = 0;
@@ -121,6 +127,11 @@ int main(int argc, char** argv) {
                 }
                 mod_pmod += 1;
             }
+        }
+
+        // Fast clock domain (RAM domain simulation)
+        if (timestamp_ns % (ns_in_fast_cycle/2) == 0) {
+            top->clk_fast = !top->clk_fast;
         }
 
 #ifdef PSRAM_SIM
