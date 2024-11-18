@@ -6,6 +6,7 @@ const N_TOUCH: usize = 8;
 pub struct MidiTouchController {
     notes:     [Note; N_TOUCH],
     l_touch:   [u8; N_TOUCH],
+    l_jack:    u8,
     smoothers: [OnePoleSmoother; N_TOUCH],
 }
 
@@ -24,6 +25,7 @@ impl MidiTouchController {
                       Note::C0],
             // Last touch value for tracking ON/OFF events
             l_touch: [0u8; N_TOUCH],
+            l_jack:  0u8,
             // Smoothers to de-noise touch values
             smoothers: [OnePoleSmoother::new(0.2); N_TOUCH]
         }
@@ -35,8 +37,8 @@ impl MidiTouchController {
         for i in 0..N_TOUCH {
             let sm = self.smoothers[i].proc(Fix::from_bits(touch[i] as i32));
             let pressure = Value7::new((sm.to_bits() as u8)>>1);
-            // if jack is not inserted
-            if ((1 << i) & !jack) != 0 {
+            let jack_currently_unplugged = ((1 << i) & !jack) != 0;
+            if jack_currently_unplugged {
                 // emit NOTE_ON once after the touch starts, and
                 // POLY_PRESSURE for all cycles afterward.
                 if self.l_touch[i] == 0 && touch[i] > 0 {
@@ -48,8 +50,13 @@ impl MidiTouchController {
                     out[i] = MidiMessage::NoteOff(channel, self.notes[i], pressure);
                 }
             }
+            let jack_just_plugged = ((1 << i) & (jack & !self.l_jack)) != 0;
+            if jack_just_plugged {
+                out[i] = MidiMessage::NoteOff(channel, self.notes[i], pressure);
+            }
         }
         self.l_touch = *touch;
+        self.l_jack  = jack;
         out
     }
 }
