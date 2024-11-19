@@ -158,9 +158,9 @@ class PolySynth(wiring.Component):
                 follower.o.ready.eq(1)
             ]
 
-            # Connect voice.vel and NCO.o -> SVF.
+            # Connect voice.vel and shifter.o -> SVF.
             dsp.connect_remap(m, shifters[n].o, svfs[n].i, lambda o, i : [
-                i.payload.x                    .eq(o.payload >> 1),
+                i.payload.x                    .eq(o.payload),
                 i.payload.resonance.raw()      .eq(self.reso),
                 i.payload.cutoff               .eq(follower.o.payload << 5)
             ])
