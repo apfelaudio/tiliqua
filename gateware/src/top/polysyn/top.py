@@ -126,7 +126,7 @@ class PolySynth(wiring.Component):
         # analog ins
         m.submodules.cv_in = cv_in = dsp.Split(
                 n_channels=4, source=wiring.flipped(self.i))
-        cv_in.wire_ready(m, [3])
+        cv_in.wire_ready(m, [2, 3])
 
         # write audio samples to delay line
         wiring.connect(m, cv_in.o[0], delay_line.i)
@@ -144,8 +144,8 @@ class PolySynth(wiring.Component):
             ])
             """
 
-            dsp.connect_remap(m, cv_in.o[2], shifters[n].i, lambda o, i : [
-                i.payload.pitch   .eq(voice_tracker.o[n].freq_inc),
+            dsp.connect_remap(m, cv_in.o[1], shifters[n].i, lambda o, i : [
+                i.payload.pitch   .eq(-voice_tracker.o[n].freq_inc << 7),
                 i.payload.grain_sz.eq(delay_line.max_delay//2),
             ])
 
@@ -191,7 +191,7 @@ class PolySynth(wiring.Component):
         dsp.named_submodules(m.submodules, output_hpfs, override_name="output_hpf")
 
         m.submodules.hpf_split2 = hpf_split2 = dsp.Split(n_channels=2, source=matrix_mix.o)
-        m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=diffuser.i)
+        m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
         hpf_merge4.wire_valid(m, [0, 1])
 
         for lr in [0, 1]:
@@ -204,6 +204,8 @@ class PolySynth(wiring.Component):
             dsp.connect_remap(m, output_hpfs[lr].o, hpf_merge4.i[2+lr], lambda o, i : [
                 i.payload.eq(o.payload.hp << 2)
             ])
+
+        """
 
         # Implement stereo distortion effect after diffuser.
 
@@ -244,6 +246,7 @@ class PolySynth(wiring.Component):
         merge4.wire_valid(m, [0, 1])
         wiring.connect(m, outs[0], merge4.i[2])
         wiring.connect(m, outs[1], merge4.i[3])
+        """
 
         return m
 
