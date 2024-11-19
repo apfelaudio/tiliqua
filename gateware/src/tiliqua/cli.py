@@ -101,7 +101,7 @@ def top_level_cli(
     kwargs = {}
 
     if video_core:
-        assert args.resolution in video.DVI_TIMINGS, f"error: video resolution must be one of {DVI_TIMINGS.keys()}"
+        assert args.resolution in video.DVI_TIMINGS, f"error: video resolution must be one of {video.DVI_TIMINGS.keys()}"
         dvi_timings = video.DVI_TIMINGS[args.resolution]
         kwargs["dvi_timings"] = dvi_timings
         if args.rotate_90:
