@@ -100,18 +100,24 @@ class PolySynth(wiring.Component):
         # supported simultaneous voices
         n_voices = self.N_VOICES
 
+        m.submodules.delay_line = delay_line = DelayLine(
+            max_delay=0x8000,
+            psram_backed=False,
+            write_triggers_read=False,
+        )
+
         m.submodules.voice_tracker = voice_tracker = midi.MidiVoiceTracker(
             max_voices=n_voices, velocity_mod=True, zero_velocity_gate=True)
-        # 1 oscillator and filter per oscillator
-        ncos = [dsp.SawNCO(shift=0) for _ in range(n_voices)]
-
+        # shifters
+        shifters = [dsp.PitchShift(
+            tap=delay_line.add_tap(), xfade=delay_line.max_delay//4) for _ in range(n_voices)]
         # All SVFs share the same multiplier tile through a RingMAC.
         m.submodules.server = server = mac.RingMACServer()
         svfs = [dsp.SVF(macp=server.new_client()) for _ in range(n_voices)]
 
         m.submodules.merge = merge = dsp.Merge(n_channels=n_voices)
 
-        dsp.named_submodules(m.submodules, ncos)
+        dsp.named_submodules(m.submodules, shifters)
         dsp.named_submodules(m.submodules, svfs)
 
         # Connect MIDI stream -> voice tracker
@@ -120,17 +126,27 @@ class PolySynth(wiring.Component):
         # analog ins
         m.submodules.cv_in = cv_in = dsp.Split(
                 n_channels=4, source=wiring.flipped(self.i))
-        cv_in.wire_ready(m, [2, 3])
+        cv_in.wire_ready(m, [3])
+
+        # write audio samples to delay line
+        wiring.connect(m, cv_in.o[0], delay_line.i)
 
         for n in range(n_voices):
 
             m.d.comb += self.voice_states[n].eq(voice_tracker.o[n])
 
+            """
             # Connect audio in -> NCO.i
             dsp.connect_remap(m, cv_in.o[0], ncos[n].i, lambda o, i : [
                 # For fun, phase mod on audio in #0
                 i.payload.phase   .eq(o.payload),
                 i.payload.freq_inc.eq(voice_tracker.o[n].freq_inc)
+            ])
+            """
+
+            dsp.connect_remap(m, cv_in.o[2], shifters[n].i, lambda o, i : [
+                i.payload.pitch   .eq(voice_tracker.o[n].freq_inc),
+                i.payload.grain_sz.eq(delay_line.max_delay//2),
             ])
 
             # Simple counting smoother for the filter cutoff.
@@ -143,7 +159,7 @@ class PolySynth(wiring.Component):
             ]
 
             # Connect voice.vel and NCO.o -> SVF.
-            dsp.connect_remap(m, ncos[n].o, svfs[n].i, lambda o, i : [
+            dsp.connect_remap(m, shifters[n].o, svfs[n].i, lambda o, i : [
                 i.payload.x                    .eq(o.payload >> 1),
                 i.payload.resonance.raw()      .eq(self.reso),
                 i.payload.cutoff               .eq(follower.o.payload << 5)
