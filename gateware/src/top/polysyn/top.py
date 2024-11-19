@@ -177,8 +177,9 @@ class PolySynth(wiring.Component):
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=n_voices, o_channels=o_channels,
             coefficients=coefficients)
-        wiring.connect(m, merge.o, wiring.flipped(matrix_mix.i),
+        wiring.connect(m, merge.o, matrix_mix.i)
 
+        """
         # Output diffuser
 
         m.submodules.diffuser = diffuser = Diffuser()
@@ -189,11 +190,15 @@ class PolySynth(wiring.Component):
 
         output_hpfs = [dsp.SVF() for _ in range(o_channels)]
         dsp.named_submodules(m.submodules, output_hpfs, override_name="output_hpf")
+        """
 
         m.submodules.hpf_split2 = hpf_split2 = dsp.Split(n_channels=2, source=matrix_mix.o)
         m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
         hpf_merge4.wire_valid(m, [0, 1])
+        wiring.connect(m, hpf_split2.o[0], hpf_merge4.i[2])
+        wiring.connect(m, hpf_split2.o[1], hpf_merge4.i[3])
 
+        """
         for lr in [0, 1]:
             dsp.connect_remap(m, hpf_split2.o[lr], output_hpfs[lr].i, lambda o, i : [
                 i.payload.x                     .eq(o.payload),
@@ -205,7 +210,6 @@ class PolySynth(wiring.Component):
                 i.payload.eq(o.payload.hp << 2)
             ])
 
-        """
 
         # Implement stereo distortion effect after diffuser.
 
@@ -315,6 +319,7 @@ class SynthPeripheral(wiring.Component):
             ]
 
         # matrix coefficient update logic
+        """
         matrix_busy = Signal()
         m.d.comb += self._matrix_busy.f.busy.r_data.eq(matrix_busy)
         with m.If(self._matrix.element.w_stb & ~matrix_busy):
@@ -331,6 +336,7 @@ class SynthPeripheral(wiring.Component):
                 matrix_busy.eq(0),
                 self.synth.diffuser.matrix.c.valid.eq(0),
             ]
+        """
 
 
         # MIDI injection and arbiter between SoC MIDI and HW MIDI -> synth MIDI.
