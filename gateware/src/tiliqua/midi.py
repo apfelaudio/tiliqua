@@ -217,7 +217,6 @@ class MidiVoiceTracker(wiring.Component):
         for i in range(128):
             freq = 2**((i-69)/12.0)
             lut.append(fixed.Const(1.0-freq, shape=fixed.SQ(7, 8))._value)
-        print(lut[57], lut[69], lut[81], lut[0], lut[127])
         m.submodules.f_lut_mem = f_lut_mem = Memory(
                 shape=signed(fixed.SQ(7, 8).as_shape().width), depth=len(lut), init=lut)
         f_lut_rport = f_lut_mem.read_port()

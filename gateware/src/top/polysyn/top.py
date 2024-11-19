@@ -101,7 +101,7 @@ class PolySynth(wiring.Component):
         n_voices = self.N_VOICES
 
         m.submodules.delay_line = delay_line = DelayLine(
-            max_delay=0x1000,
+            max_delay=0x8000,
             psram_backed=False,
             write_triggers_read=False,
         )
