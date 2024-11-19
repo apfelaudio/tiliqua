@@ -101,7 +101,7 @@ class PolySynth(wiring.Component):
         n_voices = self.N_VOICES
 
         m.submodules.delay_line = delay_line = DelayLine(
-            max_delay=0x8000,
+            max_delay=0x1000,
             psram_backed=False,
             write_triggers_read=False,
         )
@@ -126,25 +126,20 @@ class PolySynth(wiring.Component):
         # analog ins
         m.submodules.cv_in = cv_in = dsp.Split(
                 n_channels=4, source=wiring.flipped(self.i))
-        cv_in.wire_ready(m, [2, 3])
+        cv_in.wire_ready(m, [1, 2, 3])
+
+        # pitch sync split
+        m.submodules.split_in0 = split_in0 = dsp.Split(
+                n_channels=n_voices+2, replicate=True, source=cv_in.o[0])
 
         # write audio samples to delay line
-        wiring.connect(m, cv_in.o[0], delay_line.i)
+        wiring.connect(m, split_in0.o[n_voices+0], delay_line.i)
 
         for n in range(n_voices):
 
             m.d.comb += self.voice_states[n].eq(voice_tracker.o[n])
 
-            """
-            # Connect audio in -> NCO.i
-            dsp.connect_remap(m, cv_in.o[0], ncos[n].i, lambda o, i : [
-                # For fun, phase mod on audio in #0
-                i.payload.phase   .eq(o.payload),
-                i.payload.freq_inc.eq(voice_tracker.o[n].freq_inc)
-            ])
-            """
-
-            dsp.connect_remap(m, cv_in.o[1], shifters[n].i, lambda o, i : [
+            dsp.connect_remap(m, split_in0.o[n], shifters[n].i, lambda o, i : [
                 i.payload.pitch   .eq(voice_tracker.o[n].freq_inc),
                 i.payload.grain_sz.eq(delay_line.max_delay//2),
             ])
@@ -153,7 +148,7 @@ class PolySynth(wiring.Component):
             follower = dsp.CountingFollower(bits=8)
             m.submodules += follower
             m.d.comb += [
-                follower.i.valid.eq(cv_in.o[0].valid), # hack to clock at audio rate
+                follower.i.valid.eq(split_in0.o[n].valid), # hack to clock at audio rate
                 follower.i.payload.eq(voice_tracker.o[n].velocity_mod),
                 follower.o.ready.eq(1)
             ]
@@ -179,7 +174,6 @@ class PolySynth(wiring.Component):
             coefficients=coefficients)
         wiring.connect(m, merge.o, matrix_mix.i)
 
-        """
         # Output diffuser
 
         m.submodules.diffuser = diffuser = Diffuser()
@@ -190,15 +184,11 @@ class PolySynth(wiring.Component):
 
         output_hpfs = [dsp.SVF() for _ in range(o_channels)]
         dsp.named_submodules(m.submodules, output_hpfs, override_name="output_hpf")
-        """
 
         m.submodules.hpf_split2 = hpf_split2 = dsp.Split(n_channels=2, source=matrix_mix.o)
-        m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=wiring.flipped(self.o))
+        m.submodules.hpf_merge4 = hpf_merge4 = dsp.Merge(n_channels=4, sink=diffuser.i)
         hpf_merge4.wire_valid(m, [0, 1])
-        wiring.connect(m, hpf_split2.o[0], hpf_merge4.i[2])
-        wiring.connect(m, hpf_split2.o[1], hpf_merge4.i[3])
 
-        """
         for lr in [0, 1]:
             dsp.connect_remap(m, hpf_split2.o[lr], output_hpfs[lr].i, lambda o, i : [
                 i.payload.x                     .eq(o.payload),
@@ -210,7 +200,6 @@ class PolySynth(wiring.Component):
                 i.payload.eq(o.payload.hp << 2)
             ])
 
-
         # Implement stereo distortion effect after diffuser.
 
         m.submodules.diffuser_split4 = diffuser_split4 = dsp.Split(
@@ -218,7 +207,7 @@ class PolySynth(wiring.Component):
         diffuser_split4.wire_ready(m, [0, 1])
 
         m.submodules.cv_gain_split2 = cv_gain_split2 = dsp.Split(
-                n_channels=2, replicate=True, source=cv_in.o[1])
+                n_channels=2, replicate=True, source=split_in0.o[n_voices+1])
 
         def scaled_tanh(x):
             return math.tanh(3.0*x)
@@ -250,7 +239,6 @@ class PolySynth(wiring.Component):
         merge4.wire_valid(m, [0, 1])
         wiring.connect(m, outs[0], merge4.i[2])
         wiring.connect(m, outs[1], merge4.i[3])
-        """
 
         return m
 
@@ -319,7 +307,6 @@ class SynthPeripheral(wiring.Component):
             ]
 
         # matrix coefficient update logic
-        """
         matrix_busy = Signal()
         m.d.comb += self._matrix_busy.f.busy.r_data.eq(matrix_busy)
         with m.If(self._matrix.element.w_stb & ~matrix_busy):
@@ -336,7 +323,6 @@ class SynthPeripheral(wiring.Component):
                 matrix_busy.eq(0),
                 self.synth.diffuser.matrix.c.valid.eq(0),
             ]
-        """
 
 
         # MIDI injection and arbiter between SoC MIDI and HW MIDI -> synth MIDI.
