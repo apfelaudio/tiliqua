@@ -145,7 +145,7 @@ class PolySynth(wiring.Component):
             """
 
             dsp.connect_remap(m, cv_in.o[1], shifters[n].i, lambda o, i : [
-                i.payload.pitch   .eq(-voice_tracker.o[n].freq_inc << 7),
+                i.payload.pitch   .eq(voice_tracker.o[n].freq_inc),
                 i.payload.grain_sz.eq(delay_line.max_delay//2),
             ])
 
@@ -177,7 +177,7 @@ class PolySynth(wiring.Component):
         m.submodules.matrix_mix = matrix_mix = dsp.MatrixMix(
             i_channels=n_voices, o_channels=o_channels,
             coefficients=coefficients)
-        wiring.connect(m, merge.o, matrix_mix.i),
+        wiring.connect(m, merge.o, wiring.flipped(matrix_mix.i),
 
         # Output diffuser
 

@@ -178,7 +178,7 @@ class MidiVoice(data.Struct):
     note:         unsigned(8)
     velocity:     unsigned(8)
     gate:         unsigned(1)
-    freq_inc:     ASQ
+    freq_inc:     fixed.SQ(7, 8)
     velocity_mod: unsigned(8)
 
 class MidiVoiceTracker(wiring.Component):
@@ -215,11 +215,11 @@ class MidiVoiceTracker(wiring.Component):
         lut = []
         sample_rate_hz = 48000
         for i in range(128):
-            freq = 440 * 2**((i-69)/12.0)
-            freq_inc = freq * (1.0 / sample_rate_hz)
-            lut.append(fixed.Const(freq_inc, shape=ASQ)._value)
+            freq = 2**((i-69)/12.0)
+            lut.append(fixed.Const(1.0-freq, shape=fixed.SQ(7, 8))._value)
+        print(lut[57], lut[69], lut[81], lut[0], lut[127])
         m.submodules.f_lut_mem = f_lut_mem = Memory(
-                shape=signed(ASQ.as_shape().width), depth=len(lut), init=lut)
+                shape=signed(fixed.SQ(7, 8).as_shape().width), depth=len(lut), init=lut)
         f_lut_rport = f_lut_mem.read_port()
         m.d.comb += f_lut_rport.en.eq(1)
 
@@ -338,6 +338,7 @@ class MidiVoiceTracker(wiring.Component):
 
             with m.State('UPDATE-FREQ-VEL'):
 
+                """
                 # Update linear frequency and velocity based on note values,
                 # pitch bend and (optionally) mod wheel.
 
@@ -353,13 +354,14 @@ class MidiVoiceTracker(wiring.Component):
                     f_inc_base.raw().eq(f_lut_rport.data),
                     calculated_freq.eq(f_inc_base + f_inc_base*pb_scaled),
                 ]
+                """
 
                 # latch to correct output register
                 with m.Switch(ix_update):
                     for n in range(self.max_voices):
                         with m.Case(n):
                             # latch linear frequency + pitch bend
-                            m.d.sync += self.o[n].freq_inc.eq(calculated_freq)
+                            m.d.sync += self.o[n].freq_inc.eq(f_lut_rport.data)
                             # optional mod wheel caps `velocity_mod` field.
                             if self.velocity_mod:
                                 with m.If(last_cc1 < self.o[n].velocity):
