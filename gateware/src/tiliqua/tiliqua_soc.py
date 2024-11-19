@@ -143,6 +143,10 @@ class TiliquaSoc(Component):
         super().__init__({})
 
         self.sim_fs_strobe = Signal()
+        self.inject0 = Signal(signed(16))
+        self.inject1 = Signal(signed(16))
+        self.inject2 = Signal(signed(16))
+        self.inject3 = Signal(signed(16))
 
         self.firmware_bin_path = firmware_bin_path
         self.touch = touch
@@ -392,8 +396,14 @@ class TiliquaSoc(Component):
             m.d.comb += reboot.button.eq(self.encoder0._button.f.button.r_data)
         else:
             m.submodules.car = sim.FakeTiliquaDomainGenerator()
-            self.pmod0_periph.pmod = sim.FakeEurorackPmod()
+            m.submodules.pmod = self.pmod0_periph.pmod = sim.FakeEurorackPmod()
             m.d.comb += self.pmod0_periph.pmod.fs_strobe.eq(self.sim_fs_strobe)
+            m.d.comb += [
+                self.pmod0_periph.pmod.sample_inject[0]._target.eq(self.inject0),
+                self.pmod0_periph.pmod.sample_inject[1]._target.eq(self.inject1),
+                self.pmod0_periph.pmod.sample_inject[2]._target.eq(self.inject2),
+                self.pmod0_periph.pmod.sample_inject[3]._target.eq(self.inject3),
+            ]
 
         # wishbone csr bridge
         m.submodules.wb_to_csr = self.wb_to_csr

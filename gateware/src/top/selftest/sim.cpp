@@ -146,13 +146,11 @@ int main(int argc, char** argv) {
                 if (mod_pmod % 256 == 0) {
                     ++pmod_clocks;
                     top->fs_strobe = 1;
-                    /*
                     // audio signals
-                    top->fs_inject0 = (int16_t)20000.0*sin((float)pmod_clocks / 6000.0);
-                    top->fs_inject1 = (int16_t)20000.0*cos((float)pmod_clocks /  300.0);
+                    top->fs_inject0 = (int16_t)20000.0*sin((float)pmod_clocks /  300.0);
+                    top->fs_inject1 = (int16_t)20000.0*cos((float)pmod_clocks / 6000.0);
                     // color
                     top->fs_inject3 = (int16_t)20000.0*cos((float)pmod_clocks /  600.0);
-                    */
                 } else {
                     if (top->fs_strobe) {
                         top->fs_strobe = 0;

@@ -88,7 +88,12 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         // Touch controller logic (sends MIDI to internal polysynth)
         if opts.poly.interface.value == TouchControl::On {
             app.ui.touch_led_mask(0b00111111);
-            let touch = app.ui.pmod.touch();
+            let mut touch = app.ui.pmod.touch();
+            if app.first {
+                touch[0] = 64;
+                touch[1] = 64;
+                //app.first = false;
+            }
             let jack = app.ui.pmod.jack();
             let msgs = app.touch_controller.update(&touch, jack);
             for msg in msgs {
@@ -119,6 +124,7 @@ pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
 
 struct App {
     ui: UI,
+    first: bool,
     synth: Polysynth0,
     drive_smoother: OnePoleSmoother,
     reso_smoother: OnePoleSmoother,
@@ -141,6 +147,7 @@ impl App {
         Self {
             ui: UI::new(opts, TIMER0_ISR_PERIOD_MS,
                         encoder, pca9635, pmod),
+            first: true,
             synth,
             drive_smoother,
             reso_smoother,
