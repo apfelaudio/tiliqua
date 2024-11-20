@@ -638,6 +638,8 @@ class PitchShift(wiring.Component):
     shifters to share a single delay line).
     """
 
+    PitchSQ = fixed.SQ(5, 8)
+
     def __init__(self, tap, xfade=256, macp=None):
         assert xfade <= (tap.max_delay // 4)
         self.tap        = tap
@@ -649,7 +651,7 @@ class PitchShift(wiring.Component):
         self.macp = macp or mac.MAC.default()
         super().__init__({
             "i": In(stream.Signature(data.StructLayout({
-                    "pitch": self.dtype,
+                    "pitch": self.PitchSQ,
                     "grain_sz": unsigned(exact_log2(tap.max_delay)),
                   }))),
             "o": Out(stream.Signature(ASQ)),
@@ -669,9 +671,6 @@ class PitchShift(wiring.Component):
         # Envelope values
         env0 = Signal(ASQ)
         env1 = Signal(ASQ)
-
-        s    = Signal(self.dtype)
-        m.d.comb += s.eq(delay0 + self.i.payload.pitch)
 
         # Last latched grain size, pitch
         grain_sz_latched = Signal(self.i.payload.grain_sz.shape())

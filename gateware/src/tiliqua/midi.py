@@ -15,6 +15,7 @@ from amaranth_stdio.serial import AsyncSerialRX
 
 from amaranth_future       import fixed
 from tiliqua.eurorack_pmod import ASQ # hardware native fixed-point sample type
+from tiliqua               import dsp
 
 MIDI_BAUD_RATE = 31250
 
@@ -174,11 +175,12 @@ class MidiDecode(wiring.Component):
 
         return m
 
+
 class MidiVoice(data.Struct):
     note:         unsigned(8)
     velocity:     unsigned(8)
     gate:         unsigned(1)
-    freq_inc:     fixed.SQ(7, 8)
+    freq_inc:     dsp.PitchShift.PitchSQ
     velocity_mod: unsigned(8)
 
 class MidiVoiceTracker(wiring.Component):
@@ -213,12 +215,12 @@ class MidiVoiceTracker(wiring.Component):
         # MIDI note -> linearized frequency LUT memory (exponential converter)
 
         lut = []
-        sample_rate_hz = 48000
+        ptype = self.o[0].freq_inc.shape()
         for i in range(128):
             freq = 2**((i-69)/12.0)
-            lut.append(fixed.Const(1.0-freq, shape=fixed.SQ(7, 8))._value)
+            lut.append(fixed.Const(1.0-freq, shape=ptype)._value)
         m.submodules.f_lut_mem = f_lut_mem = Memory(
-                shape=signed(fixed.SQ(7, 8).as_shape().width), depth=len(lut), init=lut)
+                shape=signed(ptype.as_shape().width), depth=len(lut), init=lut)
         f_lut_rport = f_lut_mem.read_port()
         m.d.comb += f_lut_rport.en.eq(1)
 
@@ -337,30 +339,28 @@ class MidiVoiceTracker(wiring.Component):
 
             with m.State('UPDATE-FREQ-VEL'):
 
-                """
                 # Update linear frequency and velocity based on note values,
                 # pitch bend and (optionally) mod wheel.
 
                 # pitch bend factor
-                pb_factor = fixed.Const(0.1225, shape=ASQ)
+                pb_factor = fixed.Const(-0.1225, shape=ASQ)
                 pb_scaled = Signal(shape=ASQ)
                 m.d.comb += pb_scaled.eq(pb_factor * last_pb)
 
                 # linearized frequency from LUT * pitch bend
-                calculated_freq = Signal(ASQ)
-                f_inc_base = Signal(ASQ)
+                calculated_freq = Signal(ptype)
+                f_inc_base = Signal(ptype)
                 m.d.comb += [
                     f_inc_base.raw().eq(f_lut_rport.data),
-                    calculated_freq.eq(f_inc_base + f_inc_base*pb_scaled),
+                    calculated_freq.eq(f_inc_base + pb_scaled),
                 ]
-                """
 
                 # latch to correct output register
                 with m.Switch(ix_update):
                     for n in range(self.max_voices):
                         with m.Case(n):
                             # latch linear frequency + pitch bend
-                            m.d.sync += self.o[n].freq_inc.eq(f_lut_rport.data)
+                            m.d.sync += self.o[n].freq_inc.eq(calculated_freq)
                             # optional mod wheel caps `velocity_mod` field.
                             if self.velocity_mod:
                                 with m.If(last_cc1 < self.o[n].velocity):
