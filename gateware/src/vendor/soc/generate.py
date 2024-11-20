@@ -103,6 +103,8 @@ class GenerateSVD:
             registers = SubElement(peripheral, "registers")
             for resource_info in resource_infos:
                 name = "_".join([str(s[0]) for s in resource_info.path[1:]])
+                if "voices" in name and "voices0" not in name:
+                    continue
                 rstart = resource_info.start - pstart
                 rend   = resource_info.end   - pstart
                 #print(f"    {resource_info.path[1:]}  =>  {name}")
@@ -235,6 +237,16 @@ class GenerateSVD:
 
     def _register(self, root, name, start, end, description=None, access=None):
         register = SubElement(root, "register")
+
+        is_voice = "voice" in name
+        if is_voice:
+            name = name[:-1]+"%s"
+            el = SubElement(register, "dim")
+            el.text = "8"
+            el = SubElement(register, "dimIncrement")
+            el.text = "0x4"
+            el = SubElement(register, "dimIndex")
+            el.text = "1-8"
 
         el = SubElement(register, "name")
         el.text = name
