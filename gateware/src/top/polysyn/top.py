@@ -34,8 +34,11 @@ from amaranth                  import *
 from amaranth.lib              import wiring, data, stream
 from amaranth.lib.wiring       import In, Out, connect, flipped
 from amaranth.lib.fifo         import SyncFIFOBuffered
+from amaranth.utils            import exact_log2
 
 from amaranth_soc              import csr
+from amaranth_soc              import wishbone
+from amaranth_soc.memory       import MemoryMap
 
 from amaranth_future           import fixed
 
@@ -44,6 +47,66 @@ from tiliqua.delay_line        import DelayLine
 from tiliqua.eurorack_pmod     import ASQ
 from tiliqua.tiliqua_soc       import TiliquaSoc
 from tiliqua.cli               import top_level_cli
+
+class AudioFIFOPeripheral(wiring.Component):
+
+    class FifoLenReg(csr.Register, access="r"):
+        fifo_len: csr.Field(csr.action.R, unsigned(16))
+
+    def __init__(self, fifo_sz=4*4, fifo_data_width=32, granularity=8, elastic_sz=1024):
+        regs = csr.Builder(addr_width=6, data_width=8)
+
+        # Out and Aux FIFOs
+        self.elastic_sz = elastic_sz
+        self._fifo0 = SyncFIFOBuffered(
+            width=ASQ.as_shape().width, depth=elastic_sz)
+
+        # Amount of elements in fifo0, used by softcore for scheduling.
+        self._fifo_len = regs.add(f"fifo_len", self.FifoLenReg(), offset=0x4)
+
+        self._bridge = csr.Bridge(regs.as_memory_map())
+
+        mem_depth  = (fifo_sz * granularity) // fifo_data_width
+        super().__init__({
+            "csr_bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+            "wb_bus":  In(wishbone.Signature(addr_width=exact_log2(mem_depth),
+                                             data_width=fifo_data_width,
+                                             granularity=granularity)),
+            "o":       Out(stream.Signature(ASQ)),
+        })
+
+        self.csr_bus.memory_map = self._bridge.bus.memory_map
+
+        # Fixed memory region for the audio fifo rather than CSRs, so each 32-bit write
+        # takes a single bus cycle (CSRs take longer).
+        wb_memory_map = MemoryMap(addr_width=exact_log2(fifo_sz), data_width=granularity)
+        wb_memory_map.add_resource(name=("audio_fifo",), size=fifo_sz, resource=self)
+        self.wb_bus.memory_map = wb_memory_map
+
+    def elaborate(self, platform):
+        m = Module()
+        m.submodules.bridge = self._bridge
+
+        m.submodules._fifo0 = self._fifo0
+
+        connect(m, flipped(self.csr_bus), self._bridge.bus)
+
+        # Route writes to DMA region to audio FIFOs
+        wstream0 = self._fifo0.w_stream
+        with m.If(self.wb_bus.cyc & self.wb_bus.stb & self.wb_bus.we):
+            with m.Switch(self.wb_bus.adr):
+                with m.Case(0):
+                    m.d.comb += [
+                        self.wb_bus.ack.eq(1),
+                        wstream0.valid.eq(1),
+                        wstream0.payload.eq(self.wb_bus.dat_w),
+                    ]
+
+        m.d.comb += self._fifo_len.f.fifo_len.r_data.eq(self._fifo0.level)
+
+        wiring.connect(m, self._fifo0.r_stream, wiring.flipped(self.o))
+
+        return m
 
 class Diffuser(wiring.Component):
 
@@ -84,7 +147,7 @@ class PolySynth(wiring.Component):
 
     N_VOICES = 8
 
-    i: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    i: In(stream.Signature(ASQ))
     o: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
     i_midi: In(stream.Signature(midi.MidiMessage))
@@ -123,14 +186,9 @@ class PolySynth(wiring.Component):
         # Connect MIDI stream -> voice tracker
         wiring.connect(m, wiring.flipped(self.i_midi), voice_tracker.i)
 
-        # analog ins
-        m.submodules.cv_in = cv_in = dsp.Split(
-                n_channels=4, source=wiring.flipped(self.i))
-        cv_in.wire_ready(m, [1, 2, 3])
-
         # pitch sync split
         m.submodules.split_in0 = split_in0 = dsp.Split(
-                n_channels=n_voices+2, replicate=True, source=cv_in.o[0])
+                n_channels=n_voices+2, replicate=True, source=wiring.flipped(self.i))
 
         # write audio samples to delay line
         wiring.connect(m, split_in0.o[n_voices+0], delay_line.i)
@@ -366,6 +424,9 @@ class PolySoc(TiliquaSoc):
         # WARN: TiliquaSoc ends at 0x00000900
         self.vector_periph_base = 0x00001000
         self.synth_periph_base  = 0x00001100
+        self.audio_fifo_csr_base = 0x00001200
+        # offset 0x0 is FIFO0, offset 0x4 is FIFO1
+        self.audio_fifo_mem_base = 0xa0000000
 
         self.vector_periph = scope.VectorTracePeripheral(
             fb_base=self.video.fb_base,
@@ -383,6 +444,16 @@ class PolySoc(TiliquaSoc):
         self.add_rust_constant(
             f"pub const N_VOICES: usize = {PolySynth.N_VOICES};\n")
 
+        self.audio_fifo = AudioFIFOPeripheral()
+        self.csr_decoder.add(self.audio_fifo.csr_bus, addr=self.audio_fifo_csr_base, name="audio_fifo")
+        self.wb_decoder.add(self.audio_fifo.wb_bus, addr=self.audio_fifo_mem_base, name="audio_fifo")
+
+        # TODO: take this from parsed memory region list
+        self.add_rust_constant(
+            f"pub const AUDIO_FIFO_MEM_BASE: usize = 0x{self.audio_fifo_mem_base:x};\n")
+        self.add_rust_constant(
+            f"pub const AUDIO_FIFO_ELASTIC_SZ: usize = {self.audio_fifo.elastic_sz};\n")
+
         # now we can freeze the memory map
         self.finalize_csr_bridge()
 
@@ -394,6 +465,9 @@ class PolySoc(TiliquaSoc):
 
         m.submodules.polysynth = polysynth = PolySynth()
         self.synth_periph.synth = polysynth
+
+        m.submodules += self.audio_fifo
+        wiring.connect(m, self.audio_fifo.o, polysynth.i)
 
         m.submodules.synth_periph = self.synth_periph
 
@@ -413,7 +487,6 @@ class PolySoc(TiliquaSoc):
             wiring.connect(m, midi_decode.o, self.synth_periph.i_midi)
 
         # polysynth audio
-        wiring.connect(m, astream.istream, polysynth.i)
         wiring.connect(m, polysynth.o, astream.ostream)
 
         # polysynth out -> vectorscope TODO use true split

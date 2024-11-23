@@ -41,8 +41,12 @@ impl_ui!(UI,
 tiliqua_hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE, VIDEO_ROTATE_90);
 
 pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
+const BLOCK_SIZE: usize = 64;
 
 fn timer0_handler(app: &Mutex<RefCell<App>>) {
+
+    let peripherals = unsafe { pac::Peripherals::steal() };
+    let audio_fifo = peripherals.AUDIO_FIFO;
 
     critical_section::with(|cs| {
 
@@ -105,6 +109,19 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
             }
         }
 
+        // Render audio
+
+        let fifo_base = AUDIO_FIFO_MEM_BASE as *mut u32;
+        while (audio_fifo.fifo_len().read().bits() as usize) < AUDIO_FIFO_ELASTIC_SZ - BLOCK_SIZE {
+            for _ in 0..BLOCK_SIZE {
+                unsafe {
+                    let sample = (app.time % 2000) as i16 - 1000;
+                    *fifo_base = sample as u32;
+                    app.time += 1;
+                }
+            }
+        }
+
     });
 }
 
@@ -124,6 +141,7 @@ struct App {
     reso_smoother: OnePoleSmoother,
     diffusion_smoother: OnePoleSmoother,
     touch_controller: MidiTouchController,
+    time: u32,
 }
 
 impl App {
@@ -146,6 +164,7 @@ impl App {
             reso_smoother,
             diffusion_smoother,
             touch_controller,
+            time: 0,
         }
     }
 }
