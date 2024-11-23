@@ -14,6 +14,45 @@ from amaranth_soc.csr      import wishbone
 
 from vendor                import i2c as vendor_i2c
 
+class PmodMaster(wiring.Component):
+
+    def __init__(self):
+        self.i2c_stream = i2c.I2CStreamer(period_cyc=4)
+        super().__init__({
+            "pins": Out(I2CPinSignature()),
+
+            "jack": Out(8)
+        })
+
+
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.i2c_stream = i2c = self.i2c_stream
+        wiring.connect(m, wiring.flipped(self.pins), self.i2c_stream.pins)
+
+
+        with m.FSM() as fsm:
+            with m.State('JACK-INVERSION-REG'):
+                m.d.sync += [
+                    i2c.address.eq(0x18),
+                    i2c.i.valid.eq(1),
+                    i2c.i.payload.rw.eq(0), # Write
+                    i2c.i.payload.data.eq(0x02),
+                ]
+                m.next = 'JACK-INVERSION-REG-VALUE'
+            with m.State('JACK-INVERSION-REG-VALUE'):
+                m.d.sync += [
+                    i2c.address.eq(0x18),
+                    i2c.i.valid.eq(1),
+                    i2c.i.payload.rw  .eq(0), # Write
+                    i2c.i.payload.data.eq(0x00),
+                    i2c.i.payload.last.eq(1),
+                ]
+
+        return m
+
 class I2CTests(unittest.TestCase):
 
     def test_i2c_peripheral(self):
