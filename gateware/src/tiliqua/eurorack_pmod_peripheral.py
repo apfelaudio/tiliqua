@@ -81,8 +81,23 @@ class Peripheral(wiring.Component):
 
         connect(m, flipped(self.bus), self._bridge.bus)
 
-        m.d.comb += self._touch_err.f.value.r_data.eq(self.pmod.touch_err)
+        m.d.comb += [
+            self._touch_err.f.value.r_data.eq(self.pmod.touch_err),
+            self._jack.f.jack.r_data.eq(self.pmod.jack),
+            self._eeprom.f.mfg.r_data.eq(self.pmod.eeprom_mfg),
+            self._eeprom.f.dev.r_data.eq(self.pmod.eeprom_dev),
+            self._eeprom.f.serial.r_data.eq(self.pmod.eeprom_serial),
+        ]
 
+        with m.If(self._led_mode.f.led.w_stb):
+            m.d.sync += self.pmod.led_mode.eq(self._led_mode.f.led.w_data)
+
+        for i in range(8):
+            m.d.comb += self._touch[i].f.touch.r_data.eq(self.pmod.touch[i])
+            with m.If(self._led[i].f.led.w_stb):
+                m.d.sync += self.pmod.led[i].eq(self._led[i].f.led.w_data)
+
+        # Audio domain signals need synchronizers
         for i in range(4):
             m.submodules += FFSynchronizer(self.pmod.sample_adc[i], self._sample_adc[i].f.sample.r_data, reset=0)
             m.submodules += FFSynchronizer(self.pmod.sample_i[i], self._sample_i[i].f.sample.r_data, reset=0)
@@ -90,19 +105,5 @@ class Peripheral(wiring.Component):
                 with m.If(self._sample_o[i].f.sample.w_stb):
                     m.d.sync += self.pmod.sample_o[i].eq(self._sample_o[i].f.sample.w_data)
 
-        for i in range(8):
-            m.submodules += FFSynchronizer(self.pmod.touch[i], self._touch[i].f.touch.r_data, reset=0)
-
-        with m.If(self._led_mode.f.led.w_stb):
-            m.d.sync += self.pmod.led_mode.eq(self._led_mode.f.led.w_data)
-
-        for i in range(8):
-            with m.If(self._led[i].f.led.w_stb):
-                m.d.sync += self.pmod.led[i].eq(self._led[i].f.led.w_data)
-
-        m.submodules += FFSynchronizer(self.pmod.jack, self._jack.f.jack.r_data, reset=0)
-        m.submodules += FFSynchronizer(self.pmod.eeprom_mfg, self._eeprom.f.mfg.r_data, reset=0)
-        m.submodules += FFSynchronizer(self.pmod.eeprom_dev, self._eeprom.f.dev.r_data, reset=0)
-        m.submodules += FFSynchronizer(self.pmod.eeprom_serial, self._eeprom.f.serial.r_data, reset=0)
 
         return m

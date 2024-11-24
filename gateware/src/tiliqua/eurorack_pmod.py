@@ -114,6 +114,21 @@ class EdgeToPulse(Elaboratable):
 
 class I2CMaster(wiring.Component):
 
+    """
+    Driver for I2C traffic to/from the `eurorack-pmod`.
+
+    For HW Rev. 3.2+, this is:
+       - AK4619 Audio Codec (I2C for configuration only, data is I2S)
+       - 24AA025UIDT I2C EEPROM with unique ID
+       - PCA9635 I2C PWM LED controller
+       - PCA9557 I2C GPIO expander (for jack detection)
+       - CY8CMBR3108 I2C touch/proximity sensor (experiment, off by default!)
+
+    This kind of stateful stuff is often best suited for a softcore rather
+    than pure RTL, however I wanted to make it possible to use all
+    functions of the board without having to resort to using a softcore.
+    """
+
     PCA9557_ADDR     = 0x18
     PCA9635_ADDR     = 0x5
     AK4619VN_ADDR    = 0x10
@@ -122,6 +137,31 @@ class I2CMaster(wiring.Component):
     N_JACKS   = 8
     N_LEDS    = N_JACKS * 2
     N_SENSORS = 8
+
+    AK4619VN_CFG = [
+        0x00, # Register address to start at.
+        0x37, # 0x00 Power Management
+        0xAE, # 0x01 Audio I/F Format
+        0x1C, # 0x02 Audio I/F Format
+        0x00, # 0x03 System Clock Setting
+        0x22, # 0x04 MIC AMP Gain
+        0x22, # 0x05 MIC AMP Gain
+        0x30, # 0x06 ADC1 Lch Digital Volume
+        0x30, # 0x07 ADC1 Rch Digital Volume
+        0x30, # 0x08 ADC2 Lch Digital Volume
+        0x30, # 0x09 ADC2 Rch Digital Volume
+        0x22, # 0x0A ADC Digital Filter Setting
+        0x55, # 0x0B ADC Analog Input Setting
+        0x00, # 0x0C Reserved
+        0x06, # 0x0D ADC Mute & HPF Control
+        0x18, # 0x0E DAC1 Lch Digital Volume
+        0x18, # 0x0F DAC1 Rch Digital Volume
+        0x18, # 0x10 DAC2 Lch Digital Volume
+        0x18, # 0x11 DAC2 Rch Digital Volume
+        0x04, # 0x12 DAC Input Select Setting
+        0x05, # 0x13 DAC De-Emphasis Setting
+        0x0A, # 0x14 DAC Mute & Filter Setting
+    ]
 
     PCA9635_CFG = [
         0x80, # Auto-increment starting from MODE1
@@ -151,39 +191,14 @@ class I2CMaster(wiring.Component):
         0xAA, # LEDOUT3
     ]
 
-    AK4619VN_CFG = [
-        0x00, # Register address to start at.
-        0x37, # 0x00 Power Management
-        0xAE, # 0x01 Audio I/F Format
-        0x1C, # 0x02 Audio I/F Format
-        0x00, # 0x03 System Clock Setting
-        0x22, # 0x04 MIC AMP Gain
-        0x22, # 0x05 MIC AMP Gain
-        0x30, # 0x06 ADC1 Lch Digital Volume
-        0x30, # 0x07 ADC1 Rch Digital Volume
-        0x30, # 0x08 ADC2 Lch Digital Volume
-        0x30, # 0x09 ADC2 Rch Digital Volume
-        0x22, # 0x0A ADC Digital Filter Setting
-        0x55, # 0x0B ADC Analog Input Setting
-        0x00, # 0x0C Reserved
-        0x06, # 0x0D ADC Mute & HPF Control
-        0x18, # 0x0E DAC1 Lch Digital Volume
-        0x18, # 0x0F DAC1 Rch Digital Volume
-        0x18, # 0x10 DAC2 Lch Digital Volume
-        0x18, # 0x11 DAC2 Rch Digital Volume
-        0x04, # 0x12 DAC Input Select Setting
-        0x05, # 0x13 DAC De-Emphasis Setting
-        0x0A, # 0x14 DAC Mute & Filter Setting
-    ]
-
     def __init__(self):
-        self.i2c_stream = i2c.I2CStreamer(period_cyc=256)
+        self.i2c_stream = i2c.I2CStreamer(period_cyc=256) # 200kHz-ish at 60MHz sync
         super().__init__({
             "pins":           Out(vendor_i2c.I2CPinSignature()),
             "jack":           Out(self.N_JACKS),
             "led":            In(signed(8)).array(self.N_JACKS),
             "touch":          Out(unsigned(8)).array(self.N_SENSORS),
-            "touch_err":      Out(unsigned(8)),
+            "touch_err":      Out(unsigned(8)), # should be close to 0 if touch sense is OK.
         })
 
     def elaborate(self, platform):
@@ -400,6 +415,11 @@ class EurorackPmod(wiring.Component):
     jack: Out(8)
     touch_err: Out(8)
 
+    # 1s for automatic audio -> LED control. 0s for manual.
+    led_mode: In(8, init=0xff)
+    # If an LED is in manual, this is signed i8 from -green to +red.
+    led: In(8).array(8)
+
     # TODO
     # Read from the onboard I2C eeprom.
     # These will be valid a few hundred milliseconds after boot.
@@ -407,15 +427,9 @@ class EurorackPmod(wiring.Component):
     eeprom_dev: Out(8)
     eeprom_serial: Out(32)
 
-    # TODO
-    # Bitwise manual LED overrides. 1 == audio passthrough, 0 == manual set.
-    led_mode: In(8, init=0xff)
-    # If an LED is in manual, this is signed i8 from -green to +red
-    led: In(8).array(8)
-
-    # TODO
     # Signals only used for calibration
     sample_adc: Out(signed(WIDTH)).array(4)
+    # TODO
     force_dac_output: In(signed(WIDTH))
 
     def __init__(self, pmod_pins, hardware_r33=True, touch_enabled=True, audio_192=False):
