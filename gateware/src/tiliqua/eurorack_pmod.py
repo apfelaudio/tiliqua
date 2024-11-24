@@ -138,7 +138,7 @@ class I2CMaster(wiring.Component):
     N_LEDS    = N_JACKS * 2
     N_SENSORS = 8
 
-    AK4619VN_CFG = [
+    AK4619VN_CFG_48KHZ = [
         0x00, # Register address to start at.
         0x36, # 0x00 Power Management (RST not held)
         0xAE, # 0x01 Audio I/F Format
@@ -162,6 +162,9 @@ class I2CMaster(wiring.Component):
         0x05, # 0x13 DAC De-Emphasis Setting
         0x0A, # 0x14 DAC Mute & Filter Setting
     ]
+
+    AK4619VN_CFG_192KHZ = AK4619VN_CFG_48KHZ.copy()
+    AK4619VN_CFG_192KHZ[4] = 0x04 # 0x03 System Clock Setting
 
     PCA9635_CFG = [
         0x80, # Auto-increment starting from MODE1
@@ -191,8 +194,10 @@ class I2CMaster(wiring.Component):
         0xAA, # LEDOUT3
     ]
 
-    def __init__(self):
-        self.i2c_stream = i2c.I2CStreamer(period_cyc=256) # 200kHz-ish at 60MHz sync
+    def __init__(self, audio_192):
+        self.i2c_stream   = i2c.I2CStreamer(period_cyc=256) # 200kHz-ish at 60MHz sync
+        self.audio_192    = audio_192
+        self.ak4619vn_cfg = self.AK4619VN_CFG_192KHZ if audio_192 else self.AK4619VN_CFG_48KHZ
         super().__init__({
             "pins":           Out(vendor_i2c.I2CPinSignature()),
             "jack":           Out(self.N_JACKS),
@@ -307,9 +312,9 @@ class I2CMaster(wiring.Component):
         #
         codec_reg00 = Signal(8)
         with m.If(self.codec_mute):
-            m.d.comb += codec_reg00.eq(self.AK4619VN_CFG[1] & 0b11111110)
+            m.d.comb += codec_reg00.eq(self.ak4619vn_cfg[1] & 0b11111110)
         with m.Else():
-            m.d.comb += codec_reg00.eq(self.AK4619VN_CFG[1] | 0b00000001)
+            m.d.comb += codec_reg00.eq(self.ak4619vn_cfg[1] | 0b00000001)
 
         startup_delay = Signal(32)
 
@@ -319,7 +324,7 @@ class I2CMaster(wiring.Component):
             # AK4619VN init
             #
             init, _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
-            _,    _,   ix  = i2c_w_arr(m, ix, self.AK4619VN_CFG)
+            _,    _,   ix  = i2c_w_arr(m, ix, self.ak4619vn_cfg)
             _,    _,   ix  = i2c_wait (m, ix)
 
             #
@@ -480,8 +485,9 @@ class EurorackPmod(wiring.Component):
         vroot = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                              "../../deps/eurorack-pmod/gateware")
 
+        define_192 = "`define AK4619_192KHZ" if self.audio_192 else ""
         platform.add_file("eurorack_pmod_defines.sv",
-                          f"`define HW_R33\n")
+                          f"`define HW_R33\n{define_192}")
         platform.add_file("cal/cal_mem_default_r33.hex",
                           open(os.path.join(vroot, "cal/cal_mem_default_r33.hex")))
 
@@ -496,7 +502,7 @@ class EurorackPmod(wiring.Component):
 
         self.add_verilog_sources(platform)
 
-        m.submodules.i2c_master = i2c_master = I2CMaster()
+        m.submodules.i2c_master = i2c_master = I2CMaster(audio_192=self.audio_192)
 
         pmod_pins = self.pmod_pins
 
