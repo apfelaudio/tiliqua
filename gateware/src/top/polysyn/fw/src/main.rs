@@ -115,7 +115,11 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         while (audio_fifo.fifo_len().read().bits() as usize) < AUDIO_FIFO_ELASTIC_SZ - BLOCK_SIZE {
             for _ in 0..BLOCK_SIZE {
                 unsafe {
-                    let sample = (app.time % 2000) as i16 - 1000;
+                    let mut sample = ((app.time % 512) as i16 - 256) << 4;
+                    sample += ((app.time % 520) as i16 - 260) << 3;
+                    sample += ((app.time % 504) as i16 - 252) << 3;
+                    sample += ((app.time % 530) as i16 - 265) << 3;
+                    sample += ((app.time % 494) as i16 - 246) << 3;
                     *fifo_base = sample as u32;
                     app.time += 1;
                 }
