@@ -299,8 +299,12 @@ class I2CMaster(wiring.Component):
         # current touch sensor to poll, incremented once per loop
         touch_nsensor = Signal(range(self.N_SENSORS))
 
-        # compute coded power management register contents
+        # compute codec power management register contents
         # muting effectively clears/sets the RSTN bit.
+        #
+        # Sequencing - assert RSTN (0) to mute, after MCLK is stable.
+        # deassert RSTN (1) to unmute, after MCLK is stable.
+        #
         codec_reg00 = Signal(8)
         with m.If(self.codec_mute):
             m.d.comb += codec_reg00.eq(self.AK4619VN_CFG[1] & 0b11111110)
@@ -492,28 +496,9 @@ class EurorackPmod(wiring.Component):
 
         self.add_verilog_sources(platform)
 
-        pmod_pins = self.pmod_pins
-
-        # 1/256 clk_fs divider. this is not a true clock domain, don't create one.
-        # FIXME: this should be removed from `eurorack-pmod` verilog implementation
-        # and just replaced with a strobe. that's all its used for anyway. For this
-        # reason we do NOT expose this signal and only the 'strobe' version created next.
-        clk_fs = Signal()
-        clkdiv_fs = Signal(8)
-        m.d.audio += clkdiv_fs.eq(clkdiv_fs+1)
-        m.d.comb += clk_fs.eq(clkdiv_fs[-1])
-
-        # Create a strobe from the sample clock 'clk_fs` that asserts for 1 cycle
-        # per sample in the 'audio' domain. This is useful for latching our samples
-        # and hooking up to various signals in our FIFOs external to this module.
-        m.submodules.fs_edge = fs_edge = DomainRenamer("audio")(EdgeToPulse())
-        m.d.audio += fs_edge.edge_in.eq(clk_fs),
-        m.d.comb += self.fs_strobe.eq(fs_edge.pulse_out)
-
         m.submodules.i2c_master = i2c_master = I2CMaster()
 
-        sample_adc = Signal(data.ArrayLayout(signed(WIDTH), 4))
-        sample_dac = Signal(data.ArrayLayout(signed(WIDTH), 4))
+        pmod_pins = self.pmod_pins
 
         # Hook up I2C master (TODO: use provider)
         m.d.comb += [
@@ -547,17 +532,32 @@ class EurorackPmod(wiring.Component):
             with m.Else():
                 m.d.comb += i2c_master.led[n].eq(self.led[n]),
 
-        for n in range(4):
-            m.d.comb += self.sample_adc[n].eq(sample_adc[n])
-
         # PDN (and clocking for mobo R3+ for pop-free bitstream switching)
         m.d.comb += pmod_pins.pdn_d.o.eq(1),
         if hasattr(pmod_pins, "pdn_clk"):
+            #
+            # Drive external flip-flop, ensuring PDN remains high across
+            # FPGA reconfiguration (only works on mobo R3+).
+            #
+            # Codec RSTN must be asserted (held in reset) across the
+            # FPGA reconfiguration. This is performed by `self.codec_mute`.
+            #
             pdn_cnt = Signal(unsigned(16))
             with m.If(pdn_cnt != 60000): # 1ms
                 m.d.sync += pdn_cnt.eq(pdn_cnt+1)
             with m.If(3000 < pdn_cnt):
                 m.d.comb += pmod_pins.pdn_clk.o.eq(1)
+
+        # 1/256 clk_fs strobe
+        clkdiv_fs = Signal(8)
+        m.d.audio += clkdiv_fs.eq(clkdiv_fs+1)
+        m.d.comb += self.fs_strobe.eq(clkdiv_fs == 0)
+
+        sample_adc = Signal(data.ArrayLayout(signed(WIDTH), 4))
+        sample_dac = Signal(data.ArrayLayout(signed(WIDTH), 4))
+
+        for n in range(4):
+            m.d.comb += self.sample_adc[n].eq(sample_adc[n])
 
         # CODEC ser-/deserialiser. Sample rate derived from these clocks.
         m.submodules.vak4619 = Instance("ak4619",
