@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 #
 
-"""Amaranth wrapper and clock domain crossing for `eurorack-pmod` hardware."""
+"""Low-level drivers and domain crossing logic for `eurorack-pmod` hardware."""
 
 import os
 
@@ -86,29 +86,6 @@ class AudioStream(wiring.Component):
                     self.eurorack_pmod.sample_o.eq(dac_fifo.r_data),
                 ]
                 m.next = 'READ'
-
-        return m
-
-# TODO: move this to another util lib
-class EdgeToPulse(Elaboratable):
-    """
-    each rising edge of the signal edge_in will be
-    converted to a single clock pulse on pulse_out
-    """
-    def __init__(self):
-        self.edge_in          = Signal()
-        self.pulse_out        = Signal()
-
-    def elaborate(self, platform) -> Module:
-        m = Module()
-
-        edge_last = Signal()
-
-        m.d.sync += edge_last.eq(self.edge_in)
-        with m.If(self.edge_in & ~edge_last):
-            m.d.comb += self.pulse_out.eq(1)
-        with m.Else():
-            m.d.comb += self.pulse_out.eq(0)
 
         return m
 
@@ -200,10 +177,15 @@ class I2CMaster(wiring.Component):
         self.ak4619vn_cfg = self.AK4619VN_CFG_192KHZ if audio_192 else self.AK4619VN_CFG_48KHZ
         super().__init__({
             "pins":           Out(vendor_i2c.I2CPinSignature()),
+            # Jack insertion status.
             "jack":           Out(self.N_JACKS),
+            # Desired LED state -green/+red
             "led":            In(signed(8)).array(self.N_JACKS),
+            # Touch sensor states
             "touch":          Out(unsigned(8)).array(self.N_SENSORS),
-            "touch_err":      Out(unsigned(8)), # should be close to 0 if touch sense is OK.
+            # should be close to 0 if touch sense is OK.
+            "touch_err":      Out(unsigned(8)),
+            # assert for at least 100msec for complete muting sequence.
             "codec_mute":     In(1),
         })
 
