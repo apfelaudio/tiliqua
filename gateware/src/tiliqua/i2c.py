@@ -92,8 +92,10 @@ class I2CStreamer(wiring.Component):
 
         current_transaction_rw = Signal()
 
+        err  = Signal()
         done = Signal()
         m.d.comb += done.eq(self._transactions.level == 0)
+        m.d.comb += self.status.error.eq(err)
 
         with m.FSM() as fsm:
 
@@ -105,7 +107,7 @@ class I2CStreamer(wiring.Component):
                     m.next = 'START'
 
             with m.State('START'):
-                m.d.sync += self.status.error.eq(0)
+                m.d.sync += err.eq(0)
                 with m.If(~i2c.busy):
                     m.d.comb += i2c.start.eq(1),
                     m.next = 'SEND_DEV_ADDRESS'
@@ -183,7 +185,7 @@ class I2CStreamer(wiring.Component):
 
             with m.State("ABORT"):
                 with m.If(~i2c.busy):
-                    m.d.sync += self.status.error.eq(1)
+                    m.d.sync += err.eq(1)
                     m.d.comb += i2c.stop.eq(1)
                     m.next = "DRAIN_FIFOS"
 
