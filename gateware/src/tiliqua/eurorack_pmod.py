@@ -280,18 +280,45 @@ class I2CMaster(wiring.Component):
         with m.FSM(init='STARTUP-DELAY') as fsm:
 
             #
-            # AK4619VN init
+            # CY8CMBR3108 init (SW_RESET)
+            # Config is not flashed here, it is assumed touch config
+            # in CY8CMBR3108 NVM is already flashed
             #
-            cur, _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
-            _,   _,   ix  = i2c_w_arr(m, ix, self.AK4619VN_CFG)
-            _,   _,   ix  = i2c_wait (m, ix)
+            # TODO: verify this against checksum read?
+            #
 
+            init, _,   ix  = i2c_addr (m, ix, self.CY8CMBR3108_ADDR)
+            _,    _,   ix  = i2c_write(m, ix, 0x86)
+            _,    _,   ix  = i2c_write(m, ix, 0xff, last=True)
+            _,    _,   ix  = i2c_wait (m, ix)
+
+            #
             # startup delay
+            #
+
             with m.State('STARTUP-DELAY'):
                 with m.If(startup_delay == 600_000):
-                    m.next = cur
+                    m.next = init
                 with m.Else():
                     m.d.sync += startup_delay.eq(startup_delay+1)
+
+            #
+            # CYMBR init retries
+            #
+
+            cur, nxt, ix = state_id(ix)
+            with m.State(cur):
+                with m.If(i2c.status.error):
+                    m.next = init
+                with m.Else():
+                    m.next = nxt
+
+            #
+            # AK4619VN init
+            #
+            _,   _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
+            _,   _,   ix  = i2c_w_arr(m, ix, self.AK4619VN_CFG)
+            _,   _,   ix  = i2c_wait (m, ix)
 
             #
             # PCA9557 init
@@ -340,7 +367,13 @@ class I2CMaster(wiring.Component):
                 with m.If(~i2c.status.error):
                     with m.Switch(touch_nsensor):
                         for n in range(8):
-                            m.d.sync += self.touch[n].eq(i2c.o.payload)
+                            if n > 3:
+                                # R3.3 hw swaps last four vs R3.2 to improve PCB routing
+                                with m.Case(n):
+                                    m.d.sync += self.touch[4+(7-n)].eq(i2c.o.payload)
+                            else:
+                                with m.Case(n):
+                                    m.d.sync += self.touch[n].eq(i2c.o.payload)
                     m.d.comb += i2c.o.ready.eq(1)
                 m.next = nxt
 
