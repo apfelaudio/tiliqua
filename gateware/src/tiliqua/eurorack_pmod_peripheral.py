@@ -28,6 +28,9 @@ class Peripheral(wiring.Component):
     class TouchReg(csr.Register, access="r"):
         touch: csr.Field(csr.action.R, unsigned(8))
 
+    class TouchErrorsReg(csr.Register, access="r"):
+        value: csr.Field(csr.action.R, unsigned(8))
+
     class LEDReg(csr.Register, access="w"):
         led: csr.Field(csr.action.W, unsigned(8))
 
@@ -55,6 +58,7 @@ class Peripheral(wiring.Component):
 
         # Touch sensing
         self._touch = [regs.add(f"touch{i}", self.TouchReg()) for i in range(8)]
+        self._touch_err = regs.add("touch_err", self.TouchErrorsReg())
 
         # LED control
         self._led_mode = regs.add("led_mode", self.LEDReg())
@@ -76,6 +80,8 @@ class Peripheral(wiring.Component):
         m.submodules.bridge = self._bridge
 
         connect(m, flipped(self.bus), self._bridge.bus)
+
+        m.d.comb += self._touch_err.f.value.r_data.eq(self.pmod.touch_err)
 
         for i in range(4):
             m.submodules += FFSynchronizer(self.pmod.sample_adc[i], self._sample_adc[i].f.sample.r_data, reset=0)

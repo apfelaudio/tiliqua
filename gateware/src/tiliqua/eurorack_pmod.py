@@ -179,10 +179,11 @@ class I2CMaster(wiring.Component):
     def __init__(self):
         self.i2c_stream = i2c.I2CStreamer(period_cyc=256)
         super().__init__({
-            "pins":   wiring.Out(vendor_i2c.I2CPinSignature()),
-            "jack":   wiring.Out(self.N_JACKS),
-            "led":    wiring.In(signed(8)).array(self.N_JACKS),
-            "touch":  wiring.Out(unsigned(8)).array(self.N_SENSORS),
+            "pins":           Out(vendor_i2c.I2CPinSignature()),
+            "jack":           Out(self.N_JACKS),
+            "led":            In(signed(8)).array(self.N_JACKS),
+            "touch":          Out(unsigned(8)).array(self.N_SENSORS),
+            "touch_err":      Out(unsigned(8)),
         })
 
     def elaborate(self, platform):
@@ -341,6 +342,8 @@ class I2CMaster(wiring.Component):
             with m.State(cur):
                 m.d.sync += touch_nsensor.eq(touch_nsensor+1)
                 with m.If(~i2c.status.error):
+                    with m.If(self.touch_err > 0):
+                        m.d.sync += self.touch_err.eq(self.touch_err - 1)
                     with m.Switch(touch_nsensor):
                         for n in range(8):
                             if n > 3:
@@ -351,6 +354,9 @@ class I2CMaster(wiring.Component):
                                 with m.Case(n):
                                     m.d.sync += self.touch[n].eq(i2c.o.payload)
                     m.d.comb += i2c.o.ready.eq(1)
+                with m.Else():
+                    with m.If(self.touch_err != 0xff):
+                        m.d.sync += self.touch_err.eq(self.touch_err + 1)
                 m.next = nxt
 
             #
@@ -392,6 +398,7 @@ class EurorackPmod(wiring.Component):
     # Touch sensing and jacksense outputs.
     touch: Out(8).array(8)
     jack: Out(8)
+    touch_err: Out(8)
 
     # TODO
     # Read from the onboard I2C eeprom.
@@ -489,6 +496,7 @@ class EurorackPmod(wiring.Component):
             self.touch[5].eq(i2c_master.touch[5]),
             self.touch[6].eq(i2c_master.touch[6]),
             self.touch[7].eq(i2c_master.touch[7]),
+            self.touch_err.eq(i2c_master.touch_err),
             i2c_master.led[0].eq(self.sample_i[0]>>10),
             i2c_master.led[1].eq(self.sample_i[1]>>10),
             i2c_master.led[2].eq(self.sample_i[2]>>10),

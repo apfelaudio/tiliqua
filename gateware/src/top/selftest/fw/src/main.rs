@@ -182,8 +182,9 @@ fn print_touch_state<D>(d: &mut D, pmod: &pac::PMOD0_PERIPH)
 where
     D: DrawTarget<Color = Gray8>,
 {
-    let mut s = String::<64>::new();
-    write!(s, "touch          - ch0={:03} ch1={:03} ch2={:03} ch3={:03} ch4={:03} ch5={:03} ch6={:03} ch7={:03}",
+    let mut s = String::<128>::new();
+    write!(s, "touch          - err={:03} ch0={:03} ch1={:03} ch2={:03} ch3={:03} ch4={:03} ch5={:03} ch6={:03} ch7={:03}",
+          pmod.touch_err().read().bits() as u8,
           pmod.touch0().read().bits() as u8,
           pmod.touch1().read().bits() as u8,
           pmod.touch2().read().bits() as u8,
