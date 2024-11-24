@@ -339,21 +339,28 @@ class RebootProvider(wiring.Component):
 
     """
     Issue a 'self_program' (return to bootloader) when the 'button'
-    signal is high for 'reboot_seconds'.
+    signal is high for 'reboot_seconds', and a 'mute' output shortly
+    before then (to warn the CODEC to prevent pops).
     """
 
     button: wiring.In(unsigned(1))
+    mute:   wiring.Out(unsigned(1))
 
-    def __init__(self, clock_sync_hz, reboot_seconds=3):
+    def __init__(self, clock_sync_hz, reboot_seconds=3, mute_seconds=2.5):
         self.reboot_seconds = reboot_seconds
+        self.mute_seconds   = mute_seconds
         self.clock_sync_hz  = clock_sync_hz
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
-        timeout = self.reboot_seconds*self.clock_sync_hz
-        button_counter = Signal(range(timeout+1))
-        with m.If(button_counter >= timeout):
+        timeout_reboot = self.reboot_seconds*self.clock_sync_hz
+        timeout_mute   = int(self.mute_seconds*self.clock_sync_hz)
+        assert(timeout_reboot > (timeout_mute - 0.25))
+        button_counter = Signal(range(timeout_reboot+1))
+        with m.If(button_counter >= timeout_mute):
+            m.d.comb += self.mute.eq(1)
+        with m.If(button_counter >= timeout_reboot):
             m.d.comb += platform.request("self_program").o.eq(1)
         with m.Else():
             with m.If(self.button):

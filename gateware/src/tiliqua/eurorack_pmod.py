@@ -140,7 +140,7 @@ class I2CMaster(wiring.Component):
 
     AK4619VN_CFG_48KHZ = [
         0x00, # Register address to start at.
-        0x36, # 0x00 Power Management (RST not held)
+        0x36, # 0x00 Power Management (RSTN asserted!)
         0xAE, # 0x01 Audio I/F Format
         0x1C, # 0x02 Audio I/F Format
         0x00, # 0x03 System Clock Setting
@@ -160,7 +160,7 @@ class I2CMaster(wiring.Component):
         0x18, # 0x11 DAC2 Rch Digital Volume
         0x04, # 0x12 DAC Input Select Setting
         0x05, # 0x13 DAC De-Emphasis Setting
-        0x0A, # 0x14 DAC Mute & Filter Setting
+        0x3A, # 0x14 DAC Mute & Filter Setting (soft mute asserted!)
     ]
 
     AK4619VN_CFG_192KHZ = AK4619VN_CFG_48KHZ.copy()
@@ -304,14 +304,31 @@ class I2CMaster(wiring.Component):
         # current touch sensor to poll, incremented once per loop
         touch_nsensor = Signal(range(self.N_SENSORS))
 
-        # compute codec power management register contents
-        # muting effectively clears/sets the RSTN bit.
         #
-        # Sequencing - assert RSTN (0) to mute, after MCLK is stable.
+        # Compute codec power management register contents,
+        # Muting effectively clears/sets the RSTN bit and DA1/DA2
+        # soft mute bits. `mute_count` ensures correct sequencing -
+        # always soft mute before asserting RSTN. Likewise, always
+        # boot with soft mute, and deassert soft mute after RSTN.
+        #
+        # Clocks - assert RSTN (0) to mute, after MCLK is stable.
         # deassert RSTN (1) to unmute, after MCLK is stable.
         #
-        codec_reg00 = Signal(8)
+        mute_count  = Signal(4)
+
+        # CODEC DAC soft mute sequencing
+        codec_reg14 = Signal(8)
         with m.If(self.codec_mute):
+            # DA1MUTE / DA2MUTE soft mute ON
+            m.d.comb += codec_reg14.eq(self.ak4619vn_cfg[0x15] | 0b00110000)
+        with m.Else():
+            # DA1MUTE / DA2MUTE soft mute OFF
+            m.d.comb += codec_reg14.eq(self.ak4619vn_cfg[0x15] & 0b11001111)
+
+        # CODEC RSTN sequencing
+        # Only assert if we know soft mute has been asserted for a while.
+        codec_reg00 = Signal(8)
+        with m.If(mute_count == 0xf):
             m.d.comb += codec_reg00.eq(self.ak4619vn_cfg[1] & 0b11111110)
         with m.Else():
             m.d.comb += codec_reg00.eq(self.ak4619vn_cfg[1] | 0b00000001)
@@ -403,11 +420,15 @@ class I2CMaster(wiring.Component):
                 m.next = nxt
 
 
-            # AK4619VN power management (mute / RSTN)
+            # AK4619VN power management (Soft mute + RSTN)
 
             _,   _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
-            _,   _,   ix  = i2c_write(m, ix, 0x00)
+            _,   _,   ix  = i2c_write(m, ix, 0x00) # RSTN
             _,   _,   ix  = i2c_write(m, ix, codec_reg00, last=True)
+            _,   _,   ix  = i2c_wait (m, ix)
+
+            _,   _,   ix  = i2c_write(m, ix, 0x14) # DAC1MUTE / DAC2MUTE
+            _,   _,   ix  = i2c_write(m, ix, codec_reg14, last=True)
             _,   _,   ix  = i2c_wait (m, ix)
 
             #
@@ -423,6 +444,11 @@ class I2CMaster(wiring.Component):
                 with m.If(~i2c.status.error):
                     m.d.sync += self.jack.eq(i2c.o.payload)
                     m.d.comb += i2c.o.ready.eq(1)
+                # Also update the soft mute state tracking
+                with m.If(self.codec_mute & (mute_count != 0xf)):
+                    m.d.sync += mute_count.eq(mute_count+1)
+                with m.Else():
+                    m.d.sync += mute_count.eq(0)
                 # Go back to LED brightness update
                 m.next = s_loop_begin
 
