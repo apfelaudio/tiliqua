@@ -280,16 +280,10 @@ class I2CMaster(wiring.Component):
         with m.FSM(init='STARTUP-DELAY') as fsm:
 
             #
-            # CY8CMBR3108 init (SW_RESET)
-            # Config is not flashed here, it is assumed touch config
-            # in CY8CMBR3108 NVM is already flashed
+            # AK4619VN init
             #
-            # TODO: verify this against checksum read?
-            #
-
-            init, _,   ix  = i2c_addr (m, ix, self.CY8CMBR3108_ADDR)
-            _,    _,   ix  = i2c_write(m, ix, 0x86)
-            _,    _,   ix  = i2c_write(m, ix, 0xff, last=True)
+            init, _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
+            _,    _,   ix  = i2c_w_arr(m, ix, self.AK4619VN_CFG)
             _,    _,   ix  = i2c_wait (m, ix)
 
             #
@@ -301,24 +295,6 @@ class I2CMaster(wiring.Component):
                     m.next = init
                 with m.Else():
                     m.d.sync += startup_delay.eq(startup_delay+1)
-
-            #
-            # CYMBR init retries
-            #
-
-            cur, nxt, ix = state_id(ix)
-            with m.State(cur):
-                with m.If(i2c.status.error):
-                    m.next = init
-                with m.Else():
-                    m.next = nxt
-
-            #
-            # AK4619VN init
-            #
-            _,   _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
-            _,   _,   ix  = i2c_w_arr(m, ix, self.AK4619VN_CFG)
-            _,   _,   ix  = i2c_wait (m, ix)
 
             #
             # PCA9557 init
