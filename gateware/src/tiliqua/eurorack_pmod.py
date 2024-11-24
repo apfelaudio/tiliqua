@@ -177,7 +177,7 @@ class I2CMaster(wiring.Component):
     ]
 
     def __init__(self):
-        self.i2c_stream = i2c.I2CStreamer(period_cyc=512)
+        self.i2c_stream = i2c.I2CStreamer(period_cyc=256)
         super().__init__({
             "pins":   wiring.Out(vendor_i2c.I2CPinSignature()),
             "jack":   wiring.Out(self.N_JACKS),
