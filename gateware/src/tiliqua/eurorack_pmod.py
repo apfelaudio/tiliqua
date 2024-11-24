@@ -275,13 +275,29 @@ class I2CMaster(wiring.Component):
 
         touch_nsensor = Signal(range(self.N_SENSORS))
 
-        with m.FSM() as fsm:
+        startup_delay = Signal(32)
+
+        with m.FSM(init='STARTUP-DELAY') as fsm:
+
+            #
+            # AK4619VN init
+            #
+            cur, _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
+            _,   _,   ix  = i2c_w_arr(m, ix, self.AK4619VN_CFG)
+            _,   _,   ix  = i2c_wait (m, ix)
+
+            # startup delay
+            with m.State('STARTUP-DELAY'):
+                with m.If(startup_delay == 600_000):
+                    m.next = cur
+                with m.Else():
+                    m.d.sync += startup_delay.eq(startup_delay+1)
 
             #
             # PCA9557 init
             #
 
-            cur, _,   ix  = i2c_addr (m, ix, self.PCA9557_ADDR)
+            _,   _,   ix  = i2c_addr (m, ix, self.PCA9557_ADDR)
             _,   _,   ix  = i2c_write(m, ix, 0x02)
             _,   _,   ix  = i2c_write(m, ix, 0x00, last=True)
             _,   _,   ix  = i2c_wait (m, ix) # set polarity inversion reg
@@ -291,13 +307,6 @@ class I2CMaster(wiring.Component):
             #
             _,   _,   ix  = i2c_addr (m, ix, self.PCA9635_ADDR)
             _,   _,   ix  = i2c_w_arr(m, ix, self.PCA9635_CFG)
-            _,   _,   ix  = i2c_wait (m, ix)
-
-            #
-            # AK4619VN init
-            #
-            _,   _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
-            _,   _,   ix  = i2c_w_arr(m, ix, self.AK4619VN_CFG)
             _,   _,   ix  = i2c_wait (m, ix)
 
             #
@@ -471,14 +480,14 @@ class EurorackPmod(wiring.Component):
             self.touch[5].eq(i2c_master.touch[5]),
             self.touch[6].eq(i2c_master.touch[6]),
             self.touch[7].eq(i2c_master.touch[7]),
-            i2c_master.led[0].eq(self.sample_i[0]>>9),
-            i2c_master.led[1].eq(self.sample_i[1]>>9),
-            i2c_master.led[2].eq(self.sample_i[2]>>9),
-            i2c_master.led[3].eq(self.sample_i[3]>>9),
-            i2c_master.led[4].eq(self.sample_o[0]>>9),
-            i2c_master.led[5].eq(self.sample_o[1]>>9),
-            i2c_master.led[6].eq(self.sample_o[2]>>9),
-            i2c_master.led[7].eq(self.sample_o[3]>>9),
+            i2c_master.led[0].eq(self.sample_i[0]>>10),
+            i2c_master.led[1].eq(self.sample_i[1]>>10),
+            i2c_master.led[2].eq(self.sample_i[2]>>10),
+            i2c_master.led[3].eq(self.sample_i[3]>>10),
+            i2c_master.led[4].eq(self.sample_o[0]>>10),
+            i2c_master.led[5].eq(self.sample_o[1]>>10),
+            i2c_master.led[6].eq(self.sample_o[2]>>10),
+            i2c_master.led[7].eq(self.sample_o[3]>>10),
         ]
 
         # CODEC ser-/deserialiser. Sample rate derived from these clocks.
