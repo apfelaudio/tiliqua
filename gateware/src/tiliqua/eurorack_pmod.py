@@ -13,7 +13,7 @@ from amaranth.lib               import wiring, data, stream
 from amaranth.lib.wiring        import In, Out
 from amaranth.lib.fifo          import AsyncFIFOBuffered
 from amaranth.lib.cdc           import FFSynchronizer
-from amaranth.lib.memory   import Memory
+from amaranth.lib.memory        import Memory
 
 from tiliqua                    import i2c
 from vendor                     import i2c as vendor_i2c
@@ -332,10 +332,13 @@ class I2CMaster(wiring.Component):
             #
 
             with m.State('STARTUP-DELAY'):
-                with m.If(startup_delay == 600_000):
+                if platform is not None:
+                    with m.If(startup_delay == 600_000):
+                        m.next = init
+                    with m.Else():
+                        m.d.sync += startup_delay.eq(startup_delay+1)
+                else:
                     m.next = init
-                with m.Else():
-                    m.d.sync += startup_delay.eq(startup_delay+1)
 
             #
             # PCA9557 init
