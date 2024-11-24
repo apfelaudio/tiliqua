@@ -203,6 +203,24 @@ where
     .draw(d).ok();
 }
 
+fn print_jack_state<D>(d: &mut D, pmod: &pac::PMOD0_PERIPH)
+where
+    D: DrawTarget<Color = Gray8>,
+{
+    let mut s = String::<64>::new();
+    write!(s, "jack           - 0x{:x}",
+          pmod.jack().read().bits() as u8).ok();
+    info!("{}", s);
+    let style = MonoTextStyle::new(&FONT_6X10, Gray8::WHITE);
+    Text::with_alignment(
+        &s,
+        d.bounding_box().center() + Point::new(-140, 12),
+        style,
+        Alignment::Left,
+    )
+    .draw(d).ok();
+}
+
 fn print_usb_state<D>(d: &mut D, i2cdev: &mut I2c0)
 where
     D: DrawTarget<Color = Gray8>,
@@ -228,7 +246,7 @@ where
     let style = MonoTextStyle::new(&FONT_6X10, Gray8::WHITE);
     Text::with_alignment(
         &s,
-        d.bounding_box().center() + Point::new(-140, 12),
+        d.bounding_box().center() + Point::new(-140, 24),
         style,
         Alignment::Left,
     )
@@ -260,7 +278,7 @@ where
     let style = MonoTextStyle::new(&FONT_6X10, Gray8::WHITE);
     Text::with_alignment(
         &s,
-        d.bounding_box().center() + Point::new(-140, 24),
+        d.bounding_box().center() + Point::new(-140, 36),
         style,
         Alignment::Left,
     )
@@ -352,6 +370,9 @@ fn main() -> ! {
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_touch_state(&mut display, &pmod);
+        pause_flush(&mut timer, &mut uptime_ms, period_ms);
+
+        print_jack_state(&mut display, &pmod);
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_usb_state(&mut display, &mut i2cdev);
