@@ -135,10 +135,13 @@ macro_rules! impl_ui {
                             }
                         } else {
                             self.pmod.led_all_auto();
+                            // Override LEDs with touch value if no jack inserted.
                             let touch = self.pmod.touch();
                             for n in 0..8 {
-                                if (self.touch_led_mask & (1<<n)) != 0 {
-                                    self.pmod.led_set_manual(n,(touch[n]>>2) as i8);
+                                if (self.pmod.jack() & (1<<n)) == 0 {
+                                    if (self.touch_led_mask & (1<<n)) != 0 {
+                                        self.pmod.led_set_manual(n,(touch[n]>>2) as i8);
+                                    }
                                 }
                             }
                         }
