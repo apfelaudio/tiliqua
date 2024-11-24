@@ -488,24 +488,25 @@ class EurorackPmod(wiring.Component):
 
             # Hook up I2C master registers
             self.jack.eq(i2c_master.jack),
-            self.touch[0].eq(i2c_master.touch[0]),
-            self.touch[1].eq(i2c_master.touch[1]),
-            self.touch[2].eq(i2c_master.touch[2]),
-            self.touch[3].eq(i2c_master.touch[3]),
-            self.touch[4].eq(i2c_master.touch[4]),
-            self.touch[5].eq(i2c_master.touch[5]),
-            self.touch[6].eq(i2c_master.touch[6]),
-            self.touch[7].eq(i2c_master.touch[7]),
             self.touch_err.eq(i2c_master.touch_err),
-            i2c_master.led[0].eq(self.sample_i[0]>>10),
-            i2c_master.led[1].eq(self.sample_i[1]>>10),
-            i2c_master.led[2].eq(self.sample_i[2]>>10),
-            i2c_master.led[3].eq(self.sample_i[3]>>10),
-            i2c_master.led[4].eq(self.sample_o[0]>>10),
-            i2c_master.led[5].eq(self.sample_o[1]>>10),
-            i2c_master.led[6].eq(self.sample_o[2]>>10),
-            i2c_master.led[7].eq(self.sample_o[3]>>10),
         ]
+
+        for n in range(8):
+
+            # Touch sense readings per jack
+            m.d.comb += self.touch[n].eq(i2c_master.touch[n]),
+
+            # LED auto/manual settings per jack
+            with m.If(self.led_mode[n]):
+                if n <= 3:
+                    m.d.comb += i2c_master.led[n].eq(self.sample_i[n].raw()>>8),
+                else:
+                    m.d.comb += i2c_master.led[n].eq(self.sample_o[n-4].raw()>>8),
+            with m.Else():
+                m.d.comb += i2c_master.led[n].eq(self.led[n]),
+
+        for n in range(4):
+            m.d.comb += self.sample_adc[n].eq(sample_adc[n])
 
         # CODEC ser-/deserialiser. Sample rate derived from these clocks.
         m.submodules.vak4619 = Instance("ak4619",
@@ -535,6 +536,8 @@ class EurorackPmod(wiring.Component):
             i_sample_in3  = sample_dac[3]
         )
 
+        sample_i_inner = Signal(data.ArrayLayout(signed(WIDTH), 4))
+
         # Raw sample calibrator, both for input and output channels.
         # Compensates for DC bias in CODEC, gain differences, resistor
         # tolerances and so on.
@@ -556,19 +559,25 @@ class EurorackPmod(wiring.Component):
             i_in1  = ~sample_adc[1],
             i_in2  = ~sample_adc[2],
             i_in3  = ~sample_adc[3],
-            i_in4  = self.sample_o[0],
-            i_in5  = self.sample_o[1],
-            i_in6  = self.sample_o[2],
-            i_in7  = self.sample_o[3],
-            o_out0 = self.sample_i[0],
-            o_out1 = self.sample_i[1],
-            o_out2 = self.sample_i[2],
-            o_out3 = self.sample_i[3],
+            i_in4  = self.sample_o[0].raw(),
+            i_in5  = self.sample_o[1].raw(),
+            i_in6  = self.sample_o[2].raw(),
+            i_in7  = self.sample_o[3].raw(),
+            o_out0 = sample_i_inner[0],
+            o_out1 = sample_i_inner[1],
+            o_out2 = sample_i_inner[2],
+            o_out3 = sample_i_inner[3],
             o_out4 = sample_dac[0],
             o_out5 = sample_dac[1],
             o_out6 = sample_dac[2],
             o_out7 = sample_dac[3],
         )
+
+        for n in range(4):
+            with m.If(self.jack[n]):
+                m.d.comb += self.sample_i[n].raw().eq(sample_i_inner[n])
+            with m.Else():
+                m.d.comb += self.sample_i[n].raw().eq(self.touch[n] << 6)
 
         return m
 
