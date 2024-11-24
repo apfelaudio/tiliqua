@@ -225,10 +225,10 @@ class I2CMaster(wiring.Component):
                     rd_port.en.eq(1),
                     rd_port.addr.eq(cnt),
                 ]
+                m.d.sync += cnt.eq(cnt+1)
                 with m.If(cnt != len(data) + 1):
-                    m.d.sync += cnt.eq(cnt+1)
                     m.d.comb += [
-                        i2c.i.valid.eq(1),
+                        i2c.i.valid.eq(cnt != 0),
                         i2c.i.payload.rw.eq(0), # Write
                         i2c.i.payload.data.eq(rd_port.data),
                         i2c.i.payload.last.eq(cnt == (len(data)-1)),
