@@ -140,7 +140,7 @@ class I2CMaster(wiring.Component):
 
     AK4619VN_CFG = [
         0x00, # Register address to start at.
-        0x37, # 0x00 Power Management
+        0x36, # 0x00 Power Management (RST not held)
         0xAE, # 0x01 Audio I/F Format
         0x1C, # 0x02 Audio I/F Format
         0x00, # 0x03 System Clock Setting
@@ -199,6 +199,7 @@ class I2CMaster(wiring.Component):
             "led":            In(signed(8)).array(self.N_JACKS),
             "touch":          Out(unsigned(8)).array(self.N_SENSORS),
             "touch_err":      Out(unsigned(8)), # should be close to 0 if touch sense is OK.
+            "codec_mute":     In(1),
         })
 
     def elaborate(self, platform):
@@ -211,6 +212,7 @@ class I2CMaster(wiring.Component):
             return (f"i2c_state{ix}", f"i2c_state{ix+1}", ix+1)
 
         def i2c_addr(m, ix, addr):
+            # set i2c address of transactions being enqueued
             cur, nxt, ix = state_id(ix)
             with m.State(cur):
                 m.d.sync += i2c.address.eq(addr),
@@ -218,6 +220,7 @@ class I2CMaster(wiring.Component):
             return cur, nxt, ix
 
         def i2c_write(m, ix, data, last=False):
+            # enqueue a single byte. delineate transaction boundary with 'last=True'
             cur, nxt, ix = state_id(ix)
             with m.State(cur):
                 m.d.comb += [
@@ -230,6 +233,7 @@ class I2CMaster(wiring.Component):
             return cur, nxt, ix
 
         def i2c_w_arr(m, ix, data):
+            # enqueue write transactions for an array of data
             cur, nxt, ix = state_id(ix)
             with m.State(cur):
                 cnt = Signal(range(len(data)+2))
@@ -255,6 +259,7 @@ class I2CMaster(wiring.Component):
             return cur, nxt, ix
 
         def i2c_read(m, ix, last=False):
+            # enqueue a single read transaction
             cur, nxt, ix = state_id(ix)
             with m.State(cur):
                 m.d.comb += [
@@ -266,6 +271,7 @@ class I2CMaster(wiring.Component):
             return cur, nxt, ix
 
         def i2c_wait(m, ix):
+            # wait until all enqueued transactions are complete
             cur,  nxt, ix = state_id(ix)
             with m.State(cur):
                 with m.If(~i2c.status.busy):
@@ -276,6 +282,7 @@ class I2CMaster(wiring.Component):
         # used for implicit state machine ID tracking / generation
         ix = 0
 
+        # compute actual LED register values based on signed 'red/green' desire
         led_reg = Signal(data.ArrayLayout(unsigned(8), self.N_LEDS))
         for n in range(self.N_LEDS):
             if n % 2 == 0:
@@ -289,7 +296,16 @@ class I2CMaster(wiring.Component):
                 with m.Else():
                     m.d.comb += led_reg[n].eq(0)
 
+        # current touch sensor to poll, incremented once per loop
         touch_nsensor = Signal(range(self.N_SENSORS))
+
+        # compute coded power management register contents
+        # muting effectively clears/sets the RSTN bit.
+        codec_reg00 = Signal(8)
+        with m.If(self.codec_mute):
+            m.d.comb += codec_reg00.eq(self.AK4619VN_CFG[1] & 0b11111110)
+        with m.Else():
+            m.d.comb += codec_reg00.eq(self.AK4619VN_CFG[1] | 0b00000001)
 
         startup_delay = Signal(32)
 
@@ -374,6 +390,14 @@ class I2CMaster(wiring.Component):
                         m.d.sync += self.touch_err.eq(self.touch_err + 1)
                 m.next = nxt
 
+
+            # AK4619VN power management (mute / RSTN)
+
+            _,   _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
+            _,   _,   ix  = i2c_write(m, ix, 0x00)
+            _,   _,   ix  = i2c_write(m, ix, codec_reg00, last=True)
+            _,   _,   ix  = i2c_wait (m, ix)
+
             #
             # PCA9557 read (Jack input port register)
             #
@@ -414,6 +438,7 @@ class EurorackPmod(wiring.Component):
     touch: Out(8).array(8)
     jack: Out(8)
     touch_err: Out(8)
+    codec_mute: In(1)
 
     # 1s for automatic audio -> LED control. 0s for manual.
     led_mode: In(8, init=0xff)
@@ -503,6 +528,9 @@ class EurorackPmod(wiring.Component):
             # Hook up I2C master registers
             self.jack.eq(i2c_master.jack),
             self.touch_err.eq(i2c_master.touch_err),
+
+            # Hook up coded mute control
+            i2c_master.codec_mute.eq(self.codec_mute),
         ]
 
         for n in range(8):
@@ -522,6 +550,15 @@ class EurorackPmod(wiring.Component):
         for n in range(4):
             m.d.comb += self.sample_adc[n].eq(sample_adc[n])
 
+        # PDN (and clocking for mobo R3+ for pop-free bitstream switching)
+        m.d.comb += pmod_pins.pdn_d.o.eq(1),
+        if hasattr(pmod_pins, "pdn_clk"):
+            pdn_cnt = Signal(unsigned(16))
+            with m.If(pdn_cnt != 60000): # 1ms
+                m.d.sync += pdn_cnt.eq(pdn_cnt+1)
+            with m.If(3000 < pdn_cnt):
+                m.d.comb += pmod_pins.pdn_clk.o.eq(1)
+
         # CODEC ser-/deserialiser. Sample rate derived from these clocks.
         m.submodules.vak4619 = Instance("ak4619",
             # Parameters
@@ -533,7 +570,7 @@ class EurorackPmod(wiring.Component):
             i_rst = ResetSignal("audio"),
 
             # Pads (directly hooked up to pads without extra logic required)
-            o_pdn = pmod_pins.pdn.o,
+            # o_pdn = pmod_pins.pdn.o,
             o_mclk = pmod_pins.mclk.o,
             o_sdin1 = pmod_pins.sdin1.o,
             i_sdout1 = pmod_pins.sdout1.i,

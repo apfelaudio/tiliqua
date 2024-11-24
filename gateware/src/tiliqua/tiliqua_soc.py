@@ -377,6 +377,8 @@ class TiliquaSoc(Component):
             self.pmod0_periph.pmod = pmod0
             m.submodules.pmod0_periph = self.pmod0_periph
 
+            m.d.comb += pmod0.codec_mute.eq(self.encoder0._button.f.button.r_data)
+
             # die temperature
             m.submodules.dtr0 = self.dtr0
 
