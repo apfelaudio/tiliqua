@@ -177,7 +177,7 @@ class I2CMaster(wiring.Component):
     ]
 
     def __init__(self):
-        self.i2c_stream = i2c.I2CStreamer(period_cyc=4)
+        self.i2c_stream = i2c.I2CStreamer(period_cyc=512)
         super().__init__({
             "pins":   wiring.Out(vendor_i2c.I2CPinSignature()),
             "jack":   wiring.Out(self.N_JACKS),
@@ -471,14 +471,14 @@ class EurorackPmod(wiring.Component):
             self.touch[5].eq(i2c_master.touch[5]),
             self.touch[6].eq(i2c_master.touch[6]),
             self.touch[7].eq(i2c_master.touch[7]),
-            i2c_master.led[0].eq(self.sample_i[0]),
-            i2c_master.led[1].eq(self.sample_i[1]),
-            i2c_master.led[2].eq(self.sample_i[2]),
-            i2c_master.led[3].eq(self.sample_i[3]),
-            i2c_master.led[4].eq(self.sample_o[0]),
-            i2c_master.led[5].eq(self.sample_o[1]),
-            i2c_master.led[6].eq(self.sample_o[2]),
-            i2c_master.led[7].eq(self.sample_o[3]),
+            i2c_master.led[0].eq(self.sample_i[0]>>9),
+            i2c_master.led[1].eq(self.sample_i[1]>>9),
+            i2c_master.led[2].eq(self.sample_i[2]>>9),
+            i2c_master.led[3].eq(self.sample_i[3]>>9),
+            i2c_master.led[4].eq(self.sample_o[0]>>9),
+            i2c_master.led[5].eq(self.sample_o[1]>>9),
+            i2c_master.led[6].eq(self.sample_o[2]>>9),
+            i2c_master.led[7].eq(self.sample_o[3]>>9),
         ]
 
         # CODEC ser-/deserialiser. Sample rate derived from these clocks.
