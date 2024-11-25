@@ -486,6 +486,7 @@ class USB2AudioInterface(Elaboratable):
         m.submodules.pmod0 = pmod0 = EurorackPmod(
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True)
+        m.d.comb += pmod0.codec_mute.eq(reboot.mute)
 
         m.submodules.audio_to_channels = AudioToChannels(
                 pmod0,

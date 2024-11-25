@@ -111,6 +111,7 @@ class VectorScopeTop(Elaboratable):
             m.submodules.reboot = reboot = RebootProvider(car.clocks_hz["sync"])
             m.submodules.btn = FFSynchronizer(
                     platform.request("encoder").s.i, reboot.button)
+            m.d.comb += self.pmod0.codec_mute.eq(reboot.mute)
 
         if sim.is_hw(platform):
             self.pmod0 = eurorack_pmod.EurorackPmod(
