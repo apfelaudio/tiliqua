@@ -42,6 +42,9 @@ class Peripheral(wiring.Component):
         dev: csr.Field(csr.action.R, unsigned(8))
         serial: csr.Field(csr.action.R, unsigned(32))
 
+    class FlagsReg(csr.Register, access="w"):
+        mute: csr.Field(csr.action.W, unsigned(1))
+
     def __init__(self, *, pmod, enable_out=False, **kwargs):
         self.pmod = pmod
         self.enable_out = enable_out
@@ -68,10 +71,13 @@ class Peripheral(wiring.Component):
         self._jack = regs.add("jack", self.JackReg())
         self._eeprom = regs.add("eeprom", self.EEPROMReg())
 
+        self._flags = regs.add("flags", self.FlagsReg())
+
         self._bridge = csr.Bridge(regs.as_memory_map())
 
         super().__init__({
             "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
+            "mute": In(1),
         })
         self.bus.memory_map = self._bridge.bus.memory_map
 
@@ -88,6 +94,11 @@ class Peripheral(wiring.Component):
             self._eeprom.f.dev.r_data.eq(self.pmod.eeprom_dev),
             self._eeprom.f.serial.r_data.eq(self.pmod.eeprom_serial),
         ]
+
+        mute_reg = Signal(init=0)
+        m.d.comb += self.pmod.codec_mute.eq(mute_reg | self.mute)
+        with m.If(self._flags.f.mute.w_stb):
+            m.d.sync += mute_reg.eq(self._flags.f.mute.w_data)
 
         with m.If(self._led_mode.f.led.w_stb):
             m.d.sync += self.pmod.led_mode.eq(self._led_mode.f.led.w_data)

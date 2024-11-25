@@ -86,6 +86,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
+    let pmod = peripherals.PMOD0_PERIPH;
 
     let sysclk = pac::clock::sysclk();
     let serial = Serial0::new(peripherals.UART0);
@@ -141,6 +142,7 @@ fn main() -> ! {
 
             if opts.modify() {
                 if let Some(n) = opts.view().selected() {
+                    pmod.flags().write(|w|  w.mute().bit(true) );
                     print_rebooting(&mut display, &mut rng);
                     // TODO: delay before reboot.
                     info!("BITSTREAM{}\n\r", n);

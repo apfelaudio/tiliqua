@@ -390,7 +390,7 @@ class TiliquaSoc(Component):
             # Connect encoder button to RebootProvider
             m.submodules.reboot = reboot = RebootProvider(car.clocks_hz["sync"])
             m.d.comb += reboot.button.eq(self.encoder0._button.f.button.r_data)
-            m.d.comb += pmod0.codec_mute.eq(reboot.mute)
+            m.d.comb += self.pmod0_periph.mute.eq(reboot.mute)
         else:
             m.submodules.car = sim.FakeTiliquaDomainGenerator()
             self.pmod0_periph.pmod = sim.FakeEurorackPmod()
