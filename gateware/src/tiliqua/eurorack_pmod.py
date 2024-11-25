@@ -296,7 +296,7 @@ class I2CMaster(wiring.Component):
         # Clocks - assert RSTN (0) to mute, after MCLK is stable.
         # deassert RSTN (1) to unmute, after MCLK is stable.
         #
-        mute_count  = Signal(4)
+        mute_count  = Signal(8)
 
         # CODEC DAC soft mute sequencing
         codec_reg14 = Signal(8)
@@ -310,7 +310,7 @@ class I2CMaster(wiring.Component):
         # CODEC RSTN sequencing
         # Only assert if we know soft mute has been asserted for a while.
         codec_reg00 = Signal(8)
-        with m.If(mute_count == 0xf):
+        with m.If(mute_count == 0xff):
             m.d.comb += codec_reg00.eq(self.ak4619vn_cfg[1] & 0b11111110)
         with m.Else():
             m.d.comb += codec_reg00.eq(self.ak4619vn_cfg[1] | 0b00000001)
@@ -427,8 +427,9 @@ class I2CMaster(wiring.Component):
                     m.d.sync += self.jack.eq(i2c.o.payload)
                     m.d.comb += i2c.o.ready.eq(1)
                 # Also update the soft mute state tracking
-                with m.If(self.codec_mute & (mute_count != 0xf)):
-                    m.d.sync += mute_count.eq(mute_count+1)
+                with m.If(self.codec_mute):
+                    with m.If(mute_count != 0xff):
+                        m.d.sync += mute_count.eq(mute_count+1)
                 with m.Else():
                     m.d.sync += mute_count.eq(0)
                 # Go back to LED brightness update

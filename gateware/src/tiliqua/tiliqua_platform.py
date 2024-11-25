@@ -359,11 +359,12 @@ class RebootProvider(wiring.Component):
         assert(timeout_reboot > (timeout_mute - 0.25))
         button_counter = Signal(range(timeout_reboot+1))
         with m.If(button_counter >= timeout_mute):
-            m.d.comb += self.mute.eq(1)
+            m.d.sync += self.mute.eq(1)
         with m.If(button_counter >= timeout_reboot):
             m.d.comb += platform.request("self_program").o.eq(1)
         with m.Else():
-            with m.If(self.button):
+            # we already started muting. point of no return.
+            with m.If(self.button | self.mute):
                 m.d.sync += button_counter.eq(button_counter + 1)
             with m.Else():
                 m.d.sync += button_counter.eq(0)
