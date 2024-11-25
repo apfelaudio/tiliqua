@@ -816,6 +816,7 @@ class CoreTop(Elaboratable):
             m.submodules.reboot = reboot = RebootProvider(car.clocks_hz["sync"])
             m.submodules.btn = FFSynchronizer(
                     platform.request("encoder").s.i, reboot.button)
+            m.d.comb += pmod0.codec_mute.eq(reboot.mute)
         else:
             m.submodules.car = sim.FakeTiliquaDomainGenerator()
             m.submodules.pmod0 = pmod0 = sim.FakeEurorackPmod()

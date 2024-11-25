@@ -76,6 +76,8 @@ class USB2HostTest(Elaboratable):
                 pmod_pins=platform.request("audio_ffc"),
                 hardware_r33=True,
                 touch_enabled=False)
+        m.d.comb += pmod0.codec_mute.eq(reboot.mute)
+
 
         m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
         m.submodules.midi_cv = self.midi_cv = midi.MonoMidiCV()

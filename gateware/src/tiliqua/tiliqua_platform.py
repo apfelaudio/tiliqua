@@ -188,7 +188,7 @@ class _TiliquaR2Mobo:
             Subsignal("lrck",    Pins("48", dir="o",  conn=("m2", 0))),
             Subsignal("bick",    Pins("50", dir="o",  conn=("m2", 0))),
             Subsignal("mclk",    Pins("52", dir="o",  conn=("m2", 0))),
-            Subsignal("pdn",     Pins("54", dir="o",  conn=("m2", 0))),
+            Subsignal("pdn_d",   Pins("54", dir="o",  conn=("m2", 0))),
             Subsignal("i2c_sda", Pins("56", dir="io", conn=("m2", 0))),
             Subsignal("i2c_scl", Pins("58", dir="io", conn=("m2", 0))),
             Attrs(IO_TYPE="LVCMOS33")
@@ -262,7 +262,8 @@ class _TiliquaR3Mobo:
             Subsignal("lrck",    Pins("48", dir="o",  conn=("m2", 0))),
             Subsignal("bick",    Pins("50", dir="o",  conn=("m2", 0))),
             Subsignal("mclk",    Pins("67", dir="o",  conn=("m2", 0))),
-            Subsignal("pdn",     Pins("65", dir="o",  conn=("m2", 0))),
+            Subsignal("pdn_d",   Pins("65", dir="o",  conn=("m2", 0))),
+            Subsignal("pdn_clk", Pins("56", dir="o",  conn=("m2", 0))),
             Subsignal("i2c_sda", Pins("71", dir="io", conn=("m2", 0))),
             Subsignal("i2c_scl", Pins("69", dir="io", conn=("m2", 0))),
             Attrs(IO_TYPE="LVCMOS33")
@@ -338,24 +339,32 @@ class RebootProvider(wiring.Component):
 
     """
     Issue a 'self_program' (return to bootloader) when the 'button'
-    signal is high for 'reboot_seconds'.
+    signal is high for 'reboot_seconds', and a 'mute' output shortly
+    before then (to warn the CODEC to prevent pops).
     """
 
     button: wiring.In(unsigned(1))
+    mute:   wiring.Out(unsigned(1))
 
-    def __init__(self, clock_sync_hz, reboot_seconds=3):
+    def __init__(self, clock_sync_hz, reboot_seconds=3, mute_seconds=2.5):
         self.reboot_seconds = reboot_seconds
+        self.mute_seconds   = mute_seconds
         self.clock_sync_hz  = clock_sync_hz
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
-        timeout = self.reboot_seconds*self.clock_sync_hz
-        button_counter = Signal(range(timeout+1))
-        with m.If(button_counter >= timeout):
+        timeout_reboot = self.reboot_seconds*self.clock_sync_hz
+        timeout_mute   = int(self.mute_seconds*self.clock_sync_hz)
+        assert(timeout_reboot > (timeout_mute - 0.25))
+        button_counter = Signal(range(timeout_reboot+1))
+        with m.If(button_counter >= timeout_mute):
+            m.d.sync += self.mute.eq(1)
+        with m.If(button_counter >= timeout_reboot):
             m.d.comb += platform.request("self_program").o.eq(1)
         with m.Else():
-            with m.If(self.button):
+            # we already started muting. point of no return.
+            with m.If(self.button | self.mute):
                 m.d.sync += button_counter.eq(button_counter + 1)
             with m.Else():
                 m.d.sync += button_counter.eq(0)

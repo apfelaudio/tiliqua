@@ -182,8 +182,9 @@ fn print_touch_state<D>(d: &mut D, pmod: &pac::PMOD0_PERIPH)
 where
     D: DrawTarget<Color = Gray8>,
 {
-    let mut s = String::<64>::new();
-    write!(s, "touch          - ch0={:03} ch1={:03} ch2={:03} ch3={:03} ch4={:03} ch5={:03} ch6={:03} ch7={:03}",
+    let mut s = String::<128>::new();
+    write!(s, "touch          - err={:03} ch0={:03} ch1={:03} ch2={:03} ch3={:03} ch4={:03} ch5={:03} ch6={:03} ch7={:03}",
+          pmod.touch_err().read().bits() as u8,
           pmod.touch0().read().bits() as u8,
           pmod.touch1().read().bits() as u8,
           pmod.touch2().read().bits() as u8,
@@ -197,6 +198,24 @@ where
     Text::with_alignment(
         &s,
         d.bounding_box().center() + Point::new(-140, 0),
+        style,
+        Alignment::Left,
+    )
+    .draw(d).ok();
+}
+
+fn print_jack_state<D>(d: &mut D, pmod: &pac::PMOD0_PERIPH)
+where
+    D: DrawTarget<Color = Gray8>,
+{
+    let mut s = String::<64>::new();
+    write!(s, "jack           - 0x{:x}",
+          pmod.jack().read().bits() as u8).ok();
+    info!("{}", s);
+    let style = MonoTextStyle::new(&FONT_6X10, Gray8::WHITE);
+    Text::with_alignment(
+        &s,
+        d.bounding_box().center() + Point::new(-140, 12),
         style,
         Alignment::Left,
     )
@@ -228,7 +247,7 @@ where
     let style = MonoTextStyle::new(&FONT_6X10, Gray8::WHITE);
     Text::with_alignment(
         &s,
-        d.bounding_box().center() + Point::new(-140, 12),
+        d.bounding_box().center() + Point::new(-140, 24),
         style,
         Alignment::Left,
     )
@@ -260,7 +279,7 @@ where
     let style = MonoTextStyle::new(&FONT_6X10, Gray8::WHITE);
     Text::with_alignment(
         &s,
-        d.bounding_box().center() + Point::new(-140, 24),
+        d.bounding_box().center() + Point::new(-140, 36),
         style,
         Alignment::Left,
     )
@@ -352,6 +371,9 @@ fn main() -> ! {
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_touch_state(&mut display, &pmod);
+        pause_flush(&mut timer, &mut uptime_ms, period_ms);
+
+        print_jack_state(&mut display, &pmod);
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
 
         print_usb_state(&mut display, &mut i2cdev);

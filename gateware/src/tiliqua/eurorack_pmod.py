@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 #
 
-"""Amaranth wrapper and clock domain crossing for `eurorack-pmod` hardware."""
+"""Low-level drivers and domain crossing logic for `eurorack-pmod` hardware."""
 
 import os
 
@@ -13,6 +13,10 @@ from amaranth.lib               import wiring, data, stream
 from amaranth.lib.wiring        import In, Out
 from amaranth.lib.fifo          import AsyncFIFOBuffered
 from amaranth.lib.cdc           import FFSynchronizer
+from amaranth.lib.memory        import Memory
+
+from tiliqua                    import i2c
+from vendor                     import i2c as vendor_i2c
 
 from amaranth_future            import fixed
 
@@ -85,26 +89,351 @@ class AudioStream(wiring.Component):
 
         return m
 
-# TODO: move this to another util lib
-class EdgeToPulse(Elaboratable):
-    """
-    each rising edge of the signal edge_in will be
-    converted to a single clock pulse on pulse_out
-    """
-    def __init__(self):
-        self.edge_in          = Signal()
-        self.pulse_out        = Signal()
+class I2CMaster(wiring.Component):
 
-    def elaborate(self, platform) -> Module:
+    """
+    Driver for I2C traffic to/from the `eurorack-pmod`.
+
+    For HW Rev. 3.2+, this is:
+       - AK4619 Audio Codec (I2C for configuration only, data is I2S)
+       - 24AA025UIDT I2C EEPROM with unique ID
+       - PCA9635 I2C PWM LED controller
+       - PCA9557 I2C GPIO expander (for jack detection)
+       - CY8CMBR3108 I2C touch/proximity sensor (experiment, off by default!)
+
+    This kind of stateful stuff is often best suited for a softcore rather
+    than pure RTL, however I wanted to make it possible to use all
+    functions of the board without having to resort to using a softcore.
+    """
+
+    PCA9557_ADDR     = 0x18
+    PCA9635_ADDR     = 0x5
+    AK4619VN_ADDR    = 0x10
+    CY8CMBR3108_ADDR = 0x37
+
+    N_JACKS   = 8
+    N_LEDS    = N_JACKS * 2
+    N_SENSORS = 8
+
+    AK4619VN_CFG_48KHZ = [
+        0x00, # Register address to start at.
+        0x36, # 0x00 Power Management (RSTN asserted!)
+        0xAE, # 0x01 Audio I/F Format
+        0x1C, # 0x02 Audio I/F Format
+        0x00, # 0x03 System Clock Setting
+        0x22, # 0x04 MIC AMP Gain
+        0x22, # 0x05 MIC AMP Gain
+        0x30, # 0x06 ADC1 Lch Digital Volume
+        0x30, # 0x07 ADC1 Rch Digital Volume
+        0x30, # 0x08 ADC2 Lch Digital Volume
+        0x30, # 0x09 ADC2 Rch Digital Volume
+        0x22, # 0x0A ADC Digital Filter Setting
+        0x55, # 0x0B ADC Analog Input Setting
+        0x00, # 0x0C Reserved
+        0x06, # 0x0D ADC Mute & HPF Control
+        0x18, # 0x0E DAC1 Lch Digital Volume
+        0x18, # 0x0F DAC1 Rch Digital Volume
+        0x18, # 0x10 DAC2 Lch Digital Volume
+        0x18, # 0x11 DAC2 Rch Digital Volume
+        0x04, # 0x12 DAC Input Select Setting
+        0x05, # 0x13 DAC De-Emphasis Setting
+        0x3A, # 0x14 DAC Mute & Filter Setting (soft mute asserted!)
+    ]
+
+    AK4619VN_CFG_192KHZ = AK4619VN_CFG_48KHZ.copy()
+    AK4619VN_CFG_192KHZ[4] = 0x04 # 0x03 System Clock Setting
+
+    PCA9635_CFG = [
+        0x80, # Auto-increment starting from MODE1
+        0x81, # MODE1
+        0x01, # MODE2
+        0x10, # PWM0
+        0x10, # PWM1
+        0x10, # PWM2
+        0x10, # PWM3
+        0x10, # PWM4
+        0x10, # PWM5
+        0x10, # PWM6
+        0x10, # PWM7
+        0x10, # PWM8
+        0x10, # PWM9
+        0x10, # PWM10
+        0x10, # PWM11
+        0x10, # PWM12
+        0x10, # PWM13
+        0x10, # PWM14
+        0x10, # PWM15
+        0xFF, # GRPPWM
+        0x00, # GRPFREQ
+        0xAA, # LEDOUT0
+        0xAA, # LEDOUT1
+        0xAA, # LEDOUT2
+        0xAA, # LEDOUT3
+    ]
+
+    def __init__(self, audio_192):
+        self.i2c_stream   = i2c.I2CStreamer(period_cyc=256) # 200kHz-ish at 60MHz sync
+        self.audio_192    = audio_192
+        self.ak4619vn_cfg = self.AK4619VN_CFG_192KHZ if audio_192 else self.AK4619VN_CFG_48KHZ
+        super().__init__({
+            "pins":           Out(vendor_i2c.I2CPinSignature()),
+            # Jack insertion status.
+            "jack":           Out(self.N_JACKS),
+            # Desired LED state -green/+red
+            "led":            In(signed(8)).array(self.N_JACKS),
+            # Touch sensor states
+            "touch":          Out(unsigned(8)).array(self.N_SENSORS),
+            # should be close to 0 if touch sense is OK.
+            "touch_err":      Out(unsigned(8)),
+            # assert for at least 100msec for complete muting sequence.
+            "codec_mute":     In(1),
+        })
+
+    def elaborate(self, platform):
         m = Module()
 
-        edge_last = Signal()
+        m.submodules.i2c_stream = i2c = self.i2c_stream
+        wiring.connect(m, wiring.flipped(self.pins), self.i2c_stream.pins)
 
-        m.d.sync += edge_last.eq(self.edge_in)
-        with m.If(self.edge_in & ~edge_last):
-            m.d.comb += self.pulse_out.eq(1)
+        def state_id(ix):
+            return (f"i2c_state{ix}", f"i2c_state{ix+1}", ix+1)
+
+        def i2c_addr(m, ix, addr):
+            # set i2c address of transactions being enqueued
+            cur, nxt, ix = state_id(ix)
+            with m.State(cur):
+                m.d.sync += i2c.address.eq(addr),
+                m.next = nxt
+            return cur, nxt, ix
+
+        def i2c_write(m, ix, data, last=False):
+            # enqueue a single byte. delineate transaction boundary with 'last=True'
+            cur, nxt, ix = state_id(ix)
+            with m.State(cur):
+                m.d.comb += [
+                    i2c.i.valid.eq(1),
+                    i2c.i.payload.rw.eq(0), # Write
+                    i2c.i.payload.data.eq(data),
+                    i2c.i.payload.last.eq(1 if last else 0),
+                ]
+                m.next = nxt
+            return cur, nxt, ix
+
+        def i2c_w_arr(m, ix, data):
+            # enqueue write transactions for an array of data
+            cur, nxt, ix = state_id(ix)
+            with m.State(cur):
+                cnt = Signal(range(len(data)+2))
+                mem = Memory(
+                    shape=unsigned(8), depth=len(data), init=data)
+                m.submodules += mem
+                rd_port = mem.read_port()
+                m.d.comb += [
+                    rd_port.en.eq(1),
+                    rd_port.addr.eq(cnt),
+                ]
+                m.d.sync += cnt.eq(cnt+1)
+                with m.If(cnt != len(data) + 1):
+                    m.d.comb += [
+                        i2c.i.valid.eq(cnt != 0),
+                        i2c.i.payload.rw.eq(0), # Write
+                        i2c.i.payload.data.eq(rd_port.data),
+                        i2c.i.payload.last.eq(cnt == (len(data)-1)),
+                    ]
+                with m.Else():
+                    m.d.sync += cnt.eq(0)
+                    m.next = nxt
+            return cur, nxt, ix
+
+        def i2c_read(m, ix, last=False):
+            # enqueue a single read transaction
+            cur, nxt, ix = state_id(ix)
+            with m.State(cur):
+                m.d.comb += [
+                    i2c.i.valid.eq(1),
+                    i2c.i.payload.rw.eq(1), # Read
+                    i2c.i.payload.last.eq(1 if last else 0),
+                ]
+                m.next = nxt
+            return cur, nxt, ix
+
+        def i2c_wait(m, ix):
+            # wait until all enqueued transactions are complete
+            cur,  nxt, ix = state_id(ix)
+            with m.State(cur):
+                with m.If(~i2c.status.busy):
+                    m.next = nxt
+            return cur, nxt, ix
+
+
+        # used for implicit state machine ID tracking / generation
+        ix = 0
+
+        # compute actual LED register values based on signed 'red/green' desire
+        led_reg = Signal(data.ArrayLayout(unsigned(8), self.N_LEDS))
+        for n in range(self.N_LEDS):
+            if n % 2 == 0:
+                with m.If(self.led[n//2] > 0):
+                    m.d.comb += led_reg[n].eq(0)
+                with m.Else():
+                    m.d.comb += led_reg[n].eq(-self.led[n//2])
+            else:
+                with m.If(self.led[n//2] > 0):
+                    m.d.comb += led_reg[n].eq(self.led[n//2])
+                with m.Else():
+                    m.d.comb += led_reg[n].eq(0)
+
+        # current touch sensor to poll, incremented once per loop
+        touch_nsensor = Signal(range(self.N_SENSORS))
+
+        #
+        # Compute codec power management register contents,
+        # Muting effectively clears/sets the RSTN bit and DA1/DA2
+        # soft mute bits. `mute_count` ensures correct sequencing -
+        # always soft mute before asserting RSTN. Likewise, always
+        # boot with soft mute, and deassert soft mute after RSTN.
+        #
+        # Clocks - assert RSTN (0) to mute, after MCLK is stable.
+        # deassert RSTN (1) to unmute, after MCLK is stable.
+        #
+        mute_count  = Signal(8)
+
+        # CODEC DAC soft mute sequencing
+        codec_reg14 = Signal(8)
+        with m.If(self.codec_mute):
+            # DA1MUTE / DA2MUTE soft mute ON
+            m.d.comb += codec_reg14.eq(self.ak4619vn_cfg[0x15] | 0b00110000)
         with m.Else():
-            m.d.comb += self.pulse_out.eq(0)
+            # DA1MUTE / DA2MUTE soft mute OFF
+            m.d.comb += codec_reg14.eq(self.ak4619vn_cfg[0x15] & 0b11001111)
+
+        # CODEC RSTN sequencing
+        # Only assert if we know soft mute has been asserted for a while.
+        codec_reg00 = Signal(8)
+        with m.If(mute_count == 0xff):
+            m.d.comb += codec_reg00.eq(self.ak4619vn_cfg[1] & 0b11111110)
+        with m.Else():
+            m.d.comb += codec_reg00.eq(self.ak4619vn_cfg[1] | 0b00000001)
+
+        startup_delay = Signal(32)
+
+        with m.FSM(init='STARTUP-DELAY') as fsm:
+
+            #
+            # AK4619VN init
+            #
+            init, _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
+            _,    _,   ix  = i2c_w_arr(m, ix, self.ak4619vn_cfg)
+            _,    _,   ix  = i2c_wait (m, ix)
+
+            #
+            # startup delay
+            #
+
+            with m.State('STARTUP-DELAY'):
+                if platform is not None:
+                    with m.If(startup_delay == 600_000):
+                        m.next = init
+                    with m.Else():
+                        m.d.sync += startup_delay.eq(startup_delay+1)
+                else:
+                    m.next = init
+
+            #
+            # PCA9557 init
+            #
+
+            _,   _,   ix  = i2c_addr (m, ix, self.PCA9557_ADDR)
+            _,   _,   ix  = i2c_write(m, ix, 0x02)
+            _,   _,   ix  = i2c_write(m, ix, 0x00, last=True)
+            _,   _,   ix  = i2c_wait (m, ix) # set polarity inversion reg
+
+            #
+            # PCA9635 init
+            #
+            _,   _,   ix  = i2c_addr (m, ix, self.PCA9635_ADDR)
+            _,   _,   ix  = i2c_w_arr(m, ix, self.PCA9635_CFG)
+            _,   _,   ix  = i2c_wait (m, ix)
+
+            #
+            # BEGIN MAIN LOOP
+            #
+
+            #
+            # PCA9635 update (LED brightnesses)
+            #
+            cur, _,   ix  = i2c_addr (m, ix, self.PCA9635_ADDR)
+            _,   _,   ix  = i2c_write(m, ix, 0x82) # start from first brightness reg
+            for n in range(self.N_LEDS):
+                _,   _,   ix  = i2c_write(m, ix, led_reg[n], last=(n==self.N_LEDS-1))
+            _,   _,   ix  = i2c_wait (m, ix)
+
+            s_loop_begin = cur
+
+            #
+            # CY8CMBR3108 read (Touch scan registers)
+            #
+
+            _,   _,   ix  = i2c_addr (m, ix, self.CY8CMBR3108_ADDR)
+            _,   _,   ix  = i2c_write(m, ix, 0xBA + (touch_nsensor<<1))
+            _,   _,   ix  = i2c_read (m, ix, last=True)
+            _,   _,   ix  = i2c_wait (m, ix)
+
+            # Latch valid reads to dedicated touch register.
+            cur, nxt, ix = state_id(ix)
+            with m.State(cur):
+                m.d.sync += touch_nsensor.eq(touch_nsensor+1)
+                with m.If(~i2c.status.error):
+                    with m.If(self.touch_err > 0):
+                        m.d.sync += self.touch_err.eq(self.touch_err - 1)
+                    with m.Switch(touch_nsensor):
+                        for n in range(8):
+                            if n > 3:
+                                # R3.3 hw swaps last four vs R3.2 to improve PCB routing
+                                with m.Case(n):
+                                    m.d.sync += self.touch[4+(7-n)].eq(i2c.o.payload)
+                            else:
+                                with m.Case(n):
+                                    m.d.sync += self.touch[n].eq(i2c.o.payload)
+                    m.d.comb += i2c.o.ready.eq(1)
+                with m.Else():
+                    with m.If(self.touch_err != 0xff):
+                        m.d.sync += self.touch_err.eq(self.touch_err + 1)
+                m.next = nxt
+
+
+            # AK4619VN power management (Soft mute + RSTN)
+
+            _,   _,   ix  = i2c_addr (m, ix, self.AK4619VN_ADDR)
+            _,   _,   ix  = i2c_write(m, ix, 0x00) # RSTN
+            _,   _,   ix  = i2c_write(m, ix, codec_reg00, last=True)
+            _,   _,   ix  = i2c_wait (m, ix)
+
+            _,   _,   ix  = i2c_write(m, ix, 0x14) # DAC1MUTE / DAC2MUTE
+            _,   _,   ix  = i2c_write(m, ix, codec_reg14, last=True)
+            _,   _,   ix  = i2c_wait (m, ix)
+
+            #
+            # PCA9557 read (Jack input port register)
+            #
+            _,   _,   ix  = i2c_addr (m, ix, self.PCA9557_ADDR)
+            _,   _,   ix  = i2c_write(m, ix, 0x00)
+            _,   _,   ix  = i2c_read (m, ix, last=True)
+            _,   nxt, ix  = i2c_wait (m, ix)
+
+            # Latch valid reads to dedicated jack register.
+            with m.State(nxt):
+                with m.If(~i2c.status.error):
+                    m.d.sync += self.jack.eq(i2c.o.payload)
+                    m.d.comb += i2c.o.ready.eq(1)
+                # Also update the soft mute state tracking
+                with m.If(self.codec_mute):
+                    with m.If(mute_count != 0xff):
+                        m.d.sync += mute_count.eq(mute_count+1)
+                with m.Else():
+                    m.d.sync += mute_count.eq(0)
+                # Go back to LED brightness update
+                m.next = s_loop_begin
 
         return m
 
@@ -129,27 +458,29 @@ class EurorackPmod(wiring.Component):
     # Touch sensing and jacksense outputs.
     touch: Out(8).array(8)
     jack: Out(8)
+    touch_err: Out(8)
+    codec_mute: In(1)
 
+    # 1s for automatic audio -> LED control. 0s for manual.
+    led_mode: In(8, init=0xff)
+    # If an LED is in manual, this is signed i8 from -green to +red.
+    led: In(8).array(8)
+
+    # TODO
     # Read from the onboard I2C eeprom.
     # These will be valid a few hundred milliseconds after boot.
     eeprom_mfg: Out(8)
     eeprom_dev: Out(8)
     eeprom_serial: Out(32)
 
-    # Bitwise manual LED overrides. 1 == audio passthrough, 0 == manual set.
-    led_mode: In(8, init=0xff)
-    # If an LED is in manual, this is signed i8 from -green to +red
-    led: In(8).array(8)
-
     # Signals only used for calibration
     sample_adc: Out(signed(WIDTH)).array(4)
+    # TODO
     force_dac_output: In(signed(WIDTH))
 
     def __init__(self, pmod_pins, hardware_r33=True, touch_enabled=True, audio_192=False):
 
         self.pmod_pins = pmod_pins
-        self.hardware_r33 = hardware_r33
-        self.touch_enabled = touch_enabled
         self.audio_192 = audio_192
 
         super().__init__()
@@ -166,39 +497,16 @@ class EurorackPmod(wiring.Component):
         vroot = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                              "../../deps/eurorack-pmod/gateware")
 
-        # Defines and default cal for PMOD hardware version.
-        if self.hardware_r33:
-            touch_define = "`define TOUCH_SENSE_ENABLED" if self.touch_enabled else ""
-            define_192 = "`define AK4619_192KHZ" if self.audio_192 else ""
-            platform.add_file("eurorack_pmod_defines.sv",
-                              f"`define HW_R33\n{touch_define}\n{define_192}")
-            platform.add_file("cal/cal_mem_default_r33.hex",
-                              open(os.path.join(vroot, "cal/cal_mem_default_r33.hex")))
-        else:
-            platform.add_file("eurorack_pmod_defines.sv", "`define HW_R31")
-            platform.add_file("cal/cal_mem_default_r31.hex",
-                              open(os.path.join(vroot, "cal/cal_mem_default_r31.hex")))
+        define_192 = "`define AK4619_192KHZ" if self.audio_192 else ""
+        platform.add_file("eurorack_pmod_defines.sv",
+                          f"`define HW_R33\n{define_192}")
+        platform.add_file("cal/cal_mem_default_r33.hex",
+                          open(os.path.join(vroot, "cal/cal_mem_default_r33.hex")))
 
         # Verilog implementation
-        platform.add_file("eurorack_pmod.sv", open(os.path.join(vroot, "eurorack_pmod.sv")))
-        platform.add_file("pmod_i2c_master.sv", open(os.path.join(vroot, "drivers/pmod_i2c_master.sv")))
         platform.add_file("ak4619.sv", open(os.path.join(vroot, "drivers/ak4619.sv")))
         platform.add_file("cal.sv", open(os.path.join(vroot, "cal/cal.sv")))
-        platform.add_file("i2c_master.sv", open(os.path.join(vroot, "external/no2misc/rtl/i2c_master.v")))
 
-        # .hex files for I2C initialization
-        if self.audio_192:
-            # 192KHz sampling requires a different CODEC configuration.
-            platform.add_file("drivers/ak4619-cfg.hex",
-                              open(os.path.join(vroot, "drivers/ak4619-cfg-192.hex")))
-        else:
-            # CODEC configuration for 8-48KHz sampling.
-            platform.add_file("drivers/ak4619-cfg.hex",
-                              open(os.path.join(vroot, "drivers/ak4619-cfg.hex")))
-        platform.add_file("drivers/pca9635-cfg.hex",
-                          open(os.path.join(vroot, "drivers/pca9635-cfg.hex")))
-        platform.add_file("drivers/cy8cmbr3108-cfg.hex",
-                          open(os.path.join(vroot, "drivers/cy8cmbr3108-cfg.hex")))
 
     def elaborate(self, platform) -> Module:
 
@@ -206,32 +514,71 @@ class EurorackPmod(wiring.Component):
 
         self.add_verilog_sources(platform)
 
+        m.submodules.i2c_master = i2c_master = I2CMaster(audio_192=self.audio_192)
+
         pmod_pins = self.pmod_pins
 
-        # 1/256 clk_fs divider. this is not a true clock domain, don't create one.
-        # FIXME: this should be removed from `eurorack-pmod` verilog implementation
-        # and just replaced with a strobe. that's all its used for anyway. For this
-        # reason we do NOT expose this signal and only the 'strobe' version created next.
-        clk_fs = Signal()
-        clkdiv_fs = Signal(8)
-        m.d.audio += clkdiv_fs.eq(clkdiv_fs+1)
-        m.d.comb += clk_fs.eq(clkdiv_fs[-1])
-
-        # Create a strobe from the sample clock 'clk_fs` that asserts for 1 cycle
-        # per sample in the 'audio' domain. This is useful for latching our samples
-        # and hooking up to various signals in our FIFOs external to this module.
-        m.submodules.fs_edge = fs_edge = DomainRenamer("audio")(EdgeToPulse())
-        m.d.audio += fs_edge.edge_in.eq(clk_fs),
-        m.d.comb += self.fs_strobe.eq(fs_edge.pulse_out)
-
-
-        # When i2c oe is asserted, we always want to pull down.
+        # Hook up I2C master (TODO: use provider)
         m.d.comb += [
+            # When i2c oe is asserted, we always want to pull down.
             pmod_pins.i2c_scl.o.eq(0),
             pmod_pins.i2c_sda.o.eq(0),
+            pmod_pins.i2c_sda.oe.eq(i2c_master.pins.sda.oe),
+            pmod_pins.i2c_scl.oe.eq(i2c_master.pins.scl.oe),
+            i2c_master.pins.sda.i.eq(pmod_pins.i2c_sda.i),
+            i2c_master.pins.scl.i.eq(pmod_pins.i2c_scl.i),
+
+            # Hook up I2C master registers
+            self.jack.eq(i2c_master.jack),
+            self.touch_err.eq(i2c_master.touch_err),
+
+            # Hook up coded mute control
+            i2c_master.codec_mute.eq(self.codec_mute),
         ]
 
-        m.submodules.veurorack_pmod = Instance("eurorack_pmod",
+        for n in range(8):
+
+            # Touch sense readings per jack
+            m.d.comb += self.touch[n].eq(i2c_master.touch[n]),
+
+            # LED auto/manual settings per jack
+            with m.If(self.led_mode[n]):
+                if n <= 3:
+                    m.d.comb += i2c_master.led[n].eq(self.sample_i[n].raw()>>8),
+                else:
+                    m.d.comb += i2c_master.led[n].eq(self.sample_o[n-4].raw()>>8),
+            with m.Else():
+                m.d.comb += i2c_master.led[n].eq(self.led[n]),
+
+        # PDN (and clocking for mobo R3+ for pop-free bitstream switching)
+        m.d.comb += pmod_pins.pdn_d.o.eq(1),
+        if hasattr(pmod_pins, "pdn_clk"):
+            #
+            # Drive external flip-flop, ensuring PDN remains high across
+            # FPGA reconfiguration (only works on mobo R3+).
+            #
+            # Codec RSTN must be asserted (held in reset) across the
+            # FPGA reconfiguration. This is performed by `self.codec_mute`.
+            #
+            pdn_cnt = Signal(unsigned(16))
+            with m.If(pdn_cnt != 60000): # 1ms
+                m.d.sync += pdn_cnt.eq(pdn_cnt+1)
+            with m.If(3000 < pdn_cnt):
+                m.d.comb += pmod_pins.pdn_clk.o.eq(1)
+
+        # 1/256 clk_fs strobe
+        clkdiv_fs = Signal(8)
+        m.d.audio += clkdiv_fs.eq(clkdiv_fs+1)
+        m.d.comb += self.fs_strobe.eq(clkdiv_fs == 0)
+
+        sample_adc = Signal(data.ArrayLayout(signed(WIDTH), 4))
+        sample_dac = Signal(data.ArrayLayout(signed(WIDTH), 4))
+
+        for n in range(4):
+            m.d.comb += self.sample_adc[n].eq(sample_adc[n])
+
+        # CODEC ser-/deserialiser. Sample rate derived from these clocks.
+        m.submodules.vak4619 = Instance("ak4619",
             # Parameters
             p_W = WIDTH,
 
@@ -240,64 +587,66 @@ class EurorackPmod(wiring.Component):
             i_strobe = self.fs_strobe,
             i_rst = ResetSignal("audio"),
 
-            # Pads (tristate, may require different logic to hook these
-            # up to pads depending on the target platform).
-            o_i2c_scl_oe = pmod_pins.i2c_scl.oe,
-            i_i2c_scl_i = pmod_pins.i2c_scl.i,
-            o_i2c_sda_oe = pmod_pins.i2c_sda.oe,
-            i_i2c_sda_i = pmod_pins.i2c_sda.i,
-
             # Pads (directly hooked up to pads without extra logic required)
-            o_pdn = pmod_pins.pdn.o,
+            # o_pdn = pmod_pins.pdn.o,
             o_mclk = pmod_pins.mclk.o,
             o_sdin1 = pmod_pins.sdin1.o,
             i_sdout1 = pmod_pins.sdout1.i,
             o_lrck = pmod_pins.lrck.o,
             o_bick = pmod_pins.bick.o,
 
-            # Ports (clock at clk_fs)
-            o_cal_in0 = self.sample_i[0],
-            o_cal_in1 = self.sample_i[1],
-            o_cal_in2 = self.sample_i[2],
-            o_cal_in3 = self.sample_i[3],
-            i_cal_out0 = self.sample_o[0],
-            i_cal_out1 = self.sample_o[1],
-            i_cal_out2 = self.sample_o[2],
-            i_cal_out3 = self.sample_o[3],
-
-            # Ports (serialized data fetched over I2C)
-            o_eeprom_mfg = self.eeprom_mfg,
-            o_eeprom_dev = self.eeprom_dev,
-            o_eeprom_serial = self.eeprom_serial,
-            o_jack = self.jack,
-
-            o_touch0 = self.touch[0],
-            o_touch1 = self.touch[1],
-            o_touch2 = self.touch[2],
-            o_touch3 = self.touch[3],
-            o_touch4 = self.touch[4],
-            o_touch5 = self.touch[5],
-            o_touch6 = self.touch[6],
-            o_touch7 = self.touch[7],
-
-            # Manual LED overrides.
-            i_led_mode = self.led_mode,
-            i_led0 = self.led[0],
-            i_led1 = self.led[1],
-            i_led2 = self.led[2],
-            i_led3 = self.led[3],
-            i_led4 = self.led[4],
-            i_led5 = self.led[5],
-            i_led6 = self.led[6],
-            i_led7 = self.led[7],
-
-            # Debug ports
-            o_sample_adc0 = self.sample_adc[0],
-            o_sample_adc1 = self.sample_adc[1],
-            o_sample_adc2 = self.sample_adc[2],
-            o_sample_adc3 = self.sample_adc[3],
-            i_force_dac_output = self.force_dac_output,
+            o_sample_out0 = sample_adc[0],
+            o_sample_out1 = sample_adc[1],
+            o_sample_out2 = sample_adc[2],
+            o_sample_out3 = sample_adc[3],
+            i_sample_in0  = sample_dac[0],
+            i_sample_in1  = sample_dac[1],
+            i_sample_in2  = sample_dac[2],
+            i_sample_in3  = sample_dac[3]
         )
+
+        sample_i_inner = Signal(data.ArrayLayout(signed(WIDTH), 4))
+
+        # Raw sample calibrator, both for input and output channels.
+        # Compensates for DC bias in CODEC, gain differences, resistor
+        # tolerances and so on.
+        m.submodules.vcal = Instance("cal",
+            # Parameters
+            p_W = WIDTH,
+
+            # Ports (clk + reset)
+            i_clk_256fs = ClockSignal("audio"),
+            i_strobe = self.fs_strobe,
+            i_rst = ResetSignal("audio"),
+
+            # Calibrated inputs are zeroed if jack is unplugged.
+            i_jack = self.jack,
+
+            # Note: inputs samples are inverted by analog frontend
+            # Should add +1 for precise 2s complement sign change
+            i_in0  = ~sample_adc[0],
+            i_in1  = ~sample_adc[1],
+            i_in2  = ~sample_adc[2],
+            i_in3  = ~sample_adc[3],
+            i_in4  = self.sample_o[0].raw(),
+            i_in5  = self.sample_o[1].raw(),
+            i_in6  = self.sample_o[2].raw(),
+            i_in7  = self.sample_o[3].raw(),
+            o_out0 = sample_i_inner[0],
+            o_out1 = sample_i_inner[1],
+            o_out2 = sample_i_inner[2],
+            o_out3 = sample_i_inner[3],
+            o_out4 = sample_dac[0],
+            o_out5 = sample_dac[1],
+            o_out6 = sample_dac[2],
+            o_out7 = sample_dac[3],
+        )
+
+        for n in range(4):
+            with m.If(self.jack[n]):
+                m.d.comb += self.sample_i[n].raw().eq(sample_i_inner[n])
+            with m.Else():
+                m.d.comb += self.sample_i[n].raw().eq(self.touch[n] << 6)
 
         return m
 

@@ -118,6 +118,7 @@ class VectorScopeTop(Elaboratable):
                 hardware_r33=True,
                 touch_enabled=False,
                 audio_192=True)
+            m.d.comb += self.pmod0.codec_mute.eq(reboot.mute)
 
         pmod0 = self.pmod0
         m.submodules.pmod0 = pmod0

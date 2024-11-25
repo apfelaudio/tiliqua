@@ -51,31 +51,42 @@ macro_rules! impl_i2c {
 
                     let mut enospace = false;
 
+                    let mut total_bytes = 0;
+                    for op in operations.iter() {
+                        total_bytes += match op {
+                            Operation::Write(bytes) => bytes.len(),
+                            Operation::Read(bytes)  => bytes.len(),
+                        };
+                    }
+
                     self.registers.address().write(|w| unsafe { w.address().bits(address) } );
+
+                    let mut sent_bytes = 0;
                     for op in operations.iter() {
                         match op {
                             Operation::Write(bytes) => {
                                 for b in bytes.iter() {
-                                    enospace |= self.registers.status().read().transaction_full().bit();
+                                    enospace |= self.registers.status().read().full().bit();
                                     self.registers.transaction_reg().write( |w| unsafe {
                                         w.rw().bit(false);
-                                        w.data().bits(*b)
-                                    } );
+                                        w.data().bits(*b);
+                                        w.last().bit(sent_bytes == total_bytes - 1)
+                                    });
+                                    sent_bytes += 1;
                                 }
                             }
                             Operation::Read(bytes) => {
                                 for b in bytes.iter() {
-                                    enospace |= self.registers.status().read().transaction_full().bit();
+                                    enospace |= self.registers.status().read().full().bit();
                                     self.registers.transaction_reg().write( |w| unsafe {
-                                        w.rw().bit(true)
+                                        w.rw().bit(true);
+                                        w.last().bit(sent_bytes == total_bytes - 1)
                                     } );
+                                    sent_bytes += 1;
                                 }
                             },
                         }
                     }
-
-                    // Start executing transactions
-                    self.registers.start().write(|w| w.start().bit(true) );
 
                     // Wait for completion
                     while self.registers.status().read().busy().bit() { }
