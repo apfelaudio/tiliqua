@@ -89,6 +89,71 @@ class AudioStream(wiring.Component):
 
         return m
 
+class AK4619(wiring.Component):
+
+    """
+    This core talks I2S TDM to an AK4619 configured in the
+    interface mode configured by I2CMaster below.
+
+    The following registers specify the interface format:
+     - FS == 0b000, which means:
+         - MCLK = 256*Fs,
+         - BICK = 128*Fs,
+         - Fs must fall within 8kHz <= Fs <= 48Khz.
+    - TDM == 0b1 and DCF == 0b010, which means:
+         - TDM128 mode I2S compatible.
+    """
+
+    N_CHANNELS = 4
+    S_WIDTH    = 16
+    SLOT_WIDTH = 32
+
+    mclk:   Out(1)
+    bick:   Out(1)
+    lrck:   Out(1)
+    sdin1:  Out(1)
+    sdout1: In(1)
+
+    i: In(stream.Signature(signed(16)))
+    o: Out(stream.Signature(signed(16)))
+
+    def elaborate(self, platform):
+        m = Module()
+        clkdiv      = Signal(8)
+        bit_counter = Signal(5)
+        bitsel      = Signal(range(self.S_WIDTH))
+        sample_i    = Signal(signed(self.S_WIDTH))
+        m.d.comb += [
+            self.mclk  .eq(ClockSignal("audio")), # TODO 192KHz
+            self.bick  .eq(clkdiv[0]),
+            self.lrck  .eq(clkdiv[7]),
+            bit_counter.eq(clkdiv[1:6]),
+            bitsel.eq(self.S_WIDTH-bit_counter-1),
+        ]
+        m.d.audio += clkdiv.eq(clkdiv+1)
+        with m.If(bit_counter == (self.SLOT_WIDTH-1)):
+            with m.If(self.bick):
+                m.d.audio += self.o.payload.eq(0)
+            with m.Else():
+                m.d.comb += [
+                    self.i.ready.eq(1),
+                    self.o.valid.eq(1),
+                ]
+        with m.If(self.bick):
+            # BICK transition HI -> LO: Clock in W bits
+            # On HI -> LO both SDIN and SDOUT do not transition.
+            # (determined by AK4619 transition polarity register BCKP)
+            with m.If(bit_counter < self.S_WIDTH):
+                m.d.audio += self.o.payload.eq((self.o.payload << 1) | self.sdout1)
+        with m.Else():
+            # BICK transition LO -> HI: Clock out W bits
+            # On LO -> HI both SDIN and SDOUT transition.
+            with m.If(bit_counter < (self.S_WIDTH-1)):
+                m.d.audio += self.sdin1.eq(self.i.payload.bit_select(bitsel, 1))
+            with m.Else():
+                m.d.audio += self.sdin1.eq(0)
+        return m
+
 class I2CMaster(wiring.Component):
 
     """
