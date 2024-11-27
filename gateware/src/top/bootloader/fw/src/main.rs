@@ -38,6 +38,8 @@ pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
 
 struct App {
     ui: UI,
+    reboot_n: Option<usize>,
+    time_since_reboot_requested: u32,
 }
 
 impl App {
@@ -50,6 +52,8 @@ impl App {
         Self {
             ui: UI::new(opts, TIMER0_ISR_PERIOD_MS,
                         encoder, pca9635, pmod),
+            reboot_n: None,
+            time_since_reboot_requested: 0u32,
         }
     }
 }
@@ -80,6 +84,19 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
 
         app.ui.update();
 
+        if app.ui.opts.modify() {
+            if let Some(n) = app.ui.opts.view().selected() {
+                app.reboot_n = Some(n)
+            }
+        }
+
+        if let Some(n) = app.reboot_n {
+            app.time_since_reboot_requested += app.ui.period_ms;
+            // Give codec time to mute and display time to draw 'REBOOTING'
+            if app.time_since_reboot_requested > 500 {
+                info!("BITSTREAM{}\n\r", n);
+            }
+        }
     });
 }
 
@@ -126,8 +143,9 @@ fn main() -> ! {
 
         loop {
 
-            let opts = critical_section::with(|cs| {
-                app.borrow_ref(cs).ui.opts.clone()
+            let (opts, reboot_n) = critical_section::with(|cs| {
+                (app.borrow_ref(cs).ui.opts.clone(),
+                 app.borrow_ref(cs).reboot_n.clone())
             });
 
             draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, 0).ok();
@@ -140,13 +158,9 @@ fn main() -> ! {
                 logo_coord_ix += 1;
             }
 
-            if opts.modify() {
-                if let Some(n) = opts.view().selected() {
-                    pmod.flags().write(|w|  w.mute().bit(true) );
-                    print_rebooting(&mut display, &mut rng);
-                    // TODO: delay before reboot.
-                    info!("BITSTREAM{}\n\r", n);
-                }
+            if let Some(_) = reboot_n {
+                pmod.flags().write(|w|  w.mute().bit(true) );
+                print_rebooting(&mut display, &mut rng);
             }
         }
     })
