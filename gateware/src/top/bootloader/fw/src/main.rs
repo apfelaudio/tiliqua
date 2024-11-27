@@ -118,8 +118,11 @@ fn main() -> ! {
         manifest::BitstreamManifest::unknown_manifest());
 
     info!("BitstreamManifest created with:");
-    for name in &manifest.names {
-        info!("- '{}'", name);
+    for bitstream in &manifest.bitstreams {
+        info!("* Bitstream *");
+        info!("- name '{}'",  bitstream.name);
+        info!("- brief '{}'", bitstream.brief);
+        info!("- video '{}'", bitstream.video);
     }
 
     let opts = opts::Options::new(&manifest);

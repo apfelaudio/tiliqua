@@ -1,13 +1,45 @@
 {
     "magic": 3735928559,
-    "names": [
-        "polysyn",
-        "xbeam",
-        "usb_audio",
-        "usb_host",
-        "vectorscope",
-        "dsp_quadnco",
-        "dsp_midicv",
-        "dsp_diffusion"
+    "bitstreams": [
+        {
+            "name": "polysyn",
+            "brief": "Polyphonic synthesizer, touch & MIDI control.",
+            "video": "720x720p60 (custom)"
+        },
+        {
+            "name": "xbeam",
+            "brief": "Graphical vectorscope and oscilloscope.",
+            "video": "720x720p60 (custom)"
+        },
+        {
+            "name": "macro-osc",
+            "brief": "Emulation of a famous Eurorack module.",
+            "video": "720x20p60 (custom)"
+        },
+        {
+            "name": "usb-audio",
+            "brief": "USB soundcard, 4in + 4out.",
+            "video": "none"
+        },
+        {
+            "name": "usb-host",
+            "brief": "USB host MIDI to CV conversion (EXPERIMENT).",
+            "video": "none"
+        },
+        {
+            "name": "dsp-quadnco",
+            "brief": "Quad-output oversampling NC oscillator.",
+            "video": "none"
+        },
+        {
+            "name": "dsp-midicv",
+            "brief": "TRS MIDI to CV conversion",
+            "video": "none"
+        },
+        {
+            "name": "dsp-diffusion",
+            "brief": "Long-tail resonator, 4in + 4out.",
+            "video": "none"
+        }
     ]
 }
