@@ -8,6 +8,7 @@ The set of available commands depends on the specific project.
 """
 import argparse
 import enum
+import git
 import logging
 import os
 import subprocess
@@ -34,6 +35,9 @@ def top_level_cli(
     argparse_callback=None, # project needs extra CLI flags before argparse.parse()
     argparse_fragment=None  # project needs to check args.<custom_flag> after argparse.parse()
     ):
+
+    # Get some repository properties
+    repo = git.Repo(search_parent_directories=True)
 
     # Configure logging.
     logging.getLogger().setLevel(logging.DEBUG)
@@ -66,6 +70,10 @@ def top_level_cli(
                             help="SoC designs: stop after rust FW compilation (optionally re-flash)")
         parser.add_argument('--fw-spiflash-offset', type=str, default="0xc0000",
                             help="SoC designs: expect firmware flashed at this address.")
+        # TODO: is this ok on windows?
+        name_default = os.path.normpath(sys.argv[0]).split(os.sep)[2].replace("_", "-").upper()
+        parser.add_argument('--name', type=str, default=name_default,
+                            help="SoC designs: bitstream name to display at bottom of screen.")
 
     parser.add_argument('--sc3', action='store_true',
                         help="platform override: Tiliqua R2 with a SoldierCrab R3")
@@ -114,6 +122,8 @@ def top_level_cli(
         kwargs["firmware_bin_path"] = os.path.join(rust_fw_root, rust_fw_bin)
         if args.fw_spiflash_offset is not None:
             kwargs["spiflash_fw_offset"] = int(args.fw_spiflash_offset, 16)
+        kwargs["ui_name"] = args.name
+        kwargs["ui_sha"]  = repo.head.object.hexsha[:6]
 
     if argparse_fragment:
         kwargs = kwargs | argparse_fragment(args)

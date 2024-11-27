@@ -195,6 +195,30 @@ where
     Ok(())
 }
 
+pub fn draw_name<D>(d: &mut D, pos_x: u32, pos_y: u32, hue: u8, name: &str, sha: &str) -> Result<(), D::Error>
+where
+    D: DrawTarget<Color = Gray8>,
+{
+    let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::WHITE);
+    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xB0 + hue));
+
+    Text::with_alignment(
+        name,
+        Point::new(pos_x as i32, pos_y as i32),
+        font_small_white,
+        Alignment::Center
+    ).draw(d)?;
+
+    Text::with_alignment(
+        sha,
+        Point::new(pos_x as i32, (pos_y + 18) as i32),
+        font_small_grey,
+        Alignment::Center
+    ).draw(d)?;
+
+    Ok(())
+}
+
 
 #[cfg(test)]
 mod test_data {
@@ -340,6 +364,8 @@ mod tests {
                        ((V_ACTIVE as f32)/2.0f32 + 250.0f32*f32::sin(2.3f32 + 2.0f32 * n as f32 / 8.0f32)) as u32,
                        12, 127, 0).ok();
         }
+
+        draw_name(&mut disp, H_ACTIVE/2, V_ACTIVE-50, 0, "MACRO-OSC", "b2d3aa").ok();
 
         disp.img.save("draw_opt_test.png").unwrap();
     }

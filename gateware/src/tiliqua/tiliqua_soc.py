@@ -135,12 +135,15 @@ class VideoPeripheral(wiring.Component):
         return m
 
 class TiliquaSoc(Component):
-    def __init__(self, *, firmware_bin_path, dvi_timings, audio_192=False,
+    def __init__(self, *, firmware_bin_path, dvi_timings, ui_name, ui_sha, audio_192=False,
                  audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
                  video_rotate_90=False, mainram_size=0x2000, spiflash_fw_offset=None,
                  cpu_variant="tiliqua_rv32im"):
 
         super().__init__({})
+
+        self.ui_name = ui_name
+        self.ui_sha  = ui_sha
 
         self.sim_fs_strobe = Signal()
 
@@ -465,6 +468,8 @@ class TiliquaSoc(Component):
         # TODO: better to move these to SVD vendor section?
         print("Generating (rust) constants ...", dst)
         with open(dst, "w") as f:
+            f.write(f"pub const UI_NAME: &str            = \"{self.ui_name}\";\n")
+            f.write(f"pub const UI_SHA: &str             = \"{self.ui_sha}\";\n")
             f.write(f"pub const CLOCK_SYNC_HZ: u32       = {self.clock_sync_hz};\n")
             f.write(f"pub const PSRAM_BASE: usize        = 0x{self.psram_base:x};\n")
             f.write(f"pub const PSRAM_SZ_BYTES: usize    = 0x{self.psram_size:x};\n")

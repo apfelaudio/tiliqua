@@ -32,6 +32,7 @@ use core::fmt::Write;
 use micromath::F32Ext;
 
 use tiliqua_lib::generated_constants::*;
+use tiliqua_lib::draw;
 
 const TUSB322I_ADDR:  u8 = 0x47;
 
@@ -381,6 +382,8 @@ fn main() -> ! {
 
         print_die_temperature(&mut display, &dtr);
         pause_flush(&mut timer, &mut uptime_ms, period_ms);
+
+        draw::draw_name(&mut display, H_ACTIVE/2, V_ACTIVE-50, 0, UI_NAME, UI_SHA).ok();
 
         // Write something to the CODEC outputs / LEDs
         pmod.sample_o0().write(|w| unsafe { w.sample().bits(

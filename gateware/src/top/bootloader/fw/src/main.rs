@@ -149,6 +149,7 @@ fn main() -> ! {
             });
 
             draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, 0).ok();
+            draw::draw_name(&mut display, H_ACTIVE/2, V_ACTIVE-50, 0, UI_NAME, UI_SHA).ok();
 
             for _ in 0..5 {
                 let _ = draw::draw_boot_logo(&mut display,

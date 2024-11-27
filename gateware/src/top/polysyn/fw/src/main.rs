@@ -197,6 +197,7 @@ fn main() -> ! {
             if opts.draw {
                 draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2,
                                    opts.beam.hue.value).ok();
+                draw::draw_name(&mut display, H_ACTIVE/2, V_ACTIVE-50, opts.beam.hue.value, UI_NAME, UI_SHA).ok();
             }
 
             video.set_persist(opts.beam.persist.value);
