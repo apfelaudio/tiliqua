@@ -111,10 +111,12 @@ class Peripheral(wiring.Component):
         # Audio domain signals need synchronizers
         for i in range(4):
             m.submodules += FFSynchronizer(self.pmod.sample_adc[i], self._sample_adc[i].f.sample.r_data, reset=0)
+            """
             m.submodules += FFSynchronizer(self.pmod.sample_i[i], self._sample_i[i].f.sample.r_data, reset=0)
             if self.enable_out:
                 with m.If(self._sample_o[i].f.sample.w_stb):
                     m.d.sync += self.pmod.sample_o[i].eq(self._sample_o[i].f.sample.w_data)
+                    """
 
 
         return m
