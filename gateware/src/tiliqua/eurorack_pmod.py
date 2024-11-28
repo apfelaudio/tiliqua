@@ -154,6 +154,37 @@ class AK4619(wiring.Component):
                 m.d.audio += self.sdin1.eq(0)
         return m
 
+class Calibrator(wiring.Component):
+
+    i_uncal:  In(stream.Signature(signed(AK4619.S_WIDTH)))
+    o_cal:   Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+
+    i_cal:    In(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    o_uncal: Out(stream.Signature(signed(AK4619.S_WIDTH)))
+
+    def elaborate(self, platform):
+
+        m = Module()
+
+        channel = Signal(2)
+
+        latch = Signal.like(self.i_cal.payload)
+
+        m.d.comb += self.o_uncal.payload.eq(latch[0].raw())
+
+        with m.If(self.i_uncal.valid):
+            m.d.comb += self.o_uncal.valid.eq(1)
+            m.d.audio += [
+                    self.o_cal.payload.as_value().eq((self.o_cal.payload.as_value() >> AK4619.S_WIDTH) | self.i_uncal.payload[0:AK4619.S_WIDTH]<<(3*AK4619.S_WIDTH)),
+                latch.as_value().eq(latch.as_value() >> AK4619.S_WIDTH),
+                channel.eq(channel+1),
+            ]
+            with m.If(channel == 0):
+                m.d.comb += self.o_cal.valid.eq(1)
+                m.d.audio += latch.eq(self.i_cal.payload),
+
+        return m
+
 class I2CMaster(wiring.Component):
 
     """
@@ -631,6 +662,17 @@ class EurorackPmod(wiring.Component):
             with m.If(3000 < pdn_cnt):
                 m.d.comb += pmod_pins.pdn_clk.o.eq(1)
 
+        m.submodules.ak4619 = ak4619 = AK4619()
+        m.submodules.calibrator = calibrator = Calibrator()
+        wiring.connect(m, ak4619.o, calibrator.i_uncal)
+        wiring.connect(m, calibrator.o_uncal, ak4619.i)
+        m.d.comb += [
+            self.fs_strobe.eq(calibrator.o_cal.valid),
+            self.sample_i.eq(calibrator.o_cal.payload),
+            calibrator.i_cal.payload.eq(self.sample_o),
+        ]
+
+        """
         # 1/256 clk_fs strobe
         clkdiv_fs = Signal(8)
         m.d.audio += clkdiv_fs.eq(clkdiv_fs+1)
@@ -712,6 +754,7 @@ class EurorackPmod(wiring.Component):
                 m.d.comb += self.sample_i[n].raw().eq(sample_i_inner[n])
             with m.Else():
                 m.d.comb += self.sample_i[n].raw().eq(self.touch[n] << 6)
+        """
 
         return m
 

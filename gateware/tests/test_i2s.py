@@ -16,15 +16,18 @@ class I2CTests(unittest.TestCase):
 
         m = Module()
         dut = eurorack_pmod.AK4619()
-        m.submodules += [dut]
+        cal = eurorack_pmod.Calibrator()
+        wiring.connect(m, dut.o, cal.i_uncal)
+        wiring.connect(m, cal.o_uncal, dut.i)
+        m.submodules += [dut, cal]
         m = DomainRenamer({"audio": "sync"})(m)
 
         TICKS = 10000
 
         async def test_response(ctx):
-            ctx.set(dut.sdout1, 1)
-            ctx.set(dut.i.payload, 0xDEAD)
-            for _ in range(TICKS):
+            for n in range(TICKS):
+                ctx.set(dut.sdout1, n % 5 == 0)
+                ctx.set(cal.i_cal.payload[0].raw(), 0xDEAD)
                 await ctx.tick()
 
         sim = Simulator(m)
