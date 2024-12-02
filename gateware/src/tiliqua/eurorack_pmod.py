@@ -176,7 +176,7 @@ class Calibrator(wiring.Component):
                 self.i_cal.ready.eq(1),
                 self.o_uncal.valid.eq(1),
                 self.o_uncal.payload.eq(
-                    ((i_select - mem_cal_out_rport.data[0]) * mem_cal_in_rport.data[1])>>10)
+                    ((i_select - mem_cal_out_rport.data[0]) * mem_cal_out_rport.data[1])>>10)
             ]
             m.d.audio += [
                 self.o_cal.payload.as_value().bit_select(
@@ -665,6 +665,13 @@ class EurorackPmod(wiring.Component):
                 m.d.comb += pmod_pins.pdn_clk.o.eq(1)
 
         m.submodules.ak4619 = ak4619 = AK4619()
+        m.d.comb += [
+            pmod_pins.mclk.o.eq(ak4619.mclk),
+            pmod_pins.bick.o.eq(ak4619.bick),
+            pmod_pins.lrck.o.eq(ak4619.lrck),
+            pmod_pins.sdin1.o.eq(ak4619.sdin1),
+            ak4619.sdout1.eq(pmod_pins.sdout1.i),
+        ]
         m.submodules.calibrator = calibrator = Calibrator()
         wiring.connect(m, ak4619.o, calibrator.i_uncal)
         wiring.connect(m, calibrator.o_uncal, ak4619.i)
