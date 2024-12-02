@@ -166,8 +166,8 @@ class Calibrator(wiring.Component):
         ]
 
         latch = Signal.like(self.i_cal.payload)
-        m.d.sync += self.o_cal.valid.eq(0)
         i_select = Signal(signed(16))
+        m.d.audio += self.o_cal.valid.eq(0)
         m.d.comb += i_select.eq(
             self.i_cal.payload.as_value().bit_select(
                 channel*AK4619.S_WIDTH, AK4619.S_WIDTH))
@@ -186,8 +186,10 @@ class Calibrator(wiring.Component):
                 channel.eq(channel+1),
             ]
             with m.If(channel == 0):
-                m.d.sync += self.o_cal.valid.eq(1)
-                m.d.audio += latch.eq(self.i_cal.payload),
+                m.d.audio += [
+                    self.o_cal.valid.eq(1),
+                    latch.eq(self.i_cal.payload),
+                ]
 
         return m
 
