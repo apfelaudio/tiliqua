@@ -171,12 +171,12 @@ class Calibrator(wiring.Component):
         m.d.comb += i_select.eq(
             self.i_cal.payload.as_value().bit_select(
                 channel*AK4619.S_WIDTH, AK4619.S_WIDTH))
+        m.d.comb += self.o_uncal.payload.eq(
+                ((i_select - mem_cal_out_rport.data[0]) * mem_cal_out_rport.data[1])>>10)
         with m.If(self.i_uncal.valid):
             m.d.comb += [
                 self.i_cal.ready.eq(1),
                 self.o_uncal.valid.eq(1),
-                self.o_uncal.payload.eq(
-                    ((i_select - mem_cal_out_rport.data[0]) * mem_cal_out_rport.data[1])>>10)
             ]
             m.d.audio += [
                 self.o_cal.payload.as_value().bit_select(
