@@ -16,14 +16,16 @@ use tiliqua_lib::generated_constants::*;
 use tiliqua_fw::*;
 
 use embedded_graphics::{
-    mono_font::{ascii::FONT_9X15_BOLD, MonoTextStyle},
+    mono_font::{ascii::FONT_9X15, ascii::FONT_9X15_BOLD, MonoTextStyle},
     pixelcolor::{Gray8, GrayColor},
     prelude::*,
+    primitives::{PrimitiveStyleBuilder, Line},
     text::{Alignment, Text},
 };
 
 use opts::Options;
 use hal::pca9635::Pca9635Driver;
+use crate::manifest::Bitstream;
 
 impl_ui!(UI,
          Options,
@@ -68,6 +70,41 @@ where
         Point::new(rng.i32(0..H_ACTIVE as i32), rng.i32(0..V_ACTIVE as i32)),
         style,
         Alignment::Center,
+    )
+    .draw(d).ok();
+}
+
+fn draw_summary<D>(d: &mut D, bitstream: &Bitstream, or: i32, ot: i32, hue: u8)
+where
+    D: DrawTarget<Color = Gray8>,
+{
+    let norm = MonoTextStyle::new(&FONT_9X15,      Gray8::new(0xB0 + hue));
+    Text::with_alignment(
+        "video:".into(),
+        Point::new((H_ACTIVE/2 - 10) as i32 + or, (V_ACTIVE/2+20) as i32 + ot),
+        norm,
+        Alignment::Right,
+    )
+    .draw(d).ok();
+    Text::with_alignment(
+        &bitstream.video,
+        Point::new((H_ACTIVE/2) as i32 + or, (V_ACTIVE/2+20) as i32 + ot),
+        norm,
+        Alignment::Left,
+    )
+    .draw(d).ok();
+    Text::with_alignment(
+        "brief:".into(),
+        Point::new((H_ACTIVE/2 - 10) as i32 + or, (V_ACTIVE/2+40) as i32 + ot),
+        norm,
+        Alignment::Right,
+    )
+    .draw(d).ok();
+    Text::with_alignment(
+        &bitstream.brief,
+        Point::new((H_ACTIVE/2) as i32 + or, (V_ACTIVE/2+40) as i32 + ot),
+        norm,
+        Alignment::Left,
     )
     .draw(d).ok();
 }
@@ -144,6 +181,11 @@ fn main() -> ! {
         };
         video.set_persist(2048);
 
+        let stroke = PrimitiveStyleBuilder::new()
+            .stroke_color(Gray8::new(0xB0))
+            .stroke_width(1)
+            .build();
+
         loop {
 
             let (opts, reboot_n) = critical_section::with(|cs| {
@@ -151,13 +193,21 @@ fn main() -> ! {
                  app.borrow_ref(cs).reboot_n.clone())
             });
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, 0).ok();
+            draw::draw_options(&mut display, &opts, 100, V_ACTIVE/2-50, 0).ok();
             draw::draw_name(&mut display, H_ACTIVE/2, V_ACTIVE-50, 0, UI_NAME, UI_SHA).ok();
 
-            for _ in 0..5 {
+            if let Some(n) = opts.boot.selected {
+                draw_summary(&mut display, &manifest.bitstreams[n], -20, -18, 0);
+                Line::new(Point::new(255, (V_ACTIVE/2 - 55 + (n as u32)*18) as i32),
+                          Point::new(270, (V_ACTIVE/2+8) as i32))
+                          .into_styled(stroke)
+                          .draw(&mut display).ok();
+            }
+
+            for _ in 0..10 {
                 let _ = draw::draw_boot_logo(&mut display,
                                              (H_ACTIVE/2) as i32,
-                                             (V_ACTIVE/2+200) as i32,
+                                             100 as i32,
                                              logo_coord_ix);
                 logo_coord_ix += 1;
             }
