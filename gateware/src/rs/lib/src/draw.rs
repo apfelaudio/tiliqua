@@ -1,6 +1,6 @@
 use embedded_graphics::{
     pixelcolor::{Gray8, GrayColor},
-    primitives::{PrimitiveStyleBuilder, Line},
+    primitives::{PrimitiveStyleBuilder, Line, Ellipse},
     mono_font::{ascii::FONT_9X15, ascii::FONT_9X15_BOLD, MonoTextStyle},
     text::{Alignment, Text},
     prelude::*,
@@ -219,6 +219,154 @@ where
     Ok(())
 }
 
+pub fn draw_tiliqua<D>(d: &mut D, x: u32, y: u32, hue: u8) -> Result<(), D::Error>
+where
+    D: DrawTarget<Color = Gray8>,
+{
+     let stroke_grey = PrimitiveStyleBuilder::new()
+            .stroke_color(Gray8::new(0xB0 + hue))
+            .stroke_width(1)
+            .build();
+
+     let stroke_white = PrimitiveStyleBuilder::new()
+            .stroke_color(Gray8::WHITE)
+            .stroke_width(1)
+            .build();
+
+    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xB0 + hue));
+    let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::WHITE);
+
+    let mut line = |disp: &mut D, x1: u32, y1: u32, x2: u32, y2: u32| {
+        Line::new(Point::new((x+x1) as i32, (y+y1) as i32),
+                  Point::new((x+x2) as i32, (y+y2) as i32))
+                  .into_styled(stroke_grey)
+                  .draw(disp).ok()
+    };
+
+    let mut ellipse = |disp: &mut D, x1: u32, y1: u32, sx: u32, sy: u32| {
+        Ellipse::new(Point::new((x+x1-sx) as i32, (y+y1-sy) as i32),
+                  Size::new(sx<<1, sy<<1))
+                  .into_styled(stroke_grey)
+                  .draw(disp).ok()
+    };
+
+    ellipse(d, 70, 19, 4, 2);
+    ellipse(d, 90, 19, 4, 2);
+    ellipse(d, 70, 142, 4, 2);
+    ellipse(d, 90, 142, 4, 2);
+    ellipse(d, 88, 33, 6, 6);
+    ellipse(d, 88, 46, 5, 2);
+    ellipse(d, 88, 55, 5, 2);
+    ellipse(d, 89, 129, 4, 4);
+    ellipse(d, 71, 129, 4, 4);
+    ellipse(d, 71, 115, 4, 4);
+    ellipse(d, 71, 101, 4, 4);
+    ellipse(d, 71, 87, 4, 4);
+    ellipse(d, 71, 73, 4, 4);
+    ellipse(d, 71, 59, 4, 4);
+    ellipse(d, 71, 45, 4, 4);
+    ellipse(d, 71, 31, 4, 4);
+
+    line(d, 63, 14, 63, 146);
+    line(d, 97, 14, 97, 146);
+    line(d, 63, 14, 97, 14);
+    line(d, 63, 147, 97, 147);
+    line(d, 90, 62, 90, 77);
+    line(d, 85, 65, 85, 74);
+    line(d, 85, 64, 90, 62);
+    line(d, 85, 75, 90, 77);
+    line(d, 85, 84, 85, 98);
+    line(d, 90, 83, 90, 98);
+    line(d, 85, 83, 90, 83);
+    line(d, 86, 98, 89, 98);
+    line(d, 90, 105, 90, 119);
+    line(d, 85, 105, 85, 119);
+    line(d, 85, 104, 90, 104);
+    line(d, 86, 119, 89, 119);
+    line(d, 66, 24, 94, 24);
+    line(d, 66, 136, 94, 136);
+    line(d, 58, 33, 60, 31);
+    line(d, 60, 31, 58, 29);
+    line(d, 58, 47, 60, 45);
+    line(d, 58, 61, 60, 59);
+    line(d, 60, 45, 58, 43);
+    line(d, 60, 59, 58, 57);
+    line(d, 58, 75, 60, 73);
+    line(d, 60, 73, 58, 71);
+    line(d, 45, 101, 47, 103);
+    line(d, 45, 101, 47, 99);
+    line(d, 45, 87, 47, 89);
+    line(d, 45, 87, 47, 85);
+    line(d, 45, 115, 47, 117);
+    line(d, 45, 115, 47, 113);
+    line(d, 45, 129, 47, 131);
+    line(d, 45, 129, 47, 127);
+    line(d, 101, 129, 103, 131);
+    line(d, 101, 129, 103, 127);
+    line(d, 60, 31, 45, 31);     // in0
+    line(d, 60, 45, 45, 45);     // in1
+    line(d, 60, 59, 45, 59);     // in2
+    line(d, 60, 73, 45, 73);     // in3
+    line(d, 59, 87, 45, 87);     // out0
+    line(d, 59, 101, 45, 101);   // out1
+    line(d, 59, 115, 45, 115);   // out2
+    line(d, 59, 129, 45, 129);   // out3
+    line(d, 115, 33, 101, 33);   // encoder
+    line(d, 115, 55, 101, 55);   // usb2
+    line(d, 115, 69, 101, 69);   // dvi
+    line(d, 115, 90, 101, 90);   // ex1
+    line(d, 115, 111, 101, 111); // ex2
+    line(d, 115, 129, 101, 129); // TRS midi
+
+    let mut text_l = [[0u32; 2]; 8];
+    text_l[0][1] = 31;
+    text_l[1][1] = 45;
+    text_l[2][1] = 59;
+    text_l[3][1] = 73;
+    text_l[4][1] = 87;
+    text_l[5][1] = 101;
+    text_l[6][1] = 115;
+    text_l[7][1] = 129;
+    for n in 0..8 { text_l[n][0] = 45 };
+
+    Text::with_alignment(
+        "touch  jack ".into(),
+        Point::new((x+45-15) as i32, (y+15+5) as i32),
+        font_small_white,
+        Alignment::Right
+    ).draw(d)?;
+
+    for n in 0..8 {
+        Text::with_alignment(
+            "note   phase".into(),
+            Point::new((x+text_l[n][0]-15) as i32, (y+text_l[n][1]+5) as i32),
+            font_small_grey,
+            Alignment::Right
+        ).draw(d)?;
+    }
+
+    let mut text_r = [[0u32; 2]; 8];
+    text_r[0][1] = 33;
+    text_r[1][1] = 55;
+    text_r[2][1] = 69;
+    text_r[3][1] = 90;
+    text_r[4][1] = 111;
+    text_r[5][1] = 129;
+    for n in 0..6 { text_r[n][0] = 115 };
+
+    for n in 0..6 {
+        Text::with_alignment(
+            "video".into(),
+            Point::new((x+text_r[n][0]+7) as i32, (y+text_r[n][1]+3) as i32),
+            font_small_grey,
+            Alignment::Left
+        ).draw(d)?;
+    }
+
+
+    Ok(())
+}
+
 
 #[cfg(test)]
 mod test_data {
@@ -364,6 +512,8 @@ mod tests {
                        ((V_ACTIVE as f32)/2.0f32 + 250.0f32*f32::sin(2.3f32 + 2.0f32 * n as f32 / 8.0f32)) as u32,
                        12, 127, 0).ok();
         }
+
+        draw_tiliqua(&mut disp, H_ACTIVE/2, V_ACTIVE/2, 0).ok();
 
         draw_name(&mut disp, H_ACTIVE/2, V_ACTIVE-50, 0, "MACRO-OSC", "b2d3aa").ok();
 
