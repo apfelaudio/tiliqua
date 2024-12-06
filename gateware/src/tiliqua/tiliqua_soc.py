@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
+# Copyright (c) 2024 Seb Holzapfel <me@sebholzapfel.com>
 #
 # Based on some work from LUNA project licensed under BSD. Anything new
 # in this file is issued under the following license:

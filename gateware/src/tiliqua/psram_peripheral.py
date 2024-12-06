@@ -1,7 +1,7 @@
 # This file inherits a bit of `interfaces/psram` from LUNA, but is mostly new.
 #
 # Copyright (c) 2020 Great Scott Gadgets <info@greatscottgadgets.com>
-# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
+# Copyright (c) 2024 S. Holzapfel <me@sebholzapfel.com>
 #
 # SPDX-License-Identifier: BSD-3-Clause
 

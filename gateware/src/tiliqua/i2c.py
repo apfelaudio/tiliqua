@@ -3,7 +3,7 @@
 # This file is built on `interfaces/i2c` from LUNA.
 #
 # Copyright (c) 2020 Great Scott Gadgets <info@greatscottgadgets.com>
-# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
+# Copyright (c) 2024 S. Holzapfel <me@sebholzapfel.com>
 #
 # SPDX-License-Identifier: BSD-3-Clause
 

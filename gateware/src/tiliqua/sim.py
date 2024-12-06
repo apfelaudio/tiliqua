@@ -1,4 +1,4 @@
-# Copyright (c) 2024 S. Holzapfel, apfelaudio UG <info@apfelaudio.com>
+# Copyright (c) 2024 S. Holzapfel <me@sebholzapfel.com>
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 #

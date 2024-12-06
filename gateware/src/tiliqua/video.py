@@ -1,6 +1,6 @@
 # Utilities for synthesizing digital video timings and presenting a framebuffer.
 #
-# Copyright (c) 2024 Seb Holzapfel, apfelaudio UG <info@apfelaudio.com>
+# Copyright (c) 2024 Seb Holzapfel <me@sebholzapfel.com>
 #
 # SPDX-License-Identifier: CERN-OHL-S-2.0
 
