@@ -219,7 +219,8 @@ where
     Ok(())
 }
 
-pub fn draw_tiliqua<D>(d: &mut D, x: u32, y: u32, hue: u8) -> Result<(), D::Error>
+pub fn draw_tiliqua<D>(d: &mut D, x: u32, y: u32, hue: u8,
+                       str_l: [&str; 8], str_r: [&str; 6]) -> Result<(), D::Error>
 where
     D: DrawTarget<Color = Gray8>,
 {
@@ -327,36 +328,36 @@ where
     text_l[5][1] = 101;
     text_l[6][1] = 115;
     text_l[7][1] = 129;
-    for n in 0..8 { text_l[n][0] = 45 };
+    for n in 0..text_l.len() { text_l[n][0] = 45 };
 
     Text::with_alignment(
-        "touch  jack ".into(),
+        "touch  jack".into(),
         Point::new((x+45-15) as i32, (y+15+5) as i32),
         font_small_white,
         Alignment::Right
     ).draw(d)?;
 
-    for n in 0..8 {
+    for n in 0..text_l.len() {
         Text::with_alignment(
-            "note   phase".into(),
-            Point::new((x+text_l[n][0]-15) as i32, (y+text_l[n][1]+5) as i32),
+            str_l[n],
+            Point::new((x+text_l[n][0]-6) as i32, (y+text_l[n][1]+5) as i32),
             font_small_grey,
             Alignment::Right
         ).draw(d)?;
     }
 
-    let mut text_r = [[0u32; 2]; 8];
+    let mut text_r = [[0u32; 2]; 6];
     text_r[0][1] = 33;
     text_r[1][1] = 55;
     text_r[2][1] = 69;
     text_r[3][1] = 90;
     text_r[4][1] = 111;
     text_r[5][1] = 129;
-    for n in 0..6 { text_r[n][0] = 115 };
+    for n in 0..text_r.len() { text_r[n][0] = 115 };
 
-    for n in 0..6 {
+    for n in 0..text_r.len() {
         Text::with_alignment(
-            "video".into(),
+            str_r[n],
             Point::new((x+text_r[n][0]+7) as i32, (y+text_r[n][1]+3) as i32),
             font_small_grey,
             Alignment::Left
@@ -513,7 +514,27 @@ mod tests {
                        12, 127, 0).ok();
         }
 
-        draw_tiliqua(&mut disp, H_ACTIVE/2, V_ACTIVE/2, 0).ok();
+        draw_tiliqua(&mut disp, H_ACTIVE/2, V_ACTIVE/2, 0,
+            [
+            //  "touch  jack "
+                "C0     phase",
+                "G0     -    ",
+                "E0     -    ",
+                "D0     -    ",
+                "E0     -    ",
+                "F0     -    ",
+                "-      out L",
+                "-      out R",
+            ],
+            [
+                "menu",
+                "-",
+                "video",
+                "-",
+                "-",
+                "midi notes (+mod, +pitch)",
+            ],
+            ).ok();
 
         draw_name(&mut disp, H_ACTIVE/2, V_ACTIVE-50, 0, "MACRO-OSC", "b2d3aa").ok();
 
