@@ -18,7 +18,7 @@ where
     D: DrawTarget<Color = Gray8>,
     O: opt::OptionPage
 {
-    let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::WHITE);
+    let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::new(0xF0 + hue));
     let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xB0 + hue));
 
     let opts_view = opts.view().options();
@@ -118,7 +118,7 @@ pub fn draw_voice<D>(d: &mut D, sx: i32, sy: u32, note: u8, cutoff: u8, hue: u8)
 where
     D: DrawTarget<Color = Gray8>,
 {
-    let font_small_white = MonoTextStyle::new(&FONT_9X15, Gray8::WHITE);
+    let font_small_white = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xF0 + hue));
 
 
     let mut stroke_gain = PrimitiveStyleBuilder::new()
@@ -199,7 +199,7 @@ pub fn draw_name<D>(d: &mut D, pos_x: u32, pos_y: u32, hue: u8, name: &str, sha:
 where
     D: DrawTarget<Color = Gray8>,
 {
-    let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::WHITE);
+    let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::new(0xF0 + hue));
     let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xB0 + hue));
 
     Text::with_alignment(

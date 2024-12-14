@@ -502,6 +502,7 @@ class WaveShaper(wiring.Component):
                 with m.If(self.o.ready):
                     m.next = 'WAIT-VALID'
 
+
         return m
 
 class SVF(wiring.Component):
