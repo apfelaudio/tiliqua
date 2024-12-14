@@ -12,6 +12,7 @@ use strum_macros::{EnumIter, IntoStaticStr};
 #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
 pub enum Screen {
+    Help,
     Poly,
     Beam,
     Vector,
@@ -23,6 +24,15 @@ pub enum TouchControl {
     On,
     Off,
 }
+
+#[derive(Clone)]
+pub struct HelpOptions {
+    pub selected:  Option<usize>,
+    pub page:      NumOption<u16>,
+}
+
+impl_option_view!(HelpOptions,
+                  page);
 
 #[derive(Clone)]
 pub struct PolyOptions {
@@ -68,12 +78,14 @@ pub struct Options {
     pub draw: bool,
     pub screen: EnumOption<Screen>,
 
+    pub help:   HelpOptions,
     pub poly:   PolyOptions,
     pub beam:   BeamOptions,
     pub vector: VectorOptions,
 }
 
 impl_option_page!(Options,
+                  (Screen::Help,   help),
                   (Screen::Poly,   poly),
                   (Screen::Beam,   beam),
                   (Screen::Vector, vector));
@@ -81,11 +93,21 @@ impl_option_page!(Options,
 impl Options {
     pub fn new() -> Options {
         Options {
-            modify: false,
+            modify: true,
             draw: true,
             screen: EnumOption {
                 name: String::from_str("screen").unwrap(),
-                value: Screen::Poly,
+                value: Screen::Help,
+            },
+            help: HelpOptions {
+                selected: None,
+                page: NumOption{
+                    name: String::from_str("page").unwrap(),
+                    value: 0,
+                    step: 0,
+                    min: 0,
+                    max: 0,
+                },
             },
             poly: PolyOptions {
                 selected: None,
@@ -119,9 +141,9 @@ impl Options {
                 selected: None,
                 persist: NumOption{
                     name: String::from_str("persist").unwrap(),
-                    value: 1024,
+                    value: 512,
                     step: 256,
-                    min: 512,
+                    min: 256,
                     max: 32768,
                 },
                 decay: NumOption{
@@ -133,7 +155,7 @@ impl Options {
                 },
                 intensity: NumOption{
                     name: String::from_str("intensity").unwrap(),
-                    value: 10,
+                    value: 8,
                     step: 1,
                     min: 0,
                     max: 15,
@@ -147,7 +169,7 @@ impl Options {
                 },
                 palette: EnumOption {
                     name: String::from_str("palette").unwrap(),
-                    value: ColorPalette::Exp,
+                    value: ColorPalette::Linear,
                 },
             },
             vector: VectorOptions {

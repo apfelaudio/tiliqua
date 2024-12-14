@@ -19,7 +19,7 @@ where
     O: opt::OptionPage
 {
     let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::new(0xF0 + hue));
-    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xB0 + hue));
+    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xA0 + hue));
 
     let opts_view = opts.view().options();
 
@@ -81,7 +81,7 @@ where
     }
 
     let stroke = PrimitiveStyleBuilder::new()
-        .stroke_color(Gray8::new(0xB0 + hue))
+        .stroke_color(Gray8::new(0xA0 + hue))
         .stroke_width(1)
         .build();
     Line::new(Point::new(vx-3, vy as i32 - 10),
@@ -200,7 +200,7 @@ where
     D: DrawTarget<Color = Gray8>,
 {
     let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::new(0xF0 + hue));
-    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xB0 + hue));
+    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xA0 + hue));
 
     Text::with_alignment(
         name,
@@ -220,31 +220,26 @@ where
 }
 
 pub fn draw_tiliqua<D>(d: &mut D, x: u32, y: u32, hue: u8,
-                       str_l: [&str; 8], str_r: [&str; 6]) -> Result<(), D::Error>
+                       str_l: [&str; 8], str_r: [&str; 6], text_title: &str, text_desc: &str) -> Result<(), D::Error>
 where
     D: DrawTarget<Color = Gray8>,
 {
      let stroke_grey = PrimitiveStyleBuilder::new()
-            .stroke_color(Gray8::new(0xB0 + hue))
+            .stroke_color(Gray8::new(0xA0 + hue))
             .stroke_width(1)
             .build();
 
-     let stroke_white = PrimitiveStyleBuilder::new()
-            .stroke_color(Gray8::WHITE)
-            .stroke_width(1)
-            .build();
+    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xA0 + hue));
+    let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::new(0xF0 + hue));
 
-    let font_small_grey = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xB0 + hue));
-    let font_small_white = MonoTextStyle::new(&FONT_9X15_BOLD, Gray8::WHITE);
-
-    let mut line = |disp: &mut D, x1: u32, y1: u32, x2: u32, y2: u32| {
+    let line = |disp: &mut D, x1: u32, y1: u32, x2: u32, y2: u32| {
         Line::new(Point::new((x+x1) as i32, (y+y1) as i32),
                   Point::new((x+x2) as i32, (y+y2) as i32))
                   .into_styled(stroke_grey)
                   .draw(disp).ok()
     };
 
-    let mut ellipse = |disp: &mut D, x1: u32, y1: u32, sx: u32, sy: u32| {
+    let ellipse = |disp: &mut D, x1: u32, y1: u32, sx: u32, sy: u32| {
         Ellipse::new(Point::new((x+x1-sx) as i32, (y+y1-sy) as i32),
                   Size::new(sx<<1, sy<<1))
                   .into_styled(stroke_grey)
@@ -364,6 +359,20 @@ where
         ).draw(d)?;
     }
 
+    Text::with_alignment(
+        text_title,
+        Point::new((x + 80) as i32, (y-10) as i32),
+        font_small_white,
+        Alignment::Center
+    ).draw(d)?;
+
+    Text::with_alignment(
+        text_desc,
+        Point::new((x - 120) as i32, (y + 180) as i32),
+        font_small_grey,
+        Alignment::Left
+    ).draw(d)?;
+
 
     Ok(())
 }
@@ -454,8 +463,8 @@ mod tests {
 
     use image::{ImageBuffer, RgbImage, Rgb};
 
-    const H_ACTIVE: u32 = 800;
-    const V_ACTIVE: u32 = 600;
+    const H_ACTIVE: u32 = 720;
+    const V_ACTIVE: u32 = 720;
 
     struct FakeDisplay {
         img: RgbImage,
@@ -504,7 +513,7 @@ mod tests {
         opts.toggle_modify();
 
         disp.img = ImageBuffer::new(H_ACTIVE, V_ACTIVE);
-        draw_options(&mut disp, &opts, H_ACTIVE-200, V_ACTIVE/2, 0).ok();
+        draw_options(&mut disp, &opts, H_ACTIVE/2-30, 70, 0).ok();
 
         let n_voices = 8;
         for n in 0..8 {
@@ -514,7 +523,7 @@ mod tests {
                        12, 127, 0).ok();
         }
 
-        draw_tiliqua(&mut disp, H_ACTIVE/2, V_ACTIVE/2, 0,
+        draw_tiliqua(&mut disp, H_ACTIVE/2-80, V_ACTIVE/2-200, 0,
             [
             //  "touch  jack "
                 "C0     phase",
@@ -534,9 +543,27 @@ mod tests {
                 "-",
                 "midi notes (+mod, +pitch)",
             ],
+            "[8-voice polyphonic synthesizer]",
+            "The synthesizer can be controlled by touching\n\
+            jacks 0-5 or using a MIDI keyboard through TRS\n\
+            midi. Control source is selected in the menu.\n\
+            \n\
+            In touch mode, the touch magnitude controls the\n\
+            filter envelopes of each voice. In MIDI mode\n\
+            the velocity of each note as well as the value\n\
+            of the modulation wheel affects the filter\n\
+            envelopes.\n\
+            \n\
+            Output audio is sent to output channels 2 and\n\
+            3 (last 2 jacks). Input jack 0 also controls\n\
+            phase modulation of all oscillators, so you\n\
+            can patch input jack 0 to an LFO for retro-sounding\n\
+            slow vibrato, or to an oscillator for some wierd\n\
+            FM effects.\n\
+            ",
             ).ok();
 
-        draw_name(&mut disp, H_ACTIVE/2, V_ACTIVE-50, 0, "MACRO-OSC", "b2d3aa").ok();
+        draw_name(&mut disp, H_ACTIVE/2, 30, 0, "MACRO-OSC", "b2d3aa").ok();
 
         disp.img.save("draw_opt_test.png").unwrap();
     }
