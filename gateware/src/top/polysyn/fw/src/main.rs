@@ -206,12 +206,12 @@ fn main() -> ! {
             if help_screen {
                 draw::draw_tiliqua(&mut display, H_ACTIVE/2-80, V_ACTIVE/2-200, opts.beam.hue.value,
                     [
-                        "C0     phase",
-                        "G0     -    ",
-                        "E0     -    ",
-                        "D0     -    ",
-                        "E0     -    ",
-                        "F0     -    ",
+                        "C2     phase",
+                        "G2     -    ",
+                        "C3     -    ",
+                        "Eb3    -    ",
+                        "G3     -    ",
+                        "C4     -    ",
                         "-      out L",
                         "-      out R",
                     ],
