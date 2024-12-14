@@ -16,7 +16,7 @@ Documentation is built from source in `gateware/docs`.
 
 # Community
 
-`apfaudio` has a Matrix channel, [#apfelaudio:matrix.org](https://matrix.to/#/#apfelaudio:matrix.org). Feel free to join to ask questions or discuss ongoing development.
+`apfaudio` has a Matrix channel, [#apfaudio:matrix.org](https://matrix.to/#/#apfaudio:matrix.org). Feel free to join to ask questions or discuss ongoing development.
 
 You might also find some interesting things:
 - On my [personal YouTube channel](https://www.youtube.com/channel/UCj2hxwW2fD-3egUAxqW0mhg)
