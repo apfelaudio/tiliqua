@@ -14,6 +14,7 @@ use tiliqua_lib::*;
 use tiliqua_lib::opt::*;
 use tiliqua_lib::generated_constants::*;
 use tiliqua_fw::*;
+use tiliqua_lib::palette::ColorPalette;
 
 use embedded_graphics::{
     mono_font::{ascii::FONT_9X15, ascii::FONT_9X15_BOLD, MonoTextStyle},
@@ -137,6 +138,15 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
     });
 }
 
+pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
+    for i in 0..PX_INTENSITY_MAX {
+        for h in 0..PX_HUE_MAX {
+            let rgb = palette::compute_color(i, h, p);
+            video.set_palette_rgb(i as u8, h as u8, rgb.r, rgb.g, rgb.b);
+        }
+    }
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
@@ -179,12 +189,14 @@ fn main() -> ! {
         let mut display = DMADisplay {
             framebuffer_base: PSRAM_FB_BASE as *mut u32,
         };
-        video.set_persist(2048);
+        video.set_persist(1024);
 
         let stroke = PrimitiveStyleBuilder::new()
             .stroke_color(Gray8::new(0xB0))
             .stroke_width(1)
             .build();
+
+        write_palette(&mut video, ColorPalette::Linear);
 
         loop {
 
@@ -199,7 +211,7 @@ fn main() -> ! {
             if let Some(n) = opts.boot.selected {
                 draw_summary(&mut display, &manifest.bitstreams[n], -20, -18, 0);
                 Line::new(Point::new(255, (V_ACTIVE/2 - 55 + (n as u32)*18) as i32),
-                          Point::new(270, (V_ACTIVE/2+8) as i32))
+                          Point::new((H_ACTIVE/2-90) as i32, (V_ACTIVE/2+8) as i32))
                           .into_styled(stroke)
                           .draw(&mut display).ok();
             }
