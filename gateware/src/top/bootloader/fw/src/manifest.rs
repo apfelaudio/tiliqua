@@ -6,26 +6,38 @@ use serde::{Deserialize};
 use log::info;
 use tiliqua_lib::opt::OptionString;
 
+#[derive(Deserialize, Clone)]
+pub struct Bitstream {
+    pub name: OptionString,
+    pub brief: String<128>,
+    pub video: String<64>,
+}
+
 #[derive(Deserialize)]
 pub struct BitstreamManifest {
     pub magic: u32,
-    pub names: [OptionString; N_BITSTREAMS],
+    pub bitstreams: [Bitstream; N_BITSTREAMS],
 }
 
 impl BitstreamManifest {
     pub fn unknown_manifest() -> Self {
         let unknown = String::from_str("<unknown>").unwrap();
+        let unknown_bitstream = Bitstream {
+            name:  unknown.clone(),
+            brief: String::new(),
+            video: String::new(),
+        };
         BitstreamManifest {
             magic: 0xDEADBEEFu32,
-            names: [
-                unknown.clone(),
-                unknown.clone(),
-                unknown.clone(),
-                unknown.clone(),
-                unknown.clone(),
-                unknown.clone(),
-                unknown.clone(),
-                unknown.clone(),
+            bitstreams: [
+                unknown_bitstream.clone(),
+                unknown_bitstream.clone(),
+                unknown_bitstream.clone(),
+                unknown_bitstream.clone(),
+                unknown_bitstream.clone(),
+                unknown_bitstream.clone(),
+                unknown_bitstream.clone(),
+                unknown_bitstream.clone(),
             ],
         }
     }
@@ -54,6 +66,7 @@ impl BitstreamManifest {
         }
 
         let manifest_slice = &manifest_slice[0..last_byte];
+        info!("Manifest length: {}", last_byte);
 
         let manifest_de = serde_json_core::from_slice::<BitstreamManifest>(manifest_slice);
         match manifest_de {

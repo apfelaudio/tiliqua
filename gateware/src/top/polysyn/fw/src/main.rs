@@ -23,6 +23,7 @@ use tiliqua_lib::midi::MidiTouchController;
 use tiliqua_lib::generated_constants::*;
 use tiliqua_fw::*;
 use tiliqua_fw::opts::TouchControl;
+use tiliqua_fw::opts::Screen;
 
 use embedded_graphics::{
     pixelcolor::{Gray8, GrayColor},
@@ -189,32 +190,85 @@ fn main() -> ! {
                  app.synth.voice_cutoffs().clone())
             });
 
+            let help_screen: bool = opts.screen.value == Screen::Help;
+
             if opts.beam.palette.value != last_palette || first {
                 write_palette(&mut video, opts.beam.palette.value);
                 last_palette = opts.beam.palette.value;
             }
 
-            if opts.draw {
-                draw::draw_options(&mut display, &opts, H_ACTIVE-200, V_ACTIVE/2,
+            if opts.draw || help_screen {
+                draw::draw_options(&mut display, &opts, H_ACTIVE/2-30, 70,
                                    opts.beam.hue.value).ok();
-                draw::draw_name(&mut display, H_ACTIVE/2, V_ACTIVE-50, opts.beam.hue.value, UI_NAME, UI_SHA).ok();
+                draw::draw_name(&mut display, H_ACTIVE/2, 30, opts.beam.hue.value, UI_NAME, UI_SHA).ok();
             }
 
-            video.set_persist(opts.beam.persist.value);
-            video.set_decay(opts.beam.decay.value);
+            if help_screen {
+                draw::draw_tiliqua(&mut display, H_ACTIVE/2-80, V_ACTIVE/2-200, opts.beam.hue.value,
+                    [
+                        "C2     phase",
+                        "G2     -    ",
+                        "C3     -    ",
+                        "Eb3    -    ",
+                        "G3     -    ",
+                        "C4     -    ",
+                        "-      out L",
+                        "-      out R",
+                    ],
+                    [
+                        "menu",
+                        "-",
+                        "video",
+                        "-",
+                        "-",
+                        "midi notes (+mod, +pitch)",
+                    ],
+                    "[8-voice polyphonic synthesizer]",
+                    "The synthesizer can be controlled by touching\n\
+                    jacks 0-5 or using a MIDI keyboard through TRS\n\
+                    midi. Control source is selected in the menu.\n\
+                    \n\
+                    In touch mode, the touch magnitude controls the\n\
+                    filter envelopes of each voice. In MIDI mode\n\
+                    the velocity of each note as well as the value\n\
+                    of the modulation wheel affects the filter\n\
+                    envelopes.\n\
+                    \n\
+                    Output audio is sent to output channels 2 and\n\
+                    3 (last 2 jacks). Input jack 0 also controls\n\
+                    phase modulation of all oscillators, so you\n\
+                    can patch input jack 0 to an LFO for retro-sounding\n\
+                    slow vibrato, or to an oscillator for some wierd\n\
+                    FM effects.\n\
+                    \n\
+                    * Use encoder and encoder button to navigate menu.\n\
+                    * Switch away from the HELP screen to start visuals.\n\
+                    * Hold encoder for 3sec to enter bootloader.\n\
+                    ",
+                    ).ok();
+                // Enough persistance to reduce flicker on loads of text.
+                video.set_persist(2048);
+                video.set_decay(1);
+                vscope.en().write(|w| w.enable().bit(false) );
+            } else {
+                video.set_persist(opts.beam.persist.value);
+                video.set_decay(opts.beam.decay.value);
+                vscope.en().write(|w| w.enable().bit(true) );
+            }
 
-            vscope.en().write(|w| w.enable().bit(true) );
             vscope.hue().write(|w| unsafe { w.hue().bits(opts.beam.hue.value) } );
             vscope.intensity().write(|w| unsafe { w.intensity().bits(opts.beam.intensity.value) } );
             vscope.xscale().write(|w| unsafe { w.xscale().bits(opts.vector.xscale.value) } );
             vscope.yscale().write(|w| unsafe { w.yscale().bits(opts.vector.yscale.value) } );
 
-            for ix in 0usize..N_VOICES {
-                let j = (N_VOICES-1)-ix;
-                draw::draw_voice(&mut display,
-                                 ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / (N_VOICES as f32))) as i32,
-                                 ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / (N_VOICES as f32))) as u32 - 15,
-                                 notes[ix], cutoffs[ix], opts.beam.hue.value).ok();
+            if !help_screen {
+                for ix in 0usize..N_VOICES {
+                    let j = (N_VOICES-1)-ix;
+                    draw::draw_voice(&mut display,
+                                     ((H_ACTIVE as f32)/2.0f32 + 330.0f32*f32::cos(2.3f32 + 2.0f32 * j as f32 / (N_VOICES as f32))) as i32,
+                                     ((V_ACTIVE as f32)/2.0f32 + 330.0f32*f32::sin(2.3f32 + 2.0f32 * j as f32 / (N_VOICES as f32))) as u32 - 15,
+                                     notes[ix], cutoffs[ix], opts.beam.hue.value).ok();
+                }
             }
 
             first = false;

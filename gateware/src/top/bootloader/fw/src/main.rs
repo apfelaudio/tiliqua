@@ -14,16 +14,19 @@ use tiliqua_lib::*;
 use tiliqua_lib::opt::*;
 use tiliqua_lib::generated_constants::*;
 use tiliqua_fw::*;
+use tiliqua_lib::palette::ColorPalette;
 
 use embedded_graphics::{
-    mono_font::{ascii::FONT_9X15_BOLD, MonoTextStyle},
+    mono_font::{ascii::FONT_9X15, ascii::FONT_9X15_BOLD, MonoTextStyle},
     pixelcolor::{Gray8, GrayColor},
     prelude::*,
+    primitives::{PrimitiveStyleBuilder, Line},
     text::{Alignment, Text},
 };
 
 use opts::Options;
 use hal::pca9635::Pca9635Driver;
+use crate::manifest::Bitstream;
 
 impl_ui!(UI,
          Options,
@@ -72,6 +75,41 @@ where
     .draw(d).ok();
 }
 
+fn draw_summary<D>(d: &mut D, bitstream: &Bitstream, or: i32, ot: i32, hue: u8)
+where
+    D: DrawTarget<Color = Gray8>,
+{
+    let norm = MonoTextStyle::new(&FONT_9X15,      Gray8::new(0xB0 + hue));
+    Text::with_alignment(
+        "video:".into(),
+        Point::new((H_ACTIVE/2 - 10) as i32 + or, (V_ACTIVE/2+20) as i32 + ot),
+        norm,
+        Alignment::Right,
+    )
+    .draw(d).ok();
+    Text::with_alignment(
+        &bitstream.video,
+        Point::new((H_ACTIVE/2) as i32 + or, (V_ACTIVE/2+20) as i32 + ot),
+        norm,
+        Alignment::Left,
+    )
+    .draw(d).ok();
+    Text::with_alignment(
+        "brief:".into(),
+        Point::new((H_ACTIVE/2 - 10) as i32 + or, (V_ACTIVE/2+40) as i32 + ot),
+        norm,
+        Alignment::Right,
+    )
+    .draw(d).ok();
+    Text::with_alignment(
+        &bitstream.brief,
+        Point::new((H_ACTIVE/2) as i32 + or, (V_ACTIVE/2+40) as i32 + ot),
+        norm,
+        Alignment::Left,
+    )
+    .draw(d).ok();
+}
+
 fn timer0_handler(app: &Mutex<RefCell<App>>) {
 
     critical_section::with(|cs| {
@@ -100,6 +138,15 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
     });
 }
 
+pub fn write_palette(video: &mut Video0, p: palette::ColorPalette) {
+    for i in 0..PX_INTENSITY_MAX {
+        for h in 0..PX_HUE_MAX {
+            let rgb = palette::compute_color(i, h, p);
+            video.set_palette_rgb(i as u8, h as u8, rgb.r, rgb.g, rgb.b);
+        }
+    }
+}
+
 #[entry]
 fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
@@ -118,8 +165,11 @@ fn main() -> ! {
         manifest::BitstreamManifest::unknown_manifest());
 
     info!("BitstreamManifest created with:");
-    for name in &manifest.names {
-        info!("- '{}'", name);
+    for bitstream in &manifest.bitstreams {
+        info!("* Bitstream *");
+        info!("- name '{}'",  bitstream.name);
+        info!("- brief '{}'", bitstream.brief);
+        info!("- video '{}'", bitstream.video);
     }
 
     let opts = opts::Options::new(&manifest);
@@ -139,7 +189,14 @@ fn main() -> ! {
         let mut display = DMADisplay {
             framebuffer_base: PSRAM_FB_BASE as *mut u32,
         };
-        video.set_persist(2048);
+        video.set_persist(1024);
+
+        let stroke = PrimitiveStyleBuilder::new()
+            .stroke_color(Gray8::new(0xB0))
+            .stroke_width(1)
+            .build();
+
+        write_palette(&mut video, ColorPalette::Linear);
 
         loop {
 
@@ -148,13 +205,21 @@ fn main() -> ! {
                  app.borrow_ref(cs).reboot_n.clone())
             });
 
-            draw::draw_options(&mut display, &opts, H_ACTIVE/2-50, V_ACTIVE/2-50, 0).ok();
+            draw::draw_options(&mut display, &opts, 100, V_ACTIVE/2-50, 0).ok();
             draw::draw_name(&mut display, H_ACTIVE/2, V_ACTIVE-50, 0, UI_NAME, UI_SHA).ok();
 
-            for _ in 0..5 {
+            if let Some(n) = opts.boot.selected {
+                draw_summary(&mut display, &manifest.bitstreams[n], -20, -18, 0);
+                Line::new(Point::new(255, (V_ACTIVE/2 - 55 + (n as u32)*18) as i32),
+                          Point::new((H_ACTIVE/2-90) as i32, (V_ACTIVE/2+8) as i32))
+                          .into_styled(stroke)
+                          .draw(&mut display).ok();
+            }
+
+            for _ in 0..10 {
                 let _ = draw::draw_boot_logo(&mut display,
                                              (H_ACTIVE/2) as i32,
-                                             (V_ACTIVE/2+200) as i32,
+                                             100 as i32,
                                              logo_coord_ix);
                 logo_coord_ix += 1;
             }

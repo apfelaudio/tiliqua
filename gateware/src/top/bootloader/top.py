@@ -12,6 +12,5 @@ if __name__ == "__main__":
     # FIXME: more RAM needed for this bitstream because `serde` has quite huge code size.
     top_level_cli(TiliquaSoc, path=this_path,
                   argparse_fragment=lambda _: {
-                      "mainram_size": 0x10000,
-                      "spiflash_fw_offset": None
+                      "mainram_size": 0x8000,
                   })

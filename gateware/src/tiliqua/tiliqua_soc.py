@@ -484,7 +484,7 @@ class TiliquaSoc(Component):
             f.write(f"pub const PX_INTENSITY_MAX: i32    = 16;\n")
             f.write(f"pub const N_BITSTREAMS: usize      = 8;\n")
             f.write(f"pub const MANIFEST_BASE: usize     = SPIFLASH_BASE + SPIFLASH_SZ_BYTES - 4096;\n")
-            f.write(f"pub const MANIFEST_SZ_BYTES: usize = 512;\n")
+            f.write(f"pub const MANIFEST_SZ_BYTES: usize = 4096;\n")
             f.write("// Extra constants specified by an SoC subclass:\n")
             for l in self.extra_rust_constants:
                 f.write(l)

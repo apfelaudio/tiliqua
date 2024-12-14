@@ -405,12 +405,13 @@ class PolySoc(TiliquaSoc):
         wiring.connect(m, astream.istream, polysynth.i)
         wiring.connect(m, polysynth.o, astream.ostream)
 
-        # polysynth out -> vectorscope TODO use true split
-        m.d.comb += [
-            self.vector_periph.i.valid.eq(polysynth.o.valid),
-            self.vector_periph.i.payload[0].eq(polysynth.o.payload[2]),
-            self.vector_periph.i.payload[1].eq(polysynth.o.payload[3]),
-        ]
+        with m.If(self.vector_periph.soc_en):
+            # polysynth out -> vectorscope TODO use true split
+            m.d.comb += [
+                self.vector_periph.i.valid.eq(polysynth.o.valid),
+                self.vector_periph.i.payload[0].eq(polysynth.o.payload[2]),
+                self.vector_periph.i.payload[1].eq(polysynth.o.payload[3]),
+            ]
 
         # Memory controller hangs if we start making requests to it straight away.
         with m.If(self.permit_bus_traffic):

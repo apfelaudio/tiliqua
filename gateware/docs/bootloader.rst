@@ -47,25 +47,7 @@ First-time setup
 Bitstream Manifest
 ^^^^^^^^^^^^^^^^^^
 
-By default the bootloader screen will report all bitstream names as :code:`<unknown>`. The :code:`bootloader` bitstream can optionally read from a JSON manifest stored at the end of SPI flash called a 'Bitstream Manifest'. Such a :code:`manifest.json` file looks like this:
-
-.. code-block:: json
-
-    {
-        "magic": 3735928559,
-        "names": [
-            "polysyn",
-            "xbeam",
-            "usb_audio",
-            "usb_host",
-            "vectorscope",
-            "dsp_quadnco",
-            "dsp_midicv",
-            "dsp_diffusion"
-        ]
-    }
-
-An example file can be copied from :code:`gateware/src/top/bootloader/fw/example-manifest.json`. You can flash this to the end of the SPI flash so the bootloader knows what each bitstream should be called.
+By default the bootloader screen will report all bitstream names as :code:`<unknown>`. The :code:`bootloader` bitstream can optionally read from a JSON manifest stored at the end of SPI flash called a 'Bitstream Manifest'. Such a :code:`manifest.json` file can be copied from :code:`gateware/src/top/bootloader/fw/example-manifest.json`. You can flash this to the end of the SPI flash so the bootloader knows what each bitstream should be called.
 
 .. code-block:: bash
 
