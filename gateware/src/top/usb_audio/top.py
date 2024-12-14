@@ -74,7 +74,7 @@ class USB2AudioInterface(Elaboratable):
             d.idVendor           = 0x1209
             d.idProduct          = 0xAA62
 
-            d.iManufacturer      = "apfelaudio.com"
+            d.iManufacturer      = "apf.audio"
             d.iProduct           = "Tiliqua"
             d.iSerialNumber      = "r2-beta-0000"
             d.bcdDevice          = 0.01

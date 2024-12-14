@@ -5,6 +5,6 @@ Tiliqua project documentation
    :maxdepth: 1
 
    index
-   (external) GitHub <https://github.com/apfelaudio/tiliqua>
-   (external) CrowdSupply <https://www.crowdsupply.com/apfelaudio/tiliqua>
-   (external) apfelaudio.com <https://apfelaudio.com/>
+   (external) GitHub <https://github.com/apfaudio/tiliqua>
+   (external) CrowdSupply <https://www.crowdsupply.com/apfaudio/tiliqua>
+   (external) apf.audio <https://apf.audio/>
