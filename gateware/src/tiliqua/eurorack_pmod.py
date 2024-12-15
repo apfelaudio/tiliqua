@@ -126,30 +126,24 @@ class I2SCalibrator(wiring.Component):
 
         # 'audio' <-> 'sync' domain FIFOs
 
-        """
         m.submodules.adc_fifo = adc_fifo = AsyncFIFOBuffered(
                 width=I2STDM.S_WIDTH, depth=self.fifo_depth,
                 w_domain="audio", r_domain=self.stream_domain)
-        """
         m.submodules.dac_fifo = dac_fifo = AsyncFIFOBuffered(
                 width=I2STDM.S_WIDTH, depth=self.fifo_depth,
                 w_domain=self.stream_domain, r_domain="audio")
 
-        """
         wiring.connect(m, wiring.flipped(self.i_uncal), adc_fifo.w_stream)
-        """
         wiring.connect(m, dac_fifo.r_stream, wiring.flipped(self.o_uncal))
 
         # calibration memory ('sync' domain)
 
-        """
         m.submodules.mem_cal_in = mem_cal_in = Memory(
             shape=data.ArrayLayout(signed(16), 2), depth=4, init=[
             [0xff63, 0x485] for _ in range(4)
         ])
 
         mem_cal_in_rport = mem_cal_in.read_port(domain='comb')
-        """
 
         m.submodules.mem_cal_out = mem_cal_out = Memory(
             shape=data.ArrayLayout(signed(16), 2), depth=4, init=[
@@ -163,7 +157,6 @@ class I2SCalibrator(wiring.Component):
         dac_channel = Signal(2)
         dac_latch = Signal(data.ArrayLayout(ASQ, 4))
         m.d.comb += [
-            #mem_cal_out_rport.en.eq(1),
             mem_cal_out_rport.addr.eq(dac_channel),
         ]
         with m.FSM() as fsm:
@@ -186,6 +179,33 @@ class I2SCalibrator(wiring.Component):
                     ]
                     with m.If(dac_channel == 3):
                         m.next = 'DAC-WAIT-VALID'
+
+        # ADC path calibration
+
+        adc_channel = Signal(2)
+        adc_latch = Signal(data.ArrayLayout(ASQ, 4))
+        m.d.comb += [
+            mem_cal_in_rport.addr.eq(adc_channel),
+        ]
+        with m.FSM() as fsm:
+            with m.State('ADC-GATHER'):
+                with m.If(adc_fifo.r_stream.valid):
+                    adc_cal = Signal(signed(I2STDM.S_WIDTH))
+                    m.d.comb += [
+                        adc_cal.eq(
+                            ((-adc_fifo.r_stream.payload - mem_cal_in_rport.data[0]) *
+                             mem_cal_in_rport.data[1])>>10),
+                        adc_fifo.r_stream.ready.eq(1),
+                    ]
+                    m.d.sync += self.o_cal.payload.as_value().eq(
+                        self.o_cal.payload.as_value() >> I2STDM.S_WIDTH | (adc_cal << 3*I2STDM.S_WIDTH))
+                    m.d.sync += adc_channel.eq(adc_channel+1)
+                    with m.If(adc_channel == 3):
+                        m.next = 'ADC-WAIT-READY'
+            with m.State('ADC-WAIT-READY'):
+                m.d.comb += self.o_cal.valid.eq(1)
+                with m.If(self.o_cal.ready):
+                    m.next = 'ADC-GATHER'
 
         return m
 
@@ -640,11 +660,13 @@ class EurorackPmod(wiring.Component):
             # LED auto/manual settings per jack
             with m.If(self.led_mode[n]):
                 if n <= 3:
-                    m.d.comb += i2c_master.led[n].eq(self.i_cal.payload[n].raw()>>8),
+                    with m.If(self.i_cal.valid):
+                        m.d.sync += i2c_master.led[n].eq(self.i_cal.payload[n].raw()>>8),
                 else:
-                    m.d.comb += i2c_master.led[n].eq(self.o_cal.payload[n-4].raw()>>8),
+                    with m.If(self.o_cal.valid):
+                        m.d.sync += i2c_master.led[n].eq(self.o_cal.payload[n-4].raw()>>8),
             with m.Else():
-                m.d.comb += i2c_master.led[n].eq(self.led[n]),
+                m.d.sync += i2c_master.led[n].eq(self.led[n]),
 
         # PDN (and clocking for mobo R3+ for pop-free bitstream switching)
         m.d.comb += pmod_pins.pdn_d.o.eq(1),
