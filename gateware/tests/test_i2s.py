@@ -20,14 +20,11 @@ class I2CTests(unittest.TestCase):
     def test_i2s_tdm(self):
 
         m = Module()
-        dut = eurorack_pmod.AK4619()
-        cal = eurorack_pmod.Calibrator()
-        dac_fifo = SyncFIFO(
-            width=cal.i_cal.payload.shape().size, depth=16)
+        dut = eurorack_pmod.I2STDM()
+        cal = eurorack_pmod.I2SCalibrator()
         wiring.connect(m, dut.o, cal.i_uncal)
         wiring.connect(m, cal.o_uncal, dut.i)
-        wiring.connect(m, dac_fifo.r_stream, cal.i_cal)
-        m.submodules += [dut, cal, dac_fifo]
+        m.submodules += [dut, cal]
         m = DomainRenamer({"audio": "sync"})(m)
 
         TICKS = 10000
@@ -38,14 +35,15 @@ class I2CTests(unittest.TestCase):
                 def fn(n):
                     return 0.4*(math.sin(n*0.2) + math.sin(n))
                 v = fixed.Const(fn(n), shape=eurorack_pmod.ASQ)
-                ctx.set(dac_fifo.w_stream.valid,         1)
+                ctx.set(cal.i_cal.valid, 1)
                 #ctx.set(dac_fifo.w_stream.payload[0:16],  v.as_value())
-                ctx.set(dac_fifo.w_stream.payload[16:32], v.as_value())
+                ctx.set(cal.i_cal.payload, [0, v, 0, 0])
                 #ctx.set(dac_fifo.w_stream.payload[32:48], v.as_value())
                 #ctx.set(dac_fifo.w_stream.payload[48:64], v.as_value())
                 await ctx.tick()
-
-            ctx.set(dac_fifo.w_stream.valid, 0)
+                ctx.set(cal.i_cal.valid, 0)
+                for n in range(8):
+                    await ctx.tick()
 
             for n in range(TICKS):
                 ctx.set(dut.sdout1, n % 5 == 0)

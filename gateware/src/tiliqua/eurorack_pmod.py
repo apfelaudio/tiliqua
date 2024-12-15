@@ -25,47 +25,7 @@ WIDTH = 16
 # Native 'Audio sample SQ', shape of audio samples from CODEC.
 ASQ = fixed.SQ(0, WIDTH-1)
 
-class AudioStream(wiring.Component):
-
-    """
-    Domain crossing logic to move samples from `eurorack-pmod` logic in the audio domain
-    to logic in a different (faster) domain using a stream interface.
-    This is used by most DSP examples for glitch-free audio streaming.
-    """
-
-    istream: Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    ostream: In(stream.Signature(data.ArrayLayout(ASQ, 4)))
-
-    def __init__(self, eurorack_pmod, stream_domain="sync", fifo_depth=8):
-
-        self.eurorack_pmod = eurorack_pmod
-        self.stream_domain = stream_domain
-        self.fifo_depth = fifo_depth
-
-        super().__init__()
-
-    def elaborate(self, platform) -> Module:
-
-        m = Module()
-
-        m.submodules.adc_fifo = adc_fifo = AsyncFIFOBuffered(
-                width=self.eurorack_pmod.i_cal.payload.shape().size, depth=self.fifo_depth,
-                w_domain="audio", r_domain=self.stream_domain)
-        m.submodules.dac_fifo = dac_fifo = AsyncFIFOBuffered(
-                width=self.eurorack_pmod.o_cal.payload.shape().size, depth=self.fifo_depth,
-                w_domain=self.stream_domain, r_domain="audio")
-
-        wiring.connect(m, adc_fifo.r_stream, wiring.flipped(self.istream))
-        wiring.connect(m, wiring.flipped(self.ostream), dac_fifo.w_stream)
-
-        eurorack_pmod = self.eurorack_pmod
-
-        wiring.connect(m, self.eurorack_pmod.o_cal, adc_fifo.w_stream)
-        wiring.connect(m, dac_fifo.r_stream, self.eurorack_pmod.i_cal)
-
-        return m
-
-class AK4619(wiring.Component):
+class I2STDM(wiring.Component):
 
     """
     This core talks I2S TDM to an AK4619 configured in the
@@ -136,7 +96,7 @@ class AK4619(wiring.Component):
                 m.d.audio += self.sdin1.eq(0)
         return m
 
-class Calibrator(wiring.Component):
+class I2SCalibrator(wiring.Component):
 
     """
     Convert uncalibrated sample streams (1 sample per payload)
@@ -145,71 +105,87 @@ class Calibrator(wiring.Component):
 
     The goal is to remove the CODEC DC offset and scale raw counts to
     14.2 fixed-point (4 counts / mV).
-
-    WARN: these IOs do NOT adhere to normal stream rules. FIFOs must
-    be used to implement backpressure (:py:`AudioStream` is used for this).
     """
 
     # ADC -> calibrated samples
-    i_uncal:  In(stream.Signature(signed(AK4619.S_WIDTH)))
-    o_cal:   Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
+    i_uncal:  In(stream.Signature(signed(I2STDM.S_WIDTH)))   # audio domain
+    o_cal:   Out(stream.Signature(data.ArrayLayout(ASQ, 4))) # sync domain
 
     # calibrated samples -> DAC
-    i_cal:    In(stream.Signature(data.ArrayLayout(ASQ, 4)))
-    o_uncal: Out(stream.Signature(signed(AK4619.S_WIDTH)))
+    i_cal:    In(stream.Signature(data.ArrayLayout(ASQ, 4))) # sync domain
+    o_uncal: Out(stream.Signature(signed(I2STDM.S_WIDTH)))   # audio domain
+
+    def __init__(self, stream_domain="sync", fifo_depth=32):
+        self.stream_domain = stream_domain
+        self.fifo_depth = fifo_depth
+        super().__init__()
 
     def elaborate(self, platform):
 
         m = Module()
 
-        channel = Signal(2)
+        # 'audio' <-> 'sync' domain FIFOs
 
+        """
+        m.submodules.adc_fifo = adc_fifo = AsyncFIFOBuffered(
+                width=I2STDM.S_WIDTH, depth=self.fifo_depth,
+                w_domain="audio", r_domain=self.stream_domain)
+        """
+        m.submodules.dac_fifo = dac_fifo = AsyncFIFOBuffered(
+                width=I2STDM.S_WIDTH, depth=self.fifo_depth,
+                w_domain=self.stream_domain, r_domain="audio")
+
+        """
+        wiring.connect(m, wiring.flipped(self.i_uncal), adc_fifo.w_stream)
+        """
+        wiring.connect(m, dac_fifo.r_stream, wiring.flipped(self.o_uncal))
+
+        # calibration memory ('sync' domain)
+
+        """
         m.submodules.mem_cal_in = mem_cal_in = Memory(
             shape=data.ArrayLayout(signed(16), 2), depth=4, init=[
             [0xff63, 0x485] for _ in range(4)
         ])
 
-        mem_cal_in_rport = mem_cal_in.read_port(domain="audio")
+        mem_cal_in_rport = mem_cal_in.read_port(domain='comb')
+        """
 
         m.submodules.mem_cal_out = mem_cal_out = Memory(
             shape=data.ArrayLayout(signed(16), 2), depth=4, init=[
             [0xfd15, 0x3e8] for _ in range(4)
         ])
 
-        mem_cal_out_rport = mem_cal_out.read_port(domain="audio")
+        mem_cal_out_rport = mem_cal_out.read_port(domain='comb')
 
+        # DAC path calibration
+
+        dac_channel = Signal(2)
+        dac_latch = Signal(data.ArrayLayout(ASQ, 4))
         m.d.comb += [
-            mem_cal_in_rport.en.eq(1),
-            mem_cal_out_rport.en.eq(1),
-            mem_cal_in_rport.addr.eq(channel),
-            mem_cal_out_rport.addr.eq(channel),
+            #mem_cal_out_rport.en.eq(1),
+            mem_cal_out_rport.addr.eq(dac_channel),
         ]
-
-        latch = Signal.like(self.i_cal.payload)
-        i_select = Signal(signed(16))
-        m.d.audio += self.o_cal.valid.eq(0)
-        m.d.comb += i_select.eq(
-            self.i_cal.payload.as_value().bit_select(
-                channel*AK4619.S_WIDTH, AK4619.S_WIDTH))
-        m.d.comb += self.o_uncal.payload.eq(
-                ((i_select - mem_cal_out_rport.data[0]) * mem_cal_out_rport.data[1])>>10)
-        with m.If(self.i_uncal.valid):
-            m.d.comb += [
-                self.o_uncal.valid.eq(1),
-            ]
-            m.d.audio += [
-                self.o_cal.payload.as_value().bit_select(
-                    channel*AK4619.S_WIDTH, AK4619.S_WIDTH).eq(
-                        ((self.i_uncal.payload - mem_cal_in_rport.data[0]) *
-                          mem_cal_in_rport.data[1])>>10),
-                channel.eq(channel+1),
-            ]
-            with m.If(channel == 0):
-                m.d.comb += self.i_cal.ready.eq(1),
-                m.d.audio += [
-                    self.o_cal.valid.eq(1),
-                    latch.eq(self.i_cal.payload),
-                ]
+        with m.FSM() as fsm:
+            with m.State('DAC-WAIT-VALID'):
+                m.d.comb += self.i_cal.ready.eq(dac_fifo.w_stream.ready),
+                with m.If(self.i_cal.valid & dac_fifo.w_stream.ready):
+                   m.d.sync += dac_latch.eq(self.i_cal.payload)
+                   m.next = 'DAC-OUT'
+            with m.State('DAC-OUT'):
+                with m.If(dac_fifo.w_stream.ready):
+                    m.d.comb += [
+                        dac_fifo.w_stream.payload.eq(
+                            ((dac_latch[0].as_value() - mem_cal_out_rport.data[0]) *
+                              mem_cal_out_rport.data[1])>>10),
+                        dac_fifo.w_stream.valid.eq(1),
+                    ]
+                    m.d.sync += [
+                        dac_latch.as_value().eq(dac_latch.as_value() >> I2STDM.S_WIDTH),
+                        dac_channel.eq(dac_channel+1),
+                    ]
+                    with m.If(dac_channel == 3):
+                        m.next = 'DAC-WAIT-VALID'
 
         return m
 
