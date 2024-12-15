@@ -158,6 +158,9 @@ class I2SCalibrator(wiring.Component):
         dac_latch = Signal(data.ArrayLayout(ASQ, 4))
         m.d.comb += [
             mem_cal_out_rport.addr.eq(dac_channel),
+            dac_fifo.w_stream.payload.eq(
+                ((dac_latch[0].raw() - mem_cal_out_rport.data[0]) *
+                  mem_cal_out_rport.data[1])>>10),
         ]
         with m.FSM() as fsm:
             with m.State('DAC-WAIT-VALID'):
@@ -167,12 +170,7 @@ class I2SCalibrator(wiring.Component):
                    m.next = 'DAC-OUT'
             with m.State('DAC-OUT'):
                 with m.If(dac_fifo.w_stream.ready):
-                    m.d.comb += [
-                        dac_fifo.w_stream.payload.eq(
-                            ((dac_latch[0].as_value() - mem_cal_out_rport.data[0]) *
-                              mem_cal_out_rport.data[1])>>10),
-                        dac_fifo.w_stream.valid.eq(1),
-                    ]
+                    m.d.comb += dac_fifo.w_stream.valid.eq(1),
                     m.d.sync += [
                         dac_latch.as_value().eq(dac_latch.as_value() >> I2STDM.S_WIDTH),
                         dac_channel.eq(dac_channel+1),
@@ -183,23 +181,26 @@ class I2SCalibrator(wiring.Component):
         # ADC path calibration
 
         adc_channel = Signal(2)
-        adc_latch = Signal(data.ArrayLayout(ASQ, 4))
+        adc_cal = Signal(signed(I2STDM.S_WIDTH))
+        adc_sig = Signal.like(adc_cal)
         m.d.comb += [
             mem_cal_in_rport.addr.eq(adc_channel),
+            adc_sig.eq(adc_fifo.r_stream.payload),
+            adc_cal.eq(
+                ((-adc_sig - mem_cal_in_rport.data[0]) *
+                 mem_cal_in_rport.data[1])>>10),
         ]
         with m.FSM() as fsm:
             with m.State('ADC-GATHER'):
                 with m.If(adc_fifo.r_stream.valid):
-                    adc_cal = Signal(signed(I2STDM.S_WIDTH))
                     m.d.comb += [
-                        adc_cal.eq(
-                            ((-adc_fifo.r_stream.payload - mem_cal_in_rport.data[0]) *
-                             mem_cal_in_rport.data[1])>>10),
                         adc_fifo.r_stream.ready.eq(1),
                     ]
-                    m.d.sync += self.o_cal.payload.as_value().eq(
-                        self.o_cal.payload.as_value() >> I2STDM.S_WIDTH | (adc_cal << 3*I2STDM.S_WIDTH))
-                    m.d.sync += adc_channel.eq(adc_channel+1)
+                    m.d.sync += [
+                        self.o_cal.payload.as_value().eq(
+                            self.o_cal.payload.as_value() >> I2STDM.S_WIDTH | (adc_cal << 3*I2STDM.S_WIDTH)),
+                        adc_channel.eq(adc_channel+1),
+                    ]
                     with m.If(adc_channel == 3):
                         m.next = 'ADC-WAIT-READY'
             with m.State('ADC-WAIT-READY'):
