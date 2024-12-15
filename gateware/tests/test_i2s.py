@@ -24,6 +24,7 @@ class I2CTests(unittest.TestCase):
         cal = eurorack_pmod.I2SCalibrator()
         wiring.connect(m, dut.o, cal.i_uncal)
         wiring.connect(m, cal.o_uncal, dut.i)
+        m.d.comb += dut.en_dac.eq(cal.en_dac)
         m.submodules += [dut, cal]
         m = DomainRenamer({"audio": "sync"})(m)
 

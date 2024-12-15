@@ -50,37 +50,48 @@ class I2STDM(wiring.Component):
     S_WIDTH    = 16
     SLOT_WIDTH = 32
 
+    # CODEC pins
+
     mclk:   Out(1)
     bick:   Out(1)
     lrck:   Out(1)
     sdin1:  Out(1)
     sdout1: In(1)
 
+    # DAC/ADC sample streams (see note in docstring!)
+
+    en_dac: In(1)
+
     i: In(stream.Signature(signed(16)))
     o: Out(stream.Signature(signed(16)))
 
     def elaborate(self, platform):
         m = Module()
-        clkdiv      = Signal(8)
-        bit_counter = Signal(5)
-        bitsel      = Signal(range(self.S_WIDTH))
-        sample_i    = Signal(signed(self.S_WIDTH))
+        clkdiv       = Signal(8)
+        bit_counter  = Signal(5)
+        bitsel       = Signal(range(self.S_WIDTH))
+        sample_i     = Signal(signed(self.S_WIDTH))
+        channel      = Signal(2)
+        en_dac_latch = Signal()
         m.d.comb += [
             self.mclk  .eq(ClockSignal("audio")), # TODO 192KHz
             self.bick  .eq(clkdiv[0]),
             self.lrck  .eq(clkdiv[7]),
             bit_counter.eq(clkdiv[1:6]),
             bitsel.eq(self.S_WIDTH-bit_counter-1),
+            channel    .eq(clkdiv[6:8])
         ]
         m.d.audio += clkdiv.eq(clkdiv+1)
         with m.If(bit_counter == (self.SLOT_WIDTH-2)): # TODO s/-2/-1 if S_WIDTH > 24 needed
             with m.If(self.bick):
                 m.d.audio += self.o.payload.eq(0)
             with m.Else():
-                m.d.comb += [
-                    self.i.ready.eq(1),
-                    self.o.valid.eq(1),
-                ]
+                m.d.comb += self.o.valid.eq(1)
+                with m.If(en_dac_latch):
+                    m.d.comb += self.i.ready.eq(1)
+                with m.If(self.en_dac & (channel == 0)):
+                    m.d.comb += self.i.ready.eq(1)
+                    m.d.sync += en_dac_latch.eq(1)
         with m.If(self.bick):
             # BICK transition HI -> LO: Clock in W bits
             # On HI -> LO both SDIN and SDOUT do not transition.
@@ -114,6 +125,8 @@ class I2SCalibrator(wiring.Component):
     # calibrated samples -> DAC
     i_cal:    In(stream.Signature(data.ArrayLayout(ASQ, 4))) # sync domain
     o_uncal: Out(stream.Signature(signed(I2STDM.S_WIDTH)))   # audio domain
+
+    en_dac: Out(1)
 
     def __init__(self, stream_domain="sync", fifo_depth=32):
         self.stream_domain = stream_domain
@@ -177,6 +190,11 @@ class I2SCalibrator(wiring.Component):
                     ]
                     with m.If(dac_channel == 3):
                         m.next = 'DAC-WAIT-VALID'
+
+        # DAC startup
+
+        with m.If(dac_fifo.r_level > (self.fifo_depth // 2)):
+            m.d.sync += self.en_dac.eq(1)
 
         # ADC path calibration
 
@@ -662,6 +680,9 @@ class EurorackPmod(wiring.Component):
         wiring.connect(m, calibrator.o_uncal, i2stdm.i)
         wiring.connect(m, calibrator.o_cal, wiring.flipped(self.o_cal))
         wiring.connect(m, wiring.flipped(self.i_cal), calibrator.i_cal)
+
+        # DAC startup timing
+        m.d.comb += i2stdm.en_dac.eq(calibrator.en_dac)
 
         return m
 
