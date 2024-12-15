@@ -625,11 +625,11 @@ class EurorackPmod(wiring.Component):
             # LED auto/manual settings per jack
             with m.If(self.led_mode[n]):
                 if n <= 3:
-                    with m.If(self.i_cal.valid & self.jack[n]):
-                        m.d.sync += i2c_master.led[n].eq(self.i_cal.payload[n].raw()>>8),
+                    with m.If(self.o_cal.valid & self.jack[n]):
+                        m.d.sync += i2c_master.led[n].eq(self.o_cal.payload[n].raw()>>8),
                 else:
-                    with m.If(self.o_cal.valid):
-                        m.d.sync += i2c_master.led[n].eq(self.o_cal.payload[n-4].raw()>>8),
+                    with m.If(self.i_cal.valid):
+                        m.d.sync += i2c_master.led[n].eq(self.i_cal.payload[n-4].raw()>>8),
             with m.Else():
                 m.d.sync += i2c_master.led[n].eq(self.led[n]),
 
