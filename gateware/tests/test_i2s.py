@@ -39,7 +39,10 @@ class I2CTests(unittest.TestCase):
                     return 0.4*(math.sin(n*0.2) + math.sin(n))
                 v = fixed.Const(fn(n), shape=eurorack_pmod.ASQ)
                 ctx.set(dac_fifo.w_stream.valid,         1)
-                ctx.set(dac_fifo.w_stream.payload[0:16], v.as_value())
+                #ctx.set(dac_fifo.w_stream.payload[0:16],  v.as_value())
+                ctx.set(dac_fifo.w_stream.payload[16:32], v.as_value())
+                #ctx.set(dac_fifo.w_stream.payload[32:48], v.as_value())
+                #ctx.set(dac_fifo.w_stream.payload[48:64], v.as_value())
                 await ctx.tick()
 
             ctx.set(dac_fifo.w_stream.valid, 0)

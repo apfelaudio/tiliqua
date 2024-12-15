@@ -32,7 +32,7 @@ class XbeamSoc(TiliquaSoc):
     def __init__(self, **kwargs):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.
-        super().__init__(audio_192=True, audio_out_peripheral=False,
+        super().__init__(audio_192=False, audio_out_peripheral=False,
                          finalize_csr_bridge=False, **kwargs)
 
         # scope stroke bridge from audio stream
