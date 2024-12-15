@@ -73,7 +73,7 @@ class I2STDM(wiring.Component):
             bitsel.eq(self.S_WIDTH-bit_counter-1),
         ]
         m.d.audio += clkdiv.eq(clkdiv+1)
-        with m.If(bit_counter == (self.SLOT_WIDTH-1)):
+        with m.If(bit_counter == (self.SLOT_WIDTH-2)): # TODO s/-2/-1 if S_WIDTH > 24 needed
             with m.If(self.bick):
                 m.d.audio += self.o.payload.eq(0)
             with m.Else():
