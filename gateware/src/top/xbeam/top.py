@@ -71,18 +71,16 @@ class XbeamSoc(TiliquaSoc):
 
         pmod0 = self.pmod0_periph.pmod
 
-        m.submodules.astream = astream = eurorack_pmod.AudioStream(pmod0)
-
-        self.scope_periph.source = astream.istream
+        self.scope_periph.source = pmod0.o_cal
 
         with m.If(self.scope_periph.soc_en):
-            wiring.connect(m, astream.istream, self.scope_periph.i)
+            wiring.connect(m, pmod0.o_cal, self.scope_periph.i)
         with m.Else():
-            wiring.connect(m, astream.istream, self.vector_periph.i)
+            wiring.connect(m, pmod0.o_cal, self.vector_periph.i)
 
         m.d.comb += [
-            astream.ostream.valid.eq(astream.istream.valid & astream.istream.ready),
-            astream.ostream.payload.eq(astream.istream.payload),
+            pmod0.i_cal.valid.eq(pmod0.o_cal.valid & pmod0.o_cal.ready),
+            pmod0.i_cal.payload.eq(pmod0.o_cal.payload),
         ]
 
         # Memory controller hangs if we start making requests to it straight away.
