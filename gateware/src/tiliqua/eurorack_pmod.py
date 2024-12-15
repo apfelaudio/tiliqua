@@ -583,18 +583,6 @@ class EurorackPmod(wiring.Component):
     # If an LED is in manual, this is signed i8 from -green to +red.
     led: In(8).array(8)
 
-    # TODO
-    # Read from the onboard I2C eeprom.
-    # These will be valid a few hundred milliseconds after boot.
-    eeprom_mfg: Out(8)
-    eeprom_dev: Out(8)
-    eeprom_serial: Out(32)
-
-    # Signals only used for calibration
-    sample_adc: Out(signed(WIDTH)).array(4)
-    # TODO
-    force_dac_output: In(signed(WIDTH))
-
     def __init__(self, pmod_pins, hardware_r33=True, touch_enabled=True, audio_192=False):
 
         self.pmod_pins = pmod_pins
@@ -602,34 +590,10 @@ class EurorackPmod(wiring.Component):
 
         super().__init__()
 
-    def add_verilog_sources(self, platform):
-
-        #
-        # Verilog sources from `eurorack-pmod` project.
-        #
-        # Assumes `eurorack-pmod` repo is checked out in this directory and
-        # `git submodule update --init` has been run!
-        #
-
-        vroot = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                             "../../deps/eurorack-pmod/gateware")
-
-        define_192 = "`define AK4619_192KHZ" if self.audio_192 else ""
-        platform.add_file("eurorack_pmod_defines.sv",
-                          f"`define HW_R33\n{define_192}")
-        platform.add_file("cal/cal_mem_default_r33.hex",
-                          open(os.path.join(vroot, "cal/cal_mem_default_r33.hex")))
-
-        # Verilog implementation
-        platform.add_file("ak4619.sv", open(os.path.join(vroot, "drivers/ak4619.sv")))
-        platform.add_file("cal.sv", open(os.path.join(vroot, "cal/cal.sv")))
-
 
     def elaborate(self, platform) -> Module:
 
         m = Module()
-
-        self.add_verilog_sources(platform)
 
         m.submodules.i2c_master = i2c_master = I2CMaster(audio_192=self.audio_192)
 
@@ -661,7 +625,7 @@ class EurorackPmod(wiring.Component):
             # LED auto/manual settings per jack
             with m.If(self.led_mode[n]):
                 if n <= 3:
-                    with m.If(self.i_cal.valid):
+                    with m.If(self.i_cal.valid & self.jack[n]):
                         m.d.sync += i2c_master.led[n].eq(self.i_cal.payload[n].raw()>>8),
                 else:
                     with m.If(self.o_cal.valid):
