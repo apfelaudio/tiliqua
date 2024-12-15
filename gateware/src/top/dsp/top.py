@@ -828,10 +828,9 @@ class CoreTop(Elaboratable):
                 pmod0.fs_strobe.eq(self.fs_strobe),
             ]
 
-        m.submodules.audio_stream = audio_stream = eurorack_pmod.AudioStream(pmod0)
         m.submodules.core = self.core
-        wiring.connect(m, audio_stream.istream, self.core.i)
-        wiring.connect(m, self.core.o, audio_stream.ostream)
+        wiring.connect(m, pmod0.o_cal, self.core.i)
+        wiring.connect(m, self.core.o, pmod0.i_cal)
 
         if hasattr(self.core, "i_midi") and sim.is_hw(platform):
             # For now, if a core requests midi input, we connect it up

@@ -662,17 +662,17 @@ class EurorackPmod(wiring.Component):
             with m.If(3000 < pdn_cnt):
                 m.d.comb += pmod_pins.pdn_clk.o.eq(1)
 
-        m.submodules.ak4619 = ak4619 = AK4619()
+        m.submodules.i2stdm = i2stdm = I2STDM()
         m.d.comb += [
-            pmod_pins.mclk.o.eq(ak4619.mclk),
-            pmod_pins.bick.o.eq(ak4619.bick),
-            pmod_pins.lrck.o.eq(ak4619.lrck),
-            pmod_pins.sdin1.o.eq(ak4619.sdin1),
-            ak4619.sdout1.eq(pmod_pins.sdout1.i),
+            pmod_pins.mclk.o.eq(i2stdm.mclk),
+            pmod_pins.bick.o.eq(i2stdm.bick),
+            pmod_pins.lrck.o.eq(i2stdm.lrck),
+            pmod_pins.sdin1.o.eq(i2stdm.sdin1),
+            i2stdm.sdout1.eq(pmod_pins.sdout1.i),
         ]
-        m.submodules.calibrator = calibrator = Calibrator()
-        wiring.connect(m, ak4619.o, calibrator.i_uncal)
-        wiring.connect(m, calibrator.o_uncal, ak4619.i)
+        m.submodules.calibrator = calibrator = I2SCalibrator()
+        wiring.connect(m, i2stdm.o, calibrator.i_uncal)
+        wiring.connect(m, calibrator.o_uncal, i2stdm.i)
         wiring.connect(m, calibrator.o_cal, wiring.flipped(self.o_cal))
         wiring.connect(m, wiring.flipped(self.i_cal), calibrator.i_cal)
 
