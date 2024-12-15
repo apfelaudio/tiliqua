@@ -78,6 +78,12 @@ class AK4619(wiring.Component):
          - Fs must fall within 8kHz <= Fs <= 48Khz.
     - TDM == 0b1 and DCF == 0b010, which means:
          - TDM128 mode I2S compatible.
+
+    WARN: :py:`i`, :py:`o` do NOT adhere to normal stream
+    rules. :py:`i.ready` and :py:`o.valid` are simply strobed
+    for 1 cycle in the :py:`audio` domain at the end of every sample
+    slot. Channel 0 is scheduled first on both in and out streams,
+    samples emitted and consumed for channels 0, 1, 2, 3, 0, 1 ...
     """
 
     N_CHANNELS = 4
@@ -132,9 +138,23 @@ class AK4619(wiring.Component):
 
 class Calibrator(wiring.Component):
 
+    """
+    Convert uncalibrated sample streams (1 sample per payload)
+    into calibrated sample streams (4 samples per payload, each channel
+    has its own slot).
+
+    The goal is to remove the CODEC DC offset and scale raw counts to
+    14.2 fixed-point (4 counts / mV).
+
+    WARN: these IOs do NOT adhere to normal stream rules. FIFOs must
+    be used to implement backpressure (:py:`AudioStream` is used for this).
+    """
+
+    # ADC -> calibrated samples
     i_uncal:  In(stream.Signature(signed(AK4619.S_WIDTH)))
     o_cal:   Out(stream.Signature(data.ArrayLayout(ASQ, 4)))
 
+    # calibrated samples -> DAC
     i_cal:    In(stream.Signature(data.ArrayLayout(ASQ, 4)))
     o_uncal: Out(stream.Signature(signed(AK4619.S_WIDTH)))
 
@@ -175,7 +195,6 @@ class Calibrator(wiring.Component):
                 ((i_select - mem_cal_out_rport.data[0]) * mem_cal_out_rport.data[1])>>10)
         with m.If(self.i_uncal.valid):
             m.d.comb += [
-                self.i_cal.ready.eq(1),
                 self.o_uncal.valid.eq(1),
             ]
             m.d.audio += [
@@ -186,6 +205,7 @@ class Calibrator(wiring.Component):
                 channel.eq(channel+1),
             ]
             with m.If(channel == 0):
+                m.d.comb += self.i_cal.ready.eq(1),
                 m.d.audio += [
                     self.o_cal.valid.eq(1),
                     latch.eq(self.i_cal.payload),
