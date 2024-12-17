@@ -69,7 +69,9 @@ def top_level_cli(
         parser.add_argument('--fw-only', action='store_true',
                             help="SoC designs: stop after rust FW compilation (optionally re-flash)")
         parser.add_argument('--fw-spiflash-offset', type=str, default="0xc0000",
-                            help="SoC designs: expect firmware flashed at this address.")
+                            help="SoC designs: expect firmware flashed at this offset.")
+        parser.add_argument('--fw-psram-offset', type=str, default=None,
+                            help="SoC designs: expect firmware in PSRAM at this offset.")
         # TODO: is this ok on windows?
         name_default = os.path.normpath(sys.argv[0]).split(os.sep)[2].replace("_", "-").upper()
         parser.add_argument('--name', type=str, default=name_default,
@@ -122,6 +124,8 @@ def top_level_cli(
         kwargs["firmware_bin_path"] = os.path.join(rust_fw_root, rust_fw_bin)
         if args.fw_spiflash_offset is not None:
             kwargs["spiflash_fw_offset"] = int(args.fw_spiflash_offset, 16)
+        if args.fw_psram_offset is not None:
+            kwargs["psram_fw_offset"] = int(args.fw_psram_offset, 16)
         kwargs["ui_name"] = args.name
         kwargs["ui_sha"]  = repo.head.object.hexsha[:6]
 

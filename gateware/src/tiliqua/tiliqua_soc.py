@@ -138,7 +138,7 @@ class TiliquaSoc(Component):
     def __init__(self, *, firmware_bin_path, dvi_timings, ui_name, ui_sha, audio_192=False,
                  audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
                  video_rotate_90=False, mainram_size=0x2000, spiflash_fw_offset=None,
-                 cpu_variant="tiliqua_rv32im"):
+                 psram_fw_offset=None, cpu_variant="tiliqua_rv32im"):
 
         super().__init__({})
 
@@ -175,16 +175,24 @@ class TiliquaSoc(Component):
         self.video_periph_base    = 0x00000900
 
         # Some settings depend on whether code is in block RAM or SPI flash
-        if spiflash_fw_offset is None:
-            self.reset_addr           = self.mainram_base
-            self.spiflash_fw_base     = None
-        else:
-            self.spiflash_fw_size     = 0x80000 # 512KiB
+        if psram_fw_offset is not None:
+            self.psram_fw_offset = psram_fw_offset
+            self.text_region = "psram"
+            self.fw_base     = self.psram_base + psram_fw_offset
+            self.fw_size     = 0x80000 # 512KiB
+            self.reset_addr  = self.fw_base
+        elif spiflash_fw_offset is not None:
+            self.spiflash_fw_offset = spiflash_fw_offset
             # CLI provides the offset (indexed from 0 on the spiflash), however
             # on the Vex it is memory mapped from self.spiflash_base onward.
+            self.text_region          = "spiflash"
             self.spiflash_fw_offset   = spiflash_fw_offset
-            self.spiflash_fw_base     = self.spiflash_base + spiflash_fw_offset
-            self.reset_addr           = self.spiflash_fw_base
+            self.fw_base              = self.spiflash_base + spiflash_fw_offset
+            self.fw_size              = 0x80000 # 512KiB
+            self.reset_addr           = self.fw_base
+        else:
+            self.reset_addr  = self.mainram_base
+            self.fw_base     = None
 
         # cpu
         self.cpu = VexRiscv(
@@ -301,7 +309,7 @@ class TiliquaSoc(Component):
 
         m = Module()
 
-        if self.spiflash_fw_base is None:
+        if self.fw_base is None:
             # Init BRAM program memory if we aren't loading from SPI flash.
             self.mainram.init = readbin.get_mem_data(self.firmware_bin_path, data_width=32, endianness="little")
             assert self.mainram.init
@@ -425,7 +433,7 @@ class TiliquaSoc(Component):
     def genmem(self, dst_mem):
         """Generate linker regions for Rust (memory.x)."""
         print("Generating (rust) memory.x ...", dst_mem)
-        if self.spiflash_fw_base is None:
+        if self.fw_base is None:
             # .text is in block RAM
             memory_x = (
                 "MEMORY {{\n"
@@ -447,10 +455,10 @@ class TiliquaSoc(Component):
             memory_x = (
                 "MEMORY {{\n"
                 "    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}\n"
-                "    spiflash : ORIGIN = {spiflash_base}, LENGTH = {spiflash_size}\n"
+                "    {text_region} : ORIGIN = {spiflash_base}, LENGTH = {spiflash_size}\n"
                 "}}\n"
-                "REGION_ALIAS(\"REGION_TEXT\", spiflash);\n"
-                "REGION_ALIAS(\"REGION_RODATA\", spiflash);\n"
+                "REGION_ALIAS(\"REGION_TEXT\", {text_region});\n"
+                "REGION_ALIAS(\"REGION_RODATA\", {text_region});\n"
                 "REGION_ALIAS(\"REGION_DATA\", mainram);\n"
                 "REGION_ALIAS(\"REGION_BSS\", mainram);\n"
                 "REGION_ALIAS(\"REGION_HEAP\", mainram);\n"
@@ -459,8 +467,9 @@ class TiliquaSoc(Component):
             with open(dst_mem, "w") as f:
                 f.write(memory_x.format(mainram_base=hex(self.mainram_base),
                                         mainram_size=hex(self.mainram.size),
-                                        spiflash_base=hex(self.spiflash_fw_base),
-                                        spiflash_size=hex(self.spiflash_fw_size),
+                                        spiflash_base=hex(self.fw_base),
+                                        spiflash_size=hex(self.fw_size),
+                                        text_region=self.text_region,
                                         ))
 
     def genconst(self, dst):

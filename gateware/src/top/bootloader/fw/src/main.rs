@@ -132,6 +132,12 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
             app.time_since_reboot_requested += app.ui.period_ms;
             // Give codec time to mute and display time to draw 'REBOOTING'
             if app.time_since_reboot_requested > 500 {
+                let psram_ptr = PSRAM_BASE as *mut u32;
+                let spiflash_ptr = SPIFLASH_BASE as *mut u32;
+                for i in 0..0x80000usize {
+                    let d = spiflash_ptr.offset(0x1c0000usize + i).read_volatile();
+                    psram_ptr.offset(0x200000usize + i).write_volatile(d);
+                }
                 info!("BITSTREAM{}\n\r", n);
             }
         }
