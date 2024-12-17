@@ -72,6 +72,11 @@ int main(int argc, char** argv) {
     uint8_t *psram_data = (uint8_t*)malloc(psram_size_bytes);
     memset(psram_data, 0, psram_size_bytes);
 
+#ifdef PSRAM_FW_OFFSET
+    std::ifstream fin(FIRMWARE_BIN_PATH, std::ios::in | std::ios::binary);
+    fin.read((char*)psram_data + PSRAM_FW_OFFSET, psram_size_bytes);
+#endif
+
     uint32_t im_stride = 3;
     uint8_t *image_data = (uint8_t*)malloc(DVI_H_ACTIVE*DVI_V_ACTIVE*im_stride);
     memset(image_data, 0, DVI_H_ACTIVE*DVI_V_ACTIVE*im_stride);
