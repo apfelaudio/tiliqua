@@ -134,11 +134,26 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
             if app.time_since_reboot_requested > 500 {
                 let psram_ptr = PSRAM_BASE as *mut u32;
                 let spiflash_ptr = SPIFLASH_BASE as *mut u32;
-                for i in 0..0x80000usize {
-                    let d = spiflash_ptr.offset(0x1c0000usize + i).read_volatile();
-                    psram_ptr.offset(0x200000usize + i).write_volatile(d);
+                for i in 0..0x20000isize {
+                    unsafe {
+                    let d = spiflash_ptr.offset(0x1c0000isize/4isize + i).read_volatile();
+                    if i < 100 {
+                        info!("DATA {} @{}\n\r", d, i);
+                    }
+                    psram_ptr.offset(0x200000isize/4isize + i).write_volatile(d);
+                    }
+                }
+                for i in 0..0x20000isize {
+                    unsafe {
+                    let d1 = psram_ptr.offset(0x200000isize/4isize + i).read_volatile();
+                    let d2 = spiflash_ptr.offset(0x1c0000isize/4isize + i).read_volatile();
+                    if d1 != d2 {
+                        info!("ERROR {} {} @{}\n\r", d1, d2, i);
+                    }
+                    }
                 }
                 info!("BITSTREAM{}\n\r", n);
+                loop {}
             }
         }
     });
