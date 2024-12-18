@@ -3,7 +3,7 @@
 
 use critical_section::Mutex;
 use core::convert::TryInto;
-use log::info;
+use log::{info, error};
 use riscv_rt::entry;
 use irq::handler;
 use core::cell::RefCell;
@@ -26,7 +26,7 @@ use embedded_graphics::{
 
 use opts::Options;
 use hal::pca9635::Pca9635Driver;
-use crate::manifest::Bitstream;
+use crate::manifest::*;
 
 impl_ui!(UI,
          Options,
@@ -43,10 +43,11 @@ struct App {
     ui: UI,
     reboot_n: Option<usize>,
     time_since_reboot_requested: u32,
+    manifest: BitstreamManifest,
 }
 
 impl App {
-    pub fn new(opts: Options) -> Self {
+    pub fn new(opts: Options, manifest: BitstreamManifest) -> Self {
         let peripherals = unsafe { pac::Peripherals::steal() };
         let encoder = Encoder0::new(peripherals.ENCODER0);
         let i2cdev = I2c0::new(peripherals.I2C0);
@@ -57,6 +58,7 @@ impl App {
                         encoder, pca9635, pmod),
             reboot_n: None,
             time_since_reboot_requested: 0u32,
+            manifest,
         }
     }
 }
@@ -132,25 +134,35 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
             app.time_since_reboot_requested += app.ui.period_ms;
             // Give codec time to mute and display time to draw 'REBOOTING'
             if app.time_since_reboot_requested > 500 {
-                let psram_ptr = PSRAM_BASE as *mut u32;
-                let spiflash_ptr = SPIFLASH_BASE as *mut u32;
-                for i in 0..0x20000isize {
-                    unsafe {
-                    let d = spiflash_ptr.offset(0x1c0000isize/4isize + i).read_volatile();
-                    if i < 100 {
-                        info!("DATA {} @{}\n\r", d, i);
+                // Is there a firmware image to copy to PSRAM before we switch bitstreams?
+                if let Some(fw_img) = &app.manifest.bitstreams[n].fw_img {
+                    let psram_ptr = PSRAM_BASE as *mut u32;
+                    let spiflash_ptr = SPIFLASH_BASE as *mut u32;
+                    let spiflash_offset_words = fw_img.spiflash_src as isize / 4isize;
+                    let psram_offset_words = fw_img.psram_dst as isize / 4isize;
+                    let size_words = fw_img.size as isize / 4isize + 1;
+                    info!("Copying {:#x}..{:#x} (spi flash) to {:#x}..{:#x} (psram) ...",
+                          SPIFLASH_BASE + fw_img.spiflash_src as usize,
+                          SPIFLASH_BASE + (fw_img.spiflash_src + fw_img.size) as usize,
+                          PSRAM_BASE + fw_img.psram_dst as usize,
+                          PSRAM_BASE + (fw_img.psram_dst + fw_img.size) as usize);
+                    for i in 0..size_words {
+                        unsafe {
+                            let d = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
+                            psram_ptr.offset(psram_offset_words + i).write_volatile(d);
+                        }
                     }
-                    psram_ptr.offset(0x200000isize/4isize + i).write_volatile(d);
+                    info!("Verify {} KiB copied correctly ...", (size_words*4) / 1024);
+                    for i in 0..size_words {
+                        unsafe {
+                            let d1 = psram_ptr.offset(psram_offset_words + i).read_volatile();
+                            let d2 = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
+                            if d1 != d2 {
+                                error!("fw_img: {} != {} @ {}\n\r", d1, d2, i);
+                            }
+                        }
                     }
-                }
-                for i in 0..0x20000isize {
-                    unsafe {
-                    let d1 = psram_ptr.offset(0x200000isize/4isize + i).read_volatile();
-                    let d2 = spiflash_ptr.offset(0x1c0000isize/4isize + i).read_volatile();
-                    if d1 != d2 {
-                        info!("ERROR {} {} @{}\n\r", d1, d2, i);
-                    }
-                    }
+                    info!("copy OK. reconfigure and jump!");
                 }
                 info!("BITSTREAM{}\n\r", n);
                 loop {}
@@ -191,10 +203,18 @@ fn main() -> ! {
         info!("- name '{}'",  bitstream.name);
         info!("- brief '{}'", bitstream.brief);
         info!("- video '{}'", bitstream.video);
+        if let Some(img) = bitstream.fw_img.clone() {
+            info!("- fw_img:");
+            info!("\t- spiflash_src=0x{:#x}", img.spiflash_src);
+            info!("\t- psram_dst=0x{:#x}", img.psram_dst);
+            info!("\t- size=0x{:#x}", img.size);
+        } else {
+            info!("- fw_img: None");
+        }
     }
 
     let opts = opts::Options::new(&manifest);
-    let app = Mutex::new(RefCell::new(App::new(opts)));
+    let app = Mutex::new(RefCell::new(App::new(opts, manifest.clone())));
 
     handler!(timer0 = || timer0_handler(&app));
 

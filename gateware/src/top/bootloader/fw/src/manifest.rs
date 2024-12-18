@@ -7,13 +7,21 @@ use log::info;
 use tiliqua_lib::opt::OptionString;
 
 #[derive(Deserialize, Clone)]
+pub struct FirmwareImage {
+    pub spiflash_src: u32,
+    pub psram_dst: u32,
+    pub size: u32,
+}
+
+#[derive(Deserialize, Clone)]
 pub struct Bitstream {
     pub name: OptionString,
     pub brief: String<128>,
     pub video: String<64>,
+    pub fw_img: Option<FirmwareImage>
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct BitstreamManifest {
     pub magic: u32,
     pub bitstreams: [Bitstream; N_BITSTREAMS],
@@ -26,6 +34,7 @@ impl BitstreamManifest {
             name:  unknown.clone(),
             brief: String::new(),
             video: String::new(),
+            fw_img: None,
         };
         BitstreamManifest {
             magic: 0xDEADBEEFu32,
