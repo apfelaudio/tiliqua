@@ -907,6 +907,7 @@ def argparse_fragment(args):
         sys.exit(-1)
 
     touch, cls_name = CORES[args.dsp_core]
+    args.name = args.name + '-' + args.dsp_core.upper().replace('_','-')
     return {
         "dsp_core": cls_name,
         "enable_touch": touch,
