@@ -30,6 +30,7 @@ is usually hammered with video traffic).
 TODO: describe each peripheral in detail
 """
 
+import enum
 import shutil
 import subprocess
 import os
@@ -55,6 +56,10 @@ from tiliqua                                     import sim, eurorack_pmod
 
 from tiliqua.raster                              import Persistance
 
+class FirmwareLocation(str, enum.Enum):
+    BRAM      = "bram"
+    SPIFlash  = "spiflash"
+    PSRAM     = "psram"
 
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
@@ -137,8 +142,8 @@ class VideoPeripheral(wiring.Component):
 class TiliquaSoc(Component):
     def __init__(self, *, firmware_bin_path, dvi_timings, ui_name, ui_sha, audio_192=False,
                  audio_out_peripheral=True, touch=False, finalize_csr_bridge=True,
-                 video_rotate_90=False, mainram_size=0x2000, spiflash_fw_offset=None,
-                 psram_fw_offset=None, cpu_variant="tiliqua_rv32im"):
+                 video_rotate_90=False, mainram_size=0x2000, fw_location=None,
+                 fw_offset=None, cpu_variant="tiliqua_rv32im"):
 
         super().__init__({})
 
@@ -175,24 +180,21 @@ class TiliquaSoc(Component):
         self.video_periph_base    = 0x00000900
 
         # Some settings depend on whether code is in block RAM or SPI flash
-        if psram_fw_offset is not None:
-            self.psram_fw_offset = psram_fw_offset
-            self.text_region = "psram"
-            self.fw_base     = self.psram_base + psram_fw_offset
-            self.fw_size     = 0x80000 # 512KiB
-            self.reset_addr  = self.fw_base
-        elif spiflash_fw_offset is not None:
-            self.spiflash_fw_offset = spiflash_fw_offset
-            # CLI provides the offset (indexed from 0 on the spiflash), however
-            # on the Vex it is memory mapped from self.spiflash_base onward.
-            self.text_region          = "spiflash"
-            self.spiflash_fw_offset   = spiflash_fw_offset
-            self.fw_base              = self.spiflash_base + spiflash_fw_offset
-            self.fw_size              = 0x80000 # 512KiB
-            self.reset_addr           = self.fw_base
-        else:
-            self.reset_addr  = self.mainram_base
-            self.fw_base     = None
+        self.fw_location = fw_location
+        match fw_location:
+            case FirmwareLocation.BRAM:
+                self.reset_addr  = self.mainram_base
+                self.fw_base     = None
+            case FirmwareLocation.SPIFlash:
+                # CLI provides the offset (indexed from 0 on the spiflash), however
+                # on the Vex it is memory mapped from self.spiflash_base onward.
+                self.fw_base     = self.spiflash_base + fw_offset
+                self.reset_addr  = self.fw_base
+                self.fw_max_size = 0x80000 # 512KiB
+            case FirmwareLocation.PSRAM:
+                self.fw_base     = self.psram_base + fw_offset
+                self.reset_addr  = self.fw_base
+                self.fw_max_size = 0x80000 # 512KiB
 
         # cpu
         self.cpu = VexRiscv(
@@ -309,7 +311,7 @@ class TiliquaSoc(Component):
 
         m = Module()
 
-        if self.fw_base is None:
+        if self.fw_location == FirmwareLocation.BRAM:
             # Init BRAM program memory if we aren't loading from SPI flash.
             self.mainram.init = readbin.get_mem_data(self.firmware_bin_path, data_width=32, endianness="little")
             assert self.mainram.init
@@ -433,8 +435,8 @@ class TiliquaSoc(Component):
     def genmem(self, dst_mem):
         """Generate linker regions for Rust (memory.x)."""
         print("Generating (rust) memory.x ...", dst_mem)
-        if self.fw_base is None:
-            # .text is in block RAM
+        if self.fw_location == FirmwareLocation.BRAM:
+            # .text, .rodata in shared block RAM region
             memory_x = (
                 "MEMORY {{\n"
                 "    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}\n"
@@ -451,7 +453,7 @@ class TiliquaSoc(Component):
                                         mainram_size=hex(self.mainram.size),
                                         ))
         else:
-            # .text is in SPI flash
+            # .text, .rodata stored elsewhere (SPI flash or PSRAM)
             memory_x = (
                 "MEMORY {{\n"
                 "    mainram : ORIGIN = {mainram_base}, LENGTH = {mainram_size}\n"
@@ -468,8 +470,8 @@ class TiliquaSoc(Component):
                 f.write(memory_x.format(mainram_base=hex(self.mainram_base),
                                         mainram_size=hex(self.mainram.size),
                                         spiflash_base=hex(self.fw_base),
-                                        spiflash_size=hex(self.fw_size),
-                                        text_region=self.text_region,
+                                        spiflash_size=hex(self.fw_max_size),
+                                        text_region=self.fw_location.value,
                                         ))
 
     def genconst(self, dst):
