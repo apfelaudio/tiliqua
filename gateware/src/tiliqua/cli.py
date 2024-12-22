@@ -16,7 +16,7 @@ import sys
 
 from tiliqua                     import sim, video
 from tiliqua.tiliqua_platform    import *
-from tiliqua.tiliqua_soc         import TiliquaSoc
+from tiliqua.tiliqua_soc         import TiliquaSoc, FirmwareLocation
 from vendor.ila                  import AsyncSerialILAFrontend
 
 class CliAction(str, enum.Enum):
@@ -68,10 +68,25 @@ def top_level_cli(
                             help="SoC designs: stop after rust PAC generation")
         parser.add_argument('--fw-only', action='store_true',
                             help="SoC designs: stop after rust FW compilation (optionally re-flash)")
-        parser.add_argument('--fw-spiflash-offset', type=str, default=None,
-                            help="SoC designs: expect firmware flashed at this offset.")
-        parser.add_argument('--fw-psram-offset', type=str, default="0x200000",
-                            help="SoC designs: expect firmware in PSRAM at this offset.")
+        parser.add_argument("--fw-location",
+                            type=FirmwareLocation,
+                            default=FirmwareLocation.SPIFlash.value,
+                            choices=[
+                                FirmwareLocation.BRAM.value,
+                                FirmwareLocation.SPIFlash.value,
+                                FirmwareLocation.PSRAM.value,
+                            ],
+                            help=(
+                                "SoC designs: firmware (.text, .rodata) load strategy. `bram`: firmware "
+                                "is baked into bram in the built bitstream. `spiflash`: firmware is "
+                                "assumed flashed to spiflash at the provided `--fw-offset`. "
+                                "'psram': firmware is assumed already copied to PSRAM (by a bootloader) "
+                                "at the provided `--fw-offset`.")
+                            )
+        parser.add_argument('--fw-offset', type=str, default="0xc0000",
+                            help="SoC designs: See `--fw-location`.")
+
+
         # TODO: is this ok on windows?
         name_default = os.path.normpath(sys.argv[0]).split(os.sep)[2].replace("_", "-").upper()
         parser.add_argument('--name', type=str, default=name_default,
@@ -122,10 +137,8 @@ def top_level_cli(
         rust_fw_bin  = "firmware.bin"
         rust_fw_root = os.path.join(path, "fw")
         kwargs["firmware_bin_path"] = os.path.join(rust_fw_root, rust_fw_bin)
-        if args.fw_spiflash_offset is not None:
-            kwargs["spiflash_fw_offset"] = int(args.fw_spiflash_offset, 16)
-        if args.fw_psram_offset is not None:
-            kwargs["psram_fw_offset"] = int(args.fw_psram_offset, 16)
+        kwargs["fw_location"] = args.fw_location
+        kwargs["fw_offset"] = int(args.fw_offset, 16)
         kwargs["ui_name"] = args.name
         kwargs["ui_sha"]  = repo.head.object.hexsha[:6]
 
@@ -172,24 +185,45 @@ def top_level_cli(
         fragment.genconst("src/rs/lib/src/generated_constants.rs")
         TiliquaSoc.compile_firmware(rust_fw_root, rust_fw_bin)
 
-        # Generate firmware flashing arguments
-        if "spiflash_fw_offset" in kwargs or "psram_fw_offset" in kwargs:
-            fw_path = kwargs["firmware_bin_path"]
-            fw_offset = (f"{args.fw_spiflash_offset}"
-                         if "spiflash_fw_offset" in kwargs else
-                         "<spiflash_offset_src>")
-            args_flash_firmware = [
-                "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", fw_offset,
-                "--file-type", "raw", f"{fw_path}"
-            ]
+        def maybe_flash_firmware(args, kwargs, force_flash=False):
+            print()
+            match args.fw_location:
+                case FirmwareLocation.BRAM:
+                    print("Note: Firmware is stored in BRAM, it is not possible to flash firmware "
+                          "and bitstream separately. The bitstream contains the firmware.")
+                case FirmwareLocation.SPIFlash:
+                    args_flash_firmware = [
+                        "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", f"{args.fw_offset}",
+                        "--file-type", "raw", kwargs["firmware_bin_path"]
+                    ]
+                    print("Flash firmware with:")
+                    print("\t$", ' '.join(args_flash_firmware))
+                    if args.flash or force_flash:
+                        subprocess.check_call(args_flash_firmware, env=os.environ)
+                case FirmwareLocation.PSRAM:
+                    args_flash_firmware = [
+                        "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", "<spiflash_offset>",
+                        "--file-type", "raw", kwargs["firmware_bin_path"]
+                    ]
+                    firmware_size = os.path.getsize(kwargs["firmware_bin_path"])
+                    print("Note: This bitstream expects firmware already copied from SPI flash to PSRAM "
+                          "by a bootloader. ")
+                    print("Update the bootloader manifest fields like:\n"
+                          '```\n'
+                          '"fw_img":\n'
+                          '{\n'
+                          f'    "spiflash_src": <spiflash_offset>,\n'
+                          f'    "psram_dst": {kwargs["fw_offset"]},\n'
+                          f'    "size": {firmware_size}\n'
+                          '}\n'
+                          '```')
+                    print("And make sure firmware is flashed to spiflash (ensure matching <spiflash_offset>!) with:")
+                    print("\t$", ' '.join(args_flash_firmware))
+                    print("Finally, launch it with the bootloader.")
 
         # Optionally stop here if --fw-only is specified
         if args.fw_only:
-            if args_flash_firmware:
-                print("Flash firmware with:")
-                print("\t$", ' '.join(args_flash_firmware))
-                if args.flash:
-                    subprocess.check_call(args_flash_firmware, env=os.environ)
+            maybe_flash_firmware(args, kwargs)
             sys.exit(0)
 
         # Simulation configuration
@@ -231,26 +265,24 @@ def top_level_cli(
 
         # Print size information and some flashing instructions
         bitstream_path = "build/top.bit"
-        args_flash_bitstream = ["sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", bitstream_path]
         bitstream_size = os.path.getsize(bitstream_path)
-        print(f"Bitstream size (@ offset 0x0): {bitstream_size//1024} KiB")
-        if args_flash_firmware:
-            firmware_size = os.path.getsize(args_flash_firmware[-1])
-            # TODO: relative assert based on 'slot' at which bitstream is flashed, not always zero!
-            fw_offset = kwargs["spiflash_fw_offset"]
-            assert fw_offset > bitstream_size, "firmware address overlaps bitstream!"
-            print(f"Firmware size (@ offset {hex(fw_offset)}): {firmware_size//1024} KiB")
-            print("Flash firmware with:")
-            print("\t$", ' '.join(args_flash_firmware))
+        print(f"Bitstream size: {bitstream_size//1024} KiB")
+        if isinstance(fragment, TiliquaSoc):
+            firmware_size = os.path.getsize(kwargs["firmware_bin_path"])
+            print(f"Firmware size: {firmware_size//1024} KiB")
+
+        args_flash_bitstream = ["sudo", "openFPGALoader", "-c", "dirtyJtag",
+                                "-f", bitstream_path]
         print("Flash bitstream with:")
         print("\t$", ' '.join(args_flash_bitstream))
+
+        if isinstance(fragment, TiliquaSoc):
+            maybe_flash_firmware(args, kwargs, force_flash=hw_platform.ila)
 
         if args.flash or hw_platform.ila:
             # ILA situation always requires flashing, as we want to make sure
             # we aren't getting data from an old bitstream before starting the
             # ILA frontend.
-            if args_flash_firmware:
-                subprocess.check_call(args_flash_firmware, env=os.environ)
             subprocess.check_call(args_flash_bitstream, env=os.environ)
 
         if hw_platform.ila:
