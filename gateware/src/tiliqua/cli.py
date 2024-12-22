@@ -68,9 +68,9 @@ def top_level_cli(
                             help="SoC designs: stop after rust PAC generation")
         parser.add_argument('--fw-only', action='store_true',
                             help="SoC designs: stop after rust FW compilation (optionally re-flash)")
-        parser.add_argument('--fw-spiflash-offset', type=str, default="0xc0000",
+        parser.add_argument('--fw-spiflash-offset', type=str, default=None,
                             help="SoC designs: expect firmware flashed at this offset.")
-        parser.add_argument('--fw-psram-offset', type=str, default=None,
+        parser.add_argument('--fw-psram-offset', type=str, default="0x200000",
                             help="SoC designs: expect firmware in PSRAM at this offset.")
         # TODO: is this ok on windows?
         name_default = os.path.normpath(sys.argv[0]).split(os.sep)[2].replace("_", "-").upper()
@@ -173,10 +173,13 @@ def top_level_cli(
         TiliquaSoc.compile_firmware(rust_fw_root, rust_fw_bin)
 
         # Generate firmware flashing arguments
-        if kwargs["spiflash_fw_offset"] is not None:
+        if "spiflash_fw_offset" in kwargs or "psram_fw_offset" in kwargs:
             fw_path = kwargs["firmware_bin_path"]
+            fw_offset = (f"{args.fw_spiflash_offset}"
+                         if "spiflash_fw_offset" in kwargs else
+                         "<spiflash_offset_src>")
             args_flash_firmware = [
-                "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", f"{args.fw_spiflash_offset}",
+                "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", fw_offset,
                 "--file-type", "raw", f"{fw_path}"
             ]
 
