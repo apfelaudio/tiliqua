@@ -97,15 +97,16 @@ def top_level_cli(
                                 "'psram': firmware is assumed already copied to PSRAM (by a bootloader) "
                                 "at the provided `--fw-offset`.")
                             )
-        parser.add_argument('--fw-offset', type=str, default="0xc0000",
+        parser.add_argument('--fw-offset', type=str, default=None,
                             help="SoC designs: See `--fw-location`.")
 
 
-        # TODO: is this ok on windows?
-        name_default = os.path.normpath(sys.argv[0]).split(os.sep)[2].replace("_", "-").upper()
-        parser.add_argument('--name', type=str, default=name_default,
-                            help="SoC designs: bitstream name to display at bottom of screen.")
-
+    # TODO: is this ok on windows?
+    name_default = os.path.normpath(sys.argv[0]).split(os.sep)[2].replace("_", "-").upper()
+    parser.add_argument('--name', type=str, default=name_default,
+                        help="Bitstream name to display in bootloader and bottom of screen.")
+    parser.add_argument('--brief', type=str, default=None,
+                        help="Brief description to display in bootloader.")
     parser.add_argument('--sc3', action='store_true',
                         help="platform override: Tiliqua R2 with a SoldierCrab R3")
     parser.add_argument('--hw3', action='store_true',
@@ -147,21 +148,36 @@ def top_level_cli(
             kwargs["video_rotate_90"] = True
 
     if issubclass(fragment, TiliquaSoc):
-        # Used during elaboration of the SoC to load the firmware binary into block RAM
         rust_fw_bin  = "firmware.bin"
         rust_fw_root = os.path.join(path, "fw")
         kwargs["firmware_bin_path"] = os.path.join(rust_fw_root, rust_fw_bin)
         kwargs["fw_location"] = args.fw_location
-        kwargs["fw_offset"] = int(args.fw_offset, 16)
+        if args.fw_offset is None:
+            match args.fw_location:
+                case FirmwareLocation.SPIFlash:
+                    kwargs["fw_offset"] = 0xc0000
+                    print("WARN: firmware loads from SPI flash, but no `--fw-offset` specified. "
+                          f"using default: {hex(kwargs['fw_offset'])}")
+                case FirmwareLocation.PSRAM:
+                    kwargs["fw_offset"] = 0x200000
+                    print("WARN: firmware loads from PSRAM, but no `--fw-offset` specified. "
+                          f"using default: {hex(kwargs['fw_offset'])}")
+        else:
+            kwargs["fw_offset"] = int(args.fw_offset, 16)
         kwargs["ui_name"] = args.name
         kwargs["ui_sha"]  = repo.head.object.hexsha[:6]
 
     if argparse_fragment:
         kwargs = kwargs | argparse_fragment(args)
 
-    name = fragment.__name__ if callable(fragment) else fragment.__class__.__name__
     assert callable(fragment)
     fragment = fragment(**kwargs)
+
+    if args.brief is None:
+        if hasattr(fragment, "brief"):
+            args.brief = fragment.brief
+        else:
+            args.brief = ""
 
     if args.hw3:
         # Tiliqua R3 with SoldierCrab R3
@@ -179,8 +195,9 @@ def top_level_cli(
     # (only used if firmware comes from SPI flash)
     args_flash_firmware = None
 
-    if isinstance(fragment, TiliquaSoc):
+    manifest_path = "build/manifest.json"
 
+    if isinstance(fragment, TiliquaSoc):
 
         # Generate SVD
         svd_path = os.path.join(rust_fw_root, "soc.svd")
@@ -207,7 +224,7 @@ def top_level_cli(
                           "and bitstream separately. The bitstream contains the firmware.")
                 case FirmwareLocation.SPIFlash:
                     args_flash_firmware = [
-                        "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", f"{args.fw_offset}",
+                        "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", f"{hex(kwargs['fw_offset'])}",
                         "--file-type", "raw", kwargs["firmware_bin_path"]
                     ]
                     print("Flash firmware with:")
@@ -229,7 +246,6 @@ def top_level_cli(
                     print()
                     print("Where {{spiflash_src}} matches the value in the manifest.")
 
-        manifest_path = "build/manifest.json"
         with open(manifest_path, "w") as f:
             fw_template = ""
             match args.fw_location:
@@ -244,7 +260,8 @@ def top_level_cli(
                             fw_psram_dst=kwargs["fw_offset"],
                             fw_size=os.path.getsize(kwargs["firmware_bin_path"]))
             f.write(MANIFEST_TEMPLATE.format(
-                name=args.name, brief="<unknown>", video=args.resolution, fw_img=fw_template))
+                name=args.name, brief=args.brief, video=args.resolution,
+                fw_img=fw_template))
             print("wrote manifest template:", manifest_path)
 
         # Optionally stop here if --fw-only is specified
@@ -257,6 +274,17 @@ def top_level_cli(
         if sim_ports is None:
             sim_ports = sim.soc_simulation_ports
             sim_harness = os.path.join(path, "../selftest/sim.cpp")
+
+    else:
+        # Manifest generation with no SoC
+        with open(manifest_path, "w") as f:
+            f.write(MANIFEST_TEMPLATE.format(
+                name=args.name,
+                brief=args.brief,
+                video=args.resolution if hasattr(args, 'resolution') else "<none>",
+                fw_img=""))
+            print("wrote manifest template:", manifest_path)
+
 
     if args.action == CliAction.Simulate:
         sim.simulate(fragment, sim_ports(fragment), sim_harness,

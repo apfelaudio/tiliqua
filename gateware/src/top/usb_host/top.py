@@ -48,6 +48,8 @@ MIDI_DEVICES = {
 
 class USB2HostTest(Elaboratable):
 
+    brief = "USB host MIDI to CV conversion (EXPERIMENT)."
+
     def __init__(self, usb_device_config_id, usb_midi_bulk_endp_id):
         self.usb_device_config_id = usb_device_config_id
         self.usb_midi_bulk_endp_id = usb_midi_bulk_endp_id

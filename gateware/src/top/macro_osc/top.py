@@ -148,6 +148,9 @@ class AudioFIFOPeripheral(wiring.Component):
         return m
 
 class MacroOscSoc(TiliquaSoc):
+
+    brief = "Emulation of a famous Eurorack module."
+
     def __init__(self, **kwargs):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.

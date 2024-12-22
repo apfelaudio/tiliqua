@@ -29,6 +29,9 @@ from tiliqua.tiliqua_soc                         import TiliquaSoc
 from tiliqua.cli                                 import top_level_cli
 
 class XbeamSoc(TiliquaSoc):
+
+    brief = "Graphical vectorscope and oscilloscope."
+
     def __init__(self, **kwargs):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.

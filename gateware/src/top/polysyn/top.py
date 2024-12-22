@@ -344,6 +344,9 @@ class SynthPeripheral(wiring.Component):
         return m
 
 class PolySoc(TiliquaSoc):
+
+    brief = "Polyphonic synthesizer, touch & MIDI control."
+
     def __init__(self, **kwargs):
 
         # don't finalize the CSR bridge in TiliquaSoc, we're adding more peripherals.

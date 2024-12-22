@@ -54,6 +54,9 @@ from audio_to_channels      import AudioToChannels
 
 class USB2AudioInterface(Elaboratable):
     """ USB Audio Class v2 interface """
+
+    brief = "USB soundcard, 4in + 4out."
+
     NR_CHANNELS = 4
     MAX_PACKET_SIZE = int(224 // 8 * NR_CHANNELS)
     MAX_PACKET_SIZE_MIDI = 64
