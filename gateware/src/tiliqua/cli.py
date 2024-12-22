@@ -23,6 +23,20 @@ class CliAction(str, enum.Enum):
     Build    = "build"
     Simulate = "sim"
 
+MANIFEST_TEMPLATE = """{{
+    "name": "{name}",
+    "brief": "{brief}",
+    "video": "{video}",
+    {fw_img}
+}},"""
+
+MANIFEST_FW_TEMPLATE = """"fw_img":
+    {{
+        "spiflash_src": {fw_spiflash_src},
+        "psram_dst": {fw_psram_dst},
+        "size": {fw_size}
+    }}"""
+
 # TODO: these arguments would likely be cleaner encapsulated in a dataclass that
 # has an instance per-project, that may also contain some bootloader metadata.
 def top_level_cli(
@@ -202,24 +216,36 @@ def top_level_cli(
                         subprocess.check_call(args_flash_firmware, env=os.environ)
                 case FirmwareLocation.PSRAM:
                     args_flash_firmware = [
-                        "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", "<spiflash_offset>",
+                        "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", "{{spiflash_src}}",
                         "--file-type", "raw", kwargs["firmware_bin_path"]
                     ]
                     firmware_size = os.path.getsize(kwargs["firmware_bin_path"])
-                    print("Note: This bitstream expects firmware already copied from SPI flash to PSRAM "
-                          "by a bootloader. ")
-                    print("Update the bootloader manifest fields like:\n"
-                          '```\n'
-                          '"fw_img":\n'
-                          '{\n'
-                          f'    "spiflash_src": <spiflash_offset>,\n'
-                          f'    "psram_dst": {kwargs["fw_offset"]},\n'
-                          f'    "size": {firmware_size}\n'
-                          '}\n'
-                          '```')
-                    print("And make sure firmware is flashed to spiflash (ensure matching <spiflash_offset>!) with:")
+                    print("This bitstream expects firmware already copied from SPI flash to PSRAM "
+                          "by a bootloader. You must use the generated `manifest.json` launched by "
+                          "the bootloader bitstream to start this bitstream.")
+                    print()
+                    print("Firmware may be flashed using a command like:")
                     print("\t$", ' '.join(args_flash_firmware))
-                    print("Finally, launch it with the bootloader.")
+                    print()
+                    print("Where {{spiflash_src}} matches the value in the manifest.")
+
+        manifest_path = "build/manifest.json"
+        with open(manifest_path, "w") as f:
+            fw_template = ""
+            match args.fw_location:
+                case FirmwareLocation.SPIFlash:
+                    fw_template = MANIFEST_FW_TEMPLATE.format(
+                            fw_spiflash_src=kwargs["fw_offset"],
+                            fw_psram_dst="null",
+                            fw_size=os.path.getsize(kwargs["firmware_bin_path"]))
+                case FirmwareLocation.PSRAM:
+                    fw_template = MANIFEST_FW_TEMPLATE.format(
+                            fw_spiflash_src="{{spiflash_src}}",
+                            fw_psram_dst=kwargs["fw_offset"],
+                            fw_size=os.path.getsize(kwargs["firmware_bin_path"]))
+            f.write(MANIFEST_TEMPLATE.format(
+                name=args.name, brief="<unknown>", video=args.resolution, fw_img=fw_template))
+            print("wrote manifest template:", manifest_path)
 
         # Optionally stop here if --fw-only is specified
         if args.fw_only:
@@ -266,6 +292,7 @@ def top_level_cli(
         # Print size information and some flashing instructions
         bitstream_path = "build/top.bit"
         bitstream_size = os.path.getsize(bitstream_path)
+        print()
         print(f"Bitstream size: {bitstream_size//1024} KiB")
         if isinstance(fragment, TiliquaSoc):
             firmware_size = os.path.getsize(kwargs["firmware_bin_path"])
@@ -273,7 +300,8 @@ def top_level_cli(
 
         args_flash_bitstream = ["sudo", "openFPGALoader", "-c", "dirtyJtag",
                                 "-f", bitstream_path]
-        print("Flash bitstream with:")
+        print()
+        print("Flash bitstream with command like:")
         print("\t$", ' '.join(args_flash_bitstream))
 
         if isinstance(fragment, TiliquaSoc):
