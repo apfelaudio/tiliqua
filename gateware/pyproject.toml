@@ -3,7 +3,7 @@ name = "tiliqua"
 version = "0.0.0"
 description = "Tiliqua DSP library and reference designs."
 
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "amaranth[builtin-yosys]==0.5.4",
     "amaranth-boards @ git+https://github.com/amaranth-lang/amaranth-boards@main",
