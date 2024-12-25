@@ -9,6 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
+        with:
+          cache: true
+          cache-dependency-path: gateware/pdm.lock
       - run: |
           pdm install
           pdm test
