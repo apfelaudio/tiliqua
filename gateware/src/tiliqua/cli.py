@@ -16,7 +16,8 @@ import sys
 
 from tiliqua                     import sim, video
 from tiliqua.tiliqua_platform    import *
-from tiliqua.tiliqua_soc         import TiliquaSoc, FirmwareLocation
+from tiliqua.tiliqua_soc         import TiliquaSoc
+from tiliqua.types               import FirmwareLocation
 from vendor.ila                  import AsyncSerialILAFrontend
 
 class CliAction(str, enum.Enum):

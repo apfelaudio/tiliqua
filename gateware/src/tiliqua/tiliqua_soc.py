@@ -49,17 +49,13 @@ from vendor.soc.cpu                              import InterruptController, Vex
 from vendor.soc                                  import readbin
 from vendor.soc.generate                         import GenerateSVD
 
+
 from tiliqua.tiliqua_platform                    import *
+from tiliqua.raster                              import Persistance
+from tiliqua.types                               import FirmwareLocation
 
 from tiliqua                                     import psram_peripheral, i2c, encoder, dtr, video, eurorack_pmod_peripheral
 from tiliqua                                     import sim, eurorack_pmod
-
-from tiliqua.raster                              import Persistance
-
-class FirmwareLocation(str, enum.Enum):
-    BRAM      = "bram"
-    SPIFlash  = "spiflash"
-    PSRAM     = "psram"
 
 TILIQUA_CLOCK_SYNC_HZ = int(60e6)
 
