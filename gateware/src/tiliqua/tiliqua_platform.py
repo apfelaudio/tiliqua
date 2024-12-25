@@ -40,6 +40,8 @@ class _SoldierCrabPlatform(LatticeECP5Platform):
     resources = [
         # 48MHz master
         Resource("clk48", 0, Pins("A8", dir="i"), Clock(48e6), Attrs(IO_TYPE="LVCMOS33")),
+        # 24.576MHz master
+        Resource("clk24", 0, Pins("C7", dir="i"), Clock(24.576e6), Attrs(IO_TYPE="LVCMOS33")),
 
         # PROGRAMN, triggers warm self-reconfiguration
         Resource("self_program", 0, PinsN("T13", dir="o"),
@@ -217,7 +219,7 @@ class _TiliquaR3Mobo:
         # Quadrature rotary encoder and switch. These are already debounced by an RC filter.
         Resource("encoder", 0,
                  Subsignal("i", PinsN("42", dir="i", conn=("m2", 0))),
-                 Subsignal("q", PinsN("40", dir="i", conn=("m2", 0))),
+                 #Subsignal("q", PinsN("40", dir="i", conn=("m2", 0))),
                  Subsignal("s", PinsN("43", dir="i", conn=("m2", 0))),
                  Attrs(IO_TYPE="LVCMOS33")),
 

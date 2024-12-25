@@ -86,7 +86,7 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
         self.clocks_hz = {
             "sync":  60_000_000,
             "fast": 120_000_000,
-            "audio": 50_000_000 if audio_192 else 12_500_000,
+            "audio": 12_288_000,
         }
         if isinstance(pixclk_pll, video.DVIPLL):
             self.clocks_hz |= {
@@ -107,6 +107,7 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
         m.domains.raw48  = ClockDomain()
 
         clk48 = platform.request(platform.default_clk, dir='i').i
+        clk24 = platform.request("clk24", dir='i').i
         reset  = Signal(init=0)
 
         # ecppll -i 48 --clkout0 60 --clkout1 120 --clkout2 50 --reset -f pll60.v
@@ -114,10 +115,22 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
 
         m.d.comb += [
             ClockSignal("raw48").eq(clk48),
+            #ClockSignal("audio").eq(clk24),
         ]
+
 
         feedback60 = Signal()
         locked60   = Signal()
+
+        m.submodules.clkdivf = Instance("CLKDIVF",
+            i_CLKI=clk24,
+            i_RST=~locked60,
+            i_ALIGNWD=0,
+            o_CDIVX=ClockSignal("audio"),
+            p_GSR="ENABLED",
+            p_DIV="2.0",
+        )
+
         m.submodules.pll = Instance("EHXPLLL",
 
                 # Clock in.
@@ -126,7 +139,7 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
                 # Generated clock outputs.
                 o_CLKOP=feedback60,
                 o_CLKOS=ClockSignal("fast"),
-                o_CLKOS2=ClockSignal("audio"),
+                #o_CLKOS2=ClockSignal("audio"),
 
                 # Status.
                 o_LOCK=locked60,
