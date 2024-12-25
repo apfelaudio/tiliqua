@@ -196,7 +196,11 @@ def top_level_cli(
     # (only used if firmware comes from SPI flash)
     args_flash_firmware = None
 
-    manifest_path = "build/manifest.json"
+    build_path = "build"
+    if not os.path.exists(build_path):
+        os.makedirs(build_path)
+
+    manifest_path = os.path.join(build_path, "manifest.json")
 
     if isinstance(fragment, TiliquaSoc):
 
