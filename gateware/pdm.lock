@@ -5,7 +5,7 @@
 groups = ["default", "docs", "test"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:90843f0800100228854d5c29f422431b24920a624cd899e3aefbd5efab79f915"
+content_hash = "sha256:c1b51d2d9f6d9119ae839e4a3c8bba8ed00072b4d2fad8e00ba0de67fd6ec62d"
 
 [[metadata.targets]]
 requires_python = ">=3.10"
@@ -362,6 +362,64 @@ marker = "python_version < \"3.11\""
 files = [
     {file = "exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b"},
     {file = "exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc"},
+]
+
+[[package]]
+name = "fastcrc"
+version = "0.3.2"
+requires_python = ">=3.7"
+summary = "A hyper-fast Python module for computing CRC(8, 16, 32, 64) checksum"
+groups = ["default"]
+files = [
+    {file = "fastcrc-0.3.2-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:b02b35a6862f5a2b0f1c1ed3ab83b95b770e8865dd00a99e01dd6aa34189d8d8"},
+    {file = "fastcrc-0.3.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:3004ad912910c5f754c2b7135965ba1ed4c60c2cc6994697caaba1871c9f49a3"},
+    {file = "fastcrc-0.3.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c5a941b7a80c0a284907019c3ca64af329d0b18b6e1323083a4542e2f00c1ce9"},
+    {file = "fastcrc-0.3.2-cp310-cp310-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:02ecaf4bb07a3c75f80b17cc2970c1b4011ff46f41d8c48d13bc3de3c9362389"},
+    {file = "fastcrc-0.3.2-cp310-cp310-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:0301088e82116017cf478662de5817db03a79243c4fbf12976be9bed652dd8ab"},
+    {file = "fastcrc-0.3.2-cp310-cp310-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:4f59bdeaa6c158c18aec9d34d9caf853fe3a872deafedc4df0a8d156cbc4dfd6"},
+    {file = "fastcrc-0.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:53cdca334bb9a1ccf31c5f379dac98738d41a62ce5c634606c805e39b731684b"},
+    {file = "fastcrc-0.3.2-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:5885eea5122048ef79fd586c2283a5d9103455d975ed5f4965256a63aa2fc785"},
+    {file = "fastcrc-0.3.2-cp310-none-win32.whl", hash = "sha256:99dd3f05445a97337a9564330cf310728ed0f3b2ac9f8caedf9fe2395c42b7e7"},
+    {file = "fastcrc-0.3.2-cp310-none-win_amd64.whl", hash = "sha256:d3d6541a9d9dd72979122a7aa86af32ce8c02c051f53c225a101e4cb53d3993c"},
+    {file = "fastcrc-0.3.2-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:453c2978e0d04d3c6f23f4d6697a5bcfcfb970e9186e8e1b9764cce9dd8f1efa"},
+    {file = "fastcrc-0.3.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:c86d990d484c79f95d9b353834a38ab7af179f41591b234cc3395c5b2a50b823"},
+    {file = "fastcrc-0.3.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c8812e2ebb8dcc990ffca1ee97b7cb62fe979ff45eac3cf4c6f2349f076f4a1d"},
+    {file = "fastcrc-0.3.2-cp311-cp311-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:3d0f35b0a1da68d82027f00e9fcc7a17d81852fa70e5b527aa24948083976ef1"},
+    {file = "fastcrc-0.3.2-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:61c85f40f1f333d6e5151215062dd010edfa7c5626d692cdad7cf437cccd6ceb"},
+    {file = "fastcrc-0.3.2-cp311-cp311-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:819c839c2d63336bcfb48932382f3f14297d32d541d6819ddcd27493069d4b83"},
+    {file = "fastcrc-0.3.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5d2c0832a014229293b2583ab39895cc2712a73fe6ec5712c87db210b11c41fc"},
+    {file = "fastcrc-0.3.2-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:5019246289f50fcde7aa3b768ee35595b446b36acb85a97023d991a3b3735bec"},
+    {file = "fastcrc-0.3.2-cp311-none-win32.whl", hash = "sha256:d3414ba146d01fc7e26c7dd0614c5f2582d0b317daa7cf13297bcb12f9146a13"},
+    {file = "fastcrc-0.3.2-cp311-none-win_amd64.whl", hash = "sha256:e7811f35ba713fbc1def72dd47b01cda5ea567ed3fa9270d6f3aedce06fc94a1"},
+    {file = "fastcrc-0.3.2-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:5333403aaa300a6dd9a09be57108fe097bf3999c1beefee290268fe29b969770"},
+    {file = "fastcrc-0.3.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:9e440928e38295e34cc3d10c0dd60c636f29f87b3f75eb712c655f24b234783e"},
+    {file = "fastcrc-0.3.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:53b66d2a2caf5fa39d2bdfa814b08a879812cbcf8659b1606c37c6c0063ab4dc"},
+    {file = "fastcrc-0.3.2-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:047ade898642d182f98ab91c2835a261ea347c65fea9b4cbacf9c2831ae0af9e"},
+    {file = "fastcrc-0.3.2-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:ea795a0d5561bdfe45648d7f0a5423c2a4aca9fa7bf11545185551ef6df2174d"},
+    {file = "fastcrc-0.3.2-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:22a4983946593f76a573992ba92a207ddd9792b4797575ee1ae9757ddeda40f1"},
+    {file = "fastcrc-0.3.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3b0253a6408ffec884876bbfd7a0e602da1cba7f31ef63efcac3fb4600ec1f93"},
+    {file = "fastcrc-0.3.2-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:854bbc2633a94ac5673a65d2793dc952d4b795357927997fa9cf6b941f7f52ac"},
+    {file = "fastcrc-0.3.2-cp312-none-win32.whl", hash = "sha256:f47c3b4642683e653a4bb2dfb97049af60af57869298bd45b0a229be2816946f"},
+    {file = "fastcrc-0.3.2-cp312-none-win_amd64.whl", hash = "sha256:858fd01ab7996cdc1801f4845273e25e81d66a1d64a6aa79f8acb0a77a5ffc68"},
+    {file = "fastcrc-0.3.2-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:b848835c2521ad5a96413ce310243c325a911aad92860aa427afb19f28493657"},
+    {file = "fastcrc-0.3.2-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:e2d723fdf5df4444ed8ab1d3b8478d71162397243bbd26bd82f1e844a5ae4b88"},
+    {file = "fastcrc-0.3.2-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4ec03598c258ab5267ed1303988d5d34f8c8d02839409bf0be04deb91f51a7d1"},
+    {file = "fastcrc-0.3.2-cp313-cp313-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:d923e9ea11ee35d129dc742ef76b5ab86e489cf6b7f404e02e413c4b98e4c838"},
+    {file = "fastcrc-0.3.2-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:f0c8c968237d580886e796da52c7d026e318652e60e0106d9557e2a25265c030"},
+    {file = "fastcrc-0.3.2-cp313-cp313-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:4dd95f209a575edae4f223c55b508b43c18d1e4ffdb0262fcd6bc55be355a96a"},
+    {file = "fastcrc-0.3.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9465678d0fe17e4ccd63b13aadefc550521f7bd1ba7b176b5b7e118952f0097f"},
+    {file = "fastcrc-0.3.2-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:bf3aca3a8d4c369bebaf601831b25917a0808dc7cf0d3060955c97d2a72951ae"},
+    {file = "fastcrc-0.3.2-cp313-none-win32.whl", hash = "sha256:86f3c9e5844e5ffbbec1c17f059198a9b3f36ec3061f1128076ae2eb625101a3"},
+    {file = "fastcrc-0.3.2-cp313-none-win_amd64.whl", hash = "sha256:a5b68367c9a837773ad1dc98ae66adb4d097a58430665a21bff548982db8f3b9"},
+    {file = "fastcrc-0.3.2-pp310-pypy310_pp73-macosx_10_12_x86_64.whl", hash = "sha256:70c3d660acafbe684e2b7ee548f0bb8b661a7481756c86d8b1408d78a071bf3d"},
+    {file = "fastcrc-0.3.2-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:2fc3489d5be7ee5a940c38cddde52bb7b7c3dc8c9a8787301ab0eecac9096cf2"},
+    {file = "fastcrc-0.3.2-pp310-pypy310_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a822a37575c0a1fc0ffcf4ee3b6cf23b3c238a856685654c84be347b3b192abe"},
+    {file = "fastcrc-0.3.2-pp310-pypy310_pp73-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:efe319719fb2912d9b1c33d8bcc9f3a66547a7ff131b55ad252c3c01e2126603"},
+    {file = "fastcrc-0.3.2-pp310-pypy310_pp73-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:2521637ddcac21fa90761068bb2b2ee6cad0554b85ab320431e7a74504c33adf"},
+    {file = "fastcrc-0.3.2-pp310-pypy310_pp73-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:f97bf58d86bdf145b9635117dbb21afc137deb2f1f6869430c4f8c585aaa1619"},
+    {file = "fastcrc-0.3.2-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e33373b9b7325d93af5486c6414404b57e0ab48a0a1ea0125712c42607c6efcc"},
+    {file = "fastcrc-0.3.2-pp310-pypy310_pp73-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:fa14a0f06b38e1c5689c4f6c6bfcdeee24de219385af5bd2356a73afdcdee896"},
+    {file = "fastcrc-0.3.2.tar.gz", hash = "sha256:22362bb54e1bafc4f3e35544e40162481b2822c48ede1f5c2784820afad2c561"},
 ]
 
 [[package]]

@@ -13,6 +13,9 @@ import logging
 import os
 import subprocess
 import sys
+import time
+
+from fastcrc import crc32
 
 from tiliqua                     import sim, video
 from tiliqua.types               import *
@@ -192,7 +195,10 @@ def top_level_cli(
     def write_manifest():
         with open(manifest_path, "w") as f:
             f.write(BitstreamManifest(
-                name=args.name, brief=args.brief,
+                name=args.name,
+                version=BITSTREAM_MANIFEST_VERSION,
+                sha=repo.head.object.hexsha[:6],
+                brief=args.brief,
                 video=args.resolution if hasattr(args, 'resolution') else "<none>",
                 fw_img=manifest_fw_img
                 ).to_json())
@@ -247,18 +253,21 @@ def top_level_cli(
                     print()
                     print("Where {{spiflash_src}} matches the value in the manifest.")
 
+        fw_crc32 = crc32.bzip2(open(kwargs["firmware_bin_path"], "rb").read())
         match args.fw_location:
             case FirmwareLocation.SPIFlash:
                 manifest_fw_img = FirmwareImage(
                     spiflash_src=kwargs["fw_offset"],
                     psram_dst=None,
-                    size=os.path.getsize(kwargs["firmware_bin_path"])
+                    size=os.path.getsize(kwargs["firmware_bin_path"]),
+                    crc=fw_crc32
                 )
             case FirmwareLocation.PSRAM:
                 manifest_fw_img = FirmwareImage(
                     spiflash_src=None,
                     psram_dst=kwargs["fw_offset"],
-                    size=os.path.getsize(kwargs["firmware_bin_path"])
+                    size=os.path.getsize(kwargs["firmware_bin_path"]),
+                    crc=fw_crc32
                 )
         write_manifest()
 

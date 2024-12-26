@@ -9,6 +9,8 @@ from typing import Optional
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
+BITSTREAM_MANIFEST_VERSION = 0
+
 class FirmwareLocation(str, enum.Enum):
     BRAM      = "bram"
     SPIFlash  = "spiflash"
@@ -20,11 +22,14 @@ class FirmwareImage:
     spiflash_src: int
     psram_dst: Optional[int]
     size: int
+    crc: int
 
 @dataclass_json
 @dataclass
 class BitstreamManifest:
     name: str
+    version: int
+    sha: str
     brief: str
     video: str
     fw_img: Optional[FirmwareImage]
