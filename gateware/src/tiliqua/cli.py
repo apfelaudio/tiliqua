@@ -15,28 +15,14 @@ import subprocess
 import sys
 
 from tiliqua                     import sim, video
+from tiliqua.types               import *
 from tiliqua.tiliqua_platform    import *
 from tiliqua.tiliqua_soc         import TiliquaSoc
-from tiliqua.types               import FirmwareLocation
 from vendor.ila                  import AsyncSerialILAFrontend
 
 class CliAction(str, enum.Enum):
     Build    = "build"
     Simulate = "sim"
-
-MANIFEST_TEMPLATE = """{{
-    "name": "{name}",
-    "brief": "{brief}",
-    "video": "{video}",
-    {fw_img}
-}},"""
-
-MANIFEST_FW_TEMPLATE = """"fw_img":
-    {{
-        "spiflash_src": {fw_spiflash_src},
-        "psram_dst": {fw_psram_dst},
-        "size": {fw_size}
-    }}"""
 
 # TODO: these arguments would likely be cleaner encapsulated in a dataclass that
 # has an instance per-project, that may also contain some bootloader metadata.
@@ -200,7 +186,17 @@ def top_level_cli(
     if not os.path.exists(build_path):
         os.makedirs(build_path)
 
+    manifest_fw_img = None
     manifest_path = os.path.join(build_path, "manifest.json")
+
+    def write_manifest():
+        with open(manifest_path, "w") as f:
+            f.write(BitstreamManifest(
+                name=args.name, brief=args.brief,
+                video=args.resolution if hasattr(args, 'resolution') else "<none>",
+                fw_img=manifest_fw_img
+                ).to_json())
+            print("wrote manifest template:", manifest_path)
 
     if isinstance(fragment, TiliquaSoc):
 
@@ -251,23 +247,20 @@ def top_level_cli(
                     print()
                     print("Where {{spiflash_src}} matches the value in the manifest.")
 
-        with open(manifest_path, "w") as f:
-            fw_template = ""
-            match args.fw_location:
-                case FirmwareLocation.SPIFlash:
-                    fw_template = MANIFEST_FW_TEMPLATE.format(
-                            fw_spiflash_src=kwargs["fw_offset"],
-                            fw_psram_dst="null",
-                            fw_size=os.path.getsize(kwargs["firmware_bin_path"]))
-                case FirmwareLocation.PSRAM:
-                    fw_template = MANIFEST_FW_TEMPLATE.format(
-                            fw_spiflash_src="{{spiflash_src}}",
-                            fw_psram_dst=kwargs["fw_offset"],
-                            fw_size=os.path.getsize(kwargs["firmware_bin_path"]))
-            f.write(MANIFEST_TEMPLATE.format(
-                name=args.name, brief=args.brief, video=args.resolution,
-                fw_img=fw_template))
-            print("wrote manifest template:", manifest_path)
+        match args.fw_location:
+            case FirmwareLocation.SPIFlash:
+                manifest_fw_img = FirmwareImage(
+                    spiflash_src=kwargs["fw_offset"],
+                    psram_dst=None,
+                    size=os.path.getsize(kwargs["firmware_bin_path"])
+                )
+            case FirmwareLocation.PSRAM:
+                manifest_fw_img = FirmwareImage(
+                    spiflash_src=None,
+                    psram_dst=kwargs["fw_offset"],
+                    size=os.path.getsize(kwargs["firmware_bin_path"])
+                )
+        write_manifest()
 
         # Optionally stop here if --fw-only is specified
         if args.fw_only:
@@ -279,17 +272,8 @@ def top_level_cli(
         if sim_ports is None:
             sim_ports = sim.soc_simulation_ports
             sim_harness = os.path.join(path, "../selftest/sim.cpp")
-
     else:
-        # Manifest generation with no SoC
-        with open(manifest_path, "w") as f:
-            f.write(MANIFEST_TEMPLATE.format(
-                name=args.name,
-                brief=args.brief,
-                video=args.resolution if hasattr(args, 'resolution') else "<none>",
-                fw_img=""))
-            print("wrote manifest template:", manifest_path)
-
+        write_manifest()
 
     if args.action == CliAction.Simulate:
         sim.simulate(fragment, sim_ports(fragment), sim_harness,
