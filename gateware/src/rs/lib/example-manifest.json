@@ -19,7 +19,7 @@
             "fw_img":
             {
                 "spiflash_src": 1835008,
-                "psram_dst": 2097152,
+                "psram_dst": null,
                 "size": 524288
             }
         },

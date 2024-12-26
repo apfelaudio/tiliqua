@@ -136,33 +136,35 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
             if app.time_since_reboot_requested > 500 {
                 // Is there a firmware image to copy to PSRAM before we switch bitstreams?
                 if let Some(fw_img) = &app.manifest.bitstreams[n].fw_img {
-                    let psram_ptr = PSRAM_BASE as *mut u32;
-                    let spiflash_ptr = SPIFLASH_BASE as *mut u32;
-                    let spiflash_offset_words = fw_img.spiflash_src as isize / 4isize;
-                    let psram_offset_words = fw_img.psram_dst as isize / 4isize;
-                    let size_words = fw_img.size as isize / 4isize + 1;
-                    info!("Copying {:#x}..{:#x} (spi flash) to {:#x}..{:#x} (psram) ...",
-                          SPIFLASH_BASE + fw_img.spiflash_src as usize,
-                          SPIFLASH_BASE + (fw_img.spiflash_src + fw_img.size) as usize,
-                          PSRAM_BASE + fw_img.psram_dst as usize,
-                          PSRAM_BASE + (fw_img.psram_dst + fw_img.size) as usize);
-                    for i in 0..size_words {
-                        unsafe {
-                            let d = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
-                            psram_ptr.offset(psram_offset_words + i).write_volatile(d);
-                        }
-                    }
-                    info!("Verify {} KiB copied correctly ...", (size_words*4) / 1024);
-                    for i in 0..size_words {
-                        unsafe {
-                            let d1 = psram_ptr.offset(psram_offset_words + i).read_volatile();
-                            let d2 = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
-                            if d1 != d2 {
-                                error!("fw_img: {} != {} @ {}\n\r", d1, d2, i);
+                    if let Some(psram_dst) = fw_img.psram_dst {
+                        let psram_ptr = PSRAM_BASE as *mut u32;
+                        let spiflash_ptr = SPIFLASH_BASE as *mut u32;
+                        let spiflash_offset_words = fw_img.spiflash_src as isize / 4isize;
+                        let psram_offset_words = psram_dst as isize / 4isize;
+                        let size_words = fw_img.size as isize / 4isize + 1;
+                        info!("Copying {:#x}..{:#x} (spi flash) to {:#x}..{:#x} (psram) ...",
+                              SPIFLASH_BASE + fw_img.spiflash_src as usize,
+                              SPIFLASH_BASE + (fw_img.spiflash_src + fw_img.size) as usize,
+                              PSRAM_BASE + psram_dst as usize,
+                              PSRAM_BASE + (psram_dst + fw_img.size) as usize);
+                        for i in 0..size_words {
+                            unsafe {
+                                let d = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
+                                psram_ptr.offset(psram_offset_words + i).write_volatile(d);
                             }
                         }
+                        info!("Verify {} KiB copied correctly ...", (size_words*4) / 1024);
+                        for i in 0..size_words {
+                            unsafe {
+                                let d1 = psram_ptr.offset(psram_offset_words + i).read_volatile();
+                                let d2 = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
+                                if d1 != d2 {
+                                    error!("fw_img: {} != {} @ {}\n\r", d1, d2, i);
+                                }
+                            }
+                        }
+                        info!("copy OK. reconfigure and jump!");
                     }
-                    info!("copy OK. reconfigure and jump!");
                 }
                 info!("BITSTREAM{}\n\r", n);
                 loop {}
