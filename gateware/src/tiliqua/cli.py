@@ -27,6 +27,37 @@ class CliAction(str, enum.Enum):
     Build    = "build"
     Simulate = "sim"
 
+def maybe_flash_firmware(args, kwargs, force_flash=False):
+    print()
+    match args.fw_location:
+        case FirmwareLocation.BRAM:
+            print("Note: Firmware is stored in BRAM, it is not possible to flash firmware "
+                  "and bitstream separately. The bitstream contains the firmware.")
+        case FirmwareLocation.SPIFlash:
+            args_flash_firmware = [
+                "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", f"{hex(kwargs['fw_offset'])}",
+                "--file-type", "raw", kwargs["firmware_bin_path"]
+            ]
+            print("Flash firmware with:")
+            print("\t$", ' '.join(args_flash_firmware))
+            if args.flash or force_flash:
+                subprocess.check_call(args_flash_firmware, env=os.environ)
+        case FirmwareLocation.PSRAM:
+            args_flash_firmware = [
+                "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", "{{spiflash_src}}",
+                "--file-type", "raw", kwargs["firmware_bin_path"]
+            ]
+            firmware_size = os.path.getsize(kwargs["firmware_bin_path"])
+            print("This bitstream expects firmware already copied from SPI flash to PSRAM "
+                  "by a bootloader. You must use the generated `manifest.json` launched by "
+                  "the bootloader bitstream to start this bitstream.")
+            print()
+            print("Firmware may be flashed using a command like:")
+            print("\t$", ' '.join(args_flash_firmware))
+            print()
+            print("Where {{spiflash_src}} matches the value in the manifest.")
+
+
 # TODO: these arguments would likely be cleaner encapsulated in a dataclass that
 # has an instance per-project, that may also contain some bootloader metadata.
 def top_level_cli(
@@ -189,10 +220,9 @@ def top_level_cli(
     if not os.path.exists(build_path):
         os.makedirs(build_path)
 
-    manifest_fw_img = None
     manifest_path = os.path.join(build_path, "manifest.json")
 
-    def write_manifest():
+    def write_manifest(regions):
         with open(manifest_path, "w") as f:
             f.write(BitstreamManifest(
                 name=args.name,
@@ -200,7 +230,7 @@ def top_level_cli(
                 sha=repo.head.object.hexsha[:6],
                 brief=args.brief,
                 video=args.resolution if hasattr(args, 'resolution') else "<none>",
-                fw_img=manifest_fw_img
+                regions=regions
                 ).to_json())
             print("wrote manifest template:", manifest_path)
 
@@ -223,53 +253,22 @@ def top_level_cli(
         fragment.genconst("src/rs/lib/src/generated_constants.rs")
         TiliquaSoc.compile_firmware(rust_fw_root, rust_fw_bin)
 
-        def maybe_flash_firmware(args, kwargs, force_flash=False):
-            print()
-            match args.fw_location:
-                case FirmwareLocation.BRAM:
-                    print("Note: Firmware is stored in BRAM, it is not possible to flash firmware "
-                          "and bitstream separately. The bitstream contains the firmware.")
-                case FirmwareLocation.SPIFlash:
-                    args_flash_firmware = [
-                        "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", f"{hex(kwargs['fw_offset'])}",
-                        "--file-type", "raw", kwargs["firmware_bin_path"]
-                    ]
-                    print("Flash firmware with:")
-                    print("\t$", ' '.join(args_flash_firmware))
-                    if args.flash or force_flash:
-                        subprocess.check_call(args_flash_firmware, env=os.environ)
-                case FirmwareLocation.PSRAM:
-                    args_flash_firmware = [
-                        "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", "{{spiflash_src}}",
-                        "--file-type", "raw", kwargs["firmware_bin_path"]
-                    ]
-                    firmware_size = os.path.getsize(kwargs["firmware_bin_path"])
-                    print("This bitstream expects firmware already copied from SPI flash to PSRAM "
-                          "by a bootloader. You must use the generated `manifest.json` launched by "
-                          "the bootloader bitstream to start this bitstream.")
-                    print()
-                    print("Firmware may be flashed using a command like:")
-                    print("\t$", ' '.join(args_flash_firmware))
-                    print()
-                    print("Where {{spiflash_src}} matches the value in the manifest.")
-
         fw_crc32 = crc32.bzip2(open(kwargs["firmware_bin_path"], "rb").read())
+        regions = [
+            MemoryRegion(
+                filename=os.path.basename(kwargs["firmware_bin_path"]),
+                spiflash_src=None,
+                psram_dst=None,
+                size=os.path.getsize(kwargs["firmware_bin_path"]),
+                crc=fw_crc32
+            )
+        ]
         match args.fw_location:
             case FirmwareLocation.SPIFlash:
-                manifest_fw_img = FirmwareImage(
-                    spiflash_src=kwargs["fw_offset"],
-                    psram_dst=None,
-                    size=os.path.getsize(kwargs["firmware_bin_path"]),
-                    crc=fw_crc32
-                )
+                regions[-1].spiflash_src = kwargs["fw_offset"]
             case FirmwareLocation.PSRAM:
-                manifest_fw_img = FirmwareImage(
-                    spiflash_src=None,
-                    psram_dst=kwargs["fw_offset"],
-                    size=os.path.getsize(kwargs["firmware_bin_path"]),
-                    crc=fw_crc32
-                )
-        write_manifest()
+                regions[-1].psram_dst = kwargs["fw_offset"]
+        write_manifest(regions)
 
         # Optionally stop here if --fw-only is specified
         if args.fw_only:
@@ -282,7 +281,7 @@ def top_level_cli(
             sim_ports = sim.soc_simulation_ports
             sim_harness = os.path.join(path, "../selftest/sim.cpp")
     else:
-        write_manifest()
+        write_manifest(regions=[])
 
     if args.action == CliAction.Simulate:
         sim.simulate(fragment, sim_ports(fragment), sim_harness,

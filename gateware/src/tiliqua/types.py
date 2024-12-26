@@ -4,7 +4,7 @@
 
 import enum
 
-from typing import Optional
+from typing import List, Optional
 
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
@@ -18,7 +18,8 @@ class FirmwareLocation(str, enum.Enum):
 
 @dataclass_json
 @dataclass
-class FirmwareImage:
+class MemoryRegion:
+    filename: str
     spiflash_src: int
     psram_dst: Optional[int]
     size: int
@@ -32,4 +33,4 @@ class BitstreamManifest:
     sha: str
     brief: str
     video: str
-    fw_img: Optional[FirmwareImage]
+    regions: List[MemoryRegion]
