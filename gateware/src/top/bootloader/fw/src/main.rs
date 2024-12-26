@@ -15,6 +15,7 @@ use tiliqua_lib::opt::*;
 use tiliqua_lib::generated_constants::*;
 use tiliqua_fw::*;
 use tiliqua_lib::palette::ColorPalette;
+use tiliqua_lib::manifest::*;
 
 use embedded_graphics::{
     mono_font::{ascii::FONT_9X15, ascii::FONT_9X15_BOLD, MonoTextStyle},
@@ -26,7 +27,6 @@ use embedded_graphics::{
 
 use opts::Options;
 use hal::pca9635::Pca9635Driver;
-use crate::manifest::*;
 
 impl_ui!(UI,
          Options,
@@ -194,24 +194,10 @@ fn main() -> ! {
 
     info!("Hello from Tiliqua bootloader!");
 
-    let manifest = manifest::BitstreamManifest::find().unwrap_or(
+    let slice = manifest::BitstreamManifest::find_manifest_slice();
+    let manifest = manifest::BitstreamManifest::from_slice(slice).unwrap_or(
         manifest::BitstreamManifest::unknown_manifest());
-
-    info!("BitstreamManifest created with:");
-    for bitstream in &manifest.bitstreams {
-        info!("* Bitstream *");
-        info!("- name '{}'",  bitstream.name);
-        info!("- brief '{}'", bitstream.brief);
-        info!("- video '{}'", bitstream.video);
-        if let Some(img) = bitstream.fw_img.clone() {
-            info!("- fw_img:");
-            info!("\t- spiflash_src=0x{:#x}", img.spiflash_src);
-            info!("\t- psram_dst=0x{:#x}", img.psram_dst);
-            info!("\t- size=0x{:#x}", img.size);
-        } else {
-            info!("- fw_img: None");
-        }
-    }
+    manifest.print();
 
     let opts = opts::Options::new(&manifest);
     let app = Mutex::new(RefCell::new(App::new(opts, manifest.clone())));

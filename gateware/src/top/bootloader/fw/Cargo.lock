@@ -361,8 +361,6 @@ dependencies = [
  "panic-halt",
  "riscv",
  "riscv-rt",
- "serde",
- "serde-json-core",
  "strum",
  "strum_macros 0.26.4",
  "tiliqua-hal",
@@ -391,6 +389,8 @@ dependencies = [
  "log",
  "micromath",
  "midi-types",
+ "serde",
+ "serde-json-core",
  "strum",
  "strum_macros 0.26.4",
 ]

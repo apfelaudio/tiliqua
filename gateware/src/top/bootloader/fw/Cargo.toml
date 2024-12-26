@@ -19,8 +19,6 @@ fastrand = { version = "2.1.0", default-features = false }
 heapless = "0.8.0"
 strum_macros = "0.26.4"
 strum = {version = "0.25.0", features = ["derive"], default-features=false}
-serde-json-core = "0.6.0"
-serde = { version="1.0.214", default-features=false }
 critical-section = "1.2.0"
 amaranth-soc-isr = { path="../../../rs/isr", default-features = false }
 irq = "0.2.3"

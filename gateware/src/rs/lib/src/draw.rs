@@ -516,7 +516,7 @@ mod tests {
         draw_options(&mut disp, &opts, H_ACTIVE/2-30, 70, 0).ok();
 
         let n_voices = 8;
-        for n in 0..8 {
+        for n in 0..n_voices {
             draw_voice(&mut disp,
                        ((H_ACTIVE as f32)/2.0f32 + 250.0f32*f32::cos(2.3f32 + 2.0f32 * n as f32 / 8.0f32)) as i32,
                        ((V_ACTIVE as f32)/2.0f32 + 250.0f32*f32::sin(2.3f32 + 2.0f32 * n as f32 / 8.0f32)) as u32,

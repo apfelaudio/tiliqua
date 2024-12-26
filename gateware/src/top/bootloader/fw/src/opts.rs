@@ -1,11 +1,11 @@
 use tiliqua_lib::opt::*;
 use tiliqua_lib::impl_option_view;
 use tiliqua_lib::impl_option_page;
+use tiliqua_lib::manifest;
 
 use heapless::String;
 
 use core::str::FromStr;
-use crate::manifest;
 
 use strum_macros::{EnumIter, IntoStaticStr};
 

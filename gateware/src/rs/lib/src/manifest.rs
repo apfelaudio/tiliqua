@@ -1,19 +1,19 @@
-use tiliqua_lib::generated_constants::*;
+use crate::generated_constants::*;
 
 use heapless::String;
 use core::str::FromStr;
 use serde::{Deserialize};
 use log::info;
-use tiliqua_lib::opt::OptionString;
+use crate::opt::OptionString;
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct FirmwareImage {
     pub spiflash_src: u32,
     pub psram_dst: u32,
     pub size: u32,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct Bitstream {
     pub name: OptionString,
     pub brief: String<128>,
@@ -21,7 +21,7 @@ pub struct Bitstream {
     pub fw_img: Option<FirmwareImage>
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct BitstreamManifest {
     pub magic: u32,
     pub bitstreams: [Bitstream; N_BITSTREAMS],
@@ -29,9 +29,8 @@ pub struct BitstreamManifest {
 
 impl BitstreamManifest {
     pub fn unknown_manifest() -> Self {
-        let unknown = String::from_str("<unknown>").unwrap();
         let unknown_bitstream = Bitstream {
-            name:  unknown.clone(),
+            name:  String::new(),
             brief: String::new(),
             video: String::new(),
             fw_img: None,
@@ -55,7 +54,7 @@ impl BitstreamManifest {
         self.magic == 0xDEADBEEFu32
     }
 
-    pub fn find() -> Option<BitstreamManifest> {
+    pub fn find_manifest_slice() -> &'static [u8]{
         let manifest_slice = unsafe {
             core::slice::from_raw_parts(
                 MANIFEST_BASE as *mut u8,
@@ -76,7 +75,10 @@ impl BitstreamManifest {
 
         let manifest_slice = &manifest_slice[0..last_byte];
         info!("Manifest length: {}", last_byte);
+        manifest_slice
+    }
 
+    pub fn from_slice(manifest_slice: &[u8]) -> Option<BitstreamManifest> {
         let manifest_de = serde_json_core::from_slice::<BitstreamManifest>(manifest_slice);
         match manifest_de {
             Ok((contents, _rest)) => {
@@ -95,5 +97,37 @@ impl BitstreamManifest {
             }
         }
     }
+
+    pub fn print(&self) {
+        info!("BitstreamManifest created with:");
+        for bitstream in &self.bitstreams {
+            info!("* Bitstream *");
+            info!("- name '{}'",  bitstream.name);
+            info!("- brief '{}'", bitstream.brief);
+            info!("- video '{}'", bitstream.video);
+            if let Some(img) = bitstream.fw_img.clone() {
+                info!("- fw_img:");
+                info!("\t- spiflash_src=0x{:#x}", img.spiflash_src);
+                info!("\t- psram_dst=0x{:#x}", img.psram_dst);
+                info!("\t- size=0x{:#x}", img.size);
+            } else {
+                info!("- fw_img: None");
+            }
+        }
+    }
+
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn parse_manifest() {
+        env_logger::init();
+        let data: &[u8] = &fs::read("example-manifest.json").unwrap();
+        let manifest = BitstreamManifest::from_slice(data).unwrap();
+        manifest.print();
+    }
+}

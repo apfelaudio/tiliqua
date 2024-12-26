@@ -30,4 +30,3 @@ tiliqua_hal::impl_video! {
 
 pub mod handlers;
 pub mod opts;
-pub mod manifest;

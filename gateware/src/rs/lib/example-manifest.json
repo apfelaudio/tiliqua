@@ -15,7 +15,13 @@
         {
             "name": "xbeam",
             "brief": "Graphical vectorscope and oscilloscope.",
-            "video": "720x720p60 (custom)"
+            "video": "720x720p60 (custom)",
+            "fw_img":
+            {
+                "spiflash_src": 1835008,
+                "psram_dst": 2097152,
+                "size": 524288
+            }
         },
         {
             "name": "macro-osc",
