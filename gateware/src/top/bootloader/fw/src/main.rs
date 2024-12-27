@@ -38,16 +38,17 @@ hal::impl_dma_display!(DMADisplay, H_ACTIVE, V_ACTIVE,
                        VIDEO_ROTATE_90);
 
 pub const TIMER0_ISR_PERIOD_MS: u32 = 5;
+pub const N_MANIFESTS: usize = 8;
 
 struct App {
     ui: UI,
     reboot_n: Option<usize>,
     time_since_reboot_requested: u32,
-    manifest: BitstreamManifest,
+    manifests: [Option<BitstreamManifest>; N_MANIFESTS],
 }
 
 impl App {
-    pub fn new(opts: Options, manifest: BitstreamManifest) -> Self {
+    pub fn new(opts: Options, manifests: [Option<BitstreamManifest>; N_MANIFESTS]) -> Self {
         let peripherals = unsafe { pac::Peripherals::steal() };
         let encoder = Encoder0::new(peripherals.ENCODER0);
         let i2cdev = I2c0::new(peripherals.I2C0);
@@ -58,7 +59,7 @@ impl App {
                         encoder, pca9635, pmod),
             reboot_n: None,
             time_since_reboot_requested: 0u32,
-            manifest,
+            manifests,
         }
     }
 }
@@ -77,7 +78,7 @@ where
     .draw(d).ok();
 }
 
-fn draw_summary<D>(d: &mut D, bitstream: &Bitstream, or: i32, ot: i32, hue: u8)
+fn draw_summary<D>(d: &mut D, bitstream: &BitstreamManifest, or: i32, ot: i32, hue: u8)
 where
     D: DrawTarget<Color = Gray8>,
 {
@@ -135,35 +136,37 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
             // Give codec time to mute and display time to draw 'REBOOTING'
             if app.time_since_reboot_requested > 500 {
                 // Is there a firmware image to copy to PSRAM before we switch bitstreams?
-                if let Some(fw_img) = &app.manifest.bitstreams[n].fw_img {
-                    if let Some(psram_dst) = fw_img.psram_dst {
-                        let psram_ptr = PSRAM_BASE as *mut u32;
-                        let spiflash_ptr = SPIFLASH_BASE as *mut u32;
-                        let spiflash_offset_words = fw_img.spiflash_src as isize / 4isize;
-                        let psram_offset_words = psram_dst as isize / 4isize;
-                        let size_words = fw_img.size as isize / 4isize + 1;
-                        info!("Copying {:#x}..{:#x} (spi flash) to {:#x}..{:#x} (psram) ...",
-                              SPIFLASH_BASE + fw_img.spiflash_src as usize,
-                              SPIFLASH_BASE + (fw_img.spiflash_src + fw_img.size) as usize,
-                              PSRAM_BASE + psram_dst as usize,
-                              PSRAM_BASE + (psram_dst + fw_img.size) as usize);
-                        for i in 0..size_words {
-                            unsafe {
-                                let d = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
-                                psram_ptr.offset(psram_offset_words + i).write_volatile(d);
-                            }
-                        }
-                        info!("Verify {} KiB copied correctly ...", (size_words*4) / 1024);
-                        for i in 0..size_words {
-                            unsafe {
-                                let d1 = psram_ptr.offset(psram_offset_words + i).read_volatile();
-                                let d2 = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
-                                if d1 != d2 {
-                                    error!("fw_img: {} != {} @ {}\n\r", d1, d2, i);
+                if let Some(manifest) = &app.manifests[n] {
+                    for region in &manifest.regions {
+                        if let Some(psram_dst) = region.psram_dst {
+                            let psram_ptr = PSRAM_BASE as *mut u32;
+                            let spiflash_ptr = SPIFLASH_BASE as *mut u32;
+                            let spiflash_offset_words = region.spiflash_src as isize / 4isize;
+                            let psram_offset_words = psram_dst as isize / 4isize;
+                            let size_words = region.size as isize / 4isize + 1;
+                            info!("Copying {:#x}..{:#x} (spi flash) to {:#x}..{:#x} (psram) ...",
+                                  SPIFLASH_BASE + region.spiflash_src as usize,
+                                  SPIFLASH_BASE + (region.spiflash_src + region.size) as usize,
+                                  PSRAM_BASE + psram_dst as usize,
+                                  PSRAM_BASE + (psram_dst + region.size) as usize);
+                            for i in 0..128*1024 {
+                                unsafe {
+                                    let d = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
+                                    psram_ptr.offset(psram_offset_words + i).write_volatile(d);
                                 }
                             }
+                            info!("Verify {} KiB copied correctly ...", (size_words*4) / 1024);
+                            for i in 0..128*1024 {
+                                unsafe {
+                                    let d1 = psram_ptr.offset(psram_offset_words + i).read_volatile();
+                                    let d2 = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
+                                    if d1 != d2 {
+                                        error!("region: {} != {} @ {}\n\r", d1, d2, i);
+                                    }
+                                }
+                            }
+                            info!("copy OK.");
                         }
-                        info!("copy OK. reconfigure and jump!");
                     }
                 }
                 info!("BITSTREAM{}\n\r", n);
@@ -196,13 +199,17 @@ fn main() -> ! {
 
     info!("Hello from Tiliqua bootloader!");
 
-    let slice = manifest::BitstreamManifest::find_manifest_slice();
-    let manifest = manifest::BitstreamManifest::from_slice(slice).unwrap_or(
-        manifest::BitstreamManifest::unknown_manifest());
-    manifest.print();
+    let mut manifests: [Option<manifest::BitstreamManifest>; 8] = [const { None }; 8];
+    for n in 0usize..N_MANIFESTS {
+        let size: usize = 1024usize;
+        let manifest_first = SPIFLASH_BASE + 0x100000usize;
+        let addr: usize = manifest_first + (n+1)*0x100000usize - size;
+        info!("(entry {}) look for manifest from {:#x} to {:#x}", n, addr, addr+size);
+        manifests[n] = manifest::BitstreamManifest::from_addr(addr, size);
+    }
 
-    let opts = opts::Options::new(&manifest);
-    let app = Mutex::new(RefCell::new(App::new(opts, manifest.clone())));
+    let opts = opts::Options::new(&manifests);
+    let app = Mutex::new(RefCell::new(App::new(opts, manifests.clone())));
 
     handler!(timer0 = || timer0_handler(&app));
 
@@ -238,11 +245,13 @@ fn main() -> ! {
             draw::draw_name(&mut display, H_ACTIVE/2, V_ACTIVE-50, 0, UI_NAME, UI_SHA).ok();
 
             if let Some(n) = opts.boot.selected {
-                draw_summary(&mut display, &manifest.bitstreams[n], -20, -18, 0);
-                Line::new(Point::new(255, (V_ACTIVE/2 - 55 + (n as u32)*18) as i32),
-                          Point::new((H_ACTIVE/2-90) as i32, (V_ACTIVE/2+8) as i32))
-                          .into_styled(stroke)
-                          .draw(&mut display).ok();
+                if let Some(manifest) = &manifests[n] {
+                    draw_summary(&mut display, &manifest, -20, -18, 0);
+                    Line::new(Point::new(255, (V_ACTIVE/2 - 55 + (n as u32)*18) as i32),
+                              Point::new((H_ACTIVE/2-90) as i32, (V_ACTIVE/2+8) as i32))
+                              .into_styled(stroke)
+                              .draw(&mut display).ok();
+                }
             }
 
             for _ in 0..10 {

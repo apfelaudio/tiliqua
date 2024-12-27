@@ -51,7 +51,13 @@ impl_option_page!(Options,
                   (Screen::Boot, boot));
 
 impl Options {
-    pub fn new(manifest: &manifest::BitstreamManifest) -> Options {
+    pub fn new(manifests: &[Option<manifest::BitstreamManifest>; 8]) -> Options {
+        let mut names: [OptionString; 8] = [const { OptionString::new() }; 8];
+        for n in 0..manifests.len() {
+            if let Some(manifest) = &manifests[n] {
+                names[n] = manifest.name.clone();
+            }
+        }
         Options {
             modify: false,
             draw: true,
@@ -62,56 +68,56 @@ impl Options {
             boot: BootOptions {
                 selected: Some(0),
                 bitstream0: NumOption{
-                    name: manifest.bitstreams[0].name.clone(),
+                    name: names[0].clone(),
                     value: 0,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream1: NumOption{
-                    name: manifest.bitstreams[1].name.clone(),
+                    name: names[1].clone(),
                     value: 1,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream2: NumOption{
-                    name: manifest.bitstreams[2].name.clone(),
+                    name: names[2].clone(),
                     value: 2,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream3: NumOption{
-                    name: manifest.bitstreams[3].name.clone(),
+                    name: names[3].clone(),
                     value: 3,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream4: NumOption{
-                    name: manifest.bitstreams[4].name.clone(),
+                    name: names[4].clone(),
                     value: 4,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream5: NumOption{
-                    name: manifest.bitstreams[5].name.clone(),
+                    name: names[5].clone(),
                     value: 5,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream6: NumOption{
-                    name: manifest.bitstreams[6].name.clone(),
+                    name: names[6].clone(),
                     value: 6,
                     step: 0,
                     min: 0,
                     max: 8,
                 },
                 bitstream7: NumOption{
-                    name: manifest.bitstreams[7].name.clone(),
+                    name: names[7].clone(),
                     value: 7,
                     step: 0,
                     min: 0,

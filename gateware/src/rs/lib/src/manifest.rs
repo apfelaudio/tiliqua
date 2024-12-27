@@ -82,6 +82,11 @@ impl BitstreamManifest {
             }
         }
 
+        if last_byte == size {
+            info!("Manifest region is all ones, ignoring.");
+            return None
+        }
+
         let manifest_slice = &manifest_slice[0..last_byte];
         info!("Manifest length: {}", last_byte);
 
