@@ -51,3 +51,4 @@ colors_vectorscope = { call = "example_vectorscope.top:colors()" }
 # Documentation
 document.cmd = "sphinx-build docs/ docs/_build/ -W --keep-going"
 document-live.cmd = "sphinx-autobuild docs/ docs/_build/ --watch ."
+flash = {call = "tiliqua.flash:main"}
