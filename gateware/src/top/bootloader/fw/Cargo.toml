@@ -22,6 +22,7 @@ strum = {version = "0.25.0", features = ["derive"], default-features=false}
 critical-section = "1.2.0"
 amaranth-soc-isr = { path="../../../rs/isr", default-features = false }
 irq = "0.2.3"
+crc = "3.2.1"
 
 [profile.release]
 codegen-units = 1

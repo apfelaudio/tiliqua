@@ -7,6 +7,9 @@ use log::{info, error};
 use riscv_rt::entry;
 use irq::handler;
 use core::cell::RefCell;
+use heapless::String;
+
+use core::str::FromStr;
 
 use tiliqua_pac as pac;
 use tiliqua_hal as hal;
@@ -43,6 +46,7 @@ pub const N_MANIFESTS: usize = 8;
 struct App {
     ui: UI,
     reboot_n: Option<usize>,
+    error_n: [Option<String<32>>; N_MANIFESTS],
     time_since_reboot_requested: u32,
     manifests: [Option<BitstreamManifest>; N_MANIFESTS],
 }
@@ -58,6 +62,7 @@ impl App {
             ui: UI::new(opts, TIMER0_ISR_PERIOD_MS,
                         encoder, pca9635, pmod),
             reboot_n: None,
+            error_n: [const { None }; N_MANIFESTS],
             time_since_reboot_requested: 0u32,
             manifests,
         }
@@ -84,29 +89,43 @@ where
 {
     let norm = MonoTextStyle::new(&FONT_9X15,      Gray8::new(0xB0 + hue));
     Text::with_alignment(
-        "video:".into(),
+        "brief:".into(),
         Point::new((H_ACTIVE/2 - 10) as i32 + or, (V_ACTIVE/2+20) as i32 + ot),
         norm,
         Alignment::Right,
     )
     .draw(d).ok();
     Text::with_alignment(
-        &bitstream.video,
+        &bitstream.brief,
         Point::new((H_ACTIVE/2) as i32 + or, (V_ACTIVE/2+20) as i32 + ot),
         norm,
         Alignment::Left,
     )
     .draw(d).ok();
     Text::with_alignment(
-        "brief:".into(),
+        "video:".into(),
         Point::new((H_ACTIVE/2 - 10) as i32 + or, (V_ACTIVE/2+40) as i32 + ot),
         norm,
         Alignment::Right,
     )
     .draw(d).ok();
     Text::with_alignment(
-        &bitstream.brief,
+        &bitstream.video,
         Point::new((H_ACTIVE/2) as i32 + or, (V_ACTIVE/2+40) as i32 + ot),
+        norm,
+        Alignment::Left,
+    )
+    .draw(d).ok();
+    Text::with_alignment(
+        "sha:".into(),
+        Point::new((H_ACTIVE/2 - 10) as i32 + or, (V_ACTIVE/2+60) as i32 + ot),
+        norm,
+        Alignment::Right,
+    )
+    .draw(d).ok();
+    Text::with_alignment(
+        &bitstream.sha,
+        Point::new((H_ACTIVE/2) as i32 + or, (V_ACTIVE/2+60) as i32 + ot),
         norm,
         Alignment::Left,
     )
@@ -136,6 +155,7 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
             // Give codec time to mute and display time to draw 'REBOOTING'
             if app.time_since_reboot_requested > 500 {
                 // Is there a firmware image to copy to PSRAM before we switch bitstreams?
+                let mut bad_crc = false;
                 if let Some(manifest) = &app.manifests[n] {
                     for region in &manifest.regions {
                         if let Some(psram_dst) = region.psram_dst {
@@ -149,28 +169,46 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
                                   SPIFLASH_BASE + (region.spiflash_src + region.size) as usize,
                                   PSRAM_BASE + psram_dst as usize,
                                   PSRAM_BASE + (psram_dst + region.size) as usize);
-                            for i in 0..128*1024 {
+                            for i in 0..size_words {
                                 unsafe {
                                     let d = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
                                     psram_ptr.offset(psram_offset_words + i).write_volatile(d);
                                 }
                             }
                             info!("Verify {} KiB copied correctly ...", (size_words*4) / 1024);
-                            for i in 0..128*1024 {
+                            let mut crc_bzip2 = crc::Crc::<u32>::new(&crc::CRC_32_BZIP2);
+                            let mut digest = crc_bzip2.digest();
+                            for i in 0..size_words {
                                 unsafe {
                                     let d1 = psram_ptr.offset(psram_offset_words + i).read_volatile();
-                                    let d2 = spiflash_ptr.offset(spiflash_offset_words + i).read_volatile();
-                                    if d1 != d2 {
-                                        error!("region: {} != {} @ {}\n\r", d1, d2, i);
+                                    if i != (size_words - 1) {
+                                        digest.update(&d1.to_le_bytes());
+                                    } else {
+                                        digest.update(&d1.to_le_bytes()[0..(region.size as usize)%4usize]);
                                     }
                                 }
                             }
-                            info!("copy OK.");
+                            let crc_result = digest.finalize();
+                            info!("got PSRAM crc: {:#x}, manifest wants: {:#x}", crc_result, region.crc);
+                            if crc_result == region.crc {
+                                info!("CRC OK.");
+                            } else {
+                                info!("CRC NOT OK.");
+                                bad_crc = true;
+                            }
                         }
                     }
                 }
-                info!("BITSTREAM{}\n\r", n);
-                loop {}
+                if !bad_crc {
+                    info!("BITSTREAM{}\n\r", n);
+                    loop {}
+                } else {
+                    // Bad CRC: cancel reboot, draw an error.
+                    app.ui.opts.toggle_modify();
+                    app.reboot_n = None;
+                    app.time_since_reboot_requested = 0;
+                    app.error_n[n] = Some(String::from_str("ERR: CRC FAIL").unwrap());
+                }
             }
         }
     });
@@ -236,9 +274,10 @@ fn main() -> ! {
 
         loop {
 
-            let (opts, reboot_n) = critical_section::with(|cs| {
+            let (opts, reboot_n, error_n) = critical_section::with(|cs| {
                 (app.borrow_ref(cs).ui.opts.clone(),
-                 app.borrow_ref(cs).reboot_n.clone())
+                 app.borrow_ref(cs).reboot_n.clone(),
+                 app.borrow_ref(cs).error_n.clone())
             });
 
             draw::draw_options(&mut display, &opts, 100, V_ACTIVE/2-50, 0).ok();
@@ -251,6 +290,16 @@ fn main() -> ! {
                               Point::new((H_ACTIVE/2-90) as i32, (V_ACTIVE/2+8) as i32))
                               .into_styled(stroke)
                               .draw(&mut display).ok();
+                }
+                if let Some(error) = &error_n[n] {
+                    let norm = MonoTextStyle::new(&FONT_9X15, Gray8::new(0xF0));
+                    Text::with_alignment(
+                        &error,
+                        Point::new((H_ACTIVE/2) as i32 - 20, (V_ACTIVE/2) as i32 - 20),
+                        norm,
+                        Alignment::Left,
+                    )
+                    .draw(&mut display).ok();
                 }
             }
 
