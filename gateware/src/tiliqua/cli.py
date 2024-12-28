@@ -10,10 +10,13 @@ import argparse
 import enum
 import git
 import logging
+import json
 import os
 import subprocess
 import sys
 import time
+import tarfile
+from datetime import datetime
 
 from fastcrc import crc32
 
@@ -38,7 +41,7 @@ def maybe_flash_firmware(args, kwargs, force_flash=False):
                 "sudo", "openFPGALoader", "-c", "dirtyJtag", "-f", "-o", f"{hex(kwargs['fw_offset'])}",
                 "--file-type", "raw", kwargs["firmware_bin_path"]
             ]
-            print("Flash firmware with:")
+            print("SoC is configured for XIP, firmware may be flashed directly to SPI flash using:")
             print("\t$", ' '.join(args_flash_firmware))
             if args.flash or force_flash:
                 subprocess.check_call(args_flash_firmware, env=os.environ)
@@ -49,13 +52,8 @@ def maybe_flash_firmware(args, kwargs, force_flash=False):
             ]
             firmware_size = os.path.getsize(kwargs["firmware_bin_path"])
             print("This bitstream expects firmware already copied from SPI flash to PSRAM "
-                  "by a bootloader. You must use the generated `manifest.json` launched by "
-                  "the bootloader bitstream to start this bitstream.")
-            print()
-            print("Firmware may be flashed using a command like:")
-            print("\t$", ' '.join(args_flash_firmware))
-            print()
-            print("Where {{spiflash_src}} matches the value in the manifest.")
+                  "by a bootloader.\nThe bootloader must use the manifest from the bitstream archive "
+                  "to accomplish this.")
 
 
 # TODO: these arguments would likely be cleaner encapsulated in a dataclass that
@@ -223,19 +221,53 @@ def top_level_cli(
     manifest_path = os.path.join(build_path, "manifest.json")
 
     def write_manifest(regions):
+        manifest = BitstreamManifest(
+            name=args.name,
+            version=BITSTREAM_MANIFEST_VERSION,
+            sha=repo.head.object.hexsha[:6],
+            brief=args.brief,
+            video=args.resolution if hasattr(args, 'resolution') else "<none>",
+            regions=regions
+        )
+        
         with open(manifest_path, "w") as f:
-            f.write(BitstreamManifest(
-                name=args.name,
-                version=BITSTREAM_MANIFEST_VERSION,
-                sha=repo.head.object.hexsha[:6],
-                brief=args.brief,
-                video=args.resolution if hasattr(args, 'resolution') else "<none>",
-                regions=regions
-                ).to_json())
-            print("wrote manifest template:", manifest_path)
+            f.write(manifest.to_json())
+            
+        return manifest
+
+    def create_archive():
+        archive_name = f"{args.name.lower()}-{repo.head.object.hexsha[:6]}.tar.gz"
+        archive_path = os.path.join(build_path, archive_name)
+        bitstream_path = "build/top.bit"
+        
+        # Check if we have a bitstream
+        has_bitstream = os.path.exists(bitstream_path)
+        if not has_bitstream:
+            print("\nWARNING: Skipping archive creation - bitstream has not been built")
+            return
+            
+        print(f"\nCreating bitstream archive {archive_name}...")
+        with tarfile.open(archive_path, "w:gz") as tar:
+            tar.add(bitstream_path, arcname="top.bit")
+            tar.add(manifest_path, arcname="manifest.json")
+            if isinstance(fragment, TiliquaSoc):
+                tar.add(kwargs["firmware_bin_path"], arcname="firmware.bin")
+        
+        # Print archive contents and size
+        print(f"\nContents:")
+        with tarfile.open(archive_path, "r:gz") as tar:
+            for member in tar.getmembers():
+                print(f"  {member.name:<12} {member.size//1024:>4} KiB")
+        archive_size = os.path.getsize(archive_path)
+        print(f"\nCompressed bitstream archive size: {archive_size//1024} KiB")
+
+        # Print manifest contents
+        with open(manifest_path) as f:
+            manifest = json.load(f)
+        print(f"\nManifest contents:\n{json.dumps(manifest, indent=2)}")
+            
 
     if isinstance(fragment, TiliquaSoc):
-
         # Generate SVD
         svd_path = os.path.join(rust_fw_root, "soc.svd")
         fragment.gensvd(svd_path)
@@ -270,8 +302,9 @@ def top_level_cli(
                 regions[-1].psram_dst = kwargs["fw_offset"]
         write_manifest(regions)
 
-        # Optionally stop here if --fw-only is specified
+        # Create firmware-only archive if --fw-only specified
         if args.fw_only:
+            create_archive()
             maybe_flash_firmware(args, kwargs)
             sys.exit(0)
 
@@ -314,15 +347,10 @@ def top_level_cli(
 
         hw_platform.build(fragment, **build_flags)
 
-        # Print size information and some flashing instructions
-        bitstream_path = "build/top.bit"
-        bitstream_size = os.path.getsize(bitstream_path)
-        print()
-        print(f"Bitstream size: {bitstream_size//1024} KiB")
-        if isinstance(fragment, TiliquaSoc):
-            firmware_size = os.path.getsize(kwargs["firmware_bin_path"])
-            print(f"Firmware size: {firmware_size//1024} KiB")
+        # Create archive with everything
+        create_archive()
 
+        bitstream_path = "build/top.bit"
         args_flash_bitstream = ["sudo", "openFPGALoader", "-c", "dirtyJtag",
                                 "-f", bitstream_path]
         print()
