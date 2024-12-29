@@ -37,9 +37,9 @@ def flash_file(file_path, offset, file_type="auto", dry_run=True):
         print("\t$", " ".join(cmd))
         subprocess.check_call(cmd)
 
-def check_region_overlaps(regions):
+def check_region_overlaps(regions, slot=None):
     """
-    Check for overlapping regions in flash commands.
+    Check for overlapping regions in flash commands and slot boundaries.
     Each region is aligned up before checking.
     Returns (bool, str) tuple: (has_overlap, error_message)
     """
@@ -48,7 +48,16 @@ def check_region_overlaps(regions):
     for r in regions:
         start = r['addr']
         size = (r['size'] + FLASH_PAGE_SIZE - 1) & ~(FLASH_PAGE_SIZE - 1)  # Align up
-        aligned_regions.append((start, start + size, r['name']))
+        end = start + size
+        aligned_regions.append((start, end, r['name']))
+
+        # For non-XIP firmware, check if any region exceeds its slot
+        if slot is not None:
+            slot_start = (start // SLOT_SIZE) * SLOT_SIZE
+            slot_end = slot_start + SLOT_SIZE
+            if end > slot_end:
+                return (True, f"Region '{r['name']}' exceeds slot boundary: "
+                            f"ends at 0x{end:x}, slot ends at 0x{slot_end:x}")
 
     # Sort by start address
     aligned_regions.sort()
@@ -217,7 +226,7 @@ def flash_archive(archive_path, slot=None, noconfirm=False):
                 print(f"    end:   0x{region['addr']+aligned_size-1:x}")
 
             # Check for overlaps before proceeding
-            has_overlap, error_msg = check_region_overlaps(regions_to_check)
+            has_overlap, error_msg = check_region_overlaps(regions_to_check, slot)
             if has_overlap:
                 print(f"Error: {error_msg}")
                 sys.exit(1)
