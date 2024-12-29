@@ -9,6 +9,7 @@ const MANIFEST_SIZE = 1024;
 const FIRMWARE_BASE_SLOT0 = 0x1C0000;
 const FLASH_PAGE_SIZE = 1024;
 const MAX_ERROR_LINES = 100;
+const globalLogHistory = [];
 
 // Store loaded archives
 const loadedArchives = new Map();
@@ -22,7 +23,21 @@ window.handleFlash = async function(slotId) {
     if (!slotData) return;
     
     try {
-        // Collect all commands first
+        // Show manifest contents first
+        showError(slotId, "Manifest contents to be flashed:");
+        showError(slotId, JSON.stringify(slotData.manifest, null, 2));
+        
+        // Log regions
+        showError(slotId, "\nRegions to be flashed:");
+        for (const region of slotData.regions.sort((a, b) => a.addr - b.addr)) {
+            const alignedSize = (region.size + FLASH_PAGE_SIZE - 1) & ~(FLASH_PAGE_SIZE - 1);
+            showError(slotId, `${region.name}:
+    start: 0x${region.addr.toString(16)}
+    end:   0x${(region.addr + alignedSize - 1).toString(16)}
+    size:  ${region.size} bytes (${alignedSize} bytes aligned)`);
+        }
+
+        // Collect and show commands
         const commands = [];
         for (const region of slotData.regions) {
             const fileData = await slotData.archive.get(region.filename)?.arrayBuffer();
@@ -41,19 +56,11 @@ window.handleFlash = async function(slotId) {
             }
         }
 
-        // Show commands and get confirmation
-        showError(slotId, "The following commands will be executed:\n" + 
+        showError(slotId, "\nThe following commands will be executed:\n" + 
             commands.map(cmd => 
                 `openFPGALoader ${cmd.args.join(' ')} ${cmd.name}`
             ).join('\n')
         );
-
-        /*
-        if (!confirm("Proceed with flashing?")) {
-            showError(slotId, "Flash cancelled");
-            return;
-        }
-        */
 
         // Execute commands
         for (const cmd of commands) {
@@ -157,9 +164,28 @@ async function loadArchive(file, slotId) {
     // Parse manifest
     const manifest = JSON.parse(await archive.get('manifest.json').text());
     
+    // Check for XIP/bootloader images in normal slots
+    const isBootloader = slotId === 'bootloader';
+    if (!isBootloader) {
+        // Check if any region has psram_dst null/undefined (indicates XIP/bootloader firmware)
+        const hasXipRegions = (manifest.regions || []).some(region => 
+            region.filename && (region.psram_dst === null || region.psram_dst === undefined)
+        );
+        if (hasXipRegions) {
+            throw new Error("Cannot load bootloader/XIP firmware in a normal slot - all regions must have psram_dst set");
+        }
+    } else {
+        // Check if any region has psram_dst set (indicates PSRAM-based firmware)
+        const hasPsramRegions = (manifest.regions || []).some(region => 
+            region.filename && region.psram_dst !== undefined && region.psram_dst !== null
+        );
+        if (hasPsramRegions) {
+            throw new Error("Cannot load non-XIP / user bitstream in bootloader slot - no regions should have psram_dst set");
+        }
+    }
+    
     // Collect regions
     const regions = [];
-    const isBootloader = slotId === 'bootloader';
     const slot = isBootloader ? null : parseInt(slotId);
     
     if (isBootloader) {
@@ -194,16 +220,12 @@ async function loadArchive(file, slotId) {
             size: (await archive.get('top.bit').arrayBuffer()).byteLength,
         });
         
-        regions.push({
-            name: 'manifest',
-            filename: 'manifest.json',
-            addr: (slotBase + SLOT_SIZE) - MANIFEST_SIZE,
-            size: MANIFEST_SIZE,
-        });
-        
         let currentFirmwareBase = firmwareBase;
         for (const region of manifest.regions || []) {
             if (region.filename && region.psram_dst !== undefined) {
+                // Update spiflash_src in manifest
+                region.spiflash_src = currentFirmwareBase;
+                
                 regions.push({
                     name: region.filename,
                     filename: region.filename,
@@ -214,6 +236,17 @@ async function loadArchive(file, slotId) {
                 currentFirmwareBase = (currentFirmwareBase + 0xFFF) & ~0xFFF;
             }
         }
+
+        // Add manifest region last (with updated spiflash_src values)
+        const manifestJson = JSON.stringify(manifest);
+        archive.set('manifest.json', new TextEncoder().encode(manifestJson));
+        
+        regions.push({
+            name: 'manifest',
+            filename: 'manifest.json',
+            addr: (slotBase + SLOT_SIZE) - MANIFEST_SIZE,
+            size: MANIFEST_SIZE,
+        });
     }
     
     // Check for overlaps
@@ -223,10 +256,10 @@ async function loadArchive(file, slotId) {
     }
     
     // Store archive and regions
-    loadedArchives.set(slotId, { archive, regions });
+    loadedArchives.set(slotId, { archive, regions, manifest });
     
-    // Display regions
-    displayRegions(slotId, regions);
+    // Display manifest
+    displayRegions(slotId, regions, manifest);
 }
 
 function checkRegionOverlaps(regions, slot) {
@@ -260,40 +293,72 @@ function checkRegionOverlaps(regions, slot) {
     return [false, ""];
 }
 
-function displayRegions(slotId, regions) {
+function displayRegions(slotId, regions, manifest) {
     const regionsDiv = document.getElementById(`regions-${slotId}`);
-    regionsDiv.innerHTML = regions.map(r => {
-        const alignedSize = (r.size + FLASH_PAGE_SIZE - 1) & ~(FLASH_PAGE_SIZE - 1);
-        return `${r.name}:<br>` +
-               `&nbsp;&nbsp;start: 0x${r.addr.toString(16)}<br>` +
-               `&nbsp;&nbsp;end: 0x${(r.addr + alignedSize - 1).toString(16)}`;
-    }).join('<br><br>');
+    
+    function createTableFromObject(obj) {
+        const rows = [];
+        function addRow(key, value, indent = 0) {
+            // Skip the regions array
+            if (key === 'regions') return;
+            
+            if (typeof value === 'object' && value !== null) {
+                Object.entries(value).forEach(([k, v]) => {
+                    addRow(k, v, indent + 2);
+                });
+            } else {
+                rows.push(`<tr><td>${'&nbsp;'.repeat(indent)}${key}</td><td>${value}</td></tr>`);
+            }
+        }
+        
+        Object.entries(manifest).forEach(([key, value]) => {
+            addRow(key, value);
+        });
+        
+        return `<table class="manifest-table">${rows.join('')}</table>`;
+    }
+    
+    regionsDiv.innerHTML = createTableFromObject(manifest);
+}
+
+function addToGlobalLog(slotId, message, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    const lines = message.split('\n');
+    
+    lines.forEach(line => {
+        if (line.trim()) {  // Skip empty lines
+            const logEntry = {
+                timestamp,
+                slotId,
+                message: line,
+                type
+            };
+            globalLogHistory.push(logEntry);
+            
+            // Update display
+            const logContent = document.getElementById('global-log');
+            const logLine = document.createElement('div');
+            logLine.className = `log-line ${type}`;
+            logLine.innerHTML = `<span class="timestamp">${timestamp}</span><span class="slot-id">[s/${slotId}] </span>${line}`;
+            logContent.appendChild(logLine);
+            
+            // Auto-scroll to bottom
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+    });
 }
 
 function showError(slotId, message) {
-    // Get or create message history array for this slot
-    if (!messageHistory.has(slotId)) {
-        messageHistory.set(slotId, []);
-    }
-    const history = messageHistory.get(slotId);
-    
-    // Split new message into lines and add each line to history
-    const newLines = message.split('\n');
-    history.push(...newLines);
-    
-    // Keep only the last MAX_ERROR_LINES lines
-    while (history.length > MAX_ERROR_LINES) {
-        history.shift();
+    // Determine message type
+    let type = 'info';
+    if (message.toLowerCase().includes('error') || message.toLowerCase().includes('failed')) {
+        type = 'error';
+    } else if (message.toLowerCase().includes('success')) {
+        type = 'success';
     }
     
-    // Update the display
-    const errorDiv = document.getElementById(`error-${slotId}`);
-    errorDiv.innerHTML = history.map(line => 
-        `<div class="message-line">${line}</div>`
-    ).join('');
-    
-    // Scroll to bottom
-    errorDiv.scrollTop = errorDiv.scrollHeight;
+    // Add to global log
+    addToGlobalLog(slotId, message, type);
 }
 
 async function readTarGz(file) {

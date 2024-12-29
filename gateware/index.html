@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Tiliqua Flash Tool</title>
+    <title>Tiliqua Multiboot Flash Tool</title>
     <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -10,14 +10,15 @@
             color: #ffffff;
             font-family: 'Space Grotesk', sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            min-height: 100vh;
         }
 
         .slot-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
+            flex-direction: column;
             gap: 20px;
-            padding: 20px;
+            width: 100%;
         }
 
         .slot {
@@ -25,10 +26,11 @@
             padding: 20px;
             border-radius: 8px;
             background-color: #1a1a1a;
+            display: flex;
+            gap: 20px;
         }
 
         .bootloader-slot {
-            grid-column: 1 / -1;
             background-color: #1a2634;
             border-color: #234;
         }
@@ -80,18 +82,6 @@
             padding: 2px 0;
         }
 
-        /* Add a subtle fade effect for scrolling */
-        .error::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 20px;
-            background: linear-gradient(transparent, #1a1a1a);
-            pointer-events: none;
-        }
-
         .regions-list {
             font-family: 'Space Grotesk', monospace;
             margin: 10px 0;
@@ -123,36 +113,196 @@
         input[type="file"]::-webkit-file-upload-button:hover {
             background: #444;
         }
+
+        /* Add new styles for the layout and log panel */
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .slot-container {
+            flex: 0 1 800px;
+            min-width: 0;
+        }
+
+        .log-panel {
+            flex: 0 0 400px;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            position: sticky;
+            top: calc(20px + 24px + 20px);
+            max-height: calc(100vh - (20px + 24px + 20px + 20px));
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .log-panel h3 {
+            margin-top: 0;
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .log-content {
+            flex: 1;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            background: #0a0a0a;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .log-line {
+            padding: 2px 0;
+        }
+
+        .log-line.error {
+            color: #ff6b6b;
+        }
+
+        .log-line.success {
+            color: #4CAF50;
+        }
+
+        .log-line.info {
+            color: #aaa;
+        }
+
+        .log-line .timestamp {
+            color: #666;
+            margin-right: 8px;
+        }
+
+        .log-line .slot-id {
+            color: #4a9eff;
+            margin-right: 8px;
+        }
+
+        /* Add responsive breakpoint */
+        @media (max-width: 1200px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .slot-container {
+                flex: 1;
+                width: 100%;
+            }
+
+            .log-panel {
+                flex: 0 0 300px;
+                width: 100%;
+                position: static;
+                height: 300px;
+            }
+        }
+
+        .slot-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .manifest-view {
+            flex: 0 0 300px;
+            font-size: 0.8em;
+            font-family: monospace;
+            background: #0f0f0f;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .manifest-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .manifest-table td {
+            padding: 2px 4px;
+            vertical-align: top;
+        }
+
+        .manifest-table td:first-child {
+            color: #4a9eff;
+            white-space: nowrap;
+            padding-right: 10px;
+        }
+
+        .manifest-table td:last-child {
+            color: #aaa;
+            word-break: break-word;
+        }
+
+        @media (max-width: 800px) {
+            .slot {
+                flex-direction: column;
+            }
+
+            .manifest-view {
+                flex: 0 0 200px;
+            }
+        }
+
+        h1 {
+            color: #fff;
+            font-weight: 500;
+            margin: 0;
+            padding: 0 0 20px 0;
+            font-size: 24px;
+        }
     </style>
 </head>
 <body>
-    <div class="slot-grid">
-        <div class="slot bootloader-slot" id="bootloader">
-            <h3>Bootloader Slot (0x000000)</h3>
-            <div class="slot-content">
-                <input type="file" accept=".tar.gz" id="file-bootloader">
-                <button class="flash-button" disabled>Flash</button>
-            </div>
-            <div class="regions-list" id="regions-bootloader"></div>
-            <div class="error" id="error-bootloader"></div>
-        </div>
-        
-        <!-- Generate 8 user slots -->
-        <script>
-            for (let i = 0; i < 8; i++) {
-                document.write(`
-                    <div class="slot" id="slot-${i}">
-                        <h3>Slot ${i} (0x${(0x100000 + i * 0x100000).toString(16)})</h3>
+    <div class="container">
+        <div class="slot-container">
+            <h1>Tiliqua Flasher</h1>
+            <div class="slot-grid">
+                <!-- Generate 8 user slots -->
+                <script>
+                    for (let i = 0; i < 8; i++) {
+                        document.write(`
+                            <div class="slot" id="slot-${i}">
+                                <div class="slot-main">
+                                    <h3>Slot ${i} (0x${(0x100000 + i * 0x100000).toString(16)})</h3>
+                                    <div class="slot-content">
+                                        <input type="file" accept=".tar.gz" id="file-${i}">
+                                        <button class="flash-button" disabled>Flash</button>
+                                    </div>
+                                    <div class="error" id="error-${i}"></div>
+                                </div>
+                                <div class="manifest-view" id="regions-${i}"></div>
+                            </div>
+                        `);
+                    }
+                </script>
+
+                <div class="slot bootloader-slot" id="bootloader">
+                    <div class="slot-main">
+                        <h3>Bootloader (0x000000)</h3>
                         <div class="slot-content">
-                            <input type="file" accept=".tar.gz" id="file-${i}">
+                            <input type="file" accept=".tar.gz" id="file-bootloader">
                             <button class="flash-button" disabled>Flash</button>
                         </div>
-                        <div class="regions-list" id="regions-${i}"></div>
-                        <div class="error" id="error-${i}"></div>
+                        <div class="error" id="error-bootloader"></div>
                     </div>
-                `);
-            }
-        </script>
+                    <div class="manifest-view" id="regions-bootloader"></div>
+                </div>
+            </div>
+        </div>
+        <div class="log-panel">
+            <h3>Log</h3>
+            <div class="log-content" id="global-log"></div>
+        </div>
     </div>
 
     <script type="module" src="flash.js"></script>
