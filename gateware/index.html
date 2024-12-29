@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tiliqua Flash Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            font-family: 'Space Grotesk', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .slot-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .slot {
+            border: 2px solid #333;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #1a1a1a;
+        }
+
+        .bootloader-slot {
+            grid-column: 1 / -1;
+            background-color: #1a2634;
+            border-color: #234;
+        }
+
+        .slot h3 {
+            margin-top: 0;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .slot-content {
+            margin: 15px 0;
+        }
+
+        .flash-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .flash-button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+
+        .flash-button:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+        }
+
+        .error {
+            color: #ff6b6b;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .message-line {
+            padding: 2px 0;
+        }
+
+        /* Add a subtle fade effect for scrolling */
+        .error::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(transparent, #1a1a1a);
+            pointer-events: none;
+        }
+
+        .regions-list {
+            font-family: 'Space Grotesk', monospace;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        input[type="file"] {
+            background: #222;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            margin-right: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        input[type="file"]::-webkit-file-upload-button {
+            background: #333;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="slot-grid">
+        <div class="slot bootloader-slot" id="bootloader">
+            <h3>Bootloader Slot (0x000000)</h3>
+            <div class="slot-content">
+                <input type="file" accept=".tar.gz" id="file-bootloader">
+                <button class="flash-button" disabled>Flash</button>
+            </div>
+            <div class="regions-list" id="regions-bootloader"></div>
+            <div class="error" id="error-bootloader"></div>
+        </div>
+        
+        <!-- Generate 8 user slots -->
+        <script>
+            for (let i = 0; i < 8; i++) {
+                document.write(`
+                    <div class="slot" id="slot-${i}">
+                        <h3>Slot ${i} (0x${(0x100000 + i * 0x100000).toString(16)})</h3>
+                        <div class="slot-content">
+                            <input type="file" accept=".tar.gz" id="file-${i}">
+                            <button class="flash-button" disabled>Flash</button>
+                        </div>
+                        <div class="regions-list" id="regions-${i}"></div>
+                        <div class="error" id="error-${i}"></div>
+                    </div>
+                `);
+            }
+        </script>
+    </div>
+
+    <script type="module" src="flash.js"></script>
+</body>
+</html> 
