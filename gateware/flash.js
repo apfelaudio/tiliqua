@@ -17,12 +17,40 @@ const loadedArchives = new Map();
 // Add this to store message history for each slot
 const messageHistory = new Map();
 
+// Add at the top of the file
+let usbDevice = null;
+
+async function initWebUSB() {
+    try {
+        // Request device with OpenFPGALoader's USB VID/PID
+        usbDevice = await navigator.usb.requestDevice({
+            filters: [
+            ]
+        });
+        await usbDevice.open();
+        console.log("WebUSB initialized successfully");
+        return true;
+    } catch (error) {
+        console.error("WebUSB initialization failed:", error);
+        return false;
+    }
+}
+
 // Make handleFlash global
 window.handleFlash = async function(slotId) {
     const slotData = loadedArchives.get(slotId.toString());
     if (!slotData) return;
     
     try {
+        // Initialize WebUSB if not already done
+        if (!usbDevice) {
+            showError(slotId, "Requesting USB device access...");
+            if (!await initWebUSB()) {
+                throw new Error("Failed to get USB device access. Please make sure your device is connected and try again.");
+            }
+            showError(slotId, "USB device access granted.");
+        }
+
         // Show manifest contents first
         showError(slotId, "Manifest contents to be flashed:");
         showError(slotId, JSON.stringify(slotData.manifest, null, 2));
@@ -37,30 +65,54 @@ window.handleFlash = async function(slotId) {
     size:  ${region.size} bytes (${alignedSize} bytes aligned)`);
         }
 
-        // Collect and show commands
+        // Collect and sort commands - manifest first, firmware next, bitstream last
         const commands = [];
+        const bitstreamCommand = {args: [], data: null, name: "", addr: 0};
+        let manifestCommand = null;
+        
         for (const region of slotData.regions) {
             const fileData = await slotData.archive.get(region.filename)?.arrayBuffer();
-            if (fileData) {
-                commands.push({
-                    args: [
-                        "-c", "dirtyJtag",
-                        "-f",
-                        "-o", `${region.addr.toString(16)}`,
-                        "--file-type", region.filename.endsWith('.bit') ? "bit" : "raw"
-                    ],
-                    data: new Uint8Array(fileData),
-                    name: region.filename,
-                    addr: region.addr
-                });
+            if (!fileData) continue;
+
+            const cmd = {
+                args: [
+                    "-c", "dirtyJtag",
+                    "-f",
+                    "-o", `0x${region.addr.toString(16)}`,
+                    "--file-type", region.filename.endsWith('.bit') ? "bit" : "raw",
+                    "--skip-reset"  // Add for all except last command
+                ],
+                data: new Uint8Array(fileData),
+                name: region.filename,
+                addr: region.addr
+            };
+
+            if (region.filename === 'top.bit') {
+                // Save bitstream command for last (without --skip-reset)
+                Object.assign(bitstreamCommand, cmd);
+                bitstreamCommand.args = bitstreamCommand.args.filter(arg => arg !== '--skip-reset');
+            } else if (region.filename === 'manifest.json') {
+                // Save manifest command to be added first
+                manifestCommand = cmd;
+            } else {
+                // Add firmware commands in the middle
+                commands.push(cmd);
             }
         }
+        
+        // Add commands in correct order: manifest, firmware, bitstream
+        if (manifestCommand) {
+            commands.unshift(manifestCommand);
+        }
+        if (bitstreamCommand.args.length > 0) {
+            commands.push(bitstreamCommand);
+        }
 
-        showError(slotId, "\nThe following commands will be executed:\n" + 
-            commands.map(cmd => 
-                `openFPGALoader ${cmd.args.join(' ')} ${cmd.name}`
-            ).join('\n')
-        );
+        // Show commands in order
+        showError(slotId, "\nThe following commands will be executed in order:");
+        for (const cmd of commands) {
+            showError(slotId, `openFPGALoader ${cmd.args.join(' ')} ${cmd.name}`);
+        }
 
         // Execute commands
         for (const cmd of commands) {
