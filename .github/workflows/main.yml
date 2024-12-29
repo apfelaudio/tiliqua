@@ -3,7 +3,6 @@ name: build & test
 on: [push]
 
 jobs:
-
   unit-tests:
     runs-on: ubuntu-latest
     steps:
@@ -14,225 +13,79 @@ jobs:
           pdm test
         working-directory: gateware
 
-  ubuntu-usb-audio:
+  setup-rust:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm usb_audio build
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-usb-audio.bit
-          path: gateware/build/top.bit
-
-  ubuntu-usb-host:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm usb_host build --midi-device arturia-keylab49-mkii
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-usb-host.bit
-          path: gateware/build/top.bit
-
-  ubuntu-bitstream-dsp-nco:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm dsp build --dsp-core nco
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-dsp-svf.bit
-          path: gateware/build/top.bit
-
-  ubuntu-bitstream-dsp-psram-diffuser:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm dsp build --dsp-core psram_diffuser
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-dsp-psram-diffuser.bit
-          path: gateware/build/top.bit
-
-  ubuntu-bitstream-dsp-midicv:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm dsp build --dsp-core midicv
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-dsp-midicv.bit
-          path: gateware/build/top.bit
-
-  ubuntu-bitstream-xbeam:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
-            override: True
-            components: rustfmt, clippy, llvm-tools
-            target: riscv32im-unknown-none-elf
+          toolchain: stable
+          override: True
+          components: rustfmt, clippy, llvm-tools
+          target: riscv32im-unknown-none-elf
       - run: cargo install cargo-binutils form
-      # https://github.com/rust-embedded/svd2rust/issues/863
       - run: cargo install svd2rust --locked
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm xbeam build
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-xbeam.bit
-          path: gateware/build/top.bit
+    outputs:
+      setup-complete: true
 
-  ubuntu-bitstream-selftest:
+  build-bitstream:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: usb-audio
+            cmd: usb_audio build
+          - name: usb-host
+            cmd: usb_host build --midi-device arturia-keylab49-mkii
+          - name: dsp-nco
+            cmd: dsp build --dsp-core nco
+          - name: dsp-psram-diffuser
+            cmd: dsp build --dsp-core psram_diffuser
+          - name: dsp-midicv
+            cmd: dsp build --dsp-core midicv
+          - name: xbeam
+            cmd: xbeam build
+          - name: selftest
+            cmd: selftest build
+          - name: poly
+            cmd: polysyn build
+          - name: macro-osc
+            cmd: macro_osc build
+            rust_target: riscv32imafc-unknown-none-elf
+          - name: vectorscope
+            cmd: vectorscope_no_soc build
+          - name: boot
+            cmd: bootloader build
+          - name: boot-stub
+            cmd: bootstub build --bootaddr 0x100000
+    needs: [setup-rust]
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
+      - run: git submodule update --init --recursive
+      
+      # Setup Rust
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
-            override: True
-            components: rustfmt, clippy, llvm-tools
-            target: riscv32im-unknown-none-elf
-      - run: cargo install cargo-binutils form
-      - run: cargo install svd2rust --locked
-      - run: git submodule update --init --recursive
+          toolchain: stable
+          override: True
+          components: rustfmt, clippy, llvm-tools
+          target: ${{ matrix.rust_target || 'riscv32im-unknown-none-elf' }}
       - run: |
-          pdm install
-          pdm selftest build
+          cargo install cargo-binutils form
+          cargo install svd2rust --locked
+          
+      # Install dependencies
+      - name: Install PDM dependencies
+        run: pdm install
         working-directory: gateware
+          
+      # Build bitstream
+      - name: Build ${{ matrix.name }}
+        run: pdm ${{ matrix.cmd }}
+        working-directory: gateware
+        
+      # Upload artifact
       - uses: actions/upload-artifact@v4
         with:
-          name: example-selftest.bit
-          path: gateware/build/top.bit
-
-
-  ubuntu-bitstream-poly:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-            toolchain: stable
-            override: True
-            components: rustfmt, clippy, llvm-tools
-            target: riscv32im-unknown-none-elf
-      - run: cargo install cargo-binutils form
-      - run: cargo install svd2rust --locked
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm polysyn build
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-poly.bit
-          path: gateware/build/top.bit
-
-  ubuntu-bitstream-macro-osc:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-            toolchain: stable
-            override: True
-            components: rustfmt, clippy, llvm-tools
-            target: riscv32imafc-unknown-none-elf
-      - run: cargo install cargo-binutils form
-      - run: cargo install svd2rust --locked
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm macro_osc build
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-macro-osc.bit
-          path: gateware/build/top.bit
-
-  ubuntu-bitstream-vectorscope:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm vectorscope_no_soc build
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-vectorscope.bit
-          path: gateware/build/top.bit
-
-  ubuntu-bitstream-boot:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-            toolchain: stable
-            override: True
-            components: rustfmt, clippy, llvm-tools
-            target: riscv32im-unknown-none-elf
-      - run: cargo install cargo-binutils form
-      - run: cargo install svd2rust --locked
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm bootloader build
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: example-boot.bit
-          path: gateware/build/top.bit
-
-
-  ubuntu-bitstream-boot-stub:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - run: git submodule update --init --recursive
-      - run: |
-          pdm install
-          pdm bootstub build --bootaddr 0x100000
-        working-directory: gateware
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bootstub1.bit
-          path: gateware/build/top.bit
+          name: ${{ matrix.name }}-${{ github.sha }}
+          path: gateware/build/${{ matrix.name }}-*.tar.gz
