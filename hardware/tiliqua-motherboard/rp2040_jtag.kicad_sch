@@ -4890,6 +4890,18 @@
 		)
 		(uuid "a0d7d47d-944e-4f75-ac92-59a6703ebe00")
 	)
+	(hierarchical_label "I2C0_SCL"
+		(shape bidirectional)
+		(at 201.93 134.62 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "ab7597bd-1915-44d1-b1a6-4702c719af6b")
+	)
 	(hierarchical_label "JTAG_TDI"
 		(shape bidirectional)
 		(at 201.93 99.06 0)
@@ -4913,6 +4925,18 @@
 			(justify left)
 		)
 		(uuid "c9b936f8-eeee-4c43-8791-b32b352aad64")
+	)
+	(hierarchical_label "I2C0_SDA"
+		(shape bidirectional)
+		(at 201.93 132.08 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "d7fe5f61-a9e6-488f-bfcc-c56f7d2818f6")
 	)
 	(hierarchical_label "JTAG_TDO"
 		(shape bidirectional)

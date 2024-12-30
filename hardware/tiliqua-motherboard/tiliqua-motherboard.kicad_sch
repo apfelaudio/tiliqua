@@ -6226,6 +6226,28 @@
 			)
 		)
 	)
+	(global_label "MOBO_I2C_SDA"
+		(shape bidirectional)
+		(at 270.51 129.54 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "a9dd248b-5d48-4591-8d58-d3e059ef4dcf")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 288.5765 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "RP2040_UART0_RX"
 		(shape bidirectional)
 		(at 238.76 125.73 180)
@@ -6811,6 +6833,28 @@
 		(uuid "d6a3faed-6ef4-41ca-b20e-f18c98310a9a")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 83.4411 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "MOBO_I2C_SCL"
+		(shape bidirectional)
+		(at 270.51 127 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "da08d1f5-d53c-46d4-b665-d6af7bc016a5")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 288.516 127 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13388,6 +13432,26 @@
 				(justify right)
 			)
 			(uuid "8f39125e-4a08-4861-b2db-d201718eaa59")
+		)
+		(pin "I2C0_SCL" bidirectional
+			(at 270.51 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "61939ae6-1f61-4564-adfd-b323a1485b2f")
+		)
+		(pin "I2C0_SDA" bidirectional
+			(at 270.51 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+			(uuid "c96735ba-7209-4846-bd3e-22c70b4c6c7f")
 		)
 		(instances
 			(project "tiliqua-motherboard"
