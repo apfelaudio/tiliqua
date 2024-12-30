@@ -963,6 +963,278 @@
 				)
 			)
 		)
+		(symbol "Memory_Flash:W25Q32JVSS"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "U7"
+				(at 15.24 15.24 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify right)
+				)
+			)
+			(property "Value" "W25Q128JVP"
+				(at 15.24 12.7 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify right)
+				)
+			)
+			(property "Footprint" "package-son:WSON-8-1EP_6x5mm_P1.27mm_EP3.4x4mm"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Manufacturer" "Winbond"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Part Number" "W25Q128JVPIQ"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "lcsc#" "C190862"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "flash memory SPI"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "SOIC*5.23x5.23mm*P1.27mm*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "W25Q32JVSS_0_1"
+				(rectangle
+					(start -7.62 10.16)
+					(end 7.62 -10.16)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+			)
+			(symbol "W25Q32JVSS_1_1"
+				(pin input line
+					(at -10.16 7.62 0)
+					(length 2.54)
+					(name "~{CS}"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -10.16 0 0)
+					(length 2.54)
+					(name "DO(IO1)"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -10.16 -2.54 0)
+					(length 2.54)
+					(name "IO2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 -12.7 90)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -10.16 2.54 0)
+					(length 2.54)
+					(name "DI(IO0)"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -10.16 5.08 0)
+					(length 2.54)
+					(name "CLK"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin bidirectional line
+					(at -10.16 -5.08 0)
+					(length 2.54)
+					(name "IO3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 12.7 270)
+					(length 2.54)
+					(name "VCC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 2.54 -12.7 90)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "OLIMEX_IC:RP2040(QFN-56_7x7mm_P0.4mm)"
 			(pin_names
 				(offset 1.016)
@@ -2064,215 +2336,6 @@
 				)
 			)
 		)
-		(symbol "OLIMEX_IC:W25Q16BV"
-			(pin_names
-				(offset 1.016)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "U"
-				(at -5.08 10.16 0)
-				(effects
-					(font
-						(size 1.778 1.778)
-					)
-				)
-			)
-			(property "Value" "W25Q16BV"
-				(at 0 -10.795 0)
-				(effects
-					(font
-						(size 1.778 1.778)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at -2.54 0 0)
-				(effects
-					(font
-						(size 2.54 2.54)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at -2.54 0 0)
-				(effects
-					(font
-						(size 2.54 2.54)
-					)
-				)
-			)
-			(property "Description" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "W25Q16BV_0_1"
-				(polyline
-					(pts
-						(xy 7.62 8.89) (xy 7.62 -8.89) (xy -7.62 -8.89) (xy -7.62 8.89) (xy 7.62 8.89)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type background)
-					)
-				)
-			)
-			(symbol "W25Q16BV_1_1"
-				(pin passive line
-					(at -10.16 3.81 0)
-					(length 2.54)
-					(name "#CS"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -10.16 -1.27 0)
-					(length 2.54)
-					(name "DO(IO1)"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -10.16 -3.81 0)
-					(length 2.54)
-					(name "#WP(IO2)"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_in line
-					(at 10.16 -6.35 180)
-					(length 2.54)
-					(name "GND"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -10.16 1.27 0)
-					(length 2.54)
-					(name "DI(IO0)"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -10.16 6.35 0)
-					(length 2.54)
-					(name "CLK"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "6"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -10.16 -6.35 0)
-					(length 2.54)
-					(name "#HOLD(IO3)"
-						(effects
-							(font
-								(size 1.016 1.016)
-							)
-						)
-					)
-					(number "7"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin power_in line
-					(at 10.16 6.35 180)
-					(length 2.54)
-					(name "VCC"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "8"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "OLIMEX_Power:+2V5"
 			(power)
 			(pin_names
@@ -3092,6 +3155,12 @@
 		(uuid "131a6ea4-91ba-4a87-b5dd-5682fc262dba")
 	)
 	(junction
+		(at 69.85 73.66)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "2785dd77-1930-4021-a929-8da3bf1e3eb0")
+	)
+	(junction
 		(at 59.69 114.3)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3138,6 +3207,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "4c7f3656-9b6f-4cc3-9da8-ba3b66f2f95c")
+	)
+	(junction
+		(at 88.9 52.07)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "4cc5e7ea-c996-45d6-9ae4-1997444b70f2")
 	)
 	(junction
 		(at 92.71 104.14)
@@ -3194,6 +3269,12 @@
 		(uuid "8e117ddc-f750-44fc-b99e-4dc4a0269cab")
 	)
 	(junction
+		(at 88.9 33.02)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "96955354-851b-4767-9864-379810da6779")
+	)
+	(junction
 		(at 59.69 104.14)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3242,10 +3323,10 @@
 		(uuid "c115ef03-5994-4c9f-899f-f785530fed4f")
 	)
 	(junction
-		(at 92.71 55.88)
+		(at 59.69 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "d1f50df6-4dbf-48cf-ae7d-67de1c780bbf")
+		(uuid "c69f9485-48fd-4438-a7d1-5a1a5b55d132")
 	)
 	(junction
 		(at 59.69 116.84)
@@ -3270,12 +3351,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "e4bd8122-d439-42cd-940e-6981f9a6729d")
-	)
-	(junction
-		(at 92.71 33.02)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "e681ce73-9d50-484e-a9d4-985446ba238a")
 	)
 	(junction
 		(at 92.71 96.52)
@@ -3459,6 +3534,16 @@
 	)
 	(wire
 		(pts
+			(xy 69.85 73.66) (xy 72.39 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1bb79a07-0f7b-45ea-87a0-8d0bff3a6a57")
+	)
+	(wire
+		(pts
 			(xy 252.73 40.64) (xy 254 40.64)
 		)
 		(stroke
@@ -3506,16 +3591,6 @@
 			(type default)
 		)
 		(uuid "266f8f5e-9cf9-4cb3-bb87-e16bdf4a72d6")
-	)
-	(wire
-		(pts
-			(xy 92.71 55.88) (xy 95.25 55.88)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "27457fbf-e265-4f8e-9dd2-cd1f397404e8")
 	)
 	(wire
 		(pts
@@ -3609,13 +3684,13 @@
 	)
 	(wire
 		(pts
-			(xy 92.71 33.02) (xy 77.47 33.02)
+			(xy 88.9 52.07) (xy 86.36 52.07)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "31137e2a-fd69-4f5f-8a78-710a4401a10b")
+		(uuid "309bf8dc-43f6-4e1d-823f-7a8669dc33bc")
 	)
 	(wire
 		(pts
@@ -3659,13 +3734,23 @@
 	)
 	(wire
 		(pts
-			(xy 92.71 33.02) (xy 102.87 33.02)
+			(xy 77.47 33.02) (xy 88.9 33.02)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "3ffcedcf-1f0e-4745-860e-b1ff587eae73")
+	)
+	(wire
+		(pts
+			(xy 59.69 76.2) (xy 59.69 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4053d5cc-e973-4fa1-87ad-7fa7adb1c45e")
 	)
 	(wire
 		(pts
@@ -3766,6 +3851,16 @@
 			(type default)
 		)
 		(uuid "4e704db8-4052-4f47-a1fe-696dc34166ed")
+	)
+	(wire
+		(pts
+			(xy 86.36 52.07) (xy 86.36 53.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4e931a77-ff63-462f-b88d-16cfcd51d5df")
 	)
 	(wire
 		(pts
@@ -3889,6 +3984,16 @@
 	)
 	(wire
 		(pts
+			(xy 88.9 33.02) (xy 88.9 52.07)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6deeeed6-f1ad-4693-8989-66b1a896a0c5")
+	)
+	(wire
+		(pts
 			(xy 67.31 88.9) (xy 92.71 88.9)
 		)
 		(stroke
@@ -3906,6 +4011,16 @@
 			(type default)
 		)
 		(uuid "781b8cf2-faa1-493b-aec9-52ea4104af70")
+	)
+	(wire
+		(pts
+			(xy 72.39 48.26) (xy 62.23 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "79be97cd-e3d5-4d66-9609-6c73628298a5")
 	)
 	(wire
 		(pts
@@ -3959,6 +4074,16 @@
 	)
 	(wire
 		(pts
+			(xy 88.9 55.88) (xy 88.9 52.07)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "83b8e964-0f6c-4c18-a9d3-c7cda961746d")
+	)
+	(wire
+		(pts
 			(xy 59.69 30.48) (xy 59.69 33.02)
 		)
 		(stroke
@@ -3976,16 +4101,6 @@
 			(type default)
 		)
 		(uuid "860cb67f-feb8-4be4-8691-a656de6beefb")
-	)
-	(wire
-		(pts
-			(xy 92.71 33.02) (xy 92.71 55.88)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "88d85b36-4b08-4beb-aee1-d9862427161a")
 	)
 	(wire
 		(pts
@@ -4109,13 +4224,13 @@
 	)
 	(wire
 		(pts
-			(xy 82.55 55.88) (xy 92.71 55.88)
+			(xy 86.36 53.34) (xy 82.55 53.34)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "a6eac504-325f-4da0-8786-6a32cf59e76c")
+		(uuid "a75f85c2-b86b-4c95-9579-41f50114e5e1")
 	)
 	(wire
 		(pts
@@ -4136,16 +4251,6 @@
 			(type default)
 		)
 		(uuid "b329bb5f-032c-4328-8bb4-98a70b7bb5b6")
-	)
-	(wire
-		(pts
-			(xy 82.55 53.34) (xy 95.25 53.34)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b399bee1-6b55-4cf3-93b6-faf649a5e33e")
 	)
 	(wire
 		(pts
@@ -4176,6 +4281,16 @@
 			(type default)
 		)
 		(uuid "b864285d-2a04-4aeb-aec6-060b6b36f6d9")
+	)
+	(wire
+		(pts
+			(xy 88.9 33.02) (xy 102.87 33.02)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b8de43cb-2076-4cc9-b960-411d4864bf34")
 	)
 	(wire
 		(pts
@@ -4239,16 +4354,6 @@
 	)
 	(wire
 		(pts
-			(xy 59.69 66.04) (xy 62.23 66.04)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c8084d9d-76de-4fb4-94ab-aceb0eb7c50b")
-	)
-	(wire
-		(pts
 			(xy 59.69 119.38) (xy 59.69 124.46)
 		)
 		(stroke
@@ -4296,6 +4401,36 @@
 			(type default)
 		)
 		(uuid "cc68eee6-53ff-4b4d-909b-cf2a137915d4")
+	)
+	(wire
+		(pts
+			(xy 82.55 55.88) (xy 87.63 55.88)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ce8e6957-5c41-4bc3-a67a-b149e5bbc5c0")
+	)
+	(wire
+		(pts
+			(xy 88.9 55.88) (xy 95.25 55.88)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d0949a6c-0684-4040-8521-b84954885833")
+	)
+	(wire
+		(pts
+			(xy 59.69 73.66) (xy 69.85 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d1d459f2-db45-4ac6-9bbb-23b96b264120")
 	)
 	(wire
 		(pts
@@ -4349,6 +4484,16 @@
 	)
 	(wire
 		(pts
+			(xy 87.63 53.34) (xy 95.25 53.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d9dd6427-6c2a-40b1-9676-6743760fa173")
+	)
+	(wire
+		(pts
 			(xy 92.71 104.14) (xy 95.25 104.14)
 		)
 		(stroke
@@ -4386,6 +4531,16 @@
 			(type default)
 		)
 		(uuid "e1ed1d70-0b1e-4d55-8ca7-2bf720ad87b2")
+	)
+	(wire
+		(pts
+			(xy 62.23 48.26) (xy 62.23 53.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e339d352-91dd-4136-89d3-569cee1ca372")
 	)
 	(wire
 		(pts
@@ -4446,6 +4601,16 @@
 			(type default)
 		)
 		(uuid "ee74d1ed-58cc-4eca-b0a3-4c7ed21fa605")
+	)
+	(wire
+		(pts
+			(xy 87.63 55.88) (xy 87.63 53.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "eed50763-f4ad-4d43-b004-b13dcfe3e5d1")
 	)
 	(wire
 		(pts
@@ -6093,16 +6258,35 @@
 		)
 	)
 	(symbol
-		(lib_id "OLIMEX_Power:GND")
-		(at 59.69 66.04 0)
+		(lib_id "Memory_Flash:W25Q32JVSS")
+		(at 72.39 60.96 0)
+		(mirror y)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "4a5d3f06-2b44-43a5-b9a7-12e57094a528")
-		(property "Reference" "#PWR02"
-			(at 59.69 72.39 0)
+		(uuid "55e5e5a5-c19b-4d69-b288-4ed25bda79f7")
+		(property "Reference" "U12"
+			(at 60.198 68.326 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "W25Q128JVP"
+			(at 51.816 70.358 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "package-son:WSON-8-1EP_6x5mm_P1.27mm_EP3.4x4mm"
+			(at 72.39 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6110,32 +6294,44 @@
 				(hide yes)
 			)
 		)
-		(property "Value" "GND"
-			(at 59.69 69.596 0)
+		(property "Datasheet" ""
+			(at 72.39 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-			)
-		)
-		(property "Footprint" ""
-			(at 59.69 66.04 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 59.69 66.04 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
+				(hide yes)
 			)
 		)
 		(property "Description" ""
-			(at 59.69 66.04 0)
+			(at 72.39 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" "Winbond"
+			(at 72.39 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Part Number" "W25Q128JVPIQ"
+			(at 72.39 60.96 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "lcsc#" "C190862"
+			(at 72.39 60.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6144,12 +6340,36 @@
 			)
 		)
 		(pin "1"
-			(uuid "5264f8c3-c7c2-4063-9e64-589519b4df2f")
+			(uuid "b55a8875-76f9-4197-a844-0fde2eb82b1d")
+		)
+		(pin "2"
+			(uuid "721a3396-604e-4828-8c61-56445a3d0cf2")
+		)
+		(pin "3"
+			(uuid "7505ad7d-14b8-4e66-a75f-be905cfd4fc7")
+		)
+		(pin "4"
+			(uuid "591164ed-44b9-4de3-9056-0ddcdbacf7e3")
+		)
+		(pin "5"
+			(uuid "3b4804fb-0d12-4945-be5b-6cf1de2bb9fa")
+		)
+		(pin "6"
+			(uuid "190d9c8f-9f52-4745-b8a9-0239bd205e6c")
+		)
+		(pin "7"
+			(uuid "21888dce-86cd-40a8-9934-819b92a87e87")
+		)
+		(pin "8"
+			(uuid "04718a60-a52c-44d5-8d48-0c2c1935bc12")
+		)
+		(pin "9"
+			(uuid "c4b801cd-ba63-4086-9028-c9d718c3a1b1")
 		)
 		(instances
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/32fbecb8-cfc0-4e90-9d95-f47a131c8376"
-					(reference "#PWR02")
+					(reference "U12")
 					(unit 1)
 				)
 			)
@@ -6825,118 +7045,6 @@
 			(project "tiliqua-motherboard"
 				(path "/df6062c3-a570-4505-924c-c7fe32df3670/32fbecb8-cfc0-4e90-9d95-f47a131c8376"
 					(reference "#PWR058")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "OLIMEX_IC:W25Q16BV")
-		(at 72.39 59.69 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "841aaf70-bf07-47f6-a235-2989e0cfefbc")
-		(property "Reference" "U1"
-			(at 72.39 46.99 0)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-			)
-		)
-		(property "Value" "ZD25WQ16CSIGT(SOIC-8_208mils)"
-			(at 74.93 49.53 0)
-			(effects
-				(font
-					(size 1.016 1.016)
-				)
-			)
-		)
-		(property "Footprint" "Package_SO:SOIC-8W_5.3x5.3mm_P1.27mm"
-			(at 74.93 77.47 0)
-			(effects
-				(font
-					(size 2.54 2.54)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 74.93 59.69 0)
-			(effects
-				(font
-					(size 2.54 2.54)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 72.39 59.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "lcsc#" "C5353597"
-			(at 72.39 59.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Tol" ""
-			(at 72.39 59.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "LCSC" "C5353597"
-			(at 72.39 46.99 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "00396afa-0b90-480c-b170-7f4d0b5bfc87")
-		)
-		(pin "2"
-			(uuid "0a68766c-5cff-4390-956e-af7a4b9a1b03")
-		)
-		(pin "3"
-			(uuid "354c6f02-5c35-4cf7-a305-7d19b10722f2")
-		)
-		(pin "4"
-			(uuid "968697c4-3c09-4d57-968d-4850bfa67089")
-		)
-		(pin "5"
-			(uuid "fe0cc151-c768-4e7a-be76-0f16625d3561")
-		)
-		(pin "6"
-			(uuid "fcf314ed-55d8-4c96-ba66-3e4be5cf400f")
-		)
-		(pin "7"
-			(uuid "ea1991a0-9951-4a6b-a209-a136644e57b3")
-		)
-		(pin "8"
-			(uuid "34582c87-87bb-4317-a8a2-7657c8f15f24")
-		)
-		(instances
-			(project "tiliqua-motherboard"
-				(path "/df6062c3-a570-4505-924c-c7fe32df3670/32fbecb8-cfc0-4e90-9d95-f47a131c8376"
-					(reference "U1")
 					(unit 1)
 				)
 			)

@@ -10542,16 +10542,16 @@
 			)
 		)
 		(pin "1"
-			(uuid "8e781435-4dd6-43fe-afc1-93989119e1d9")
+			(uuid "8e781435-4dd6-43fe-afc1-93989119e1da")
 		)
 		(pin "8"
-			(uuid "7e6e15a0-da88-4304-be31-ae8cb5aa7acc")
+			(uuid "7e6e15a0-da88-4304-be31-ae8cb5aa7acd")
 		)
 		(pin "2"
-			(uuid "66b2af6e-aaf8-4bed-8b05-60ede74c1a42")
+			(uuid "66b2af6e-aaf8-4bed-8b05-60ede74c1a43")
 		)
 		(pin "7"
-			(uuid "efdcb909-ef0a-4123-b23b-8c1a5da25df7")
+			(uuid "efdcb909-ef0a-4123-b23b-8c1a5da25df8")
 		)
 		(pin "3"
 			(uuid "02a30eb4-2478-4428-948d-6f1cf8de2b45")
@@ -10560,10 +10560,10 @@
 			(uuid "7a1d74d9-59ea-47fc-a26c-77efd169f748")
 		)
 		(pin "4"
-			(uuid "8d70b176-038f-45a6-9251-30d1d2f35b9a")
+			(uuid "8d70b176-038f-45a6-9251-30d1d2f35b9b")
 		)
 		(pin "5"
-			(uuid "dec07aa9-61de-4b2d-838b-3ddddbb8993e")
+			(uuid "dec07aa9-61de-4b2d-838b-3ddddbb8993f")
 		)
 		(instances
 			(project "tiliqua-motherboard"
@@ -12330,22 +12330,22 @@
 			(uuid "4c0ef98e-56dc-46cd-a94b-7534463b5362")
 		)
 		(pin "2"
-			(uuid "66b2af6e-aaf8-4bed-8b05-60ede74c1a46")
+			(uuid "66b2af6e-aaf8-4bed-8b05-60ede74c1a47")
 		)
 		(pin "7"
-			(uuid "efdcb909-ef0a-4123-b23b-8c1a5da25dfb")
+			(uuid "efdcb909-ef0a-4123-b23b-8c1a5da25dfc")
 		)
 		(pin "3"
-			(uuid "49152345-4b80-403f-a66e-ca237919ca24")
+			(uuid "49152345-4b80-403f-a66e-ca237919ca25")
 		)
 		(pin "6"
-			(uuid "04130ef5-8232-4183-b61e-69c92559162d")
+			(uuid "04130ef5-8232-4183-b61e-69c92559162e")
 		)
 		(pin "4"
-			(uuid "8d70b176-038f-45a6-9251-30d1d2f35ba0")
+			(uuid "8d70b176-038f-45a6-9251-30d1d2f35ba1")
 		)
 		(pin "5"
-			(uuid "dec07aa9-61de-4b2d-838b-3ddddbb89944")
+			(uuid "dec07aa9-61de-4b2d-838b-3ddddbb89945")
 		)
 		(instances
 			(project "tiliqua-motherboard"
@@ -12653,10 +12653,10 @@
 			)
 		)
 		(pin "1"
-			(uuid "66f4ed36-410d-4173-b2ce-b6381dcad1d6")
+			(uuid "66f4ed36-410d-4173-b2ce-b6381dcad1d7")
 		)
 		(pin "8"
-			(uuid "d01ea910-aa9b-4c14-9f40-c8b2f403b950")
+			(uuid "d01ea910-aa9b-4c14-9f40-c8b2f403b951")
 		)
 		(pin "2"
 			(uuid "c519bd10-b0c2-4166-9dba-affda23f7ff0")
@@ -12665,16 +12665,16 @@
 			(uuid "2446da5d-8ab2-406b-9079-0b9b06b0b541")
 		)
 		(pin "3"
-			(uuid "49152345-4b80-403f-a66e-ca237919ca26")
+			(uuid "49152345-4b80-403f-a66e-ca237919ca27")
 		)
 		(pin "6"
-			(uuid "04130ef5-8232-4183-b61e-69c92559162f")
+			(uuid "04130ef5-8232-4183-b61e-69c925591630")
 		)
 		(pin "4"
-			(uuid "8d70b176-038f-45a6-9251-30d1d2f35ba3")
+			(uuid "8d70b176-038f-45a6-9251-30d1d2f35ba4")
 		)
 		(pin "5"
-			(uuid "dec07aa9-61de-4b2d-838b-3ddddbb89947")
+			(uuid "dec07aa9-61de-4b2d-838b-3ddddbb89948")
 		)
 		(instances
 			(project "tiliqua-motherboard"
@@ -12970,22 +12970,22 @@
 			)
 		)
 		(pin "1"
-			(uuid "72ec77ef-e53c-485d-81f5-36295e4fcc13")
+			(uuid "72ec77ef-e53c-485d-81f5-36295e4fcc14")
 		)
 		(pin "8"
-			(uuid "f1271ffe-e6fa-4719-b0ff-d0f2b624c577")
+			(uuid "f1271ffe-e6fa-4719-b0ff-d0f2b624c578")
 		)
 		(pin "2"
-			(uuid "66b2af6e-aaf8-4bed-8b05-60ede74c1a4c")
+			(uuid "66b2af6e-aaf8-4bed-8b05-60ede74c1a4d")
 		)
 		(pin "7"
-			(uuid "efdcb909-ef0a-4123-b23b-8c1a5da25e01")
+			(uuid "efdcb909-ef0a-4123-b23b-8c1a5da25e02")
 		)
 		(pin "3"
-			(uuid "49152345-4b80-403f-a66e-ca237919ca29")
+			(uuid "49152345-4b80-403f-a66e-ca237919ca2a")
 		)
 		(pin "6"
-			(uuid "04130ef5-8232-4183-b61e-69c925591632")
+			(uuid "04130ef5-8232-4183-b61e-69c925591633")
 		)
 		(pin "4"
 			(uuid "83d935a3-e835-493b-a5d4-cc4ef610e3b5")
