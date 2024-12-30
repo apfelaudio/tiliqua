@@ -4653,6 +4653,18 @@
 		)
 		(uuid "92310fba-3c12-44f5-8b58-540e44429ee0")
 	)
+	(hierarchical_label "SPI0_TX"
+		(shape bidirectional)
+		(at 201.93 60.96 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "0a44e395-6e19-4915-8520-a82ac2fe4bca")
+	)
 	(hierarchical_label "JTAG_TCK"
 		(shape bidirectional)
 		(at 201.93 104.14 0)
@@ -4665,9 +4677,9 @@
 		)
 		(uuid "1e8339d5-e4ab-49ab-93e4-d924db348cbc")
 	)
-	(hierarchical_label "I2C1_SCL"
+	(hierarchical_label "SPI0_SCK"
 		(shape bidirectional)
-		(at 201.93 83.82 0)
+		(at 201.93 58.42 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4688,6 +4700,18 @@
 			(justify left)
 		)
 		(uuid "2ca37ea1-e507-4a35-84c8-61bfe94486d5")
+	)
+	(hierarchical_label "SPI0_RX"
+		(shape bidirectional)
+		(at 201.93 63.5 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "3e176c4f-1cd5-4b17-806e-f5206673ad37")
 	)
 	(hierarchical_label "UART0_TX"
 		(shape bidirectional)
@@ -4713,9 +4737,9 @@
 		)
 		(uuid "bf2d8ec4-02e3-44be-a9bf-7001cab439bf")
 	)
-	(hierarchical_label "I2C1_SDA"
+	(hierarchical_label "SPI0_CSn"
 		(shape bidirectional)
-		(at 201.93 81.28 0)
+		(at 201.93 55.88 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
