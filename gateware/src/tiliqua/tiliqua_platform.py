@@ -285,6 +285,11 @@ class _TiliquaR3Mobo:
             Subsignal("scl", Pins("66", dir="io", conn=("m2", 0))),
             Attrs(PULLMODE="UP")
         ),
+
+        Resource("clk_ext", 0,
+            Subsignal("clk", Pins("55", dir="i", conn=("m2", 0))),
+            Attrs(IO_TYPE="LVCMOS33")
+         )
     ]
 
     # Expansion connectors ex0 and ex1

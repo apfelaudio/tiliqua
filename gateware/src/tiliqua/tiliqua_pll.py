@@ -114,6 +114,7 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
 
         m.d.comb += [
             ClockSignal("raw48").eq(clk48),
+            ClockSignal("audio").eq(platform.request("clk_ext").clk.i),
         ]
 
         feedback60 = Signal()
@@ -126,7 +127,7 @@ class TiliquaDomainGenerator2PLLs(Elaboratable):
                 # Generated clock outputs.
                 o_CLKOP=feedback60,
                 o_CLKOS=ClockSignal("fast"),
-                o_CLKOS2=ClockSignal("audio"),
+                #o_CLKOS2=ClockSignal("audio"),
 
                 # Status.
                 o_LOCK=locked60,
