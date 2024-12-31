@@ -3,32 +3,27 @@ name: build & test
 on: [push]
 
 jobs:
+  build-docker:
+    uses: ./.github/workflows/docker.yml
+    permissions:
+      contents: read
+      packages: write
+
   unit-tests:
+    needs: build-docker
     runs-on: ubuntu-latest
+    container: ghcr.io/apfaudio/tiliqua-builder:latest
     steps:
+      - name: Configure git to trust workspace
+        run: git config --global --add safe.directory /__w/tiliqua/tiliqua
       - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - run: |
-          pdm install
-          pdm test
+      - run: pdm test
         working-directory: gateware
 
-  setup-rust:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: True
-          components: rustfmt, clippy, llvm-tools
-          target: riscv32im-unknown-none-elf
-      - run: cargo install cargo-binutils form
-      - run: cargo install svd2rust --locked
-    outputs:
-      setup-complete: true
-
   build-bitstream:
+    needs: build-docker
     runs-on: ubuntu-latest
+    container: ghcr.io/apfaudio/tiliqua-builder:latest
     strategy:
       matrix:
         include:
@@ -57,27 +52,11 @@ jobs:
             cmd: bootloader build
           - name: boot-stub
             cmd: bootstub build --bootaddr 0x100000
-    needs: [setup-rust]
     steps:
+      - name: Configure git to trust workspace
+        run: git config --global --add safe.directory /__w/tiliqua/tiliqua
       - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
       - run: git submodule update --init --recursive
-      
-      # Setup Rust
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: True
-          components: rustfmt, clippy, llvm-tools
-          target: ${{ matrix.rust_target || 'riscv32im-unknown-none-elf' }}
-      - run: |
-          cargo install cargo-binutils form
-          cargo install svd2rust --locked
-          
-      # Install dependencies
-      - name: Install PDM dependencies
-        run: pdm install
-        working-directory: gateware
           
       # Build bitstream
       - name: Build ${{ matrix.name }}
