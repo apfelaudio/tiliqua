@@ -230,6 +230,22 @@ enum Register {
     Clk5 = 21,
     Clk6 = 22,
     Clk7 = 23,
+    /*
+    // Spread spectrum control registers
+    SscEn_Ssdnp2hi   = 149,
+    Ssdnp2lo         = 150,
+    SscMode_Ssdnp3hi = 151,
+    Ssdnp3lo         = 152,
+    Ssdnp1lo         = 153,
+    Ssudphi_Ssdnp1hi = 154,
+    Ssudplo          = 155,
+    Ssupp2hi         = 156,
+    Ssupp2lo         = 157,
+    Ssupp3hi         = 158,
+    Ssupp3lo         = 159,
+    Ssupp1lo         = 160,
+    Ssnclk_Ssupp1hi  = 161,
+    */
     Clk0PhOff = 165,
     Clk1PhOff = 166,
     Clk2PhOff = 167,
@@ -510,6 +526,17 @@ impl<I2C: I2c> Si5351Device<I2C> {
         self.i2c
             .write(self.address, &[reg.addr(), byte])
             .map_err(i2c_error)
+    }
+
+    pub fn write_register_seq(&mut self, base: u8, data: &[u8]) -> Result<(), Error> {
+        let mut addr = base;
+        for d in data {
+            self.i2c
+                .write(self.address, &[addr, *d])
+                .map_err(i2c_error)?;
+            addr += 1;
+        }
+        Ok(())
     }
 
     fn write_synth_registers<MS: FractionalMultisynth>(

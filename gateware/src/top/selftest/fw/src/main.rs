@@ -332,9 +332,27 @@ fn main() -> ! {
     let init = si5351drv.init_adafruit_module();
     info!("si5351 init: {:?}", init);
     info!("si5351 device status: {:?}", si5351drv.read_device_status());
+    let seq = si5351drv.write_register_seq(
+        0x95,
+        &[
+            0xAB,
+            0xE0,
+            0xFF,
+            0xFF,
+            0x00,
+            0x00,
+            0xC6,
+            0x2D,
+            0x36,
+            0x7F,
+            0xFF,
+            0x00,
+            0x00,
+        ]
+    );
+    info!("si5351 seq: {:?}", seq);
     let set = si5351drv.set_frequency(PLL::A, ClockOutput::Clk0, 12_288_000);
     info!("si5351 set: {:?}", set);
-    loop {}
 
     let mut pca9635 = Pca9635Driver::new(i2cdev2);
 
