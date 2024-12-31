@@ -279,11 +279,17 @@ class _TiliquaR3Mobo:
             Subsignal("ck", Pins("52", dir="o", conn=("m2", 0))),
             Attrs(IO_TYPE="LVCMOS33D", DRIVE="8", SLEWRATE="FAST")
          ),
+
+        Resource("i2c_ext", 0,
+            Subsignal("sda", Pins("41", dir="io", conn=("m2", 0))),
+            Subsignal("scl", Pins("66", dir="io", conn=("m2", 0))),
+            Attrs(PULLMODE="UP")
+        ),
     ]
 
     # Expansion connectors ex0 and ex1
     connectors  = [
-        Connector("pmod", 0, "55 38 66 41 - - 57 35 34 70 - -", conn=("m2", 0)),
+        #Connector("pmod", 0, "55 38 66 41 - - 57 35 34 70 - -", conn=("m2", 0)),
         Connector("pmod", 1, "59 63 14 20 - - 61 15 13 22 - -", conn=("m2", 0)),
     ]
 

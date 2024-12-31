@@ -16,6 +16,10 @@ tiliqua_hal::impl_i2c! {
     I2c0: pac::I2C0,
 }
 
+tiliqua_hal::impl_i2c! {
+    I2c1: pac::I2C1,
+}
+
 tiliqua_hal::impl_encoder! {
     Encoder0: pac::ENCODER0,
 }

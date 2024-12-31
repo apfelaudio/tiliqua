@@ -14,6 +14,8 @@ use riscv_rt::entry;
 
 use tiliqua_hal::pca9635::*;
 
+use tiliqua_hal::si5351::*;
+
 use core::convert::TryInto;
 
 use embedded_graphics::{
@@ -324,6 +326,15 @@ fn main() -> ! {
     spiflash_memtest(&mut timer);
 
     tusb322i_id_test(&mut i2cdev);
+
+    let i2c1 = I2c1::new(peripherals.I2C1);
+    let mut si5351drv = Si5351Device::new_adafruit_module(i2c1);
+    let init = si5351drv.init_adafruit_module();
+    info!("si5351 init: {:?}", init);
+    info!("si5351 device status: {:?}", si5351drv.read_device_status());
+    let set = si5351drv.set_frequency(PLL::A, ClockOutput::Clk0, 12_288_000);
+    info!("si5351 set: {:?}", set);
+    loop {}
 
     let mut pca9635 = Pca9635Driver::new(i2cdev2);
 

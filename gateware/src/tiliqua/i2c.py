@@ -33,6 +33,25 @@ class Provider(Component):
         ]
         return m
 
+class PmodProvider(Component):
+    def __init__(self):
+        super().__init__({
+            "pins": In(I2CPinSignature())
+        })
+
+    def elaborate(self, platform):
+        m = Module()
+        i2c = platform.request("i2c_ext")
+        m.d.comb += [
+            i2c.sda.o.eq(self.pins.sda.o),
+            i2c.sda.oe.eq(self.pins.sda.oe),
+            self.pins.sda.i.eq(i2c.sda.i),
+            i2c.scl.o.eq(self.pins.scl.o),
+            i2c.scl.oe.eq(self.pins.scl.oe),
+            self.pins.scl.i.eq(i2c.scl.i),
+        ]
+        return m
+
 class I2CStreamer(wiring.Component):
 
     """

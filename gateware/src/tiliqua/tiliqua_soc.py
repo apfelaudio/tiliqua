@@ -168,6 +168,7 @@ class TiliquaSoc(Component):
         self.timer0_base          = 0x00000300
         self.timer0_irq           = 0
         # (gap) was: timer1
+        self.i2c1_base            = 0x00000400
         self.i2c0_base            = 0x00000500
         self.encoder0_base        = 0x00000600
         self.pmod0_periph_base    = 0x00000700
@@ -253,6 +254,10 @@ class TiliquaSoc(Component):
         # mobo i2c
         self.i2c0 = i2c.Peripheral(period_cyc=240)
         self.csr_decoder.add(self.i2c0.bus, addr=self.i2c0_base, name="i2c0")
+
+        # pll i2c
+        self.i2c1 = i2c.Peripheral(period_cyc=240)
+        self.csr_decoder.add(self.i2c1.bus, addr=self.i2c1_base, name="i2c1")
 
         # encoder
         self.encoder0 = encoder.Peripheral()
@@ -343,6 +348,13 @@ class TiliquaSoc(Component):
             i2c0_provider = i2c.Provider()
             m.submodules.i2c0_provider = i2c0_provider
             wiring.connect(m, self.i2c0.pins, i2c0_provider.pins)
+
+        # i2c1
+        m.submodules.i2c1 = self.i2c1
+        if sim.is_hw(platform):
+            i2c1_provider = i2c.PmodProvider()
+            m.submodules.i2c1_provider = i2c1_provider
+            wiring.connect(m, self.i2c1.pins, i2c1_provider.pins)
 
         # encoder0
         m.submodules.encoder0 = self.encoder0
