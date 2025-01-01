@@ -30,4 +30,7 @@ WORKDIR /workspace
 
 # Pre-install PDM dependencies
 COPY pyproject.toml pdm.lock ./
-RUN pdm install --no-self 
+RUN pdm install
+
+# Clean up
+RUN rm -rf pyproject.toml pdm.lock 

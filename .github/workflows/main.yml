@@ -20,7 +20,7 @@ jobs:
       - run: pdm test
         working-directory: gateware
 
-  build-bitstream:
+  bitstream:
     needs: build-docker
     runs-on: ubuntu-latest
     container: ghcr.io/apfaudio/tiliqua-builder:latest
@@ -57,12 +57,15 @@ jobs:
         run: git config --global --add safe.directory /__w/tiliqua/tiliqua
       - uses: actions/checkout@v4
       - run: git submodule update --init --recursive
-          
+
       # Build bitstream
       - name: Build ${{ matrix.name }}
-        run: pdm ${{ matrix.cmd }}
+        run: |
+          pdm use /workspace/.venv
+          pdm install
+          pdm ${{ matrix.cmd }}
         working-directory: gateware
-        
+
       # Upload artifact
       - uses: actions/upload-artifact@v4
         with:
