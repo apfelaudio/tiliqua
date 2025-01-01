@@ -16,14 +16,12 @@ ENV PATH="/root/.local/bin:${PATH}"
 # Install Python tools globally
 RUN pip install pytest
 
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# Install Rust with default toolchain
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install Rust components and tools
-RUN rustup install stable && \
-    rustup default stable && \
-    rustup component add rustfmt clippy llvm-tools && \
+RUN rustup component add rustfmt clippy llvm-tools && \
     rustup target add riscv32im-unknown-none-elf riscv32imafc-unknown-none-elf && \
     cargo install cargo-binutils form svd2rust --locked
 
