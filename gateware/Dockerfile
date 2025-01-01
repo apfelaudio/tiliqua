@@ -21,7 +21,8 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install Rust components and tools
-RUN rustup component add rustfmt clippy llvm-tools && \
+RUN rustup default stable && \
+    rustup component add rustfmt clippy llvm-tools && \
     rustup target add riscv32im-unknown-none-elf riscv32imafc-unknown-none-elf && \
     cargo install cargo-binutils form svd2rust --locked
 

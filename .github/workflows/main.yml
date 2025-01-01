@@ -17,7 +17,10 @@ jobs:
       - name: Configure git to trust workspace
         run: git config --global --add safe.directory /__w/tiliqua/tiliqua
       - uses: actions/checkout@v4
-      - run: pdm test
+      - run: |
+          pdm use /workspace/.venv
+          pdm install
+          pdm test
         working-directory: gateware
 
   bitstream:
