@@ -26,7 +26,9 @@ jobs:
   bitstream:
     needs: build-docker
     runs-on: ubuntu-latest
-    container: ghcr.io/apfaudio/tiliqua-builder:latest
+    container:
+      image: ghcr.io/apfaudio/tiliqua-builder:latest
+      options: --user root
     strategy:
       matrix:
         include:
