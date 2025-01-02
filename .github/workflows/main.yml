@@ -17,20 +17,32 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        config:
+          - name: bootloader
+            cmd: bootloader build --fw-location=spiflash
+          - name: selftest
+            cmd: selftest build
+          - name: xbeam
+            cmd: xbeam build
+          - name: polysyn
+            cmd: polysyn build
+          - name: macro-osc
+            cmd: macro_osc build
+          - name: usb-audio
+            cmd: usb_audio build
+          - name: usb-host
+            cmd: usb_host build --midi-device arturia-keylab49-mkii
+          - name: dsp-nco
+            cmd: dsp build --dsp-core nco
+          - name: dsp-diffuser
+            cmd: dsp build --dsp-core psram_diffuser
+          - name: dsp-midicv
+            cmd: dsp build --dsp-core midicv
+          - name: vectorscope
+            cmd: vectorscope_no_soc build
+          - name: bootstub
+            cmd: bootstub build --bootaddr 0x100000
         hw_rev: ["", "--hw3"]
-        cmd:
-          - bootloader build --fw-location=spiflash
-          - selftest build
-          - xbeam build
-          - polysyn build
-          - macro_osc build
-          - usb_audio build
-          - usb_host build --midi-device arturia-keylab49-mkii
-          - dsp build --dsp-core nco
-          - dsp build --dsp-core psram_diffuser
-          - dsp build --dsp-core midicv
-          - vectorscope_no_soc build
-          - bootstub build --bootaddr 0x100000
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
@@ -50,13 +62,13 @@ jobs:
         run: pdm install
         working-directory: gateware
           
-      - name: Build ${{ matrix.cmd }} ${{ matrix.hw_rev }}
-        run: pdm ${{ matrix.cmd }} ${{ matrix.hw_rev }}
+      - name: Build ${{ matrix.config.cmd }} ${{ matrix.hw_rev }}
+        run: pdm ${{ matrix.config.cmd }} ${{ matrix.hw_rev }}
         working-directory: gateware
         
       - uses: actions/upload-artifact@v4
         with:
-          name: bitstream-${{ matrix.hw_rev == '--hw3' && 'r3' || 'r2' }}-${{ strategy.job-index }}
+          name: ${{ matrix.config.name }}-${{ matrix.hw_rev == '--hw3' && 'r3' || 'r2' }}.zip
           path: gateware/build/*-*-*.tar.gz
           retention-days: 1
 
@@ -66,16 +78,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: bitstream-*
-          path: artifacts
+          pattern: "*"
+          path: .
           merge-multiple: true
-
-      - name: Create combined archives
-        run: |
-          cd artifacts
-          tar czf ../bitstreams-${{ github.sha }}.tar.gz *
-
       - uses: actions/upload-artifact@v4
         with:
           name: bitstreams
-          path: bitstreams-${{ github.sha }}.tar.gz
+          path: "*"
