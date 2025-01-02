@@ -40,7 +40,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          override: True
           components: rustfmt, clippy, llvm-tools
           targets: riscv32im-unknown-none-elf, riscv32imafc-unknown-none-elf
       - run: |
