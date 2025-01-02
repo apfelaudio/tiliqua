@@ -13,6 +13,45 @@ jobs:
           pdm test
         working-directory: gateware
 
+  sim-selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pdm-project/setup-pdm@v4
+      - run: git submodule update --init --recursive
+      
+      # Install simulation dependencies
+      - name: Install Verilator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator gcc
+      
+      # Setup Rust
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: rustfmt, clippy, llvm-tools
+          targets: riscv32im-unknown-none-elf
+      - run: |
+          cargo install cargo-binutils form
+          cargo install svd2rust --locked
+          
+      - name: Install PDM dependencies
+        run: pdm install
+        working-directory: gateware
+          
+      - name: Run selftest simulation
+        run: |
+          pdm selftest sim | tee sim.log &
+          while IFS= read -r line; do
+            echo "$line"
+            if [[ "$line" == *"Hello from Tiliqua"* ]]; then
+              pkill -P $$
+              exit 0
+            fi
+          done < <(tail -f sim.log)
+        working-directory: gateware
+
   build-bitstream:
     runs-on: ubuntu-latest
     strategy:
