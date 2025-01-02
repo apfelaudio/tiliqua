@@ -103,7 +103,7 @@ def top_level_cli(
                             help="SoC designs: stop after rust FW compilation (optionally re-flash)")
         parser.add_argument("--fw-location",
                             type=FirmwareLocation,
-                            default=FirmwareLocation.SPIFlash.value,
+                            default=FirmwareLocation.PSRAM.value,
                             choices=[
                                 FirmwareLocation.BRAM.value,
                                 FirmwareLocation.SPIFlash.value,
@@ -236,7 +236,8 @@ def top_level_cli(
         return manifest
 
     def create_archive():
-        archive_name = f"{args.name.lower()}-{repo.head.object.hexsha[:6]}.tar.gz"
+        hwrev = "r3" if args.hw3 else "r2"
+        archive_name = f"{args.name.lower()}-{repo.head.object.hexsha[:6]}-{hwrev}.tar.gz"
         archive_path = os.path.join(build_path, archive_name)
         bitstream_path = "build/top.bit"
         

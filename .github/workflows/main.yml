@@ -13,79 +13,70 @@ jobs:
           pdm test
         working-directory: gateware
 
-  setup-rust:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: True
-          components: rustfmt, clippy, llvm-tools
-          target: riscv32im-unknown-none-elf
-      - run: cargo install cargo-binutils form
-      - run: cargo install svd2rust --locked
-    outputs:
-      setup-complete: true
-
   build-bitstream:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - name: usb-audio
-            cmd: usb_audio build
-          - name: usb-host
-            cmd: usb_host build --midi-device arturia-keylab49-mkii
-          - name: dsp-nco
-            cmd: dsp build --dsp-core nco
-          - name: dsp-psram-diffuser
-            cmd: dsp build --dsp-core psram_diffuser
-          - name: dsp-midicv
-            cmd: dsp build --dsp-core midicv
-          - name: xbeam
-            cmd: xbeam build
-          - name: selftest
-            cmd: selftest build
-          - name: poly
-            cmd: polysyn build
-          - name: macro-osc
-            cmd: macro_osc build
-            rust_target: riscv32imafc-unknown-none-elf
-          - name: vectorscope
-            cmd: vectorscope_no_soc build
-          - name: boot
-            cmd: bootloader build
-          - name: boot-stub
-            cmd: bootstub build --bootaddr 0x100000
-    needs: [setup-rust]
+        hw_rev: ["", "--hw3"]
+        cmd:
+          - bootloader build --fw-location=spiflash
+          - selftest build
+          - xbeam build
+          - polysyn build
+          - macro_osc build
+          - usb_audio build
+          - usb_host build --midi-device arturia-keylab49-mkii
+          - dsp build --dsp-core nco
+          - dsp build --dsp-core psram_diffuser
+          - dsp build --dsp-core midicv
+          - vectorscope_no_soc build
+          - bootstub build --bootaddr 0x100000
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
       - run: git submodule update --init --recursive
       
       # Setup Rust
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
           override: True
           components: rustfmt, clippy, llvm-tools
-          target: ${{ matrix.rust_target || 'riscv32im-unknown-none-elf' }}
+          targets: riscv32im-unknown-none-elf, riscv32imafc-unknown-none-elf
       - run: |
           cargo install cargo-binutils form
           cargo install svd2rust --locked
           
-      # Install dependencies
       - name: Install PDM dependencies
         run: pdm install
         working-directory: gateware
           
-      # Build bitstream
-      - name: Build ${{ matrix.name }}
-        run: pdm ${{ matrix.cmd }}
+      - name: Build ${{ matrix.cmd }} ${{ matrix.hw_rev }}
+        run: pdm ${{ matrix.cmd }} ${{ matrix.hw_rev }}
         working-directory: gateware
         
-      # Upload artifact
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}-${{ github.sha }}
-          path: gateware/build/${{ matrix.name }}-*.tar.gz
+          name: bitstream-${{ matrix.hw_rev == '--hw3' && 'r3' || 'r2' }}-${{ strategy.job-index }}
+          path: gateware/build/*-*-*.tar.gz
+          retention-days: 1
+
+  package-artifacts:
+    needs: build-bitstream
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bitstream-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create combined archives
+        run: |
+          cd artifacts
+          tar czf ../bitstreams-${{ github.sha }}.tar.gz *
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bitstreams
+          path: bitstreams-${{ github.sha }}.tar.gz
