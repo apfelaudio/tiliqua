@@ -13,7 +13,7 @@ jobs:
           pdm test
         working-directory: gateware
 
-  build-bitstream:
+  build-bitstream-r2:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -42,46 +42,83 @@ jobs:
             cmd: vectorscope_no_soc build
           - name: bootstub
             cmd: bootstub build --bootaddr 0x100000
-        hw_rev: ["", "--hw3"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: pdm-project/setup-pdm@v4
-      - run: git submodule update --init --recursive
-      
-      # Setup Rust
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          components: rustfmt, clippy, llvm-tools
-          targets: riscv32im-unknown-none-elf, riscv32imafc-unknown-none-elf
-      - run: |
-          cargo install cargo-binutils form
-          cargo install svd2rust --locked
-          
-      - name: Install PDM dependencies
-        run: pdm install
-        working-directory: gateware
-          
-      - name: Build ${{ matrix.config.cmd }} ${{ matrix.hw_rev }}
-        run: pdm ${{ matrix.config.cmd }} ${{ matrix.hw_rev }}
+      - uses: ./.github/workflows/setup-build
+      - name: Build ${{ matrix.config.cmd }}
+        run: pdm ${{ matrix.config.cmd }}
         working-directory: gateware
         
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.config.name }}-${{ matrix.hw_rev == '--hw3' && 'r3' || 'r2' }}.zip
+          name: ${{ matrix.config.name }}-r2.zip
           path: gateware/build/*-*-*.tar.gz
           retention-days: 1
 
-  package-artifacts:
-    needs: build-bitstream
+  build-bitstream-r3:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        config:
+          - name: bootloader
+            cmd: bootloader build --fw-location=spiflash
+          - name: selftest
+            cmd: selftest build
+          - name: xbeam
+            cmd: xbeam build
+          - name: polysyn
+            cmd: polysyn build
+          - name: macro-osc
+            cmd: macro_osc build
+          - name: usb-audio
+            cmd: usb_audio build
+          - name: usb-host
+            cmd: usb_host build --midi-device arturia-keylab49-mkii
+          - name: dsp-nco
+            cmd: dsp build --dsp-core nco
+          - name: dsp-diffuser
+            cmd: dsp build --dsp-core psram_diffuser
+          - name: dsp-midicv
+            cmd: dsp build --dsp-core midicv
+          - name: vectorscope
+            cmd: vectorscope_no_soc build
+          - name: bootstub
+            cmd: bootstub build --bootaddr 0x100000
+    steps:
+      - uses: ./.github/workflows/setup-build
+      - name: Build ${{ matrix.config.cmd }}
+        run: pdm ${{ matrix.config.cmd }} --hw3
+        working-directory: gateware
+        
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.config.name }}-r3.zip
+          path: gateware/build/*-*-*.tar.gz
+          retention-days: 1
+
+  package-artifacts-r2:
+    needs: build-bitstream-r2
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: "*"
+          pattern: "*-r2.zip"
           path: .
           merge-multiple: true
       - uses: actions/upload-artifact@v4
         with:
-          name: bitstreams
+          name: all-bitstreams-r2
+          path: "*"
+
+  package-artifacts-r3:
+    needs: build-bitstream-r3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-r3.zip"
+          path: .
+          merge-multiple: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: all-bitstreams-r3
           path: "*"

@@ -1,0 +1,26 @@
+name: 'Setup Build Environment'
+description: 'Sets up PDM and Rust build environment'
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - uses: pdm-project/setup-pdm@v4
+    - run: git submodule update --init --recursive
+      shell: bash
+    
+    # Setup Rust
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+        components: rustfmt, clippy, llvm-tools
+        targets: riscv32im-unknown-none-elf, riscv32imafc-unknown-none-elf
+    - run: |
+        cargo install cargo-binutils form
+        cargo install svd2rust --locked
+      shell: bash
+        
+    - name: Install PDM dependencies
+      run: pdm install
+      shell: bash
+      working-directory: gateware 
