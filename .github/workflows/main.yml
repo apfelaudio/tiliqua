@@ -19,24 +19,23 @@ jobs:
       matrix:
         hw_rev: ["", "--hw3"]
         cmd:
-          - bootloader build --fw-location=spiflash
-          - selftest build
-          - xbeam build
-          - polysyn build
-          - macro_osc build
+          - bootloader build --fw-location=spiflash --resolution 720x720p60 --rotate-90
+          - selftest build --resolution 720x720p60 --rotate-90
+          - xbeam build --resolution 720x720p60 --rotate-90
+          - polysyn build --resolution 720x720p60 --rotate-90
+          - macro_osc build --resolution 720x720p60 --rotate-90
           - usb_audio build
           - usb_host build --midi-device arturia-keylab49-mkii
           - dsp build --dsp-core nco
           - dsp build --dsp-core psram_diffuser
           - dsp build --dsp-core midicv
-          - vectorscope_no_soc build
+          - vectorscope_no_soc build --resolution 720x720p60 --rotate-90
           - bootstub build --bootaddr 0x100000
     steps:
       - uses: actions/checkout@v4
       - uses: pdm-project/setup-pdm@v4
       - run: git submodule update --init --recursive
       
-      # Setup Rust
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
