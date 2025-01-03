@@ -18,6 +18,8 @@ Documentation is built from source in `gateware/docs`.
 
 `apfaudio` has a Matrix channel, [#apfaudio:matrix.org](https://matrix.to/#/#apfaudio:matrix.org). Feel free to join to ask questions or discuss ongoing development.
 
+Participants in this project are expected to adhere to the [Berlin Code of Conduct](https://berlincodeofconduct.org/).
+
 ## Builds on the following (awesome) open projects
 
 - The [Amaranth HDL](https://github.com/amaranth-lang/amaranth) and [Amaranth SoC](https://github.com/amaranth-lang/amaranth-soc) projects.
