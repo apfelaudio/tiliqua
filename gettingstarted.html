@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting started &mdash; Tiliqua Project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tiliqua SoC designs" href="soc.html" />
+    <link rel="prev" title="Prerequisites" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="cover.html" class="icon icon-home">
+            Tiliqua Project
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tiliqua Manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hardware.html">Hardware overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="technical.html">Hardware details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html">Prerequisites</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Getting started</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#building-example-projects">Building example projects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#flashing-example-projects">Flashing example projects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulating-dsp-cores">Simulating DSP cores</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulating-soc-cores">Simulating SoC cores</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#simulating-vectorscope-core">Simulating vectorscope core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-the-ila">Using the ILA</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="soc.html">Tiliqua SoC designs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="top.html">Top-level projects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dsp.html">Tiliqua DSP Library</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">(external) GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">(external) CrowdSupply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">(external) apf.audio</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="cover.html">Tiliqua Project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="cover.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tiliqua Manual</a></li>
+      <li class="breadcrumb-item active">Getting started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/gettingstarted.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started">
+<h1>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<section id="building-example-projects">
+<h2>Building example projects<a class="headerlink" href="#building-example-projects" title="Link to this heading"></a></h2>
+<p>Each top-level bitstream has a command-line interface. You can see the options by running (for example):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from `gateware` directory</span>
+pdm<span class="w"> </span>dsp
+</pre></div>
+</div>
+<p>The available options change depending on the top-level project. For example, many projects have video output, and from the CLI you can select the video resolution.</p>
+<p>A few examples of building top-level bitstreams:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from `gateware` directory</span>
+
+<span class="c1"># for the selftest bitstream (prints diagnostics out DVI and serial)</span>
+pdm<span class="w"> </span>selftest<span class="w"> </span>build
+<span class="c1"># for a vectorscope / oscilloscope</span>
+pdm<span class="w"> </span>xbeam<span class="w"> </span>build
+<span class="c1"># for a polyphonic MIDI synth</span>
+pdm<span class="w"> </span>polysyn<span class="w"> </span>build
+<span class="c1"># for the LUNA-based 4in + 4out USB soundcard example</span>
+<span class="c1"># note: LUNA USB port presents itself on the second USB port (not dbg)!</span>
+pdm<span class="w"> </span>usb_audio<span class="w"> </span>build
+<span class="c1"># for a 4-channel waveshaping oscillator</span>
+pdm<span class="w"> </span>dsp<span class="w"> </span>build<span class="w"> </span>--dsp-core<span class="w"> </span>nco
+<span class="c1"># for a diffusion delay effect</span>
+pdm<span class="w"> </span>dsp<span class="w"> </span>build<span class="w"> </span>--dsp-core<span class="w"> </span>diffuser
+<span class="c1"># simplified vectorscope (no SoC / menu system)</span>
+pdm<span class="w"> </span>vectorscope_no_soc<span class="w"> </span>build
+</pre></div>
+</div>
+<p>Generally, bitstreams are also built in CI - check <code class="docutils literal notranslate"><span class="pre">.github/workflows</span></code> if you need more gruesome details on how systems are built.</p>
+</section>
+<section id="flashing-example-projects">
+<h2>Flashing example projects<a class="headerlink" href="#flashing-example-projects" title="Link to this heading"></a></h2>
+<p>The built-in RP2040 JTAG debugger is based on the <code class="docutils literal notranslate"><span class="pre">dirtyJtag</span></code> project. For non-SoC projects that don’t require extra firmware, you can directly flash bitstreams to the SRAM of the FPGA like so:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>openFPGALoader<span class="w"> </span>-c<span class="w"> </span>dirtyJtag<span class="w"> </span>build/top.bit
+</pre></div>
+</div>
+<p>When you build a project from the command line, on completion they will usually print some instructions on how to flash them. For SoC bitstreams, there may be multiple steps (e.g. bitstream and firmware, or other artifacts). You can add the <code class="code docutils literal notranslate"><span class="pre">--flash</span></code> option to perform these steps automatically.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you flash with to the SPI flash, usually you will want to specify
+an offset so you don’t overwrite the bootloader. See the <em>Bootloader</em> section
+for more information on flash addressing. In any case it’s not possible to
+brick the Tiliqua - so don’t be too scared to play!</p>
+</div>
+<p>If you are running an SoC, once you have flashed all artifacts it will give you serial output that you can monitor like so:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>picocom<span class="w"> </span>-b<span class="w"> </span><span class="m">115200</span><span class="w"> </span>/dev/ttyACM0
+</pre></div>
+</div>
+</section>
+<section id="simulating-dsp-cores">
+<h2>Simulating DSP cores<a class="headerlink" href="#simulating-dsp-cores" title="Link to this heading"></a></h2>
+<p>The easiest way to debug the internals of a DSP project is to simulate it. This project provides some shortcuts to enable simulating designs end-to-end with Verilator (at some point these will be migrated to Amaranths CXXRTL simulation backend, once it lands).</p>
+<p>For example, to simulate the waveshaping oscillator example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from `gateware` directory</span>
+pdm<span class="w"> </span>dsp<span class="w"> </span>sim<span class="w"> </span>--dsp-core<span class="w"> </span>nco
+</pre></div>
+</div>
+<p>In short this command:</p>
+<ul class="simple">
+<li><p>Elaborates your Amaranth HDL and convert it to Verilog</p></li>
+<li><p>Verilates your verilog into a C++ implementation, compiling it against <code class="docutils literal notranslate"><span class="pre">sim_dsp_core.cpp</span></code> provided in <code class="docutils literal notranslate"><span class="pre">gateware/top/dsp</span></code> that excites the audio inputs (you can modify this).</p></li>
+<li><p>Runs the verilated binary itself and spits out a trace you can view with <code class="docutils literal notranslate"><span class="pre">gtkwave</span></code> to see exactly what every net in the whole design is doing.</p></li>
+</ul>
+</section>
+<section id="simulating-soc-cores">
+<h2>Simulating SoC cores<a class="headerlink" href="#simulating-soc-cores" title="Link to this heading"></a></h2>
+<p>A subset of SoC-based top-level projects also support end-to-end simulation (i.e including firmware co-simulation). For example, for the selftest SoC:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from `gateware` directory</span>
+pdm<span class="w"> </span>selftest<span class="w"> </span>sim
+
+<span class="c1"># ...</span>
+
+run<span class="w"> </span>verilated<span class="w"> </span>binary<span class="w"> </span><span class="s1">&#39;build/obj_dir/Vtiliqua_soc&#39;</span>...
+sync<span class="w"> </span>domain<span class="w"> </span>is:<span class="w"> </span><span class="m">60000</span><span class="w"> </span>KHz<span class="w"> </span><span class="o">(</span><span class="m">16</span><span class="w"> </span>ns/cycle<span class="o">)</span>
+pixel<span class="w"> </span>clock<span class="w"> </span>is:<span class="w"> </span><span class="m">74250</span><span class="w"> </span>KHz<span class="w"> </span><span class="o">(</span><span class="m">13</span><span class="w"> </span>ns/cycle<span class="o">)</span>
+<span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span>Hello<span class="w"> </span>from<span class="w"> </span>Tiliqua<span class="w"> </span>selftest!
+<span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span>PSRAM<span class="w"> </span>memtest<span class="w"> </span><span class="o">(</span>this<span class="w"> </span>will<span class="w"> </span>be<span class="w"> </span>slow<span class="w"> </span><span class="k">if</span><span class="w"> </span>video<span class="w"> </span>is<span class="w"> </span>also<span class="w"> </span>active<span class="o">)</span>...
+<span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span>write<span class="w"> </span>speed<span class="w"> </span><span class="m">1687</span><span class="w"> </span>KByte/seout<span class="w"> </span>frame00.bmp
+c
+<span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>speed<span class="w"> </span><span class="m">1885</span><span class="w"> </span>KByte/sec
+<span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span>PASS:<span class="w"> </span>PSRAM<span class="w"> </span>memtest
+</pre></div>
+</div>
+<p>UART traffic from the firmware is printed to the terminal, and each video frame is emitted as a bitmap. This kind of simulation is useful for debugging the integration of top-level SoC components.</p>
+</section>
+<section id="simulating-vectorscope-core">
+<h2>Simulating vectorscope core<a class="headerlink" href="#simulating-vectorscope-core" title="Link to this heading"></a></h2>
+<p>There is a top-level <code class="docutils literal notranslate"><span class="pre">vectorscope_no_soc</span></code> provided which is also useful for debugging integration issues between the video and memory controller cores. This can be simulated end-to-end as follows (<code class="docutils literal notranslate"><span class="pre">--trace-fst</span></code> is also useful for saving waveform traces):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from `gateware` directory</span>
+pdm<span class="w"> </span>vectorscope_no_soc<span class="w"> </span>sim<span class="w"> </span>--trace-fst
+</pre></div>
+</div>
+</section>
+<section id="using-the-ila">
+<h2>Using the ILA<a class="headerlink" href="#using-the-ila" title="Link to this heading"></a></h2>
+<p>Some cores support using a built-in ILA (integrated logic analyzer), to collect waveform traces on the hardware into on-FPGA block RAM, which is sampled at the system clock and dumped out the serial port.</p>
+<p>For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from `gateware` directory</span>
+pdm<span class="w"> </span>vectorscope_no_soc<span class="w"> </span>build<span class="w"> </span>--ila<span class="w"> </span>--ila-port<span class="w"> </span>/dev/ttyACM0
+</pre></div>
+</div>
+<p>This will build the bitstream containing the ILA, flash the bitstream, then open the provided serial port waiting for an ILA dump from the Tiliqua to arrive. Once received, the dump will be saved to a waveform trace file.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You may have to play with permissions for flashing to work correctly - make sure <code class="docutils literal notranslate"><span class="pre">openFPGALoader</span></code> can run locally under your user without <code class="docutils literal notranslate"><span class="pre">sudo</span></code>.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install.html" class="btn btn-neutral float-left" title="Prerequisites" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="soc.html" class="btn btn-neutral float-right" title="Tiliqua SoC designs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2025, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

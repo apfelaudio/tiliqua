@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Top-level projects &mdash; Tiliqua Project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tiliqua DSP Library" href="dsp.html" />
+    <link rel="prev" title="Bootloader" href="bootloader.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="cover.html" class="icon icon-home">
+            Tiliqua Project
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tiliqua Manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hardware.html">Hardware overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="technical.html">Hardware details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gettingstarted.html">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="soc.html">Tiliqua SoC designs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Top-level projects</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-top.dsp.top">dsp</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.Mirror"><code class="docutils literal notranslate"><span class="pre">Mirror</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.QuadNCO"><code class="docutils literal notranslate"><span class="pre">QuadNCO</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.Resampler"><code class="docutils literal notranslate"><span class="pre">Resampler</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.ResonantFilter"><code class="docutils literal notranslate"><span class="pre">ResonantFilter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.DualVCA"><code class="docutils literal notranslate"><span class="pre">DualVCA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.Pitch"><code class="docutils literal notranslate"><span class="pre">Pitch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.Matrix"><code class="docutils literal notranslate"><span class="pre">Matrix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.DualWaveshaper"><code class="docutils literal notranslate"><span class="pre">DualWaveshaper</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.TouchMixTop"><code class="docutils literal notranslate"><span class="pre">TouchMixTop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.PSRAMPingPongDelay"><code class="docutils literal notranslate"><span class="pre">PSRAMPingPongDelay</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.SRAMPingPongDelay"><code class="docutils literal notranslate"><span class="pre">SRAMPingPongDelay</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.PSRAMDiffuser"><code class="docutils literal notranslate"><span class="pre">PSRAMDiffuser</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.SRAMDiffuser"><code class="docutils literal notranslate"><span class="pre">SRAMDiffuser</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.dsp.top.PSRAMMultiDiffuser"><code class="docutils literal notranslate"><span class="pre">PSRAMMultiDiffuser</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-top.xbeam.top">xbeam</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-top.polysyn.top">polysyn</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-top.selftest.top">selftest</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-top.macro_osc.top">macro_osc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-audio">usb_audio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-top.usb_host.top">usb_host</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-top.vectorscope_no_soc.top">vectorscope_no_soc</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#top.vectorscope_no_soc.top.VectorScopeTop"><code class="docutils literal notranslate"><span class="pre">VectorScopeTop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#top.vectorscope_no_soc.top.colors"><code class="docutils literal notranslate"><span class="pre">colors()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-top.bootloader.top">bootloader</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dsp.html">Tiliqua DSP Library</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">(external) GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">(external) CrowdSupply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">(external) apf.audio</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="cover.html">Tiliqua Project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="cover.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tiliqua Manual</a></li>
+      <li class="breadcrumb-item active">Top-level projects</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/top.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="top-level-projects">
+<h1>Top-level projects<a class="headerlink" href="#top-level-projects" title="Link to this heading"></a></h1>
+<p>Top-level projects are located in <cite>gateware/src/top</cite>.</p>
+<p>Each top-level project has a command-line interface. See the ‘Getting started’ section for how to build and flash these top-level designs.</p>
+<section id="module-top.dsp.top">
+<span id="dsp"></span><h2>dsp<a class="headerlink" href="#module-top.dsp.top" title="Link to this heading"></a></h2>
+<p>Designs demoing parts of the DSP library. Build any of them as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from `gateware` directory. Show all available example cores -</span>
+pdm<span class="w"> </span>dsp<span class="w"> </span>-h
+
+<span class="c1"># build an example core</span>
+pdm<span class="w"> </span>dsp<span class="w"> </span>build<span class="w"> </span>--dsp-core<span class="w"> </span>nco
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.Mirror">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">Mirror</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.Mirror" title="Link to this definition"></a></dt>
+<dd><p>Route audio inputs straight to outputs (in the audio domain).
+This is the simplest possible core, useful for basic tests.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.QuadNCO">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">QuadNCO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.QuadNCO" title="Link to this definition"></a></dt>
+<dd><p>Audio-rate oscillator (NCO) with internal oversampling.
+4 different waveform outputs.</p>
+<p>in0: V/oct pitch
+in1: phase modulation
+out0: sine
+out1: saw
+out2: tri
+out3: square</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.Resampler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">Resampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.Resampler" title="Link to this definition"></a></dt>
+<dd><p>Resample different channels to a different sample rate (and back).
+Not very musically interesting</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.ResonantFilter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">ResonantFilter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.ResonantFilter" title="Link to this definition"></a></dt>
+<dd><p>High-, Low-, Bandpass with cutoff &amp; resonance control.</p>
+<p>in0: audio in
+in1: cutoff (0V == off, ~5V == open)
+in2: resonance (0V == min, ~5V == crazy)</p>
+<p>out0: LPF out
+out1: HPF out
+out2: BPF out</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.DualVCA">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">DualVCA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.DualVCA" title="Link to this definition"></a></dt>
+<dd><p>Audio-rate VCA.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.Pitch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">Pitch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.Pitch" title="Link to this definition"></a></dt>
+<dd><p>PSRAM-backed pitch shifter with CV-controlled pitch.
+Grain size is quite large (~250ms) to reduce fluttering.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.Matrix">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">Matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.Matrix" title="Link to this definition"></a></dt>
+<dd><p>Matrix mixer with fixed coefficients.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.DualWaveshaper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">DualWaveshaper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.DualWaveshaper" title="Link to this definition"></a></dt>
+<dd><p>Soft distortion, channel 1/2 inputs, 3 is overdrive gain.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.TouchMixTop">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">TouchMixTop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.TouchMixTop" title="Link to this definition"></a></dt>
+<dd><p>Matrix mixer, combine touch inputs in interesting ways.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.PSRAMPingPongDelay">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">PSRAMPingPongDelay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.PSRAMPingPongDelay" title="Link to this definition"></a></dt>
+<dd><p>2-channel stereo ping-pong delay, backed by external PSRAM.</p>
+<p>2 delay lines are instantiated in isolated slices of the external
+memory address space. Using external memory allows for much longer
+delay times whilst using less resources, compared to SRAM-backed
+delay lines, however on a larger design, you have to be careful
+that PSRAM-backed delay lines don’t get starved by other PSRAM
+traffic (i.e video framebuffer operations).</p>
+<p>Tiliqua input 0/1 is stereo in, output 0/1 is stereo out.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.SRAMPingPongDelay">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">SRAMPingPongDelay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.SRAMPingPongDelay" title="Link to this definition"></a></dt>
+<dd><p>2-channel stereo ping-pong delay, backed by internal SRAM.</p>
+<p>Tiliqua input 0/1 is stereo in, output 0/1 is stereo out.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.PSRAMDiffuser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">PSRAMDiffuser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.PSRAMDiffuser" title="Link to this definition"></a></dt>
+<dd><p>PSRAM-backed 4-channel feedback delay, diffused by a matrix mixer.</p>
+<p>A block diagram of the signal flow inside this demo:</p>
+<a class="reference internal image-reference" href="_images/diffusor.png"><img alt="_images/diffusor.png" src="_images/diffusor.png" style="width: 800px;" /></a>
+<p>All 4 input channels are inputs.
+All 4 output channels are outputs.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.SRAMDiffuser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">SRAMDiffuser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.SRAMDiffuser" title="Link to this definition"></a></dt>
+<dd><p>SRAM-backed 4-channel feedback delay, diffused by a matrix mixer.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="top.dsp.top.PSRAMMultiDiffuser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.dsp.top.</span></span><span class="sig-name descname"><span class="pre">PSRAMMultiDiffuser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.dsp.top.PSRAMMultiDiffuser" title="Link to this definition"></a></dt>
+<dd><p>Kind of ridiculous 3x chained diffusers (4x4 diffuser into 4x4 diffuser into 4x4 diffuser).</p>
+<p>All 4 input channels are inputs.
+All 4 output channels are outputs.</p>
+<p>Be careful with the input amplitude on this one, it clips inside the diffuser multipliers
+pretty easily and can be a bit unstable.</p>
+<p>Sounds pretty close to a REALLY long reverb. A single diffuser suffices
+for most real audio applications, but this one is a bit crazy :).</p>
+<p>Its also useful for stress-testing the memory interface logic.</p>
+<p>With 2x PSRAM-backed diffusers that’s 8x simultaneous 48kHz audio streams hitting the
+PSRAM (4 write streams, 4 read streams). In simulation the PSRAM controller is blocking
+~15% of the time. Looking at the traces it seems the cache is bursting twice as often
+as it really needs to (in theory), so probably tweaking the cache architecture could
+get the PSRAM bandwidth consumption down considerably.</p>
+</dd></dl>
+
+</section>
+<section id="module-top.xbeam.top">
+<span id="xbeam"></span><h2>xbeam<a class="headerlink" href="#module-top.xbeam.top" title="Link to this heading"></a></h2>
+<p>Vectorscope and 4-channel oscilloscope with menu system.</p>
+<p>In vectorscope mode, rasterize X/Y (audio channel 0, 1) and
+color (audio channel 3) to a simulated CRT.</p>
+<p>In oscilloscope mode, all 4 input channels are plotted simultaneosly
+in classic oscilloscope fashion.</p>
+</section>
+<section id="module-top.polysyn.top">
+<span id="polysyn"></span><h2>polysyn<a class="headerlink" href="#module-top.polysyn.top" title="Link to this heading"></a></h2>
+<p>8-voice polyphonic synthesizer with video display and menu system.</p>
+<p>The synthesizer can be controlled through touching jacks 0-5 or using a
+MIDI keyboard through TRS midi. The control source must be selected in
+the menu system.</p>
+<p>In touch mode, the touch magnitude controls the filter envelopes of
+each voice. In MIDI mode, the velocity of each note as well as the
+value of the modulation wheel affects the filter envelopes.</p>
+<p>Output audio is sent to output channels 2 and 3 (last 2 jacks).</p>
+<p>Input jack 0 also controls phase modulation of all oscillators,
+so you can patch input jack 0 to an LFO for retro-sounding slow
+vibrato, or to an oscillator for some wierd FM effects.</p>
+<p>A block diagram of the core components of this polysynth:</p>
+<a class="reference internal image-reference" href="_images/polysynth.png"><img alt="_images/polysynth.png" src="_images/polysynth.png" style="width: 800px;" /></a>
+</section>
+<section id="module-top.selftest.top">
+<span id="selftest"></span><h2>selftest<a class="headerlink" href="#module-top.selftest.top" title="Link to this heading"></a></h2>
+<p>Collect some information about Tiliqua health, display it on the video
+output and log it over serial. This is mostly used to check for
+hardware issues and for bringup.</p>
+</section>
+<section id="module-top.macro_osc.top">
+<span id="macro-osc"></span><h2>macro_osc<a class="headerlink" href="#module-top.macro_osc.top" title="Link to this heading"></a></h2>
+<p>‘Macro-Oscillator’ runs a downsampled version of the DSP code from a
+famous Eurorack module (credits below), on a softcore, to demonstrate the
+compute capabilities available if you do everything in software.</p>
+<p>All 24 engines are available for tweaking and patching via the UI.
+A couple of engines use a bit more compute and may cause the UI to
+slow down, however you should never get audio glitches.
+A scope and vectorscope is included and hooked up to the oscillator
+outputs so you can visualize exactly what the softcore is spitting out.</p>
+<p>The original module was designed to run at 48kHz. Here, we instantiate
+a powerful (rv32imafc) softcore (this one includes an FPU), which
+is enough to run most engines at ~24kHz-48kHz, however with the video
+and menu system running simultaneously, it’s necessary to clock
+this down to 12kHz. Surprisingly, most engines still sound reasonable.
+The resampling from 12kHz &lt;-&gt; 48kHz is performed in hardware below.</p>
+<p>Jack mapping:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>In0: frequency modulation</p></li>
+<li><p>In1: trigger</p></li>
+<li><p>In2: timbre modulation</p></li>
+<li><p>In3: morph modulation</p></li>
+<li><p>Out2: ‘out’ output</p></li>
+<li><p>Out3: ‘aux’ output</p></li>
+</ul>
+</div></blockquote>
+<p>There is quite some heavy compute here and RAM usage, as a result,
+the firmware and buffers are too big to fit in BRAM. In this demo,
+the firmware is in memory-mapped SPI flash and the DSP buffers are
+allocated from external PSRAM.</p>
+<p>Credits to Emilie Gillet for the original Plaits module and firmware.</p>
+<dl class="simple">
+<dt>Credits to Oliver Rockstedt for the Rust port of said firmware:</dt><dd><p><a class="reference external" href="https://github.com/sourcebox/mi-plaits-dsp-rs">https://github.com/sourcebox/mi-plaits-dsp-rs</a></p>
+</dd>
+</dl>
+<p>The Rust port is what is running on this softcore.</p>
+</section>
+<section id="usb-audio">
+<h2>usb_audio<a class="headerlink" href="#usb-audio" title="Link to this heading"></a></h2>
+<p>4-channel USB2 audio interface, based on LUNA project.
+Enumerates as a 4-in, 4-out 48kHz sound card.</p>
+</section>
+<section id="module-top.usb_host.top">
+<span id="usb-host"></span><h2>usb_host<a class="headerlink" href="#module-top.usb_host.top" title="Link to this heading"></a></h2>
+<p>Extremely bare-bones USB MIDI host demo. EXPERIMENTAL.</p>
+<p><strong>*WARN*</strong> This demo hardwires the VBUS output to ON !!! <strong>*WARN*</strong></p>
+<p>At the moment this is only used for Tiliqua hardware validation.
+NOTE: the MIDI USB configuration and endpoint IDs are hard-coded below.</p>
+<p>At the moment, all the MIDI traffic is routed to CV outputs according
+to the existing example (see docstring) in <cite>top/dsp:MidiCVTop</cite>.</p>
+</section>
+<section id="module-top.vectorscope_no_soc.top">
+<span id="vectorscope-no-soc"></span><h2>vectorscope_no_soc<a class="headerlink" href="#module-top.vectorscope_no_soc.top" title="Link to this heading"></a></h2>
+<p>CRT / Vectorscope simulator.
+Rasterizes X/Y (audio channel 0, 1) and color (audio channel 3) to a simulated
+CRT display, with intensity gradient and afterglow effects.</p>
+<p>Simple gateware-only version, this is mostly useful for debugging the
+memory and video subsystems with an ILA or simulation, as it’s smaller.</p>
+<p>See ‘xbeam’ for SoC version of the scope with a menu system.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># for visualizing the color palette</span>
+$<span class="w"> </span>pdm<span class="w"> </span>colors_vectorscope
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="top.vectorscope_no_soc.top.VectorScopeTop">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">top.vectorscope_no_soc.top.</span></span><span class="sig-name descname"><span class="pre">VectorScopeTop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#top.vectorscope_no_soc.top.VectorScopeTop" title="Link to this definition"></a></dt>
+<dd><p>Top-level Vectorscope design.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="top.vectorscope_no_soc.top.colors">
+<span class="sig-prename descclassname"><span class="pre">top.vectorscope_no_soc.top.</span></span><span class="sig-name descname"><span class="pre">colors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#top.vectorscope_no_soc.top.colors" title="Link to this definition"></a></dt>
+<dd><p>Render image of intensity/color palette used internally by FramebufferPHY.
+This is useful for quickly tweaking it.</p>
+</dd></dl>
+
+</section>
+<section id="module-top.bootloader.top">
+<span id="bootloader"></span><h2>bootloader<a class="headerlink" href="#module-top.bootloader.top" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="bootloader.html" class="btn btn-neutral float-left" title="Bootloader" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dsp.html" class="btn btn-neutral float-right" title="Tiliqua DSP Library" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2025, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+.platform-picker {
+    margin: 10px 0 20px 0;
+}
+.platform-selector {
+    display:block;
+    list-style-type: none;
+    margin: 0 0 10px;
+    padding: 0;
+    line-height: normal;
+    overflow: auto;
+}
+.platform-selector li {
+    display: block;
+    cursor: pointer;
+    font-weight: bold;
+    margin: 0 5px 0 0;
+    padding: 5px 10px;
+    float: left;
+    background-color: #999;
+    color: #fff;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    -khtml-border-radius: 5px;
+}
+.rst-content .section .platform-selector,
+.rst-content section .platform-selector,
+.rst-content .toctree-wrapper .platform-selector,
+article .platform-selector {
+    line-height: normal;
+    margin: -15px 0 10px;
+}
+.rst-content .section .platform-selector li,
+.rst-content section .platform-selector li,
+.rst-content section .platform-selector ul li,
+.rst-content .toctree-wrapper .platform-selector li,
+article .platform-selector li {
+    margin-left: 0;
+}
+.platform-selector li:hover {
+    background-color: #777;
+}
+.platform-selector li.selected {
+    background-color: #2980b9;
+}
+.platform-selector li.selected:hover {
+    background-color: #333;
+}
+.platform-choice {
+    clear: both;
+}

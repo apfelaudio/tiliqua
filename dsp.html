@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tiliqua DSP Library &mdash; Tiliqua Project  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Top-level projects" href="top.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="cover.html" class="icon icon-home">
+            Tiliqua Project
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tiliqua Manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hardware.html">Hardware overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="technical.html">Hardware details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gettingstarted.html">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="soc.html">Tiliqua SoC designs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="top.html">Top-level projects</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tiliqua DSP Library</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#delay-lines">Delay Lines</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.delay_line.DelayLine"><code class="docutils literal notranslate"><span class="pre">DelayLine</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.delay_line.DelayLineTap"><code class="docutils literal notranslate"><span class="pre">DelayLineTap</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#filters">Filters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.SVF"><code class="docutils literal notranslate"><span class="pre">SVF</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.FIR"><code class="docutils literal notranslate"><span class="pre">FIR</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.Boxcar"><code class="docutils literal notranslate"><span class="pre">Boxcar</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#oscillators">Oscillators</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.SawNCO"><code class="docutils literal notranslate"><span class="pre">SawNCO</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#effects">Effects</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.WaveShaper"><code class="docutils literal notranslate"><span class="pre">WaveShaper</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.PitchShift"><code class="docutils literal notranslate"><span class="pre">PitchShift</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#vcas">VCAs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.VCA"><code class="docutils literal notranslate"><span class="pre">VCA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.GainVCA"><code class="docutils literal notranslate"><span class="pre">GainVCA</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#mixing">Mixing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.MatrixMix"><code class="docutils literal notranslate"><span class="pre">MatrixMix</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#resampling">Resampling</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.Resample"><code class="docutils literal notranslate"><span class="pre">Resample</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#one-shot">One-shot</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.Trigger"><code class="docutils literal notranslate"><span class="pre">Trigger</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.Ramp"><code class="docutils literal notranslate"><span class="pre">Ramp</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#stream-utilities">Stream utilities</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#splitting-merging-streams">Splitting / merging streams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#connecting-and-remapping-streams">Connecting and remapping streams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#connecting-streams-in-feedback-loops">Connecting streams in feedback loops</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#other-utilities">Other utilities</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.named_submodules"><code class="docutils literal notranslate"><span class="pre">named_submodules()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">(external) GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">(external) CrowdSupply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">(external) apf.audio</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="cover.html">Tiliqua Project</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="cover.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tiliqua Manual</a></li>
+      <li class="breadcrumb-item active">Tiliqua DSP Library</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/dsp.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tiliqua-dsp-library">
+<h1>Tiliqua DSP Library<a class="headerlink" href="#tiliqua-dsp-library" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>TODO short overview of the DSP library philosophy.</p>
+<p>TODO link to Amaranth documentation on streams.</p>
+<a class="reference internal image-reference" href="_images/mydsp.png"><img alt="_images/mydsp.png" src="_images/mydsp.png" style="width: 800px;" /></a>
+</section>
+<section id="delay-lines">
+<h2>Delay Lines<a class="headerlink" href="#delay-lines" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.delay_line.DelayLine">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.delay_line.</span></span><span class="sig-name descname"><span class="pre">DelayLine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.delay_line.DelayLine" title="Link to this definition"></a></dt>
+<dd><p>SRAM- or PSRAM-backed audio delay line.</p>
+<p>This forms the backbone of many different types of effects - echoes,
+pitch shifting, chorus, feedback synthesis etc.</p>
+<section id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h3>
+<p>Each <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a> instance operates in a single-writer, multiple-reader
+fashion - that is, for each <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a>, there may be only one stream
+of samples being <em>written</em>, however from each <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a> you may
+create N instances of <a class="reference internal" href="#tiliqua.delay_line.DelayLineTap" title="tiliqua.delay_line.DelayLineTap"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLineTap</span></code></a>, which are submodules of <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a>
+used to produce output streams (read operations) on the <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a>.</p>
+<p>For a simple, SRAM-backed delay line, the following is sufficient:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">delayln</span> <span class="o">=</span> <span class="n">DelayLine</span><span class="p">(</span>
+    <span class="n">max_delay</span><span class="o">=</span><span class="mi">8192</span><span class="p">,</span>
+    <span class="n">write_triggers_read</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>From this, you can create some read taps:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tap1</span> <span class="o">=</span> <span class="n">delayln</span><span class="o">.</span><span class="n">add_tap</span><span class="p">()</span>
+<span class="n">tap2</span> <span class="o">=</span> <span class="n">delayln</span><span class="o">.</span><span class="n">add_tap</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a> instance requires a single incoming stream <code class="code highlight py python docutils literal highlight-python"><span class="n">DelayLine</span><span class="o">.</span><span class="n">i</span></code>,
+on which incoming samples are taken and written to the backing store.</p>
+<p>Each <a class="reference internal" href="#tiliqua.delay_line.DelayLineTap" title="tiliqua.delay_line.DelayLineTap"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLineTap</span></code></a> instance requires both an incoming <em>and</em> outgoing
+stream, <code class="code highlight py python docutils literal highlight-python"><span class="n">DelayLineTap</span><span class="o">.</span><span class="n">i</span></code>, <code class="code highlight py python docutils literal highlight-python"><span class="n">DelayLineTap</span><span class="o">.</span><span class="n">o</span></code>, where an output sample is
+<em>only</em> produced some time after the requested delay count has arrived on
+<code class="code highlight py python docutils literal highlight-python"><span class="n">DelayLineTap</span><span class="o">.</span><span class="n">i</span></code>.</p>
+<p>This gives applications the flexibility to read multiple times per
+write sample (useful for example for fractional delay lines where
+we want to interpolate between two adjacent samples).</p>
+</section>
+<section id="fixed-simple-delay-taps">
+<h3>Fixed (simple) delay taps<a class="headerlink" href="#fixed-simple-delay-taps" title="Link to this heading"></a></h3>
+<p>It can be a bit cumbersome to need to provide each tap with an
+input stream if you just want some taps with fixed delays.</p>
+<p>So, if you want a simple fixed delay tap, you can use the
+<code class="code highlight py python docutils literal highlight-python"><span class="n">write_triggers_read</span><span class="o">=</span><span class="kc">True</span></code> option when creating the <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a>. Then,
+you can specify explicit fixed delay taps as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">delayln</span> <span class="o">=</span> <span class="n">DelayLine</span><span class="p">(</span><span class="n">max_delay</span><span class="o">=</span><span class="mi">8192</span><span class="p">,</span> <span class="n">write_triggers_read</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">tap1</span>    <span class="o">=</span> <span class="n">delayln</span><span class="o">.</span><span class="n">add_tap</span><span class="p">(</span><span class="n">fixed_delay</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+<span class="n">tap2</span>    <span class="o">=</span> <span class="n">delayln</span><span class="o">.</span><span class="n">add_tap</span><span class="p">(</span><span class="n">fixed_delay</span><span class="o">=</span><span class="mi">7000</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When used in this mode, <code class="code highlight py python docutils literal highlight-python"><span class="n">tap1</span></code> and <code class="code highlight py python docutils literal highlight-python"><span class="n">tap2</span></code> will internally have their
+inputs (sample request streams) hooked up to the write strobe. This
+means you no longer need to hook up <code class="code highlight py python docutils literal highlight-python"><span class="n">tapX</span><span class="o">.</span><span class="n">i</span></code> and will automatically
+get a single sample on each <code class="code highlight py python docutils literal highlight-python"><span class="n">tapX</span><span class="o">.</span><span class="n">o</span></code> after every write to <code class="code highlight py python docutils literal highlight-python"><span class="n">delayln</span></code>.</p>
+</div>
+</section>
+<section id="backing-store">
+<h3>Backing store<a class="headerlink" href="#backing-store" title="Link to this heading"></a></h3>
+<p>The backing store is a contiguous region of memory where samples are
+written to a wrapped incrementing index (i.e circular buffer fashion).</p>
+<p>The same memory space is shared by all read &amp; write operations, however
+the way this works is slightly different when comparing SRAM- and PSRAM-
+backed delay lines. In both cases, all read &amp; write operations go through
+an arbiter and share the same memory bus.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><strong>SRAM-backed delay line</strong></dt><dd><p>The memory bus is connected directly to an
+FPGA DPRAM instantiation and does not need to be connected to any external
+memory bus.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>PSRAM-backed delay line</strong></dt><dd><p>Due to the memory access latency of PSRAM,
+simply forwarding each read/write access would quickly consume memory
+bandwidth simply due to the access latency. So, in the PSRAM case, a
+small cache is inserted between the internal delay line R/W bus and
+the memory bus exposed by <cite>DelayLine.bus</cite> (normally hooked up to the PSRAM).
+The purpose of this cache is to collect as many read &amp; write operations into
+burstable transactions as possible.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As each delayline contains completely different samples and individually
+has quite a predictable access pattern, it makes sense to have one cache
+per <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a>, rather than one larger shared cache (which would likely
+perform worse considering area/bandwidth). The important factor is that
+all writes and reads on the same delayline share the same cache, as
+the write and read taps have the same working set.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Input stream for writing samples to the delay line.</p></li>
+<li><p><strong>bus</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">wishbone</span><span class="o">.</span><span class="n">Signature</span><span class="p">)</span></code>) – Wishbone bus for connecting to external PSRAM (usually through an arbiter).
+<em>Only present for PSRAM-backed delay lines.</em></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.delay_line.DelayLine.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_delay</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psram_backed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addr_width_o</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_triggers_read</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.delay_line.DelayLine.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>max_delay<span class="classifier">int</span></dt><dd><p>The maximum delay in samples. This exactly corresponds to the memory
+required in the backing store. Must be a power of 2.</p>
+</dd>
+<dt>psram_backed<span class="classifier">bool, optional</span></dt><dd><p>If True, the delay line is backed by PSRAM. Otherwise, it is backed
+by SRAM.</p>
+</dd>
+<dt>addr_width_o<span class="classifier">int, optional</span></dt><dd><p><em>Required for PSRAM-backed delay lines.</em>
+The address width of the external memory bus.</p>
+</dd>
+<dt>base<span class="classifier">int, optional</span></dt><dd><p><em>Required for PSRAM-backed delay lines.</em>
+The memory slice base address. This is the physical address offset in bytes.</p>
+</dd>
+<dt>write_triggers_read<span class="classifier">bool, optional</span></dt><dd><p>If True, writing to the delay line triggers a read. This means the
+<code class="code highlight py python docutils literal highlight-python"><span class="n">DelayLineTap</span><span class="o">.</span><span class="n">i</span></code> stream does not need to be connected</p>
+</dd>
+<dt>cache_kwargs<span class="classifier">dict, optional</span></dt><dd><p><em>Relevant only for PSRAM-backed delay lines.</em>
+Arguments to forward to creation of the internal memory cache.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.delay_line.DelayLine.add_tap">
+<span class="sig-name descname"><span class="pre">add_tap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fixed_delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.delay_line.DelayLine.add_tap" title="Link to this definition"></a></dt>
+<dd><p>Add and return a new <a class="reference internal" href="#tiliqua.delay_line.DelayLineTap" title="tiliqua.delay_line.DelayLineTap"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLineTap</span></code></a> to stream samples read from this <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Each tap automatically becomes a submodule of the <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a> instance.
+That is, you only need to add <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a> itself to <code class="code highlight py python docutils literal highlight-python"><span class="n">m</span><span class="o">.</span><span class="n">submodules</span></code>.</p>
+</div>
+<dl class="simple">
+<dt>fixed_delay<span class="classifier">int</span></dt><dd><p>The <code class="code highlight py python docutils literal highlight-python"><span class="n">DelayLineTap</span><span class="o">.</span><span class="n">i</span></code> is automatically set to a fixed delay.
+<em>Only used when</em> <code class="code highlight py python docutils literal highlight-python"><span class="n">write_triggers_read</span><span class="o">=</span><span class="kc">True</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.delay_line.DelayLineTap">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.delay_line.</span></span><span class="sig-name descname"><span class="pre">DelayLineTap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.delay_line.DelayLineTap" title="Link to this definition"></a></dt>
+<dd><p>A single read tap of a parent <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a>.
+See <a class="reference internal" href="#tiliqua.delay_line.DelayLine" title="tiliqua.delay_line.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLine</span></code></a> top-level comment for information on usage.
+<a class="reference internal" href="#tiliqua.delay_line.DelayLineTap" title="tiliqua.delay_line.DelayLineTap"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelayLineTap</span></code></a> should only be created using <code class="code highlight py python docutils literal highlight-python"><span class="n">DelayLine</span><span class="o">.</span><span class="n">add_tap</span><span class="p">()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">unsigned</span><span class="p">(</span><span class="n">N</span><span class="p">))</span></code>) – Stream of delays requested to be read from the delay line.
+The unit is in number of samples <em>behind</em> the last written
+sample to the delay line.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Stream of samples read from the delay line, one per request
+on <code class="code highlight py python docutils literal highlight-python"><span class="n">DelayLineTap</span><span class="o">.</span><span class="n">i</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="filters">
+<h2>Filters<a class="headerlink" href="#filters" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.SVF">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">SVF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.SVF" title="Link to this definition"></a></dt>
+<dd><p>Oversampled Chamberlin State Variable Filter.</p>
+<p>Filter <cite>cutoff</cite> and <cite>resonance</cite> are tunable at the system sample rate.</p>
+<p>Highpass, lowpass, bandpass routed out on stream payloads <cite>hp</cite>, <cite>lp</cite>, <cite>bp</cite>.</p>
+<p>Reference: Fig.3 in <a class="reference external" href="https://arxiv.org/pdf/2111.05592">https://arxiv.org/pdf/2111.05592</a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.FIR">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">FIR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.FIR" title="Link to this definition"></a></dt>
+<dd><p>Fixed-point FIR filter that uses a single multiplier.</p>
+<p>This filter contains some optional optimizations to act as an efficient
+interpolator/decimator. For details, see <code class="code highlight py python docutils literal highlight-python"><span class="n">stride_i</span></code>, <code class="code highlight py python docutils literal highlight-python"><span class="n">stride_o</span></code> below.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Input stream for sending samples to the filter.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Output stream for getting samples from the filter. There is 1 output
+sample per input sample, presented <code class="code highlight py python docutils literal highlight-python"><span class="n">filter_order</span><span class="o">+</span><span class="mi">1</span></code> cycles after
+the input sample. For <code class="code highlight py python docutils literal highlight-python"><span class="n">stride_o</span> <span class="o">&gt;</span> <span class="mi">1</span></code>, there is only 1 output
+sample per <code class="code highlight py python docutils literal highlight-python"><span class="n">stride_o</span></code> input samples.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.FIR.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_cutoff_hz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lowpass'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prescale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride_i</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride_o</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.FIR.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>fs<span class="classifier">int</span></dt><dd><p>Sample rate of the filter, used for calculating FIR coefficients.</p>
+</dd>
+<dt>filter_cutoff_hz<span class="classifier">int</span></dt><dd><p>Cutoff frequency of the filter, used for calculating FIR coefficients.</p>
+</dd>
+<dt>filter_order<span class="classifier">int</span></dt><dd><p>Size of the filter (number of coefficients).</p>
+</dd>
+<dt>filter_type<span class="classifier">str</span></dt><dd><p>Type of the filter passed to <code class="code highlight py python docutils literal highlight-python"><span class="n">signal</span><span class="o">.</span><span class="n">firwin</span></code> - <code class="code highlight py python docutils literal highlight-python"><span class="s2">&quot;lowpass&quot;</span></code>,
+<code class="code highlight py python docutils literal highlight-python"><span class="s2">&quot;highpass&quot;</span></code> or so on.</p>
+</dd>
+<dt>prescale<span class="classifier">float</span></dt><dd><p>All taps are scaled by <code class="code highlight py python docutils literal highlight-python"><span class="n">prescale</span></code>. This is used in cases where
+you are upsampling and need to preserve energy. Be careful with this,
+it can overflow the tap coefficients (you’ll get a warning).</p>
+</dd>
+<dt>stride_i<span class="classifier">int</span></dt><dd><p>When an FIR filter is used as an interpolator, a common pattern is
+to provide 1 ‘actual’ sample and pad S-1 zeroes for every S
+output samples needed. For any <code class="code highlight py python docutils literal highlight-python"><span class="n">stride</span> <span class="o">&gt;</span> <span class="mi">1</span></code>, the <code class="code highlight py python docutils literal highlight-python"><span class="n">stride</span></code>
+must evenly divide <code class="code highlight py python docutils literal highlight-python"><span class="n">filter_order</span></code> (i.e. no remainder). For
+<code class="code highlight py python docutils literal highlight-python"><span class="n">stride</span> <span class="o">&gt;</span> <span class="mi">1</span></code>, this core applies some optimizations, assuming
+every S’th sample is nonzero, and the rest are zero. This results in
+a factor S reduction in MAC ops (latency) and a factor S reduction in
+RAM needed for sample storage. The tap storage remains of size
+<code class="code highlight py python docutils literal highlight-python"><span class="n">filter_order</span></code> as all taps are still mathematically required.
+The nonzero sample must be the first sample to arrive.</p>
+</dd>
+<dt>stride_o<span class="classifier">int</span></dt><dd><p>When an FIR filter is used as a decimator, it is common to keep only
+1 sample and discard M-1 samples (if decimating by factor M). For
+<code class="code highlight py python docutils literal highlight-python"><span class="n">stride_o</span> <span class="o">==</span> <span class="n">M</span></code>, only 1 output sample is produced per M input
+samples. This does not reduce LUT/RAM usage, but avoids performing
+MACs to produce samples that will be discarded.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.Boxcar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">Boxcar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Boxcar" title="Link to this definition"></a></dt>
+<dd><p>Simple Boxcar Average.</p>
+<p>Average of previous N samples, implemented with an accumulator.
+Requires no multiplies, often useful for simple smoothing.</p>
+<p>Can be used in low- or high-pass mode.</p>
+</dd></dl>
+
+</section>
+<section id="oscillators">
+<h2>Oscillators<a class="headerlink" href="#oscillators" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.SawNCO">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">SawNCO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.SawNCO" title="Link to this definition"></a></dt>
+<dd><p>Sawtooth Numerically Controlled Oscillator.</p>
+<p>Often this can be simply routed into a LUT waveshaper for any other waveform type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">StructLayout</span><span class="p">)</span></code>) – Input stream, with fields <code class="code highlight py python docutils literal highlight-python"><span class="n">freq_inc</span></code> (linear frequency) and
+<code class="code highlight py python docutils literal highlight-python"><span class="n">phase</span></code> (phase offset). One output sample is produced for each
+input sample.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Output stream, values sweep from <code class="code highlight py python docutils literal highlight-python"><span class="n">ASQ</span><span class="o">.</span><span class="n">min</span><span class="p">()</span></code> to <code class="code highlight py python docutils literal highlight-python"><span class="n">ASQ</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="effects">
+<h2>Effects<a class="headerlink" href="#effects" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.WaveShaper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">WaveShaper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.WaveShaper" title="Link to this definition"></a></dt>
+<dd><p>Waveshaper that maps x to f(x), where the function must be
+stateless so we can precompute a mapping lookup table.</p>
+<p>Linear interpolation is used between lut elements.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.PitchShift">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">PitchShift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.PitchShift" title="Link to this definition"></a></dt>
+<dd><p>Granular pitch shifter. Works by crossfading 2 separately
+tracked taps on a delay line. As a result, maximum grain
+size is the delay line ‘max_delay’ // 2.</p>
+<p>The delay line tap itself must be hooked up to the input
+source from outside this component (this allows multiple
+shifters to share a single delay line).</p>
+</dd></dl>
+
+</section>
+<section id="vcas">
+<h2>VCAs<a class="headerlink" href="#vcas" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.VCA">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">VCA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.VCA" title="Link to this definition"></a></dt>
+<dd><p>Voltage Controlled Amplifier (simple multiplier).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span></code>) – 2-channel input stream.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span></code>) – Output stream, <code class="code highlight py python docutils literal highlight-python"><span class="n">i</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">i</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.GainVCA">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">GainVCA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.GainVCA" title="Link to this definition"></a></dt>
+<dd><p>Voltage Controlled Amplifier where the gain amount can be &gt; 1.
+The output is clipped to fit in a normal ASQ.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">StructLayout</span><span class="p">)</span></code>) – 2-channel input stream, with fields <code class="code highlight py python docutils literal highlight-python"><span class="n">x</span></code> (audio in) and <code class="code highlight py python docutils literal highlight-python"><span class="n">gain</span></code>
+(multiplier that may be &gt;1 for saturation. legal values <code class="code highlight py python docutils literal highlight-python"><span class="o">-</span><span class="mi">3</span> <span class="o">&lt;</span> <span class="n">gain</span> <span class="o">&lt;</span> <span class="mi">3</span></code>)</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Output stream, <code class="code highlight py python docutils literal highlight-python"><span class="n">x</span> <span class="o">*</span> <span class="n">gain</span></code> with saturation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="mixing">
+<h2>Mixing<a class="headerlink" href="#mixing" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.MatrixMix">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">MatrixMix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.MatrixMix" title="Link to this definition"></a></dt>
+<dd><p>Matrix mixer with tunable coefficients and configurable
+input &amp; output channel count. Uses a single multiplier.</p>
+<p>Coefficients must fit inside the self.ctype declared below.
+Coefficients can be updated in real-time by writing them
+to the <cite>c</cite> stream (position <cite>o_x</cite>, <cite>i_y</cite>, value <cite>v</cite>).</p>
+</dd></dl>
+
+</section>
+<section id="resampling">
+<h2>Resampling<a class="headerlink" href="#resampling" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.Resample">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">Resample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Resample" title="Link to this definition"></a></dt>
+<dd><p>Polyphase fractional resampler.</p>
+<p>Upsamples by factor N, filters the result, then downsamples by factor M.
+The upsampling action zero-pads before applying the low-pass filter, so
+the low-pass filter coefficients are prescaled by N to preserve total energy.</p>
+<p>The underlying FIR interpolator only performs MACs on non-padded input samples,
+(and for output samples which are not discarded), which can make a big difference
+for large upsampling/interpolating ratios, and is what makes this a polyphase
+resampler - time complexity per output sample proportional to O(fir_order/N).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Input stream for sending samples to the resampler at sample rate <code class="code highlight py python docutils literal highlight-python"><span class="n">fs_in</span></code>.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Output stream for getting samples from the resampler. Samples are produced
+at a rate determined by <code class="code highlight py python docutils literal highlight-python"><span class="n">fs_in</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_up</span> <span class="o">/</span> <span class="n">m_down</span><span class="p">)</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.Resample.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs_in</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_up</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_down</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order_mult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Resample.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>fs_in<span class="classifier">int</span></dt><dd><p>Expected sample rate of incoming samples, used for calculating filter coefficients.</p>
+</dd>
+<dt>n_up<span class="classifier">int</span></dt><dd><p>Numerator of the resampling ratio. Samples are produced at <code class="code highlight py python docutils literal highlight-python"><span class="n">fs_in</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_up</span> <span class="o">/</span> <span class="n">m_down</span><span class="p">)</span></code>.
+If <code class="code highlight py python docutils literal highlight-python"><span class="n">n_up</span></code> and <code class="code highlight py python docutils literal highlight-python"><span class="n">m_down</span></code> share a common factor, the internal resampling ratio is reduced.</p>
+</dd>
+<dt>m_down<span class="classifier">int</span></dt><dd><p>Denominator of the resampling ratio. Samples are produced at <code class="code highlight py python docutils literal highlight-python"><span class="n">fs_in</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_up</span> <span class="o">/</span> <span class="n">m_down</span><span class="p">)</span></code>.
+If <code class="code highlight py python docutils literal highlight-python"><span class="n">n_up</span></code> and <code class="code highlight py python docutils literal highlight-python"><span class="n">m_down</span></code> share a common factor, the internal resampling ratio is reduced.</p>
+</dd>
+<dt>bw<span class="classifier">float</span></dt><dd><p>Bandwidth (0 to 1, proportion of the nyquist frequency) of the resampling filter.</p>
+</dd>
+<dt>order_mult<span class="classifier">int</span></dt><dd><p>Filter order multiplier, determines number of taps in underlying FIR filter. The
+underlying tap count is determined as <code class="code highlight py python docutils literal highlight-python"><span class="n">order_factor</span><span class="o">*</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_up</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_down</span><span class="p">)</span></code>,
+rounded up to the next multiple of <code class="code highlight py python docutils literal highlight-python"><span class="n">n_up</span></code> (required for even zero padding).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="one-shot">
+<h2>One-shot<a class="headerlink" href="#one-shot" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.Trigger">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">Trigger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Trigger" title="Link to this definition"></a></dt>
+<dd><p>When trigger condition is met, output is set to 1, for 1 stream cycle.</p>
+<p>Currently this only implements rising edge trigger.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.Ramp">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">Ramp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Ramp" title="Link to this definition"></a></dt>
+<dd><p>If trigger strobes a 1, ramps from -1 to 1, staying at 1 until retriggered.
+A retrigger mid-ramp does not restart the ramp until the output has reached 1.</p>
+</dd></dl>
+
+</section>
+<section id="stream-utilities">
+<h2>Stream utilities<a class="headerlink" href="#stream-utilities" title="Link to this heading"></a></h2>
+<section id="splitting-merging-streams">
+<h3>Splitting / merging streams<a class="headerlink" href="#splitting-merging-streams" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.Split">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">Split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Split" title="Link to this definition"></a></dt>
+<dd><p>Consumes payloads from a single stream and splits it into multiple independent streams.
+This component may be instantiated in 2 modes depending on the value of <code class="code highlight py python docutils literal highlight-python"><span class="n">replicate</span></code>:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><strong>Channel splitter</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">replicate</span> <span class="o">==</span> <span class="kc">False</span></code>):</dt><dd><p>The incoming stream has an <code class="code highlight py python docutils literal highlight-python"><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span></code> signature. Each payload in the
+<code class="code highlight py python docutils literal highlight-python"><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span></code> becomes an independent outgoing stream. <code class="code highlight py python docutils literal highlight-python"><span class="n">n_channels</span></code>
+must match the number of payloads in the <code class="code highlight py python docutils literal highlight-python"><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Channel replicater</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">replicate</span> <span class="o">==</span> <span class="kc">True</span></code>):</dt><dd><p>The incoming stream has a single payload. Each payload in the incoming stream
+is replicated and at the output appears as <code class="code highlight py python docutils literal highlight-python"><span class="n">n_channels</span></code> independent streams,
+which produce the same values, however may be synchronized/consumed independently.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>This class is inspired by previous work in the lambdalib and LiteX projects.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.Split.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Split.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>n_channels<span class="classifier">int</span></dt><dd><p>The number of independent output streams. See usage above.</p>
+</dd>
+<dt>replicate<span class="classifier">bool, optional</span></dt><dd><p>See usage above.</p>
+</dd>
+<dt>source<span class="classifier">stream, optional</span></dt><dd><p>Optional incoming stream to pass through to <code class="code highlight py python docutils literal highlight-python"><span class="n">wiring</span><span class="o">.</span><span class="n">connect</span></code> on
+elaboration. This argument means you do not have to hook up <code class="code highlight py python docutils literal highlight-python"><span class="bp">self</span><span class="o">.</span><span class="n">i</span></code>
+and can make some pipelines a little easier to read.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.Split.wire_ready">
+<span class="sig-name descname"><span class="pre">wire_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Split.wire_ready" title="Link to this definition"></a></dt>
+<dd><p>Set out channels as permanently READY so they don’t block progress.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.Merge">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">Merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Merge" title="Link to this definition"></a></dt>
+<dd><p>Consumes payloads from multiple independent streams and merges them into a single stream.</p>
+<p>This class is inspired by previous work in the lambdalib and LiteX projects.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.Merge.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Merge.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>n_channels<span class="classifier">int</span></dt><dd><p>The number of independent incoming streams.</p>
+</dd>
+<dt>sink<span class="classifier">stream, optional</span></dt><dd><p>Optional outgoing stream to pass through to <code class="code highlight py python docutils literal highlight-python"><span class="n">wiring</span><span class="o">.</span><span class="n">connect</span></code> on
+elaboration. This argument means you do not have to hook up <code class="code highlight py python docutils literal highlight-python"><span class="bp">self</span><span class="o">.</span><span class="n">o</span></code>
+and can make some pipelines a little easier to read.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.Merge.wire_valid">
+<span class="sig-name descname"><span class="pre">wire_valid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channels</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.Merge.wire_valid" title="Link to this definition"></a></dt>
+<dd><p>Set in channels as permanently VALID so they don’t block progress.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="connecting-and-remapping-streams">
+<h3>Connecting and remapping streams<a class="headerlink" href="#connecting-and-remapping-streams" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="tiliqua.dsp.connect_remap">
+<span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">connect_remap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stream_o</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stream_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.connect_remap" title="Link to this definition"></a></dt>
+<dd><p>Connect 2 streams, bypassing normal wiring.connect() checks
+that the signatures match. This allows easily remapping fields when
+you are trying to connect streams with different signatures.</p>
+<p>For example, say I have a stream with an ArrayLayout payload and want to
+map it to a different stream with a StructLayout payload, and the underlying
+bit-representation of both layouts do not match, I can remap using:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dsp</span><span class="o">.</span><span class="n">connect_remap</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">vca_merge2a</span><span class="o">.</span><span class="n">o</span><span class="p">,</span> <span class="n">vca0</span><span class="o">.</span><span class="n">i</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">o</span><span class="p">,</span> <span class="n">i</span> <span class="p">:</span> <span class="p">[</span>
+    <span class="n">i</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">x</span>   <span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+    <span class="n">i</span><span class="o">.</span><span class="n">payload</span><span class="o">.</span><span class="n">gain</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">)</span>
+<span class="p">])</span>
+</pre></div>
+</div>
+<p>This is a bit of a hack. TODO perhaps implement this as a StreamConverter
+such that we can still use wiring.connect?.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tiliqua.dsp.channel_remap">
+<span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">channel_remap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stream_o</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stream_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapping_o_to_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.channel_remap" title="Link to this definition"></a></dt>
+<dd><p>Connect 2 streams of type <code class="code highlight py python docutils literal highlight-python"><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span></code>, with different channel
+counts or channel indices. For example, to connect a source with 4 channels
+to a sink with 2 channels, mapping 0 to 0, 1 to 1, leaving 2 and 3 unconnected:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s1</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+<span class="n">dsp</span><span class="o">.</span><span class="n">channel_remap</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>This also works the other way around, to connect e.g. a source with 2 channels to
+a sink with 4 channels. The stream will make progress however the value of the
+payloads in any unmapped output channels is undefined.</p>
+</dd></dl>
+
+</section>
+<section id="connecting-streams-in-feedback-loops">
+<h3>Connecting streams in feedback loops<a class="headerlink" href="#connecting-streams-in-feedback-loops" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.KickFeedback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">KickFeedback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.KickFeedback" title="Link to this definition"></a></dt>
+<dd><p>Inject a single dummy (garbage) sample after reset between
+two streams. This is necessary to break infinite blocking
+after reset if streams are set up in a feedback loop.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tiliqua.dsp.connect_feedback_kick">
+<span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">connect_feedback_kick</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">o</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.connect_feedback_kick" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+<section id="other-utilities">
+<h2>Other utilities<a class="headerlink" href="#other-utilities" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="tiliqua.dsp.named_submodules">
+<span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">named_submodules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m_submodules</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elaboratables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.named_submodules" title="Link to this definition"></a></dt>
+<dd><p>Normally, using constructs like:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">m</span><span class="o">.</span><span class="n">submodules</span> <span class="o">+=</span> <span class="n">delaylines</span>
+</pre></div>
+</div>
+<p>You get generated code with names like U$14 … as Amaranth’s
+namer doesn’t give such modules a readable name.</p>
+<p>Instead, you can do:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">named_submodules</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">submodules</span><span class="p">,</span> <span class="n">delaylines</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And this helper will give each instance a name.</p>
+<p>TODO: is there an idiomatic way of doing this?</p>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="top.html" class="btn btn-neutral float-left" title="Top-level projects" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2025, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
