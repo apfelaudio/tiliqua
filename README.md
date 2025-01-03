@@ -2,25 +2,21 @@
 
 <sup>WARN: 🚧 under construction! 🚧 - this module is in active development</sup>
 
-**[Tiliqua](https://en.wikipedia.org/wiki/Blue-tongued_skink) is a powerful, open hardware FPGA-based audio multitool for Eurorack.**
+**Tiliqua is a powerful, open hardware FPGA-based audio multitool for Eurorack.**
 
-For updates, subscribe to the [Crowd Supply page](https://www.crowdsupply.com/apfaudio/tiliqua) and my own [mailing list](https://apf.audio/)
+For updates, join the [matrix chatroom](https://matrix.to/#/#apfaudio:matrix.org), subscribe to the [Crowd Supply page](https://www.crowdsupply.com/apfaudio/tiliqua) or my own [mailing list](https://apf.audio/)
 
 <img src="doc/img/tiliqua-front-left.jpg" width="500">
 
 # Documentation
 
-(🚧 under construction) documentation is available at [apfaudio.github.io/tiliqua](https://apfaudio.github.io/tiliqua/)
+Available at [apfaudio.github.io/tiliqua](https://apfaudio.github.io/tiliqua/) (🚧 under construction)
 
 Documentation is built from source in `gateware/docs`.
 
 # Community
 
 `apfaudio` has a Matrix channel, [#apfaudio:matrix.org](https://matrix.to/#/#apfaudio:matrix.org). Feel free to join to ask questions or discuss ongoing development.
-
-You might also find some interesting things:
-- On my [personal YouTube channel](https://www.youtube.com/channel/UCj2hxwW2fD-3egUAxqW0mhg)
-- On the [apfaudio Instagram page](https://www.instagram.com/apfaudio/)
 
 ## Builds on the following (awesome) open projects
 
