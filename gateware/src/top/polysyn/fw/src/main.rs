@@ -125,7 +125,11 @@ fn timer0_handler(app: &Mutex<RefCell<App>>) {
         app.synth.set_matrix_coefficient(2, 6, coeff_wet);
         app.synth.set_matrix_coefficient(3, 7, coeff_wet);
 
-        app.synth.set_midi_channel_filter(opts.misc.midi_ch.value.to_filter());
+        let mpe = opts.misc.mpe.value == Mpe::On;
+        app.synth.set_mpe(mpe);
+        app.synth.set_pitch_bend_range(opts.misc.pb_range.value.semitones());
+        app.synth.set_midi_channel_filter(
+            if mpe { None } else { opts.misc.midi_ch.value.to_filter() });
 
         // ADSR params
         app.synth.set_attack_rate(adsr_ui_to_rate(opts.adsr.attack.value));

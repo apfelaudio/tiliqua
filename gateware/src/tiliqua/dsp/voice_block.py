@@ -420,6 +420,19 @@ class MultiSVF(wiring.Component):
         in_first = Signal(1)
         voice_ix = Signal(range(N))
 
+        N_OCTAVES = 5
+        env_scaled = Signal(unsigned(16))
+        octave = env_scaled[-3:]
+        mantissa = env_scaled[:-3]
+        kK_min = (1 << (16 - 3)) >> N_OCTAVES
+        kK_exp = Signal(unsigned(16))
+        kK_shift = Signal(unsigned(3))
+        m.d.comb += [
+            env_scaled.eq((self.i.payload.sample.env.as_value() * N_OCTAVES) >> 3),
+            kK_shift.eq(N_OCTAVES - octave),
+            kK_exp.eq((Cat(mantissa, C(1, 1)) >> kK_shift) - kK_min),
+        ]
+
         with m.FSM():
 
             with m.State('WAIT-VALID'):
@@ -427,7 +440,7 @@ class MultiSVF(wiring.Component):
                 with m.If(self.i.valid):
                     m.d.sync += [
                         svf_x.eq(self.i.payload.sample.x >> 1),
-                        svf_kK.as_value().eq(self.i.payload.sample.env.as_value() >> 3),
+                        svf_kK.as_value().eq(kK_exp),
                         svf_kQinv.as_value().eq(self.reso),
                         in_first.eq(self.i.payload.first),
                         oversample.eq(0),

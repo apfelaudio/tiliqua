@@ -105,6 +105,14 @@ macro_rules! impl_polysynth {
                     self.registers.usb_midi_endp().write(|w| unsafe { w.value().bits(endpt_id) } );
                 }
 
+                pub fn set_mpe(&mut self, enable: bool)  {
+                    self.registers.mpe().write(|w| unsafe { w.enable().bit(enable) } );
+                }
+
+                pub fn set_pitch_bend_range(&mut self, semitones: u8)  {
+                    self.registers.pb_range().write(|w| unsafe { w.value().bits(semitones) } );
+                }
+
                 // `None` listens on all channels.
                 pub fn set_midi_channel_filter(&mut self, channel: Option<u8>)  {
                     let value = channel.unwrap_or(0);

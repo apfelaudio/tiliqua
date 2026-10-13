@@ -115,6 +115,8 @@ can also be used to control most of these through CCs as follows:
         MISC    touch-ctrl     -  enable/disable jacktouch input
         MISC    cc-highlight   -  highlight changed on CC input
         MISC    midi-ch        -  filter MIDI to specific channel (default: all)
+        MISC    mpe            -  MPE per-note pitch bend / pressure (ignores midi-ch)
+        MISC    pb-range       -  pitch bend range of the sending device (semitones)
         MISC    usb-host       -  enable USB host MIDI (disables TRS)
         MISC    serial-debug   -  dump MIDI data out serial port
         MISC    save-opts      -  save all options to flash
@@ -209,6 +211,9 @@ class PolySynth(wiring.Component):
     # Jack detection (directly from pmod hardware)
     jack: In(unsigned(8))
 
+    mpe_en: In(unsigned(1))
+    pb_scale: In(unsigned(8))
+
     voice_states: Out(midi.MidiVoice).array(N_VOICES)
     voice_cutoffs: Out(unsigned(8)).array(N_VOICES)
 
@@ -222,6 +227,11 @@ class PolySynth(wiring.Component):
 
         m.submodules.voice_tracker = voice_tracker = midi.MidiVoiceTracker(
             max_voices=n_voices, velocity_mod=True, zero_velocity_gate=False)
+
+        m.d.comb += [
+            voice_tracker.mpe_en.eq(self.mpe_en),
+            voice_tracker.pb_scale.eq(self.pb_scale),
+        ]
 
         # Connect MIDI stream -> voice tracker
         wiring.connect(m, wiring.flipped(self.i_midi), voice_tracker.i)
@@ -393,6 +403,12 @@ class SynthPeripheral(wiring.Component):
         """Channel filter. 0 = no filter, 1..16 = single MIDI channel."""
         value: csr.Field(csr.action.W, unsigned(5))
 
+    class PitchBendRange(csr.Register, access="w"):
+        value: csr.Field(csr.action.W, unsigned(8))
+
+    class Mpe(csr.Register, access="w"):
+        enable: csr.Field(csr.action.W, unsigned(1))
+
     def __init__(self, synth=None):
         self.synth = synth
         regs = csr.Builder(addr_width=7, data_width=8)
@@ -416,6 +432,8 @@ class SynthPeripheral(wiring.Component):
         self._wt_data       = regs.add("wt_data",       self.WavetableData(), offset=voices_csr_end + 0x30)
         self._lfo           = regs.add("lfo",           self.Lfo(),           offset=voices_csr_end + 0x34)
         self._midi_ch_filt  = regs.add("midi_ch_filter",self.MidiChannelFilter(), offset=voices_csr_end + 0x38)
+        self._mpe           = regs.add("mpe",           self.Mpe(),           offset=voices_csr_end + 0x3C)
+        self._pb_range      = regs.add("pb_range",      self.PitchBendRange(),offset=voices_csr_end + 0x40)
         self._bridge = csr.Bridge(regs.as_memory_map())
         super().__init__({
             "bus": In(csr.Signature(addr_width=regs.addr_width, data_width=regs.data_width)),
@@ -446,6 +464,11 @@ class SynthPeripheral(wiring.Component):
             m.d.sync += self.synth.sustain_level.eq(self._sustain_level.f.value.w_data)
         with m.If(self._release_rate.f.value.w_stb):
             m.d.sync += self.synth.release_rate.eq(self._release_rate.f.value.w_data)
+
+        with m.If(self._mpe.f.enable.w_stb):
+            m.d.sync += self.synth.mpe_en.eq(self._mpe.f.enable.w_data)
+        with m.If(self._pb_range.f.value.w_stb):
+            m.d.sync += self.synth.pb_scale.eq(self._pb_range.f.value.w_data)
 
         with m.If(self._lfo.f.value.w_stb):
             m.d.sync += self.synth.lfo.as_value().eq(self._lfo.f.value.w_data)

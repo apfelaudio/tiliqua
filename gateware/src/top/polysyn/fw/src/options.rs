@@ -62,6 +62,41 @@ pub enum UsbHost {
 
 #[derive(Default, Clone, Copy, PartialEq, EnumIter, IntoStaticStr, Serialize, Deserialize)]
 #[strum(serialize_all = "kebab-case")]
+pub enum Mpe {
+    #[default]
+    Off,
+    On,
+}
+
+#[derive(Default, Clone, Copy, PartialEq, EnumIter, IntoStaticStr, Serialize, Deserialize)]
+pub enum PitchBendRange {
+    #[default]
+    #[strum(serialize = "2")]
+    St2,
+    #[strum(serialize = "12")]
+    St12,
+    #[strum(serialize = "24")]
+    St24,
+    #[strum(serialize = "48")]
+    St48,
+    #[strum(serialize = "96")]
+    St96,
+}
+
+impl PitchBendRange {
+    pub fn semitones(self) -> u8 {
+        match self {
+            PitchBendRange::St2  => 2,
+            PitchBendRange::St12 => 12,
+            PitchBendRange::St24 => 24,
+            PitchBendRange::St48 => 48,
+            PitchBendRange::St96 => 96,
+        }
+    }
+}
+
+#[derive(Default, Clone, Copy, PartialEq, EnumIter, IntoStaticStr, Serialize, Deserialize)]
+#[strum(serialize_all = "kebab-case")]
 pub enum UsbMidiSerialDebug {
     #[default]
     Off,
@@ -177,6 +212,10 @@ pub struct MiscOpts {
     pub cc_highlight: EnumOption<CcHighlight>,
     #[option]
     pub midi_ch: EnumOption<MidiChannel>,
+    #[option]
+    pub mpe: EnumOption<Mpe>,
+    #[option]
+    pub pb_range: EnumOption<PitchBendRange>,
     #[option]
     pub usb_host: EnumOption<UsbHost>,
     #[option]
