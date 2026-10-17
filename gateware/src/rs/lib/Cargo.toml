@@ -25,6 +25,8 @@ serde_derive = "1.0.219"
 postcard = { version="1.1.3", default-features=false, features = ["use-crc"] }
 crc = { version="3.0", default-features=false }
 fastrand = { version = "2.1.0", default-features = false }
+irq = "0.2.3"
+amaranth-soc-isr = { path="../isr" }
 [dev-dependencies]
 critical-section = { version = "1.1.2", features = ["std"] }
 image = "0.24.7"

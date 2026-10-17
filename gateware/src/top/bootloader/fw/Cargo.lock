@@ -663,11 +663,13 @@ dependencies = [
 name = "tiliqua-lib"
 version = "0.1.0"
 dependencies = [
+ "amaranth-soc-isr",
  "crc",
  "embedded-hal 1.0.0",
  "fastrand",
  "fixed",
  "heapless",
+ "irq",
  "log",
  "micromath",
  "midi-types",

@@ -606,6 +606,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "irq"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fde4043982dac20deb036c56edf2b1928614509334ee6c392f7d8caffa999a3"
+
+[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1120,6 +1126,7 @@ dependencies = [
 name = "tiliqua-lib"
 version = "0.1.0"
 dependencies = [
+ "amaranth-soc-isr",
  "crc",
  "critical-section",
  "embedded-hal 1.0.0",
@@ -1128,6 +1135,7 @@ dependencies = [
  "fixed",
  "heapless 0.8.0",
  "image",
+ "irq",
  "log",
  "micromath",
  "midi-types",

@@ -16,7 +16,8 @@ hal::impl_grain_player! {
     GrainPlayer2: pac::GRAIN_PERIPH2,
 }
 
+tiliqua_lib::impl_handlers!(Serial0, Timer0);
+
 pub mod channel;
 pub mod flash;
-pub mod handlers;
 pub mod options;
