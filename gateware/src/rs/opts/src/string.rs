@@ -15,7 +15,7 @@ impl StringOption {
     pub fn new(name: &'static str, value: &str, key: u32) -> Self {
         Self {
             name,
-            value: OptionString::from_str(value).unwrap(),
+            value: OptionString::from_str(value).expect("string option value exceeds OptionString capacity"),
             option_key: OptionKey::new(key),
         }
     }

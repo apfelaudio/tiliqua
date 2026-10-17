@@ -48,7 +48,7 @@ pub fn derive_option(input: TokenStream) -> TokenStream {
         };
 
         let page_str: &str = &input.ident.to_string();
-        let field_name_str: &str = &field_name.as_ref().unwrap().to_string().replace('_',"-");
+        let field_name_str: &str = &field_name.as_ref().expect("options derive requires named fields").to_string().replace('_',"-");
         let type_name_str: &str = &quote!(#field_type).to_string();
 
         // Generate a unique key used for identifying the option when it is stored.
@@ -65,7 +65,7 @@ pub fn derive_option(input: TokenStream) -> TokenStream {
 
     let option_fields: Vec<_> = fields.iter()
         .filter(|field| is_option_type(&field.ty))
-        .map(|field| field.ident.as_ref().unwrap())
+        .map(|field| field.ident.as_ref().expect("options derive requires named fields"))
         .collect();
 
     let expanded = quote! {
@@ -181,7 +181,7 @@ pub fn page_derive(input: TokenStream) -> TokenStream {
 
     // Generate parent keys for each page field
     let page_key_assignments = page_fields.iter().map(|(field_name, _page_value)| {
-        let field_name_str = field_name.as_ref().unwrap().to_string();
+        let field_name_str = field_name.as_ref().expect("options derive requires named fields").to_string();
 
         // Generate a hash for the field name
         let mut fnv: FnvHasher = Default::default();

@@ -40,7 +40,7 @@ where
     }
 
     fn value(&self) -> OptionString {
-        String::from_str(self.value.into()).unwrap()
+        String::from_str(self.value.into()).expect("enum option name exceeds OptionString capacity")
     }
 
     fn key(&self) -> &OptionKey {
