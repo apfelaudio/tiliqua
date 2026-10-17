@@ -1014,16 +1014,7 @@ fn main() -> ! {
     // Until this point, the video gateware is held in reset. Now that we have a target modeline
     // and the external PLL is appropriately configured, we can bring it up.
 
-    let mut display = DMAFramebuffer0::new(
-        peripherals.FRAMEBUFFER_PERIPH,
-        peripherals.PALETTE_PERIPH,
-        peripherals.BLIT,
-        peripherals.PIXEL_PLOT,
-        peripherals.LINE,
-        PSRAM_FB_BASE,
-        modeline.clone(),
-        BLIT_MEM_BASE,
-    );
+    let mut display = hal::new_framebuffer!(peripherals, modeline.clone());
 
     timer.delay_ms(50);
 
@@ -1102,16 +1093,7 @@ fn main() -> ! {
                     if reprogrammed_pll {
                         // Finally, reinitialize the display.
                         let peripherals = unsafe { pac::Peripherals::steal() };
-                        display = DMAFramebuffer0::new(
-                            peripherals.FRAMEBUFFER_PERIPH,
-                            peripherals.PALETTE_PERIPH,
-                            peripherals.BLIT,
-                            peripherals.PIXEL_PLOT,
-                            peripherals.LINE,
-                            PSRAM_FB_BASE,
-                            new_modeline.clone(),
-                            BLIT_MEM_BASE,
-                        );
+                        display = hal::new_framebuffer!(peripherals, new_modeline.clone());
                         app.modeline = new_modeline;
                     }
                 }

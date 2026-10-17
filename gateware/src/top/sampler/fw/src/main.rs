@@ -196,16 +196,7 @@ fn main() -> ! {
     let bootinfo = unsafe { bootinfo::BootInfo::from_addr(BOOTINFO_BASE) }.unwrap();
     let modeline = bootinfo.modeline.maybe_override_fixed(
         FIXED_MODELINE, CLOCK_DVI_HZ);
-    let mut display = DMAFramebuffer0::new(
-        peripherals.FRAMEBUFFER_PERIPH,
-        peripherals.PALETTE_PERIPH,
-        peripherals.BLIT,
-        peripherals.PIXEL_PLOT,
-        peripherals.LINE,
-        PSRAM_FB_BASE,
-        modeline.clone(),
-        BLIT_MEM_BASE,
-    );
+    let mut display = hal::new_framebuffer!(peripherals, modeline.clone());
 
     let mut i2cdev1 = I2c1::new(peripherals.I2C1);
     let mut pmod = EurorackPmod0::new(peripherals.PMOD0_PERIPH);

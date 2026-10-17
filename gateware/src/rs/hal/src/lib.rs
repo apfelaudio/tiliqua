@@ -82,6 +82,22 @@ macro_rules! impl_tiliqua_soc_pac {
     };
 }
 
+#[macro_export]
+macro_rules! new_framebuffer {
+    ($peripherals:ident, $modeline:expr) => {
+        DMAFramebuffer0::new(
+            $peripherals.FRAMEBUFFER_PERIPH,
+            $peripherals.PALETTE_PERIPH,
+            $peripherals.BLIT,
+            $peripherals.PIXEL_PLOT,
+            $peripherals.LINE,
+            tiliqua_pac::constants::PSRAM_FB_BASE,
+            $modeline,
+            tiliqua_pac::constants::BLIT_MEM_BASE,
+        )
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

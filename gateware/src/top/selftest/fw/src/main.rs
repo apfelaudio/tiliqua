@@ -449,16 +449,7 @@ fn main() -> ! {
     let app = Mutex::new(RefCell::new(App::new(opts)));
     let hue = 10;
 
-    let mut display = DMAFramebuffer0::new(
-        peripherals.FRAMEBUFFER_PERIPH,
-        peripherals.PALETTE_PERIPH,
-        peripherals.BLIT,
-        peripherals.PIXEL_PLOT,
-        peripherals.LINE,
-        PSRAM_FB_BASE,
-        modeline.clone(),
-        BLIT_MEM_BASE,
-    );
+    let mut display = hal::new_framebuffer!(peripherals, modeline.clone());
 
     handler!(timer0 = || timer0_handler(&app));
 
