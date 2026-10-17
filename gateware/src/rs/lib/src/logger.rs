@@ -34,8 +34,8 @@ where
         match self.writer.borrow_mut().as_mut() {
             Some(writer) => match writeln!(writer, "[\x1B[{}m{}\x1B[0m] {}\r", color, record.level(), record.args()) {
                 Ok(()) => (),
-                Err(_e) => {
-                    panic!("Logger failed to write to device");
+                Err(e) => {
+                    panic!("Logger failed to write to device: {e:?}");
                 }
             },
             None => {

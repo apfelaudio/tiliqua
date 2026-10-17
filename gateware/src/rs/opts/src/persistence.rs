@@ -15,6 +15,11 @@ pub enum PersistenceError {
     FlashRangeError,
 }
 
+fn storage_error<E: core::fmt::Debug>(e: E) -> PersistenceError {
+    log::error!("opts/persistence: storage error: {e:?}");
+    PersistenceError::StorageError
+}
+
 pub trait OptionsPersistence {
     type Error;
 
@@ -71,7 +76,7 @@ where
             &mut self.data_buffer,
             &key,
             &value,
-        )).map_err(|_| PersistenceError::StorageError)
+        )).map_err(storage_error)
     }
 
     fn save_key_retries(&mut self, key: u32, value: &[u8], retries: usize) -> Result<(), Self::Error> {
@@ -93,7 +98,7 @@ where
             &mut NoCache::new(),
             &mut self.data_buffer,
             &key,
-        )).map_err(|_| PersistenceError::StorageError)?;
+        )).map_err(storage_error)?;
         if let Some(data) = item {
             let len = data.len().min(buffer.len());
             buffer[..len].copy_from_slice(&data[..len]);
@@ -109,7 +114,7 @@ where
             self.flash_range.clone(),
             &mut NoCache::new(),
             &mut self.data_buffer,
-        )).map_err(|_| PersistenceError::StorageError)
+        )).map_err(storage_error)
     }
 
     fn save_options<O: Options>(&mut self, opts: &O) -> Result<(), Self::Error> {

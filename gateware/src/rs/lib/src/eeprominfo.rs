@@ -58,7 +58,10 @@ where
         let mut buffer = [0u8; SIZE];
         let digest = CRC_ALGORITHM.digest();
         let serialized = postcard::to_slice_crc32(data, &mut buffer, digest)
-            .map_err(|_| EepromError::InvalidSize)?;
+            .map_err(|e| {
+                log::error!("eeprominfo: serialization failed: {e:?}");
+                EepromError::InvalidSize
+            })?;
         self.eeprom.write_bytes(addr, serialized)
     }
 
