@@ -2,7 +2,7 @@
 #![no_main]
 
 use critical_section::Mutex;
-use log::{info, warn};
+use log::info;
 use riscv_rt::entry;
 use irq::handler;
 use core::cell::RefCell;
@@ -219,14 +219,8 @@ fn main() -> ! {
     );
 
     let mut opts = Opts::default();
-    let mut flash_persist_opt = if let Some(storage_window) = bootinfo.manifest.get_option_storage_window() {
-        let mut flash_persist = FlashOptionsPersistence::new(spiflash, storage_window);
-        flash_persist.load_options(&mut opts).unwrap();
-        Some(flash_persist)
-    } else {
-        warn!("No option storage region: disable persistent storage");
-        None
-    };
+    let mut flash_persist_opt = FlashOptionsPersistence::open(
+        spiflash, bootinfo.manifest.get_option_storage_window(), &mut opts);
 
     // HACK: stolen spiflash instance!! be careful that delayln rd/wr is
     // never happening at the same time as other spiflash ops.

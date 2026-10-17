@@ -41,6 +41,20 @@ impl<F> FlashOptionsPersistence<F> {
             data_buffer: [0u8; DATA_BUFFER_SZ],
         }
     }
+
+    pub fn open<O: Options>(flash: F, flash_range: Option<core::ops::Range<u32>>, opts: &mut O) -> Option<Self>
+    where
+        F: embedded_storage::nor_flash::NorFlash + embedded_storage::nor_flash::MultiwriteNorFlash,
+    {
+        if let Some(flash_range) = flash_range {
+            let mut persist = Self::new(flash, flash_range);
+            persist.load_options(opts).unwrap();
+            Some(persist)
+        } else {
+            log::warn!("No option storage region: disable persistent storage");
+            None
+        }
+    }
 }
 
 impl<F> OptionsPersistence for FlashOptionsPersistence<F>
