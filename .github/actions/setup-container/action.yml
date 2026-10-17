@@ -8,12 +8,6 @@ runs:
       shell: sh
       run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-    - name: Setup Rust environment
-      shell: sh
-      run: |
-        . /root/.cargo/env
-        rustup default stable 2>/dev/null || true
-
     - name: Initialize submodules
       shell: sh
       run: git submodule update --init --recursive

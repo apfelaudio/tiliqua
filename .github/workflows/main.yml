@@ -28,7 +28,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
         with:
-          context: gateware/scripts
+          context: gateware
           file: gateware/scripts/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}/tiliqua-builder:${{ steps.sanitize.outputs.tag }}

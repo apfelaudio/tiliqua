@@ -84,9 +84,7 @@ The above tools are sufficient for simple bitstreams. More advanced bitstreams i
 
     .. code-block:: bash
 
-       rustup target add riscv32im-unknown-none-elf
-       rustup target add riscv32imafc-unknown-none-elf # for `macro_osc` only, it uses an FPU
-       rustup component add rustfmt clippy llvm-tools
+       rustup toolchain install # from gateware/, installs the toolchain pinned in rust-toolchain.toml
        cargo install cargo-binutils svd2rust form
 
   - Make sure the tools like ``svd2rust``, ``form`` and so on are available in your PATH after installing them. You may need to add a ``.cargo/bin``-like directory `to your path <https://doc.rust-lang.org/book/ch14-04-installing-binaries.html>`_.
