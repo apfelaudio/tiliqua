@@ -173,7 +173,7 @@ impl CalibrationConstants {
         (adc_gamma_default, adc_delta_default)
     }
 
-    pub fn from_tweakable(c: TweakableConstants, d: &DefaultCalibrationConstants) -> Self {
+    pub fn from_tweakable(c: &TweakableConstants, d: &DefaultCalibrationConstants) -> Self {
         let mut result = Self::from_defaults(d);
         // DAC
         for ch in 0..4usize {
@@ -234,7 +234,7 @@ mod tests {
         test.cal.dac_scale[0] -= 100;
         test.cal.dac_zero[0]  += 50;
         let twk = test.to_tweakable(&defaults_r33);
-        let converted = CalibrationConstants::from_tweakable(twk, &defaults_r33);
+        let converted = CalibrationConstants::from_tweakable(&twk, &defaults_r33);
         let tol = |x: i32, y: i32, t: i32| (x-y).abs() <= t;
         for ch in 0..4 {
             assert!(tol(test.cal.adc_scale[ch], converted.cal.adc_scale[ch], 1));

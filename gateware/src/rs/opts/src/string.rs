@@ -1,5 +1,5 @@
-/// TODO: just a placeholder for printing string options for now.
-/// modification is not implemented.
+//! TODO: just a placeholder for printing string options for now.
+//! modification is not implemented.
 
 use crate::traits::*;
 use core::str::FromStr;

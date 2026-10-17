@@ -30,10 +30,7 @@ where
     let vspace: usize = 18;
     let hspace: i32 = 150;
 
-    let screen_hl = match (opts.selected(), opts.modify()) {
-        (None, _) => true,
-        _ => false,
-    };
+    let screen_hl = opts.selected().is_none();
 
     Text::with_alignment(
         &opts.page().value(),
@@ -184,6 +181,7 @@ pub enum AdsrPhase {
     Release,
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn draw_adsr<D>(d: &mut D, x: u32, y: u32, width: u32, height: u32,
                     attack: u16, decay: u16, sustain: u16, release: u16,
                     hue: u8, highlight: Option<AdsrPhase>) -> Result<(), D::Error>
@@ -580,6 +578,7 @@ where
     Ok(())
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn draw_cal_constants<D>(
     d: &mut D, x: u32, y: u32, hue: u8,
     adc_scale: &[i32; 4],
@@ -733,7 +732,7 @@ where
     text_l[5][1] = 101;
     text_l[6][1] = 115;
     text_l[7][1] = 129;
-    for n in 0..text_l.len() { text_l[n][0] = 45 };
+    for t in &mut text_l { t[0] = 45 };
 
     for n in 0..text_l.len() {
         Text::with_alignment(
@@ -751,7 +750,7 @@ where
     text_r[3][1] = 90;
     text_r[4][1] = 111;
     text_r[5][1] = 129;
-    for n in 0..text_r.len() { text_r[n][0] = 115 };
+    for t in &mut text_r { t[0] = 115 };
 
     for n in 0..text_r.len() {
         Text::with_alignment(
@@ -765,6 +764,7 @@ where
     Ok(())
 }
 
+#[expect(clippy::too_many_arguments)]
 pub fn draw_sid<D>(d: &mut D, x: u32, y: u32, hue: u8,
                    wfm:    Option<u8>,
                    gates:  [bool; 3],
@@ -911,7 +911,7 @@ where
         .build();
     let center_y = y + height / 2;
     let half_height = (height / 2) as i32;
-    let sample_width = if !samples.is_empty() { width / samples.len() as u32 } else { 1 };
+    let sample_width = if samples.is_empty() { 1 } else { width / samples.len() as u32 };
     for (i, &sample) in samples.iter().enumerate() {
         let x_pos = x + (i as u32 * sample_width);
         let scaled = (sample as i32 * half_height) / 32768;
@@ -945,7 +945,7 @@ where
         .build();
     let center_y = y as i32 + height as i32 / 2;
     let half_height = height as i32 / 2;
-    let sample_width = if !samples.is_empty() { width / samples.len() as u32 } else { 1 };
+    let sample_width = if samples.is_empty() { 1 } else { width / samples.len() as u32 };
     for i in 1..samples.len() {
         let x0 = x as i32 + ((i - 1) as i32 * sample_width as i32);
         let x1 = x as i32 + (i as i32 * sample_width as i32);
@@ -1394,7 +1394,7 @@ lines, USB streams).  Some usage ideas:
 
         draw_name(&mut disp, H_ACTIVE/2, V_ACTIVE-50, 0, "XBEAM", "b2d3aa", &DVIModeline::default()).ok();
 
-        let mut opts = test_data::Opts::default();
+        let opts = test_data::Opts::default();
         draw_options(&mut disp, &opts, H_ACTIVE/2-30, V_ACTIVE-135, 0).ok();
 
         disp.img.save("draw_xbeam_help.png").unwrap();

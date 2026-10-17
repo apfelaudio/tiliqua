@@ -1113,7 +1113,6 @@ dependencies = [
  "embedded-storage",
  "env_logger",
  "log",
- "micromath",
  "nb 1.1.0",
  "riscv",
  "serde",

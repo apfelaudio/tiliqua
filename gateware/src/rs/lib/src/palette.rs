@@ -240,8 +240,7 @@ mod tests {
             let mut img: RgbImage = ImageBuffer::new(width, height);
             for h in 0..PX_HUE_MAX {
                 for i in 0..PX_INTENSITY_MAX {
-                    let (r, g, b) = palette.lut()[i * PX_HUE_MAX + h];
-                    let pixel = Rgb([r, g, b]);
+                    let pixel = Rgb(palette.lut()[i * PX_HUE_MAX + h].into());
                     let x_start = h as u32 * BLOCK_SIZE;
                     let y_start = (PX_INTENSITY_MAX as u32 - 1 - i as u32) * BLOCK_SIZE;
                     for dy in 0..BLOCK_SIZE {

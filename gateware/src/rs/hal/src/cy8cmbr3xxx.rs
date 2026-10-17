@@ -279,13 +279,13 @@ mod tests {
         log::info!("sensor_en1 = {:#x}", cy8.config[1]);
         log::info!("default_crc = {:#x}", cy8.calculate_crc());
         assert_eq!(cy8.calculate_crc(), 0x5fd7);
-        cy8.commit_config_to_nvm();
+        cy8.commit_config_to_nvm().unwrap();
     }
 
     #[test]
     fn test_write_config_to_sram() {
         setup_logger();
         let mut cy8 = Cy8cmbr3108Driver::new(MockI2c, &[]);
-        cy8.write_config_to_sram();
+        cy8.write_config_to_sram().unwrap();
     }
 }

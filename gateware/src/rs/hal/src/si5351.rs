@@ -10,7 +10,6 @@
 
 use embedded_hal::i2c::I2c;
 use core::fmt;
-use micromath::F32Ext;
 
 #[cfg(test)]
 use log;
@@ -311,7 +310,7 @@ pub struct SpreadParams {
 impl SpreadParams {
 
     fn calc_ssudp(&self) -> u16 {
-        ((self.f_pfd / (4.0 * 31500.0)).floor() as u16) & 0x7FF
+        ((self.f_pfd / (4.0 * 31500.0)) as u16) & 0x7FF
     }
 
     fn calc_center_spread(&self) -> (u16, u16, u16, u16, u16, u16) {
@@ -326,11 +325,11 @@ impl SpreadParams {
             (self.ssc_amp / ((1.0 + self.ssc_amp) * ssudp as f32));
 
         // Calculate final register values
-        let ssup_p1 = ssup.floor() as u16 & 0x7FF;
+        let ssup_p1 = ssup as u16 & 0x7FF;
         let ssup_p2 = ((32767.0f32 * (ssup - ssup_p1 as f32)) as u16) & 0x3FFF;
         let ssup_p3 = 0x7FFF;
 
-        let ssdn_p1 = ssdn.floor() as u16 & 0x7FF;
+        let ssdn_p1 = ssdn as u16 & 0x7FF;
         let ssdn_p2 = ((32767.0f32 * (ssdn - ssdn_p1 as f32)) as u16) & 0x3FFF;
         let ssdn_p3 = 0x7FFF;
 
@@ -423,24 +422,15 @@ impl<I2C: I2c> Si5351Device<I2C> {
             return Err(Error::InvalidParameter);
         }
 
-        let p1: u32;
-        let p2: u32;
-        let p3: u32;
-
-        if frac_num == 0 {
-            p1 = 128 * int as u32 - 512;
-            p2 = 0;
-            p3 = 1;
+        let (p1, p2, p3) = if frac_num == 0 {
+            (128 * int as u32 - 512, 0, 1)
         } else {
             let ratio = (128u64 * (frac_num as u64) / (frac_denom as u64)) as u32;
-
-            p1 = 128 * int as u32 + ratio - 512;
-            p2 = 128 * frac_num - frac_denom * ratio;
-            p3 = frac_denom;
-        }
+            (128 * int as u32 + ratio - 512, 128 * frac_num - frac_denom * ratio, frac_denom)
+        };
 
         self.write_synth_registers(
-            ms,
+            &ms,
             [
                 ((p3 & 0x0000FF00) >> 8) as u8,
                 p3 as u8,
@@ -517,7 +507,7 @@ impl<I2C: I2c> Si5351Device<I2C> {
 
     fn write_synth_registers<MS: FractionalMultisynth>(
         &mut self,
-        ms: MS,
+        ms: &MS,
         params: [u8; 8],
     ) -> Result<(), Error> {
         self.i2c
@@ -709,8 +699,7 @@ impl<I2C: I2c> Si5351 for Si5351Device<I2C>
         let total_div = ms_divider as u32 * r_div.denominator_u8() as u32;
         let (mult0, num0) = self.find_pll_coeffs_for_dividers(total_div, denom0, freqs[0])?;
 
-        let mut reg0 = 0u8;
-        if let Some(spread_percent) = spread {
+        let reg0 = if let Some(spread_percent) = spread {
             let params = SpreadParams {
                 f_pfd: self.xtal_freq as f32,
                 a: mult0 as f32,
@@ -718,8 +707,10 @@ impl<I2C: I2c> Si5351 for Si5351Device<I2C>
                 c: denom0 as f32,
                 ssc_amp: spread_percent,
             };
-            reg0 = self.setup_spread_spectrum(pll, &params)?;
-        }
+            self.setup_spread_spectrum(pll, &params)?
+        } else {
+            0
+        };
 
         for (i, clk) in clks.iter().enumerate() {
             let ms = match clk {

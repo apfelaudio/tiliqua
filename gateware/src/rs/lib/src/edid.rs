@@ -1,5 +1,5 @@
-/// Tiny EDID parser, only handles the header and detailed timing descriptor.
-/// Does not handle extension blocks. This should be enough for most small embedded monitors.
+//! Tiny EDID parser, only handles the header and detailed timing descriptor.
+//! Does not handle extension blocks. This should be enough for most small embedded monitors.
 
 /// Main EDID structure representing the first 128 bytes of an EDID block
 #[derive(Debug)]
@@ -137,12 +137,12 @@ impl Edid {
             return Err(EdidError::InvalidHeaderPattern);
         }
         let mut descriptors = [Descriptor::RawDescriptor([0; 18]); 4];
-        for i in 0..4 {
+        for (i, descriptor) in descriptors.iter_mut().enumerate() {
             let offset = 54 + i * 18;
             let mut data = [0; 18];
             data.copy_from_slice(&edid_data[offset..offset + 18]);
             // Parse the descriptor based on its format
-            descriptors[i] = Self::parse_descriptor(&data);
+            *descriptor = Self::parse_descriptor(&data);
         }
 
         Ok(Self {
@@ -287,7 +287,7 @@ mod tests {
 
         let edid = Edid::parse(&edid_data);
         match edid {
-            Ok(data) => println!("Successfully parsed EDID: {data:#?}"),
+            Ok(data) => log::info!("Successfully parsed EDID: {data:#?}"),
             Err(e) => panic!("Failed to parse EDID: {e:?}"),
         }
     }

@@ -586,7 +586,7 @@ fn main() -> ! {
             // Push calibration constants to audio interface
             //
             let constants = CalibrationConstants::from_tweakable(
-                TweakableConstants {
+                &TweakableConstants {
                     adc_scale: [
                         opts.caladc.scale0.value,
                         opts.caladc.scale1.value,
