@@ -152,7 +152,7 @@ where
     let filter_w = 40;
     let filter_h = 16;
     let filter_skew = 2;
-    let filter_pos: i32 = ((filter_w as f32) * (cutoff as f32 / 256.0f32)) as i32;
+    let filter_pos: i32 = ((filter_w as f32) * (f32::from(cutoff) / 256.0f32)) as i32;
 
     Line::new(Point::new(filter_x,            filter_y),
               Point::new(filter_x+filter_pos, filter_y))
@@ -192,10 +192,10 @@ where
     let font_bright = MonoTextStyle::new(&FONT_9X15_BOLD, HI8::new(hue, 15));
 
     // Convert UI values (0..32768) to milliseconds (1..2000)
-    let a_ms = 1.0f32 + (attack as f32 / 32768.0f32) * 1999.0f32;
-    let d_ms = 1.0f32 + (decay as f32 / 32768.0f32) * 1999.0f32;
+    let a_ms = 1.0f32 + (f32::from(attack) / 32768.0f32) * 1999.0f32;
+    let d_ms = 1.0f32 + (f32::from(decay) / 32768.0f32) * 1999.0f32;
     let s_ms = 1000.0f32; // fixed sustain section
-    let r_ms = 1.0f32 + (release as f32 / 32768.0f32) * 1999.0f32;
+    let r_ms = 1.0f32 + (f32::from(release) / 32768.0f32) * 1999.0f32;
 
     let total_ms = a_ms + d_ms + s_ms + r_ms;
     let w = width as f32;
@@ -205,7 +205,7 @@ where
     let s_w = (s_ms / total_ms * w) as i32;
     let r_w = width as i32 - a_w - d_w - s_w; // remainder avoids rounding gaps
 
-    let s_level = (sustain as u32 * height / 32768) as i32;
+    let s_level = (u32::from(sustain) * height / 32768) as i32;
     let h = height as i32;
     let x = x as i32;
     let y = y as i32;
@@ -291,8 +291,8 @@ where
     for i in 1..n {
         let x0 = x + (i - 1) as i32 * width as i32 / (n - 1) as i32;
         let x1 = x + i as i32 * width as i32 / (n - 1) as i32;
-        let y0 = center_y - (samples[i - 1] as i32 * half_h / 32767);
-        let y1 = center_y - (samples[i] as i32 * half_h / 32767);
+        let y0 = center_y - (i32::from(samples[i - 1]) * half_h / 32767);
+        let y1 = center_y - (i32::from(samples[i]) * half_h / 32767);
         Line::new(Point::new(x0, y0), Point::new(x1, y1))
             .into_styled(stroke).draw(d)?;
     }
@@ -314,8 +314,8 @@ where
     let y = -BOOT_LOGO_COORDS[p].1/2;
     let xl = BOOT_LOGO_COORDS[p-1].0/2;
     let yl = -BOOT_LOGO_COORDS[p-1].1/2;
-    Line::new(Point::new(sx+xl as i32, sy+yl as i32),
-              Point::new(sx+x as i32, sy+y as i32))
+    Line::new(Point::new(sx+i32::from(xl), sy+i32::from(yl)),
+              Point::new(sx+i32::from(x), sy+i32::from(y)))
               .into_styled(stroke_white)
               .draw(d)?;
     Ok(())
@@ -497,8 +497,8 @@ where
             (h_active/2-80) as i32,
             (v_active/2) as i32 - 330,
             hue,
-            help.io_left.each_ref().map(|s| s.as_str()),
-            help.io_right.each_ref().map(|s| s.as_str())
+            help.io_left.each_ref().map(heapless::String::as_str),
+            help.io_right.each_ref().map(heapless::String::as_str)
         )?;
     }
     Ok(())
@@ -914,7 +914,7 @@ where
     let sample_width = if samples.is_empty() { 1 } else { width / samples.len() as u32 };
     for (i, &sample) in samples.iter().enumerate() {
         let x_pos = x + (i as u32 * sample_width);
-        let scaled = (sample as i32 * half_height) / 32768;
+        let scaled = (i32::from(sample) * half_height) / 32768;
         let y_top = center_y as i32 - scaled.abs();
         let y_bot = center_y as i32 + scaled.abs();
         Line::new(
@@ -949,8 +949,8 @@ where
     for i in 1..samples.len() {
         let x0 = x as i32 + ((i - 1) as i32 * sample_width as i32);
         let x1 = x as i32 + (i as i32 * sample_width as i32);
-        let y0 = center_y - (samples[i - 1] as i32 * half_height) / 32768;
-        let y1 = center_y - (samples[i] as i32 * half_height) / 32768;
+        let y0 = center_y - (i32::from(samples[i - 1]) * half_height) / 32768;
+        let y1 = center_y - (i32::from(samples[i]) * half_height) / 32768;
         Line::new(
             Point::new(x0, y0),
             Point::new(x1, y1)
@@ -1010,14 +1010,14 @@ pub fn draw_benchmark_text<D>(
 where
     D: DrawTarget<Color = HI8>,
 {
-    let size = d.bounding_box().size;
-    let font_style = MonoTextStyle::new(
-        &FONT_9X15, HI8::WHITE.with_hue_offset(rng.u8(0..16)));
     const STRINGS: &[&str] = &[
         "SYNTHESIZER", "OSCILLATOR", "FILTER", "1234567890", "ADSR",
         "RESONANCE", "ENVELOPE", "LFO", "REVERB", "DELAY",
         "FPGA", "DSP", "CODEC", "BITSTREAM", "AMARANTH", "~!@#$%^&*()_+",
     ];
+    let size = d.bounding_box().size;
+    let font_style = MonoTextStyle::new(
+        &FONT_9X15, HI8::WHITE.with_hue_offset(rng.u8(0..16)));
     for _ in 0..count {
         let x = rng.u32(0..size.width.saturating_sub(80)) as i32;
         let y = rng.u32(15..size.height) as i32;
@@ -1301,8 +1301,6 @@ mod tests {
 
     #[test]
     fn test_draw_xbeam_help() {
-        let mut disp = setup_display();
-
         const XBEAM_HELP_TEXT: &str = r"
 Vectorscope/oscilloscope with menu system, USB audio and tunable delay lines.
 
@@ -1388,6 +1386,8 @@ lines, USB streams).  Some usage ideas:
         a completely 24-bit audio path.  This mostly works, but might break the
         scope triggering and use a bit more FPGA resources.
 ";
+
+        let mut disp = setup_display();
 
         // Test without manifest help (Tiliqua diagram won't be drawn)
         draw_help_page(&mut disp, XBEAM_HELP_TEXT, None, H_ACTIVE, V_ACTIVE, 3, 0).ok();

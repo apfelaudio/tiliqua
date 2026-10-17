@@ -29,13 +29,14 @@ pub struct DVIModeline {
 
 impl DVIModeline {
     pub fn refresh_rate(&self) -> f32 {
-        1e6f32 * self.pixel_clk_mhz / (self.h_total as u32 * self.v_total as u32) as f32
+        1e6f32 * self.pixel_clk_mhz / (u32::from(self.h_total) * u32::from(self.v_total)) as f32
     }
 
     pub fn fixed(&self) -> bool {
         self.v_total == 0
     }
 
+    #[must_use]
     pub fn maybe_override_fixed(self, fixed: Option<(u16, u16)>, fixed_pclk_hz: u32) -> Self {
         if let Some((h_active, v_active)) = fixed {
             let rotate = match (h_active, v_active) {

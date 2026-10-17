@@ -12,6 +12,9 @@ pub struct StringOption {
 }
 
 impl StringOption {
+    /// # Panics
+    ///
+    /// Panics if `value` does not fit in an `OptionString`.
     pub fn new(name: &'static str, value: &str, key: u32) -> Self {
         Self {
             name,

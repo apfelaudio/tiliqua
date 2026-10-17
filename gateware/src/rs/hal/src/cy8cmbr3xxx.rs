@@ -175,13 +175,13 @@ impl<I2C: I2c> Cy8cmbr3108Driver<I2C> {
         // Calculate CRC for all configuration bytes except the CRC itself
         for byte_value in &self.config {
             // Process high 4 bits
-            let table_index = (byte_value >> CY8CMBR3XXX_CRC_BIT4_SHIFT) as u16 & CY8CMBR3XXX_CRC_BIT4_MASK
+            let table_index = u16::from(byte_value >> CY8CMBR3XXX_CRC_BIT4_SHIFT) & CY8CMBR3XXX_CRC_BIT4_MASK
                 ^ (seed >> (CY8CMBR3XXX_CRC_BIT_WIDTH - CY8CMBR3XXX_CRC_BIT4_SHIFT));
             seed = (CY8CMBR3XXX_CCITT16_POLYNOM * table_index) 
                 ^ (seed << CY8CMBR3XXX_CRC_BIT4_SHIFT);
             seed &= 0xffff;
             // Process low 4 bits
-            let table_index = *byte_value as u16 & CY8CMBR3XXX_CRC_BIT4_MASK
+            let table_index = u16::from(*byte_value) & CY8CMBR3XXX_CRC_BIT4_MASK
                 ^ (seed >> (CY8CMBR3XXX_CRC_BIT_WIDTH - CY8CMBR3XXX_CRC_BIT4_SHIFT));
             seed = (CY8CMBR3XXX_CCITT16_POLYNOM * table_index) 
                 ^ (seed << CY8CMBR3XXX_CRC_BIT4_SHIFT);
@@ -203,7 +203,7 @@ impl<I2C: I2c> Cy8cmbr3108Driver<I2C> {
     pub fn get_stored_crc(&mut self) -> Result<u16, I2C::Error> {
         let crc0 = self.read_register(REG_CONFIG_CRC0)?;
         let crc1 = self.read_register(REG_CONFIG_CRC0+1)?;
-        Ok(crc0 as u16 + ((crc1 as u16) << 8))
+        Ok(u16::from(crc0) + (u16::from(crc1) << 8))
     }
 
     fn commit_config_to_nvm(&mut self) -> Result<(), I2C::Error> {

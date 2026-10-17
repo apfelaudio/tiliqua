@@ -1,3 +1,5 @@
+#![expect(clippy::missing_panics_doc, reason = "panics surface as compile errors")]
+
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Data, Fields, Type, Expr, Meta};
@@ -23,15 +25,14 @@ pub fn derive_option(input: TokenStream) -> TokenStream {
 
        let default_value = field.attrs.iter()
             .find(|attr| attr.path().is_ident("option"))
-            .map(|attr| {
+            .map_or_else(|| syn::parse_quote! { Default::default() }, |attr| {
                 if let Meta::List(meta_list) = &attr.meta {
                     meta_list.parse_args::<Expr>()
                         .expect("Failed to parse option argument as an expression")
                 } else {
                     syn::parse_quote! { Default::default() }
                 }
-            })
-            .unwrap_or_else(|| syn::parse_quote! { Default::default() });
+            });
 
         let constructor = if is_int_option(field_type) {
             quote! { IntOption::new }
@@ -52,7 +53,7 @@ pub fn derive_option(input: TokenStream) -> TokenStream {
         let type_name_str: &str = &quote!(#field_type).to_string();
 
         // Generate a unique key used for identifying the option when it is stored.
-        let mut fnv: FnvHasher = Default::default();
+        let mut fnv = FnvHasher::default();
         page_str.hash(&mut fnv);
         field_name_str.hash(&mut fnv);
         type_name_str.hash(&mut fnv);
@@ -102,32 +103,27 @@ pub fn derive_option(input: TokenStream) -> TokenStream {
 // Helper functions remain unchanged
 fn is_int_option(ty: &Type) -> bool {
     matches!(ty, Type::Path(path) if path.path.segments.first()
-        .map(|seg| seg.ident == "IntOption")
-        .unwrap_or(false))
+        .is_some_and(|seg| seg.ident == "IntOption"))
 }
 
 fn is_enum_option(ty: &Type) -> bool {
     matches!(ty, Type::Path(path) if path.path.segments.first()
-        .map(|seg| seg.ident == "EnumOption")
-        .unwrap_or(false))
+        .is_some_and(|seg| seg.ident == "EnumOption"))
 }
 
 fn is_float_option(ty: &Type) -> bool {
     matches!(ty, Type::Path(path) if path.path.segments.first()
-        .map(|seg| seg.ident == "FloatOption")
-        .unwrap_or(false))
+        .is_some_and(|seg| seg.ident == "FloatOption"))
 }
 
 fn is_string_option(ty: &Type) -> bool {
     matches!(ty, Type::Path(path) if path.path.segments.first()
-        .map(|seg| seg.ident == "StringOption")
-        .unwrap_or(false))
+        .is_some_and(|seg| seg.ident == "StringOption"))
 }
 
 fn is_button_option(ty: &Type) -> bool {
     matches!(ty, Type::Path(path) if path.path.segments.first()
-        .map(|seg| seg.ident == "ButtonOption")
-        .unwrap_or(false))
+        .is_some_and(|seg| seg.ident == "ButtonOption"))
 }
 
 fn is_option_type(ty: &Type) -> bool {
@@ -184,7 +180,7 @@ pub fn page_derive(input: TokenStream) -> TokenStream {
         let field_name_str = field_name.as_ref().expect("options derive requires named fields").to_string();
 
         // Generate a hash for the field name
-        let mut fnv: FnvHasher = Default::default();
+        let mut fnv = FnvHasher::default();
         field_name_str.hash(&mut fnv);
         let parent_key = fnv.finish32();
 

@@ -177,14 +177,14 @@ impl CalibrationConstants {
         let mut result = Self::from_defaults(d);
         // DAC
         for ch in 0..4usize {
-            result.cal.dac_scale[ch] = result.f32_to_fixed(d.dac_scale) + 4*c.dac_scale[ch] as i32;
-            result.cal.dac_zero[ch]  = result.f32_to_fixed(d.dac_zero)  + 2*c.dac_zero[ch] as i32; // FIXME 2x/4x
+            result.cal.dac_scale[ch] = result.f32_to_fixed(d.dac_scale) + 4*i32::from(c.dac_scale[ch]);
+            result.cal.dac_zero[ch]  = result.f32_to_fixed(d.dac_zero)  + 2*i32::from(c.dac_zero[ch]); // FIXME 2x/4x
         }
         // ADC
         let (adc_gd, adc_dd) = Self::adc_default_gamma_delta(d);
         for ch in 0..4usize {
-            let adc_gamma      = adc_gd + 0.00010*(c.adc_scale[ch] as f32);
-            let adc_delta      = adc_dd + 0.00005*(c.adc_zero[ch] as f32);
+            let adc_gamma      = adc_gd + 0.00010*f32::from(c.adc_scale[ch]);
+            let adc_delta      = adc_dd + 0.00005*f32::from(c.adc_zero[ch]);
             result.cal.adc_scale[ch] = result.f32_to_fixed(1.0f32/adc_gamma);
             result.cal.adc_zero[ch]  = result.f32_to_fixed(-adc_delta/adc_gamma);
         }

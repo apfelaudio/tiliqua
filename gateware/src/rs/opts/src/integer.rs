@@ -108,7 +108,7 @@ where
         let min_f: f32 = T::MIN.as_();
         let max_f: f32 = T::MAX.as_();
         let step_f: f32 = T::STEP.as_();
-        let raw = min_f + (cc as f32 / 127.0) * (max_f - min_f);
+        let raw = min_f + (f32::from(cc) / 127.0) * (max_f - min_f);
         let quantized = ((raw - min_f) / step_f + 0.5) as u32 as f32 * step_f + min_f;
         let clamped = quantized.max(min_f).min(max_f);
         self.value = clamped.as_();

@@ -30,7 +30,6 @@ pub mod clock {
 #[deny(dead_code)]
 #[deny(improper_ctypes)]
 #[deny(missing_docs)]
-#[deny(no_mangle_generic_items)]
 #[deny(non_shorthand_field_patterns)]
 #[deny(overflowing_literals)]
 #[deny(path_statements)]

@@ -41,7 +41,7 @@ impl MidiTouchController {
         let mut out: [MidiMessage; N_TOUCH] = [MidiMessage::Stop; N_TOUCH];
         let channel = Channel::C1;
         for i in 0..N_TOUCH {
-            let sm = self.smoothers[i].proc(Fix::from_bits(touch[i] as i32));
+            let sm = self.smoothers[i].proc(Fix::from_bits(i32::from(touch[i])));
             let pressure = Value7::new((sm.to_bits() as u8)>>1);
             let jack_currently_unplugged = ((1 << i) & !jack) != 0;
             if jack_currently_unplugged {

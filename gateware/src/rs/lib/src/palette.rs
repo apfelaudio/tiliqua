@@ -199,7 +199,7 @@ static PALETTE_INFERNO:  [(u8, u8, u8); PALETTE_LEN] = gen_inferno();
 static PALETTE_HUESWAP:  [(u8, u8, u8); PALETTE_LEN] = gen_hueswap();
 
 impl ColorPalette {
-    fn lut(&self) -> &'static [(u8, u8, u8); PALETTE_LEN] {
+    fn lut(self) -> &'static [(u8, u8, u8); PALETTE_LEN] {
         match self {
             Self::Exp      => &PALETTE_EXP,
             Self::Linear   => &PALETTE_LINEAR,
