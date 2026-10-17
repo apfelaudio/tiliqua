@@ -11,20 +11,19 @@ tiliqua-hal = { path="../../../rs/hal", default-features = false }
 tiliqua-lib = { path = "../../../rs/lib" }
 tiliqua-pac = { path="../pac", default-features = false, features = ["critical-section", "vexriscv"] }
 opts = { path = "../../../rs/opts" }
-guh-dma = { git = "https://github.com/apfaudio/guh", rev = "32e7f0d" }
-guh-usb-msc = { git = "https://github.com/apfaudio/guh", rev = "32e7f0d", default-features = false, features = ["fatfs"] }
+guh-dma = { git = "https://github.com/apfaudio/guh", rev = "9aa0fd3" }
+guh-usb-msc = { git = "https://github.com/apfaudio/guh", rev = "9aa0fd3", default-features = false, features = ["fatfs"] }
 fatfs = { git = "https://github.com/vk2seb/rust-fatfs.git", branch = "seb/dma-geo", default-features = false }
 
 log = "0.4.17"
 embedded-hal = "=1.0.0"
-riscv = { version = "=0.11.1", features = ["critical-section-single-hart"] }
-riscv-rt = { version = "=0.12.2", features = ["single-hart"] }
-panic-halt = "0.2.0"
+riscv = { version = "=0.16.1", features = ["critical-section-single-hart"] }
+riscv-rt = { version = "=0.18.0", features = ["single-hart"] }
 micromath = "2.1.0"
 fastrand = { version = "2.1.0", default-features = false }
-heapless = "0.8.0"
-strum_macros = "0.26.4"
-strum = {version = "0.25.0", features = ["derive"], default-features=false}
+heapless = "0.9.3"
+strum_macros = "0.28.0"
+strum = {version = "0.28.0", features = ["derive"], default-features=false}
 critical-section = "1.2.0"
 amaranth-soc-isr = { path="../../../rs/isr", default-features = false }
 tiliqua-manifest = { path="../../../rs/manifest" }
