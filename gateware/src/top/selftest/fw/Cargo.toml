@@ -1,7 +1,10 @@
 [package]
-name = "tiliqua-fw"
+name = "selftest-fw"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+name = "tiliqua_fw"
 
 [dependencies]
 tiliqua-pac = { path="../pac", default-features=false, features=["critical-section","vexriscv"] }

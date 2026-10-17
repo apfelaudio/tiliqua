@@ -1,0 +1,16 @@
+[workspace]
+resolver = "2"
+members = [
+    "bootinfo_gen",
+    "hal",
+    "isr",
+    "lib",
+    "manifest",
+    "opts",
+    "opts_derive",
+]
+exclude = ["template"]
+
+[profile.release]
+lto = true
+opt-level = 3

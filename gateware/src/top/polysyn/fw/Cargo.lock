@@ -402,6 +402,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de96540e0ebde571dc55c73d60ef407c653844e6f9a1e2fdbd40c07b9252d812"
 
 [[package]]
+name = "polysyn-fw"
+version = "0.1.0"
+dependencies = [
+ "amaranth-soc-isr",
+ "critical-section",
+ "embedded-hal 1.0.0",
+ "fastrand",
+ "fixed",
+ "heapless",
+ "irq",
+ "log",
+ "micromath",
+ "midi-convert",
+ "midi-types",
+ "opts",
+ "panic-halt",
+ "riscv",
+ "riscv-rt",
+ "serde",
+ "serde_derive",
+ "strum",
+ "strum_macros 0.26.4",
+ "tiliqua-hal",
+ "tiliqua-lib",
+ "tiliqua-pac",
+ "trig-const",
+]
+
+[[package]]
 name = "postcard"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -593,35 +622,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "tiliqua-fw"
-version = "0.1.0"
-dependencies = [
- "amaranth-soc-isr",
- "critical-section",
- "embedded-hal 1.0.0",
- "fastrand",
- "fixed",
- "heapless",
- "irq",
- "log",
- "micromath",
- "midi-convert",
- "midi-types",
- "opts",
- "panic-halt",
- "riscv",
- "riscv-rt",
- "serde",
- "serde_derive",
- "strum",
- "strum_macros 0.26.4",
- "tiliqua-hal",
- "tiliqua-lib",
- "tiliqua-pac",
- "trig-const",
 ]
 
 [[package]]

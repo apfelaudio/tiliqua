@@ -1,7 +1,10 @@
 [package]
-name = "tiliqua-fw"
+name = "macro_osc-fw"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+name = "tiliqua_fw"
 
 [dependencies]
 tiliqua-hal = { path="../../../rs/hal", default-features = false }

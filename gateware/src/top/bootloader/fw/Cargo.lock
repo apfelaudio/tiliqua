@@ -25,6 +25,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2261d10cca569e4643e526d8dc2e62e433cc8aba21ab764233731f8d369bf394"
 
 [[package]]
+name = "bootloader-fw"
+version = "0.1.0"
+dependencies = [
+ "amaranth-soc-isr",
+ "crc",
+ "critical-section",
+ "embedded-hal 1.0.0",
+ "fastrand",
+ "fatfs",
+ "guh-dma",
+ "guh-usb-msc",
+ "heapless",
+ "irq",
+ "log",
+ "micromath",
+ "opts",
+ "panic-halt",
+ "riscv",
+ "riscv-rt",
+ "serde",
+ "serde_derive",
+ "strum",
+ "strum_macros 0.26.4",
+ "tiliqua-hal",
+ "tiliqua-lib",
+ "tiliqua-manifest",
+ "tiliqua-pac",
+]
+
+[[package]]
 name = "bytemuck"
 version = "1.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -609,36 +639,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "tiliqua-fw"
-version = "0.1.0"
-dependencies = [
- "amaranth-soc-isr",
- "crc",
- "critical-section",
- "embedded-hal 1.0.0",
- "fastrand",
- "fatfs",
- "guh-dma",
- "guh-usb-msc",
- "heapless",
- "irq",
- "log",
- "micromath",
- "opts",
- "panic-halt",
- "riscv",
- "riscv-rt",
- "serde",
- "serde_derive",
- "strum",
- "strum_macros 0.26.4",
- "tiliqua-hal",
- "tiliqua-lib",
- "tiliqua-manifest",
- "tiliqua-pac",
 ]
 
 [[package]]

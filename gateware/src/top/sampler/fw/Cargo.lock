@@ -471,6 +471,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 
 [[package]]
+name = "sampler-fw"
+version = "0.1.0"
+dependencies = [
+ "amaranth-soc-isr",
+ "colorsys",
+ "critical-section",
+ "embedded-hal 1.0.0",
+ "fastrand",
+ "heapless",
+ "irq",
+ "log",
+ "micromath",
+ "opts",
+ "panic-halt",
+ "riscv",
+ "riscv-rt",
+ "serde",
+ "serde_derive",
+ "strum",
+ "strum_macros 0.26.4",
+ "tiliqua-hal",
+ "tiliqua-lib",
+ "tiliqua-pac",
+]
+
+[[package]]
 name = "sequential-storage"
 version = "5.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -590,32 +616,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "tiliqua-fw"
-version = "0.1.0"
-dependencies = [
- "amaranth-soc-isr",
- "colorsys",
- "critical-section",
- "embedded-hal 1.0.0",
- "fastrand",
- "heapless",
- "irq",
- "log",
- "micromath",
- "opts",
- "panic-halt",
- "riscv",
- "riscv-rt",
- "serde",
- "serde_derive",
- "strum",
- "strum_macros 0.26.4",
- "tiliqua-hal",
- "tiliqua-lib",
- "tiliqua-pac",
 ]
 
 [[package]]

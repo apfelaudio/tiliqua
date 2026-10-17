@@ -602,34 +602,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tiliqua-fw"
-version = "0.1.0"
-dependencies = [
- "amaranth-soc-isr",
- "colorsys",
- "critical-section",
- "embedded-hal 1.0.0",
- "fastrand",
- "heapless",
- "irq",
- "log",
- "micromath",
- "midi-convert",
- "midi-types",
- "opts",
- "panic-halt",
- "riscv",
- "riscv-rt",
- "serde",
- "serde_derive",
- "strum",
- "strum_macros 0.26.4",
- "tiliqua-hal",
- "tiliqua-lib",
- "tiliqua-pac",
-]
-
-[[package]]
 name = "tiliqua-hal"
 version = "0.0.0"
 dependencies = [
@@ -715,6 +687,34 @@ name = "void"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
+
+[[package]]
+name = "xbeam-fw"
+version = "0.1.0"
+dependencies = [
+ "amaranth-soc-isr",
+ "colorsys",
+ "critical-section",
+ "embedded-hal 1.0.0",
+ "fastrand",
+ "heapless",
+ "irq",
+ "log",
+ "micromath",
+ "midi-convert",
+ "midi-types",
+ "opts",
+ "panic-halt",
+ "riscv",
+ "riscv-rt",
+ "serde",
+ "serde_derive",
+ "strum",
+ "strum_macros 0.26.4",
+ "tiliqua-hal",
+ "tiliqua-lib",
+ "tiliqua-pac",
+]
 
 [[package]]
 name = "zerocopy"

@@ -521,6 +521,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "sid-fw"
+version = "0.1.0"
+dependencies = [
+ "amaranth-soc-isr",
+ "colorsys",
+ "critical-section",
+ "embedded-hal 1.0.0",
+ "fastrand",
+ "heapless",
+ "irq",
+ "log",
+ "micromath",
+ "opts",
+ "panic-halt",
+ "riscv",
+ "riscv-rt",
+ "serde",
+ "serde_derive",
+ "strum",
+ "strum_macros 0.26.4",
+ "tiliqua-hal",
+ "tiliqua-lib",
+ "tiliqua-pac",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -590,32 +616,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "tiliqua-fw"
-version = "0.1.0"
-dependencies = [
- "amaranth-soc-isr",
- "colorsys",
- "critical-section",
- "embedded-hal 1.0.0",
- "fastrand",
- "heapless",
- "irq",
- "log",
- "micromath",
- "opts",
- "panic-halt",
- "riscv",
- "riscv-rt",
- "serde",
- "serde_derive",
- "strum",
- "strum_macros 0.26.4",
- "tiliqua-hal",
- "tiliqua-lib",
- "tiliqua-pac",
 ]
 
 [[package]]

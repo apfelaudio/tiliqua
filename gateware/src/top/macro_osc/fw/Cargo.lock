@@ -361,6 +361,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 
 [[package]]
+name = "macro_osc-fw"
+version = "0.1.0"
+dependencies = [
+ "amaranth-soc-isr",
+ "critical-section",
+ "embedded-alloc",
+ "embedded-hal 1.0.0",
+ "fastrand",
+ "heapless",
+ "irq",
+ "log",
+ "mi-plaits-dsp",
+ "micromath",
+ "opts",
+ "panic-halt",
+ "riscv",
+ "riscv-rt",
+ "serde",
+ "serde_derive",
+ "strum",
+ "strum_macros 0.26.4",
+ "tiliqua-hal",
+ "tiliqua-lib",
+ "tiliqua-pac",
+]
+
+[[package]]
 name = "mi-plaits-dsp"
 version = "0.1.0"
 source = "git+https://github.com/schnommus/mi-plaits-dsp-rs?branch=seb%2Ftiliqua#2a05f848413d82facd07d4ac4945ca75d71c7fa3"
@@ -671,33 +698,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.107",
-]
-
-[[package]]
-name = "tiliqua-fw"
-version = "0.1.0"
-dependencies = [
- "amaranth-soc-isr",
- "critical-section",
- "embedded-alloc",
- "embedded-hal 1.0.0",
- "fastrand",
- "heapless",
- "irq",
- "log",
- "mi-plaits-dsp",
- "micromath",
- "opts",
- "panic-halt",
- "riscv",
- "riscv-rt",
- "serde",
- "serde_derive",
- "strum",
- "strum_macros 0.26.4",
- "tiliqua-hal",
- "tiliqua-lib",
- "tiliqua-pac",
 ]
 
 [[package]]
