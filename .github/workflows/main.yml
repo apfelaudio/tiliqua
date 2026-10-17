@@ -82,6 +82,12 @@ jobs:
       - run: |
           RUST_LOG=debug cargo test
         working-directory: gateware/src/rs/opts
+      - run: |
+          cargo clippy --workspace --all-targets --all-features -- -D warnings
+        working-directory: gateware/src/rs
+      - run: |
+          cargo clippy --target riscv32im-unknown-none-elf -- -D warnings
+        working-directory: gateware/src/rs/hal
 
   build-bitstreams-soc:
     needs: build-docker-image
