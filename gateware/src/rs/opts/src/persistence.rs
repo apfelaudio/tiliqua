@@ -53,7 +53,9 @@ impl<F> FlashOptionsPersistence<F> {
     {
         if let Some(flash_range) = flash_range {
             let mut persist = Self::new(flash, flash_range);
-            persist.load_options(opts).unwrap();
+            if let Err(e) = persist.load_options(opts) {
+                log::error!("Failed to load persisted options: {e:?}");
+            }
             Some(persist)
         } else {
             log::warn!("No option storage region: disable persistent storage");
