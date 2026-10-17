@@ -982,7 +982,7 @@ fn main() -> ! {
         let size: usize = MANIFEST_SIZE;
         let addr: usize = SPIFLASH_BASE + MANIFEST_OFFSET + (n+1)*SLOT_SIZE;
         info!("(entry {}) look for manifest from {:#x} to {:#x}", n, addr, addr+size);
-        manifests[n] = BitstreamManifest::from_addr(addr, size);
+        manifests[n] = unsafe { BitstreamManifest::from_addr(addr, size) };
     }
 
     let mut opts = Opts::default();

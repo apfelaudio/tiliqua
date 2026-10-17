@@ -76,6 +76,7 @@ pub struct BitstreamHelp {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+#[expect(clippy::unsafe_derive_deserialize, reason = "from_addr accesses raw memory")]
 pub struct BitstreamManifest {
     pub hw_rev: u32,
     pub name: String<BITSTREAM_NAME_LEN>,
@@ -142,8 +143,12 @@ impl BitstreamManifest {
         }
     }
 
-    pub fn from_addr(addr: usize, size: usize) -> Option<Self> {
+    /// # Safety
+    ///
+    /// `addr` must point to `size` readable bytes.
+    pub unsafe fn from_addr(addr: usize, size: usize) -> Option<Self> {
 
+        // SAFETY: upheld by the caller.
         let manifest_slice = unsafe {
             core::slice::from_raw_parts(
                 addr as *mut u8,

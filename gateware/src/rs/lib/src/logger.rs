@@ -47,4 +47,5 @@ where
     fn flush(&self) {}
 }
 
+// SAFETY: Tiliqua uses a single-core riscv, logger is never accessed from multiple threads.
 unsafe impl<W: Write + Send> Sync for WriteLogger<W> {}
