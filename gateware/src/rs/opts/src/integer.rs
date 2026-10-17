@@ -64,7 +64,7 @@ where
             }
             IntFormat::Scaled { divisor, precision, suffix } => {
                 let scaled = self.value.as_() / divisor as f32;
-                write!(&mut s, "{:.*}{}", precision, scaled, suffix).ok();
+                write!(&mut s, "{scaled:.precision$}{suffix}").ok();
             }
         }
         s
@@ -116,15 +116,15 @@ where
     }
 
     fn encode(&self, buf: &mut [u8]) -> Option<usize> {
-        if self.value != self.init {
+        if self.value == self.init {
+            None
+        } else {
             use postcard::to_slice;
             if let Ok(used) = to_slice(&self.value, buf) {
                 Some(used.len())
             } else {
                 None
             }
-        } else {
-            None
         }
     }
 

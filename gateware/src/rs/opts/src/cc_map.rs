@@ -19,6 +19,12 @@ pub struct MidiCcMapper {
     table: [Option<CcEntry>; 128],
 }
 
+impl Default for MidiCcMapper {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MidiCcMapper {
     pub fn new() -> Self {
         Self { table: [None; 128] }

@@ -105,15 +105,15 @@ where
     }
 
     fn encode(&self, buf: &mut [u8]) -> Option<usize> {
-        if self.value != self.init {
+        if self.value == self.init {
+            None
+        } else {
             use postcard::to_slice;
             if let Ok(used) = to_slice(&self.value, buf) {
                 Some(used.len())
             } else {
                 None
             }
-        } else {
-            None
         }
     }
 

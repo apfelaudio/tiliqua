@@ -42,11 +42,11 @@ struct Args {
     output: PathBuf,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     let args = Args::parse();
 
     let manifest_str = fs::read_to_string(&args.manifest)?;
-    println!("Manifest file content: {}", manifest_str);
+    println!("Manifest file content: {manifest_str}");
 
     let manifest: BitstreamManifest = serde_json::from_str(&manifest_str)?;
     println!("Manifest parsed successfully");

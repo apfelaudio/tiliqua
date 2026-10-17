@@ -100,7 +100,7 @@ impl<EncoderT: Encoder,
         // Update LEDs
         //
 
-        if self.uptime_ms % (20*self.period_ms) == 0 {
+        if self.uptime_ms.is_multiple_of(20 * self.period_ms) {
             self.toggle_leds = !self.toggle_leds;
         }
 
@@ -157,11 +157,10 @@ impl<EncoderT: Encoder,
                 // Override LEDs with touch value if no jack inserted.
                 let touch = self.pmod.touch();
                 for n in 0..8 {
-                    if (self.pmod.jack() & (1<<n)) == 0 {
-                        if (self.touch_led_mask & (1<<n)) != 0 {
+                    if (self.pmod.jack() & (1<<n)) == 0
+                        && (self.touch_led_mask & (1<<n)) != 0 {
                             self.pmod.led_set_manual(n,(touch[n]>>2) as i8);
                         }
-                    }
                 }
             }
         }

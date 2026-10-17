@@ -12,7 +12,7 @@ pub struct OnePoleSmoother {
 
 impl OnePoleSmoother {
     pub fn new(alpha: f32) -> Self {
-        OnePoleSmoother {
+        Self {
             alpha: Fix::from_num(alpha),
             y_k1:  Fix::from_num(0),
         }

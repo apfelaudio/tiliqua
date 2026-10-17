@@ -48,7 +48,7 @@ pub fn derive_option(input: TokenStream) -> TokenStream {
         };
 
         let page_str: &str = &input.ident.to_string();
-        let field_name_str: &str = &field_name.as_ref().unwrap().to_string().replace("_","-");
+        let field_name_str: &str = &field_name.as_ref().unwrap().to_string().replace('_',"-");
         let type_name_str: &str = &quote!(#field_type).to_string();
 
         // Generate a unique key used for identifying the option when it is stored.

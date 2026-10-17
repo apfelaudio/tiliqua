@@ -8,7 +8,7 @@ pub const PX_HUE_MAX: usize = 16;
 pub const PX_INTENSITY_MAX: usize = 16;
 const PALETTE_LEN: usize = PX_INTENSITY_MAX * PX_HUE_MAX;
 
-#[derive(Default, Clone, Copy, PartialEq, EnumIter, IntoStaticStr, Serialize, Deserialize)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, EnumIter, IntoStaticStr, Serialize, Deserialize)]
 #[strum(serialize_all = "kebab-case")]
 pub enum ColorPalette {
     Exp,
@@ -37,7 +37,7 @@ const fn hue2rgb(p: f64, q: f64, mut t: f64) -> f64 {
 }
 
 /// Converts an HSL color to RGB. Conversion formula
-/// adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+/// adapted from <http://en.wikipedia.org/wiki/HSL_color_space>.
 /// Assumes h, s, and l are contained in the set [0, 1] and
 /// returns RGB in the set [0, 255].
 const fn hsl2rgb(h: f64, s: f64, l: f64) -> (u8, u8, u8) {
@@ -201,13 +201,13 @@ static PALETTE_HUESWAP:  [(u8, u8, u8); PALETTE_LEN] = gen_hueswap();
 impl ColorPalette {
     fn lut(&self) -> &'static [(u8, u8, u8); PALETTE_LEN] {
         match self {
-            ColorPalette::Exp      => &PALETTE_EXP,
-            ColorPalette::Linear   => &PALETTE_LINEAR,
-            ColorPalette::Dim      => &PALETTE_DIM,
-            ColorPalette::Gray     => &PALETTE_GRAY,
-            ColorPalette::InvGray  => &PALETTE_INV_GRAY,
-            ColorPalette::Inferno  => &PALETTE_INFERNO,
-            ColorPalette::Hueswap  => &PALETTE_HUESWAP,
+            Self::Exp      => &PALETTE_EXP,
+            Self::Linear   => &PALETTE_LINEAR,
+            Self::Dim      => &PALETTE_DIM,
+            Self::Gray     => &PALETTE_GRAY,
+            Self::InvGray  => &PALETTE_INV_GRAY,
+            Self::Inferno  => &PALETTE_INFERNO,
+            Self::Hueswap  => &PALETTE_HUESWAP,
         }
     }
 
@@ -253,7 +253,7 @@ mod tests {
             }
 
             let palette_name: &'static str = palette.into();
-            let filename = format!("palette_{}.png", palette_name);
+            let filename = format!("palette_{palette_name}.png");
             img.save(&filename).unwrap();
         }
     }

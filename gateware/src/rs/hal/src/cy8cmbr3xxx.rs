@@ -160,7 +160,7 @@ impl<I2C: I2c> Cy8cmbr3108Driver<I2C> {
     pub fn new(i2c: I2C, sensors_en: &[u8]) -> Self {
         let mut config = DEFAULT_CONFIG;
         // Set enabled sensor bits by index.
-        for n_sensor in sensors_en.iter() {
+        for n_sensor in sensors_en {
             if *n_sensor < 8 {
                 config[0] |= 1<<*n_sensor;
             } else {
@@ -173,7 +173,7 @@ impl<I2C: I2c> Cy8cmbr3108Driver<I2C> {
     pub fn calculate_crc(&self) -> u16 {
         let mut seed = CY8CMBR3XXX_CCITT16_DEFAULT_SEED;
         // Calculate CRC for all configuration bytes except the CRC itself
-        for byte_value in self.config.iter() {
+        for byte_value in &self.config {
             // Process high 4 bits
             let table_index = (byte_value >> CY8CMBR3XXX_CRC_BIT4_SHIFT) as u16 & CY8CMBR3XXX_CRC_BIT4_MASK
                 ^ (seed >> (CY8CMBR3XXX_CRC_BIT_WIDTH - CY8CMBR3XXX_CRC_BIT4_SHIFT));
@@ -201,7 +201,7 @@ impl<I2C: I2c> Cy8cmbr3108Driver<I2C> {
     }
 
     pub fn get_stored_crc(&mut self) -> Result<u16, I2C::Error> {
-        let crc0 = self.read_register(REG_CONFIG_CRC0+0)?;
+        let crc0 = self.read_register(REG_CONFIG_CRC0)?;
         let crc1 = self.read_register(REG_CONFIG_CRC0+1)?;
         Ok(crc0 as u16 + ((crc1 as u16) << 8))
     }
@@ -210,7 +210,7 @@ impl<I2C: I2c> Cy8cmbr3108Driver<I2C> {
         let crc = self.calculate_crc();
         let crc0 = (crc&0xff) as u8;
         let crc1 = (crc>>8) as u8;
-        self.write_register(REG_CONFIG_CRC0+0, crc0)?;
+        self.write_register(REG_CONFIG_CRC0, crc0)?;
         self.write_register(REG_CONFIG_CRC0+1, crc1)?;
         // Check CRC, save to NVM.
         self.write_register(REG_COMMAND, CMD_SAVE_CHECK_CRC)

@@ -1,7 +1,7 @@
 use serde_derive::{Serialize, Deserialize};
 use strum_macros::{EnumIter, IntoStaticStr};
 
-#[derive(Default, Clone, Copy, PartialEq, EnumIter, IntoStaticStr, Serialize, Deserialize)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, EnumIter, IntoStaticStr, Serialize, Deserialize)]
 #[strum(serialize_all = "kebab-case")]
 pub enum Timebase {
     #[strum(serialize = "500ms/d")]
@@ -37,24 +37,24 @@ impl Timebase {
     /// Return the time per division in microseconds.
     pub fn t_div_us(&self) -> u64 {
         match self {
-            Timebase::Timebase500ms => 500_000,
-            Timebase::Timebase200ms => 200_000,
-            Timebase::Timebase100ms => 100_000,
-            Timebase::Timebase50ms  => 50_000,
-            Timebase::Timebase20ms  => 20_000,
-            Timebase::Timebase10ms  => 10_000,
-            Timebase::Timebase5ms   => 5_000,
-            Timebase::Timebase2ms   => 2_000,
-            Timebase::Timebase1ms   => 1_000,
-            Timebase::Timebase500us => 500,
-            Timebase::Timebase200us => 200,
-            Timebase::Timebase100us => 100,
-            Timebase::Timebase50us  => 50,
+            Self::Timebase500ms => 500_000,
+            Self::Timebase200ms => 200_000,
+            Self::Timebase100ms => 100_000,
+            Self::Timebase50ms  => 50_000,
+            Self::Timebase20ms  => 20_000,
+            Self::Timebase10ms  => 10_000,
+            Self::Timebase5ms   => 5_000,
+            Self::Timebase2ms   => 2_000,
+            Self::Timebase1ms   => 1_000,
+            Self::Timebase500us => 500,
+            Self::Timebase200us => 200,
+            Self::Timebase100us => 100,
+            Self::Timebase50us  => 50,
         }
     }
 }
 
-#[derive(Default, Clone, Copy, PartialEq, EnumIter, IntoStaticStr, Serialize, Deserialize)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, EnumIter, IntoStaticStr, Serialize, Deserialize)]
 #[strum(serialize_all = "kebab-case")]
 pub enum VScale {
     #[strum(serialize = "8V/d")]
@@ -79,14 +79,14 @@ pub enum VScale {
 impl VScale {
     pub fn to_scale_bits(&self) -> u8 {
         match self {
-            VScale::Scale8V    => 9,
-            VScale::Scale4V    => 8,
-            VScale::Scale2V    => 7,
-            VScale::Scale1V    => 6,
-            VScale::Scale500mV => 5,
-            VScale::Scale250mV => 4,
-            VScale::Scale125mV => 3,
-            VScale::Scale64mV  => 2,
+            Self::Scale8V    => 9,
+            Self::Scale4V    => 8,
+            Self::Scale2V    => 7,
+            Self::Scale1V    => 6,
+            Self::Scale500mV => 5,
+            Self::Scale250mV => 4,
+            Self::Scale125mV => 3,
+            Self::Scale64mV  => 2,
         }
     }
 }

@@ -110,7 +110,7 @@ impl Edid {
     pub fn parse(edid_data: &[u8; 128]) -> Result<Self, EdidError> {
         // Verify checksum
         let mut checksum: u8 = 0;
-        for &byte in edid_data.iter() {
+        for &byte in edid_data {
             checksum = checksum.wrapping_add(byte);
         }
         if checksum != 0 {
@@ -145,7 +145,7 @@ impl Edid {
             descriptors[i] = Self::parse_descriptor(&data);
         }
 
-        Ok(Edid {
+        Ok(Self {
             header,
             descriptors,
             extensions: edid_data[126],
@@ -287,8 +287,8 @@ mod tests {
 
         let edid = Edid::parse(&edid_data);
         match edid {
-            Ok(data) => println!("Successfully parsed EDID: {:#?}", data),
-            Err(e) => panic!("Failed to parse EDID: {:?}", e),
+            Ok(data) => println!("Successfully parsed EDID: {data:#?}"),
+            Err(e) => panic!("Failed to parse EDID: {e:?}"),
         }
     }
 }

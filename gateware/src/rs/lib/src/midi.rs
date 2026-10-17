@@ -10,9 +10,15 @@ pub struct MidiTouchController {
     smoothers: [OnePoleSmoother; N_TOUCH],
 }
 
+impl Default for MidiTouchController {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MidiTouchController {
     pub fn new() -> Self {
-        MidiTouchController {
+        Self {
             // Notes hard-coded for now, should be switchable at
             // runtime as long as we do a KILLALL before switching.
             notes:   [Note::C2,

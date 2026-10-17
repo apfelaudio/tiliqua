@@ -80,11 +80,10 @@ where
             result = self.save_key(key, value);
             if result.is_ok() {
                 return result;
-            } else {
-                log::warn!("save_key_retries: failed once with {:?}", result);
             }
+            log::warn!("save_key_retries: failed once with {result:?}");
         }
-        return result;
+        result
     }
 
     fn load_key(&mut self, key: u32, buffer: &mut [u8]) -> Result<Option<usize>, Self::Error> {

@@ -1,6 +1,6 @@
 use tiliqua_hal::embedded_graphics::pixelcolor::{PixelColor, raw::{RawU8, RawData}};
 
-/// 'HueIntensity8': 8bpp framebuffer color type (4bpp hue and 4bpp intensity).
+/// '`HueIntensity8`': 8bpp framebuffer color type (4bpp hue and 4bpp intensity).
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct HI8(RawU8);
 

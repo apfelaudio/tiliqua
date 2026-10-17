@@ -94,7 +94,7 @@ where
     Ok(())
 }
 
-const NOTE_NAMES: [&'static str; 12] = [
+const NOTE_NAMES: [&str; 12] = [
     "C",
     "C#",
     "D",
@@ -176,7 +176,7 @@ where
     Ok(())
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum AdsrPhase {
     Attack,
     Decay,
@@ -440,7 +440,7 @@ where
     // at top and bottom of the sliding window.
 
     if has_lines_above {
-        let arrow_y = y.saturating_sub(1 * line_spacing_small);
+        let arrow_y = y.saturating_sub(line_spacing_small);
         Text::with_alignment(
             "▴",
             Point::new(arrow_x as i32, arrow_y as i32),
@@ -643,14 +643,14 @@ where
     let font_small_grey = MonoTextStyle::new(&FONT_9X15, HI8::new(hue, 10));
 
     let line = |disp: &mut D, x1: i32, y1: i32, x2: i32, y2: i32| {
-        Line::new(Point::new((x+x1) as i32, (y+y1) as i32),
-                  Point::new((x+x2) as i32, (y+y2) as i32))
+        Line::new(Point::new(x+x1, y+y1),
+                  Point::new(x+x2, y+y2))
                   .into_styled(stroke_grey)
                   .draw(disp).ok()
     };
 
     let ellipse = |disp: &mut D, x1: i32, y1: i32, sx: u32, sy: u32| {
-        Ellipse::new(Point::new((x+x1-sx as i32) as i32, (y+y1-sy as i32) as i32),
+        Ellipse::new(Point::new(x+x1-sx as i32, y+y1-sy as i32),
                   Size::new(sx<<1, sy<<1))
                   .into_styled(stroke_grey)
                   .draw(disp).ok()
@@ -911,12 +911,12 @@ where
         .build();
     let center_y = y + height / 2;
     let half_height = (height / 2) as i32;
-    let sample_width = if samples.len() > 0 { width / samples.len() as u32 } else { 1 };
+    let sample_width = if !samples.is_empty() { width / samples.len() as u32 } else { 1 };
     for (i, &sample) in samples.iter().enumerate() {
         let x_pos = x + (i as u32 * sample_width);
         let scaled = (sample as i32 * half_height) / 32768;
-        let y_top = (center_y as i32 - scaled.abs()) as i32;
-        let y_bot = (center_y as i32 + scaled.abs()) as i32;
+        let y_top = center_y as i32 - scaled.abs();
+        let y_bot = center_y as i32 + scaled.abs();
         Line::new(
             Point::new(x_pos as i32, y_top),
             Point::new(x_pos as i32, y_bot)
@@ -945,7 +945,7 @@ where
         .build();
     let center_y = y as i32 + height as i32 / 2;
     let half_height = height as i32 / 2;
-    let sample_width = if samples.len() > 0 { width / samples.len() as u32 } else { 1 };
+    let sample_width = if !samples.is_empty() { width / samples.len() as u32 } else { 1 };
     for i in 1..samples.len() {
         let x0 = x as i32 + ((i - 1) as i32 * sample_width as i32);
         let x1 = x as i32 + (i as i32 * sample_width as i32);
@@ -1050,7 +1050,7 @@ where
     let font_white = MonoTextStyle::new(&FONT_9X15_BOLD, HI8::new(hue, 15));
 
     let mut refresh_text: String<32> = String::new();
-    write!(refresh_text, "refresh: {}Hz", refresh_rate).ok();
+    write!(refresh_text, "refresh: {refresh_rate}Hz").ok();
     Text::new(
         &refresh_text,
         Point::new(pos_x as i32, (pos_y + 20) as i32),
@@ -1058,7 +1058,7 @@ where
     ).draw(d)?;
 
     let mut frame_text: String<32> = String::new();
-    write!(frame_text, "ops/sec: {}", frame_count).ok();
+    write!(frame_text, "ops/sec: {frame_count}").ok();
     Text::new(
         &frame_text,
         Point::new(pos_x as i32, (pos_y + 40) as i32),
@@ -1129,7 +1129,7 @@ mod test_data {
     use serde_derive::{Serialize, Deserialize};
 
     // Fake set of options for quick render testing
-    #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr, Default, Serialize, Deserialize)]
+    #[derive(Clone, Copy, PartialEq, Eq, EnumIter, IntoStaticStr, Default, Serialize, Deserialize)]
     #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
     pub enum Page {
         #[default]
@@ -1179,7 +1179,7 @@ mod tests {
         where
             I: IntoIterator<Item = Pixel<Self::Color>>,
         {
-            for Pixel(coord, color) in pixels.into_iter() {
+            for Pixel(coord, color) in pixels {
                 if let Ok((x @ 0..=H_ACTIVE, y @ 0..=V_ACTIVE)) = coord.try_into() {
                     let raw = color.to_raw();
                     *self.img.get_pixel_mut(x, y) = Rgb([
@@ -1303,7 +1303,7 @@ mod tests {
     fn test_draw_xbeam_help() {
         let mut disp = setup_display();
 
-        const XBEAM_HELP_TEXT: &str = r###"
+        const XBEAM_HELP_TEXT: &str = r"
 Vectorscope/oscilloscope with menu system, USB audio and tunable delay lines.
 
     - In **vectorscope mode**, rasterize X/Y, intensity and color to a simulated
@@ -1387,7 +1387,7 @@ lines, USB streams).  Some usage ideas:
         synthesize with the environment variable ``TILIQUA_ASQ_WIDTH=24`` to use
         a completely 24-bit audio path.  This mostly works, but might break the
         scope triggering and use a bit more FPGA resources.
-"###;
+";
 
         // Test without manifest help (Tiliqua diagram won't be drawn)
         draw_help_page(&mut disp, XBEAM_HELP_TEXT, None, H_ACTIVE, V_ACTIVE, 3, 0).ok();

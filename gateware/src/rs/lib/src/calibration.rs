@@ -15,7 +15,7 @@ pub struct DefaultCalibrationConstants {
     pub fractional_bits: u8,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct CalibrationConstants {
     pub cal: EepromCalibration,
 }
@@ -46,7 +46,7 @@ pub struct TweakableConstants {
 
 impl DefaultCalibrationConstants {
     pub fn from_array(c: &[f32; 4], fractional_bits: u8) -> Self {
-        DefaultCalibrationConstants {
+        Self {
             adc_scale: c[0],
             adc_zero:  c[1],
             dac_scale: c[2],
@@ -94,8 +94,7 @@ impl CalibrationConstants {
         let cal_f_bits = self.cal.fractional_bits as i8;
         let shift = hw_f_bits - cal_f_bits;
         if shift != 0 {
-            info!("audio/calibration: calibration (f_bits={}) != hardware (f_bits={}), shift={}",
-                 cal_f_bits, hw_f_bits, shift);
+            info!("audio/calibration: calibration (f_bits={cal_f_bits}) != hardware (f_bits={hw_f_bits}), shift={shift}");
         }
         let rescale = |v: i32| -> i32 {
             if shift > 0 { v << shift } else { v >> (-shift) }
@@ -158,7 +157,7 @@ impl CalibrationConstants {
                    self.fixed_to_f32(self.cal.dac_zero[ch as usize])).ok();
         }
         write!(s, "]\n\r").ok();
-        info!("[write to eeprom] cal_constants = {}", s);
+        info!("[write to eeprom] cal_constants = {s}");
         // Commit to eeprom using EepromManager
         let mut eeprom_manager = EepromManager::new(i2cdev);
         match eeprom_manager.write_calibration(&self.cal) {
@@ -182,7 +181,7 @@ impl CalibrationConstants {
             result.cal.dac_zero[ch]  = result.f32_to_fixed(d.dac_zero)  + 2*c.dac_zero[ch] as i32; // FIXME 2x/4x
         }
         // ADC
-        let (adc_gd, adc_dd) = CalibrationConstants::adc_default_gamma_delta(d);
+        let (adc_gd, adc_dd) = Self::adc_default_gamma_delta(d);
         for ch in 0..4usize {
             let adc_gamma      = adc_gd + 0.00010*(c.adc_scale[ch] as f32);
             let adc_delta      = adc_dd + 0.00005*(c.adc_zero[ch] as f32);
@@ -197,7 +196,7 @@ impl CalibrationConstants {
         let mut adc_zero  = [0i16; 4];
         let mut dac_scale = [0i16; 4];
         let mut dac_zero  = [0i16; 4];
-        let (adc_gd, adc_dd) = CalibrationConstants::adc_default_gamma_delta(d);
+        let (adc_gd, adc_dd) = Self::adc_default_gamma_delta(d);
         for ch in 0..4usize {
             let adc_gamma = 1.0f32/self.fixed_to_f32(self.cal.adc_scale[ch]);
             adc_scale[ch] = ((adc_gamma - adc_gd) / 0.00010) as i16;
