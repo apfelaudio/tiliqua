@@ -6,7 +6,7 @@ use crc::{Crc, CRC_32_BZIP2};
 const BOOTINFO_MAX_SIZE: usize = 1024;
 const CRC_ALGORITHM: Crc<u32> = Crc::<u32>::new(&CRC_32_BZIP2);
 
-/// Information shared from Tiliqua bootloader to SoC bitstreams.
+/// Information shared from Tiliqua bootloader to `SoC` bitstreams.
 /// This is placed in PSRAM at a known address.
 #[derive(Clone, Serialize, Deserialize)]
 #[expect(clippy::unsafe_derive_deserialize)]
