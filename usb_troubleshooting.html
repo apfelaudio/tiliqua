@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>USB troubleshooting &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Electrical Design" href="hardware_design.html" />
+    <link rel="prev" title="Calibration" href="calibration.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Tiliqua
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">USB troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dbg-usb-port-top-for-flashing"><code class="docutils literal notranslate"><span class="pre">dbg</span></code> USB port (top, for flashing)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#webflasher-doesn-t-work">Webflasher doesn’t work</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#usb2-usb-port-bottom-audio-midi"><code class="docutils literal notranslate"><span class="pre">usb2</span></code> USB port (bottom, audio/MIDI)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usb-audio-nothing-enumerates">USB audio - nothing enumerates</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-audio-glitchy-audio-any-os">USB audio - glitchy audio (any OS)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-audio-windows-wasapi-shows-separate-input-and-output-devices">USB audio - Windows / WASAPI shows separate input and output devices</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-midi-host-device-is-never-powered-up">USB MIDI Host - Device is never powered up</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-midi-host-device-powers-up-but-no-response-to-midi-events">USB MIDI Host - Device powers up but no response to MIDI events</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-midi-host-device-powers-up-but-midi-events-are-glitchy-have-missing-notes">USB MIDI Host - Device powers up but MIDI events are glitchy / have missing notes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">USB troubleshooting</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/usb_troubleshooting.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="usb-troubleshooting">
+<h1>USB troubleshooting<a class="headerlink" href="#usb-troubleshooting" title="Link to this heading"></a></h1>
+<p>This page collects some tips I have collected after helping a couple of users fight with Tiliqua’s USB-C ports on different operating systems.</p>
+<figure class="align-default">
+<img alt="_images/tiliqua_usb.png" src="_images/tiliqua_usb.png" />
+</figure>
+<p>Tiliqua has 2 USB ports:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The top one <code class="docutils literal notranslate"><span class="pre">dbg</span></code> is for updating Tiliqua.</p></li>
+<li><p>The bottom one <code class="docutils literal notranslate"><span class="pre">usb2</span></code> is for use by user applications. <em>This is used for example by XBEAM for USB audio streaming (in USB DEVICE mode), or by POLYSYN for USB MIDI (in USB HOST mode).</em></p></li>
+</ul>
+</div></blockquote>
+<section id="dbg-usb-port-top-for-flashing">
+<h2><code class="docutils literal notranslate"><span class="pre">dbg</span></code> USB port (top, for flashing)<a class="headerlink" href="#dbg-usb-port-top-for-flashing" title="Link to this heading"></a></h2>
+<section id="webflasher-doesn-t-work">
+<h3>Webflasher doesn’t work<a class="headerlink" href="#webflasher-doesn-t-work" title="Link to this heading"></a></h3>
+<p>Depending on your OS, you may need to do some setup before being able to flash your device with <a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">tiliqua-webflash</a>. These tips are at the bottom of the webflasher page, and copied here:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="simple">
+<dt>macOS: No setup needed.</dt><dd><ul>
+<li><p>Note: I had one report that the webflasher does not work with very old versions of OS X (i.e a few years old).</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Windows: Use <a class="reference external" href="https://zadig.akeo.ie/">Zadig</a> to install a WinUSB driver for the device:</dt><dd><ul>
+<li><p>Plug in Tiliqua</p></li>
+<li><p>Run Zadig</p></li>
+<li><p>In the menu, under ‘Options’, choose ‘List All Devices’</p></li>
+<li><p>In the main drop down, select the Tiliqua ‘apfbug’ device</p></li>
+<li><p>Select ‘WinUSB’ in the drop down near the green arrow</p></li>
+<li><p>Click ‘Install Driver’, wait for it to complete.</p></li>
+<li><p>Refresh this page, flashing should work.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Linux: You may need to add a <a class="reference external" href="https://apfaudio.github.io/tiliqua/install.html#check-usb-device-permissions">udev rule</a> so Tiliqua can be accessed without sudo.</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+<section id="usb2-usb-port-bottom-audio-midi">
+<h2><code class="docutils literal notranslate"><span class="pre">usb2</span></code> USB port (bottom, audio/MIDI)<a class="headerlink" href="#usb2-usb-port-bottom-audio-midi" title="Link to this heading"></a></h2>
+<section id="usb-audio-nothing-enumerates">
+<h3>USB audio - nothing enumerates<a class="headerlink" href="#usb-audio-nothing-enumerates" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>Assuming you are in an app with USB streaming (like XBEAM) – if you are using a USB-C to USB-C cable and your OS does not show <em>anything at all</em> when plugged into the <code class="docutils literal notranslate"><span class="pre">usb2</span></code> port :</dt><dd><ul class="simple">
+<li><p>Try a different USB-C cable. The nice 5GBps+ ones are more likely to be good.</p></li>
+<li><p>If this doesn’t work, try using a USB-A to USB-C cable instead.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="usb-audio-glitchy-audio-any-os">
+<h3>USB audio - glitchy audio (any OS)<a class="headerlink" href="#usb-audio-glitchy-audio-any-os" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>Assuming you are in an app with USB streaming (like XBEAM) – if you hear periodic popping, this usually due to:</dt><dd><ul class="simple">
+<li><p><strong>`usb-mode` setting:</strong> For USB audio streaming, I recommend always setting <code class="docutils literal notranslate"><span class="pre">MISC-&gt;usb-mode=enable</span></code> BEFORE plugging in your PC. Otherwise, the USB audio clock sync can get confused in rare cases.</p></li>
+<li><p><strong>USB cable:</strong> if you are using a long USB cable - especially longer than 2m or so, this can cause USB packet loss. Try the same cable with a normal USB audio interface, you’ll usually get pops there as well if the cable is too long.</p></li>
+<li><p><strong>Buffer size:</strong> It depends which driver and OS you are using, what is optimal, but I recommend playing with buffer sizes between 128 and 2048 to see what works best on your machine.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="usb-audio-windows-wasapi-shows-separate-input-and-output-devices">
+<h3>USB audio - Windows / WASAPI shows separate input and output devices<a class="headerlink" href="#usb-audio-windows-wasapi-shows-separate-input-and-output-devices" title="Link to this heading"></a></h3>
+<dl>
+<dt>Some versions of Windows cause WASAPI to enumerate Tiliqua’s 4 IN and 4 OUT channels as separate devices. There are 2 ways you can deal with this:</dt><dd><ul class="simple">
+<li><p><strong>Instantiate both devices</strong> - In VCVRack you can just create 2 separate modules for the input and output sides, and use them together. This has the downside that you may need high buffer sizes like 1024 for it to work glitch-free.</p></li>
+<li><dl class="simple">
+<dt><strong>Try switching to an ASIO driver like FlexASIO</strong>. How?</dt><dd><ul>
+<li><p>Install <a class="reference external" href="https://github.com/dechamps/FlexASIO/releases/tag/flexasio-1.10b">FlexASIO</a> and <a class="reference external" href="https://github.com/flipswitchingmonkey/FlexASIO_GUI/releases/tag/v0.35">FlexASIO GUI</a></p></li>
+<li><p>Below is the <code class="docutils literal notranslate"><span class="pre">FlexASIO.toml</span></code> I end up with after configuring FlexAsio GUI for 4x4 operation and writing it to the default location (you can’t use this directly due to the german device names probably, but you should end up with something similar from the FlexAsio GUI - there are plenty of guides on how to set this up on the web):</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>backend = &quot;Windows WASAPI&quot;
+bufferSizeSamples = 256
+[input]
+device = &quot;Mikrofon (2- Tiliqua)&quot;
+channels = 4
+[output]
+device = &quot;Lautsprecher (2- Tiliqua)&quot;
+channels = 4
+</pre></div>
+</div>
+</dd>
+</dl>
+</section>
+<section id="usb-midi-host-device-is-never-powered-up">
+<h3>USB MIDI Host - Device is never powered up<a class="headerlink" href="#usb-midi-host-device-is-never-powered-up" title="Link to this heading"></a></h3>
+<dl>
+<dt>In <code class="docutils literal notranslate"><span class="pre">POLYSYN</span></code>, if your MIDI device never receives power from Tiliqua despite having <code class="docutils literal notranslate"><span class="pre">usb-host=enabled</span></code>:</dt><dd><ul class="simple">
+<li><p>If you are using a USB-C (male) to USB-A (female) adapter in Tiliqua’s host port, try inserting the adapter into Tiliqua <em>BEFORE</em> you plug your device into the USB-A (female) port.</p></li>
+<li><p>If that still doesn’t work, try a good <a class="reference external" href="https://www.anker.com/ca/products/b8731">brand like this</a> which is known to work, being careful to plug in the adapter into Tiliqua before the MIDI device.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a known bug that manifests with rare combinations of adapters in firmware v1.2.1 and earlier. A fix <a class="reference external" href="https://github.com/apfaudio/tiliqua/issues/170#issuecomment-4551905560">is linked here</a> if you want to try it out already, but will be included in v1.2.2+!</p>
+</div>
+</dd>
+</dl>
+</section>
+<section id="usb-midi-host-device-powers-up-but-no-response-to-midi-events">
+<h3>USB MIDI Host - Device powers up but no response to MIDI events<a class="headerlink" href="#usb-midi-host-device-powers-up-but-no-response-to-midi-events" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Try re-plugging the device or cycling the <code class="docutils literal notranslate"><span class="pre">usb-host</span></code> option while it is plugged in.</p></li>
+<li><p><strong>Device is a USB Hub:</strong> You could be trying to use a MIDI device which has a built-in USB hub, that is, the device has a built-in USB hub, and the MIDI device is behind it. <strong>Tiliqua does not support this</strong>. This is rare, so far I only saw this on a Boss RC-600 Loop station, because it has a built-in sound card and MIDI device behind an integrated USB hub. <strong>In such cases I suggest using DIN/TRS MIDI instead</strong>. You can check this on Linux in dmesg or in Windows in device manager.</p></li>
+</ul>
+</section>
+<section id="usb-midi-host-device-powers-up-but-midi-events-are-glitchy-have-missing-notes">
+<h3>USB MIDI Host - Device powers up but MIDI events are glitchy / have missing notes<a class="headerlink" href="#usb-midi-host-device-powers-up-but-midi-events-are-glitchy-have-missing-notes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>There was a <strong>known bug in POLYSYN v1.1.1 and earlier</strong> with how Sysex and Clock messages were handled. This is now fixed in the latest versions.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="calibration.html" class="btn btn-neutral float-left" title="Calibration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hardware_design.html" class="btn btn-neutral float-right" title="Electrical Design" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

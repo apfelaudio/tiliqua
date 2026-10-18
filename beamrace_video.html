@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 3: Video cores (top.beamrace) &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial 4: SoC/CPU bitstreams" href="cpu_bitstreams.html" />
+    <link rel="prev" title="Tutorial 2: DSP blocks (tiliqua.dsp)" href="custom_dsp.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Tiliqua
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#simulation">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-and-modeline">Building and <code class="docutils literal notranslate"><span class="pre">--modeline</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#structure">Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#todo">TODO</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/beamrace_video.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-3-video-cores-top-beamrace">
+<h1>Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)<a class="headerlink" href="#tutorial-3-video-cores-top-beamrace" title="Link to this heading"></a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This tutorial is not finished yet.</p>
+</div>
+<p>‘Beamracing’ is a simple method for creating interesting video patterns, by calculating the color of each pixel right before it is needed. It’s especially well-suited to FPGAs as we can build custom logic just for computing the value of each pixel, at the full video clock rate.</p>
+<p>In <a class="reference external" href="https://github.com/apfaudio/tiliqua/tree/main/gateware/src/top/beamrace">gateware/src/top/beamrace</a>, we have 2 files:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">top.py</span></code>: example gateware for a few different beamracing bitstreams.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sim.cpp</span></code>: a Verilator testbench for simulating <code class="docutils literal notranslate"><span class="pre">beamrace</span></code> bitstreams. This one writes each frame as an image to a bitmap file for inspection</p></li>
+</ul>
+</div></blockquote>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Link to this heading"></a></h2>
+<p>If you go ahead and run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>beamrace<span class="w"> </span>sim<span class="w"> </span>--core<span class="o">=</span>balls
+</pre></div>
+</div>
+<p>You will notice the simulation emits some images like <code class="docutils literal notranslate"><span class="pre">frameXX.bmp</span></code>. If you open one up, you will see an interesting pattern. These images have been calculated by the <code class="docutils literal notranslate"><span class="pre">Balls()</span></code> core present in <code class="docutils literal notranslate"><span class="pre">top.py</span></code>, in response to some simulated audio inputs.</p>
+</section>
+<section id="building-and-modeline">
+<h2>Building and <code class="docutils literal notranslate"><span class="pre">--modeline</span></code><a class="headerlink" href="#building-and-modeline" title="Link to this heading"></a></h2>
+<p>As these simple <code class="docutils literal notranslate"><span class="pre">beamrace</span></code> cores do not include a CPU (part of the reason they synthesize so quickly!), they also do not support dynamic framebuffer resizing.</p>
+<p>For this reason, you’ll want to supply a <code class="docutils literal notranslate"><span class="pre">--modeline</span></code> argument depending on what screen you want to use. For example, for Tiliqua’s round screen, you will want something like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>beamrace<span class="w"> </span>build<span class="w"> </span>--core<span class="o">=</span>balls<span class="w"> </span>--modeline<span class="o">=</span>720x720p60r2
+</pre></div>
+</div>
+</section>
+<section id="structure">
+<h2>Structure<a class="headerlink" href="#structure" title="Link to this heading"></a></h2>
+<p>Each <code class="docutils literal notranslate"><span class="pre">beamrace</span></code> core shares the same input and output interface, so they can all share the same <code class="docutils literal notranslate"><span class="pre">BeamRaceTop</span></code> wrapper core (which handles all the auxiliary logic outside the actual pixel color calculations).</p>
+<p>You will notice each pattern has attributes like:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">i</span><span class="p">:</span> <span class="n">In</span><span class="p">(</span><span class="n">BeamRaceInputs</span><span class="p">())</span>
+<span class="n">o</span><span class="p">:</span> <span class="n">Out</span><span class="p">(</span><span class="n">BeamRaceOutputs</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>These have the following structure:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">BeamRaceInputs</span><span class="p">(</span><span class="n">wiring</span><span class="o">.</span><span class="n">Signature</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inputs into a beamracing core, all in the &#39;dvi&#39; domain (at the pixel clock).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">({</span>
+            <span class="c1"># Video timing inputs</span>
+            <span class="s2">&quot;hsync&quot;</span><span class="p">:</span>     <span class="n">Out</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;vsync&quot;</span><span class="p">:</span>     <span class="n">Out</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;de&quot;</span><span class="p">:</span>        <span class="n">Out</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">&quot;x&quot;</span><span class="p">:</span>         <span class="n">Out</span><span class="p">(</span><span class="n">signed</span><span class="p">(</span><span class="mi">12</span><span class="p">)),</span>
+            <span class="s2">&quot;y&quot;</span><span class="p">:</span>         <span class="n">Out</span><span class="p">(</span><span class="n">signed</span><span class="p">(</span><span class="mi">12</span><span class="p">)),</span>
+            <span class="c1"># Audio samples (already synchronized to DVI domain)</span>
+            <span class="s2">&quot;audio_in0&quot;</span><span class="p">:</span> <span class="n">Out</span><span class="p">(</span><span class="n">signed</span><span class="p">(</span><span class="mi">16</span><span class="p">)),</span>
+            <span class="s2">&quot;audio_in1&quot;</span><span class="p">:</span> <span class="n">Out</span><span class="p">(</span><span class="n">signed</span><span class="p">(</span><span class="mi">16</span><span class="p">)),</span>
+            <span class="s2">&quot;audio_in2&quot;</span><span class="p">:</span> <span class="n">Out</span><span class="p">(</span><span class="n">signed</span><span class="p">(</span><span class="mi">16</span><span class="p">)),</span>
+            <span class="s2">&quot;audio_in3&quot;</span><span class="p">:</span> <span class="n">Out</span><span class="p">(</span><span class="n">signed</span><span class="p">(</span><span class="mi">16</span><span class="p">)),</span>
+        <span class="p">})</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BeamRaceOutputs</span><span class="p">(</span><span class="n">wiring</span><span class="o">.</span><span class="n">Signature</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Outputs from a beamracing core, all in the &#39;dvi&#39; domain (at the pixel clock).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">({</span>
+            <span class="s2">&quot;r&quot;</span><span class="p">:</span>     <span class="n">Out</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span>
+            <span class="s2">&quot;g&quot;</span><span class="p">:</span>     <span class="n">Out</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span>
+            <span class="s2">&quot;b&quot;</span><span class="p">:</span>     <span class="n">Out</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span>
+        <span class="p">})</span>
+</pre></div>
+</div>
+<p>In this fashion, each core already has the current audio sample and position in the frame, as well as timing signals, to use for pattern generation.</p>
+<p>Note that all signals are already synchronized into the video domain, with the <code class="docutils literal notranslate"><span class="pre">dvi</span></code> domain already remapped to <code class="docutils literal notranslate"><span class="pre">sync</span></code>, so from the perspective of your own pattern-generating core, you can do everything in the <code class="docutils literal notranslate"><span class="pre">sync</span></code> domain.</p>
+</section>
+<section id="todo">
+<h2>TODO<a class="headerlink" href="#todo" title="Link to this heading"></a></h2>
+<p>Finish writing this.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="custom_dsp.html" class="btn btn-neutral float-left" title="Tutorial 2: DSP blocks (tiliqua.dsp)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cpu_bitstreams.html" class="btn btn-neutral float-right" title="Tutorial 4: SoC/CPU bitstreams" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

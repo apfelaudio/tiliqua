@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Complex Numbers &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Trigonometry / CORDIC" href="cordic.html" />
+    <link rel="prev" title="Block-based Processing" href="block.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">DSP Library</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#philosophy">Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#interconnect">Interconnect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-and-specialized-components">‘Basic’ and ‘Specialized’ components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-dsp-components">Basic DSP Components</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#specialized-modules">Specialized Modules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="delay_effect.html">Delay Effects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fft.html">FFT Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="spectral.html">Spectral Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mac.html">Multiplier sharing (<code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="block.html">Block-based Processing</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Complex Numbers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.complex.CQ"><code class="docutils literal notranslate"><span class="pre">CQ</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.complex.Polar"><code class="docutils literal notranslate"><span class="pre">Polar</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="cordic.html">Trigonometry / CORDIC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">DSP Library</a></li>
+      <li class="breadcrumb-item active">Complex Numbers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dsp/complex.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="complex-numbers">
+<h1>Complex Numbers<a class="headerlink" href="#complex-numbers" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.complex.CQ">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.complex.</span></span><span class="sig-name descname"><span class="pre">CQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.complex.CQ" title="Link to this definition"></a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">data.StructLayout</span></code> representing a complex number, formed by a pair of numbers.</p>
+<dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point types used for real and imaginary components.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>real</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">shape</span></code>) – Real component of complex number.</p></li>
+<li><p><strong>imag</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">shape</span></code>) – Imaginary component of complex number.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.complex.Polar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.complex.</span></span><span class="sig-name descname"><span class="pre">Polar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.complex.Polar" title="Link to this definition"></a></dt>
+<dd><p><code class="xref py py-class docutils literal notranslate"><span class="pre">data.StructLayout</span></code> representing a complex number in polar form.</p>
+<dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point types used for magnitude and phase components.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>magnitude</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">shape</span></code>) – Magnitude component of complex number.</p></li>
+<li><p><strong>phase</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">shape</span></code>) – Phase component of complex number.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="block.html" class="btn btn-neutral float-left" title="Block-based Processing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cordic.html" class="btn btn-neutral float-right" title="Trigonometry / CORDIC" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

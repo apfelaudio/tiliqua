@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Effects &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="VCAs" href="vca.html" />
+    <link rel="prev" title="Oscillators" href="oscillators.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">DSP Library</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#philosophy">Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#interconnect">Interconnect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-and-specialized-components">‘Basic’ and ‘Specialized’ components</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#basic-dsp-components">Basic DSP Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="delay_lines.html">Delay Lines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="filters.html">Filters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oscillators.html">Oscillators</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Effects</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.WaveShaper"><code class="docutils literal notranslate"><span class="pre">WaveShaper</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.PitchShift"><code class="docutils literal notranslate"><span class="pre">PitchShift</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="vca.html">VCAs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mix.html">Mixing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="resample.html">Resampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oneshot.html">One-shot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stream_util.html">Stream utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="misc.html">Miscellaneous utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#specialized-modules">Specialized Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">DSP Library</a></li>
+      <li class="breadcrumb-item active">Effects</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dsp/effects.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="effects">
+<h1>Effects<a class="headerlink" href="#effects" title="Link to this heading"></a></h1>
+<p>Basic audio effects.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.WaveShaper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">WaveShaper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.WaveShaper" title="Link to this definition"></a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">Waveshaper</span></code> maps every sample <code class="docutils literal notranslate"><span class="pre">x</span></code> to <code class="docutils literal notranslate"><span class="pre">f(x)</span></code>, where <code class="docutils literal notranslate"><span class="pre">f</span></code>
+can be any arbitrary python function.</p>
+<p><code class="docutils literal notranslate"><span class="pre">f(x)</span></code> is evaluated at <code class="docutils literal notranslate"><span class="pre">N=lut_size</span></code> points at elaboration time,
+to create a LUT (lookup table ROM) mapping the input domain (<code class="docutils literal notranslate"><span class="pre">ASQ</span></code>)
+to output samples. For any input sample that sits between elements in the
+ROM, linear interpolation is used to determine the output sample.</p>
+<p>This can be used for waveshaping, but is also useful for arbitrary
+remapping of samples, for example tanh-based soft clipping, linear-
+to exponential or linear-to-log space conversion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Input stream for sending samples to the waveshaper.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Output stream for getting samples from the waveshaper.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.WaveShaper.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lut_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lut_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">macp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.WaveShaper.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>lut_function<span class="classifier">function</span></dt><dd><p>Function taking and emitting <code class="docutils literal notranslate"><span class="pre">float</span></code> values in a valid <code class="docutils literal notranslate"><span class="pre">ASQ</span></code> range.</p>
+</dd>
+<dt>lut_size<span class="classifier">int</span></dt><dd><p>Size of the LUT ROM in elements. Larger provides a better approximation.</p>
+</dd>
+<dt>continuous<span class="classifier">bool</span></dt><dd><p>Behavior of linear interpolation at <code class="docutils literal notranslate"><span class="pre">ASQ</span></code> endpoints. For <code class="docutils literal notranslate"><span class="pre">ASQ.i_bits==1</span></code>
+and for a function where <code class="docutils literal notranslate"><span class="pre">f(+1)</span> <span class="pre">~=</span> <span class="pre">f(-1)</span></code>, this should be used to ensure an
+incoming saw results in a continuous output.</p>
+</dd>
+<dt>macp<span class="classifier">mac.MAC</span></dt><dd><p>Optional shared MAC provider.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.PitchShift">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">PitchShift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.PitchShift" title="Link to this definition"></a></dt>
+<dd><p>Granular pitch shifter. Works by crossfading 2 separately tracked taps on
+a delay line - both tap positions are moving towards the write head (for
+pitching up) or away from the write head (for pitching down). Whenever
+the tap positions are close to overflowing, the discontinuity is smoothed
+by a crossfade of length <code class="docutils literal notranslate"><span class="pre">xfade</span></code>.</p>
+<p>Maximum pitch-shifting grain size is the delay line ‘max_delay’ // 2. Smaller
+grain sizes or crossfades result in a ‘fluttering’ effect, but have lower latency.
+To reduce fluttering at low latency, one can dynamically track the <code class="docutils literal notranslate"><span class="pre">grain_sz</span></code>
+based on the input frequency.</p>
+<p>The delay line write head must be hooked up to the input source from outside this
+component (this allows multiple shifters to share a single delay line).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">StructLayout</span><span class="p">({</span><span class="s2">&quot;pitch&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="s2">&quot;grain_sz&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">}))</span></code>) – Input stream, one element per desired output sample. <code class="docutils literal notranslate"><span class="pre">pitch</span></code> is a
+<code class="docutils literal notranslate"><span class="pre">fixed.SQ</span></code> i where 0 is no pitch shift, positive shifts up (e.g. 1 is 2x speed),
+negative shifts down. <code class="docutils literal notranslate"><span class="pre">grain_sz</span></code> is the length of audio grain used for pitch
+shifting - up to the <code class="docutils literal notranslate"><span class="pre">tap.max_delay</span></code></p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Output stream of pitch shifted samples.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.PitchShift.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xfade</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">macp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.PitchShift.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>tap<span class="classifier">delay_line.DelayLineTap()</span></dt><dd><p><code class="docutils literal notranslate"><span class="pre">DelayLineTap</span></code> which pitch shifter reads at 2 tap positions for every
+output sample. The delayline write head must be hooked up to the input source.</p>
+</dd>
+<dt>xfade<span class="classifier">int</span></dt><dd><p>Crossfade length between taps, in samples. Crossfades occur at every
+transition where we switch from one part of the delayline to the other.
+Longer crossfades and grain sizes produce less ‘fluttering’.</p>
+</dd>
+<dt>macp<span class="classifier">mac.MAC</span></dt><dd><p>Optional shared MAC provider.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="oscillators.html" class="btn btn-neutral float-left" title="Oscillators" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="vca.html" class="btn btn-neutral float-right" title="VCAs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

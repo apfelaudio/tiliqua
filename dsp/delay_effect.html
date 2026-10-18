@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delay Effects &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="FFT Processing" href="fft.html" />
+    <link rel="prev" title="Miscellaneous utilities" href="misc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">DSP Library</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#philosophy">Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#interconnect">Interconnect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-and-specialized-components">‘Basic’ and ‘Specialized’ components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-dsp-components">Basic DSP Components</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#specialized-modules">Specialized Modules</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Delay Effects</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.delay_effect.PingPongDelay"><code class="docutils literal notranslate"><span class="pre">PingPongDelay</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.delay_effect.Diffuser"><code class="docutils literal notranslate"><span class="pre">Diffuser</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.delay_effect.Boxcar"><code class="docutils literal notranslate"><span class="pre">Boxcar</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fft.html">FFT Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="spectral.html">Spectral Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mac.html">Multiplier sharing (<code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="block.html">Block-based Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cordic.html">Trigonometry / CORDIC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">DSP Library</a></li>
+      <li class="breadcrumb-item active">Delay Effects</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dsp/delay_effect.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="delay-effects">
+<h1>Delay Effects<a class="headerlink" href="#delay-effects" title="Link to this heading"></a></h1>
+<p>Effects built with delay lines.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.delay_effect.PingPongDelay">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.delay_effect.</span></span><span class="sig-name descname"><span class="pre">PingPongDelay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.delay_effect.PingPongDelay" title="Link to this definition"></a></dt>
+<dd><p>2-channel stereo ping-pong delay.</p>
+<p>Based on 2 equal-length delay lines, fed back into each other.</p>
+<p>Delay lines are created external to this component, and may be
+SRAM-backed or PSRAM-backed depending on the application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span></code>) – Stereo sample pairs into ping-pong delay.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span></code>) – Stereo sample pairs out of ping-pong delay. One per input.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.delay_effect.PingPongDelay.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delayln1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delayln2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.delay_effect.PingPongDelay.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>delayln1<span class="classifier">delay_line.DelayLine</span></dt><dd><p>First delay line, must have max length &gt; <code class="docutils literal notranslate"><span class="pre">delay_samples</span></code>, and have
+been created with <code class="docutils literal notranslate"><span class="pre">DelayLine.write_triggers_read</span> <span class="pre">==</span> <span class="pre">True</span></code>.</p>
+</dd>
+<dt>delayln2<span class="classifier">delay_line.DelayLine</span></dt><dd><p>Second delay line, must have max length &gt; <code class="docutils literal notranslate"><span class="pre">delay_samples</span></code>, and have
+been created with <code class="docutils literal notranslate"><span class="pre">DelayLine.write_triggers_read</span> <span class="pre">==</span> <span class="pre">True</span></code>.</p>
+</dd>
+<dt>delay_samples<span class="classifier">int</span></dt><dd><p>Length of each ping-pong section in samples.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.delay_effect.Diffuser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.delay_effect.</span></span><span class="sig-name descname"><span class="pre">Diffuser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.delay_effect.Diffuser" title="Link to this definition"></a></dt>
+<dd><p>4-channel shuffling feedback delay.</p>
+<p>Based on 4 separate delay lines with separate delay lengths,
+where the feedback paths are shuffled into different channels
+by a matrix mixer.</p>
+<p>Delay lines are created external to this component, and may be
+SRAM-backed or PSRAM-backed depending on the application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span></code>) – Sample array into the delay effect.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span></code>) – Sample array out of the delay effect. One is produced per input.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.delay_effect.Diffuser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delay_lines</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.delay_effect.Diffuser.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>delay_lines<span class="classifier">[delay_line.DelayLine]</span></dt><dd><p>Array of 4 delay lines used for feedback. Each delay line must be
+at least as long as the corresponding entry in <code class="docutils literal notranslate"><span class="pre">delays</span></code>.</p>
+</dd>
+<dt>delays<span class="classifier">[int]</span></dt><dd><p>Fixed tap delay of each feedback path - one for each delay line.
+If not provided, some default tap lengths are used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.delay_effect.Boxcar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.delay_effect.</span></span><span class="sig-name descname"><span class="pre">Boxcar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.delay_effect.Boxcar" title="Link to this definition"></a></dt>
+<dd><p>Simple Boxcar Average.</p>
+<p>Average of previous N samples, implemented with an accumulator
+and delay line. The accumulator sums all incoming samples, and we
+subtract an N-sample-delayed version of the incoming signal. This
+is the same as taking the average over the last N samples, requiring
+no multiplies but instead requiring space for N samples.</p>
+<p>Can be used in low- or high-pass mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">sq</span><span class="p">))</span></code>) – Samples into the boxcar averager.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">sq</span><span class="p">))</span></code>) – Samples out of the boxcar averager, one produced per input.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.delay_effect.Boxcar.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hpf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ASQ</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.delay_effect.Boxcar.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>n<span class="classifier">int</span></dt><dd><p>Delay line size and window length of the averager.</p>
+</dd>
+<dt>hpf<span class="classifier">bool</span></dt><dd><p>High-pass mode - if true, the average value is subtracted from the
+last sample and we emit the difference, rather than emitting the
+average value itself. Almost no extra cost, useful for other applications.</p>
+</dd>
+<dt>sq<span class="classifier">fixed.SQ</span></dt><dd><p>Fixed-point type used for underlying inputs, outputs and storage.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="misc.html" class="btn btn-neutral float-left" title="Miscellaneous utilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fft.html" class="btn btn-neutral float-right" title="FFT Processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soldiercrab SoM [TLQ-SOLDIERCRAB] &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Setup" href="../install.html" />
+    <link rel="prev" title="Expander / Euro-PMOD [TLQ-EXPANDER]" href="tlq_expander.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#use-cases">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#factory-bitstream">Factory Bitstream</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-with-tlq-module">Use with <code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-in-your-own-project">Use in your own project</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hardware-block-diagram">Hardware Block Diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#instructions-for-safe-use">Instructions for Safe Use</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/quickstart/tlq_soldiercrab.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="soldiercrab-som-tlq-soldiercrab">
+<h1>Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]<a class="headerlink" href="#soldiercrab-som-tlq-soldiercrab" title="Link to this heading"></a></h1>
+<p>An embeddable FPGA SoM designed for high-speed audio and USB applications. This was designed as the brain of <code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>, although it is also available separately and can be used in your own projects.</p>
+<figure class="align-default">
+<img alt="../_images/soldiercrab_photos.jpeg" src="../_images/soldiercrab_photos.jpeg" />
+</figure>
+<section id="use-cases">
+<h2>Use Cases<a class="headerlink" href="#use-cases" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Another / spare SoM for <code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>:</dt><dd><ul>
+<li><p>You can swap out the Soldiercrab in your Tiliqua by removing a single screw. This could be interesting for future upgrades, or an interesting way of carrying around more bitstreams by e.g. storing 8 bitstreams on one SoM and 8 bitstreams on a different one.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>FPGA SoM for your own project:</dt><dd><ul>
+<li><p>Soldiercrab only requires an M.2 socket, a 3.3V supply and JTAG connections in order to use it in your own design. And you could re-use much of Tiliqua’s RTL (memory controllers, USB audio code, SoC examples) in your own project, saving months of work.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You may notice that <code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code> does not come with a heatsink, unlike the one that comes with <code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>. The heatsink is not necessary, you can safely use <code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code> without it. Unless you are doing crazy things and overclocking the module, although that’s your own risk to take.</p>
+</div>
+</section>
+<section id="factory-bitstream">
+<h2>Factory Bitstream<a class="headerlink" href="#factory-bitstream" title="Link to this heading"></a></h2>
+<p>Out of the box, <code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code> is NOT flashed with the Tiliqua bootloader. This is for good reason: if you were to design your own product, you definitely don’t want all the IOs to be actively driven, assuming your product is not using exactly the same pins as Tiliqua. That being said, <em>every unit is tested inside a Tiliqua</em> before shipping, to make sure every function of the board is working correctly, before the device is erased again.</p>
+<p>Instead, <code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code> comes flashed with a simple LED breathing bitstream, which slowly pulses both LEDs on the board as soon as 3.3V is supplied to it. All other IOs are set to high-impedance with a weak pull-up to GND (this is the default IO state on unassigned IOs for ECP5).</p>
+</section>
+<section id="use-with-tlq-module">
+<h2>Use with <code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code><a class="headerlink" href="#use-with-tlq-module" title="Link to this heading"></a></h2>
+<p>To use <code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code> inside a Tiliqua, assuming the rest of the Tiliqua is already correctly flashed (RP2040 on motherboard is flashed), you can follow this sequence:</p>
+<ul class="simple">
+<li><p>Put the <code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code> in the M.2 slot on the <code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code> motherboard and screw it down (not too tight!).</p></li>
+<li><p>Switch on the module. You should see the Soldiercrab LEDs blinking with the default factory bitstream.</p></li>
+<li><p>Flash the Tiliqua bootloader to the bootloader slot using either <a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">tiliqua-webflash</a> or our <code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">flash</span> <span class="pre">archive</span></code> command-line tool provided with the repository.</p></li>
+<li><p>You should see the bootloader screen on the display output.</p></li>
+</ul>
+</section>
+<section id="use-in-your-own-project">
+<h2>Use in your own project<a class="headerlink" href="#use-in-your-own-project" title="Link to this heading"></a></h2>
+<p>For information on using <code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code> in your own project or designing it into your PCBAs, the best place to look is the <a class="reference external" href="https://github.com/apfaudio/soldiercrab">soldiercrab README</a></p>
+</section>
+<section id="hardware-block-diagram">
+<h2>Hardware Block Diagram<a class="headerlink" href="#hardware-block-diagram" title="Link to this heading"></a></h2>
+<p>For deeper details (and schematics) of the hardware, see the <a class="reference external" href="https://github.com/apfaudio/soldiercrab">soldiercrab README</a></p>
+<figure class="align-default">
+<img alt="../_images/soldiercrab_block.jpeg" src="../_images/soldiercrab_block.jpeg" />
+</figure>
+</section>
+<section id="instructions-for-safe-use">
+<h2>Instructions for Safe Use<a class="headerlink" href="#instructions-for-safe-use" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Take care whilst handling to avoid mechanical or electrical damage. When the product is powered on, do not touch the circuit board. When the product is not screwed down to a circuit board, only handle it unpowered and by the edges to minimize the risk of damage from electrostatic discharge.</p></li>
+<li><p>Use with any hardware other than TLQ-MODULE, or at clock frequencies outside those supported by manufacturer-supplied TLQ-MODULE gateware is to be done at your own risk, in a controlled laboratory environment, with adherence to relevant regulations and standards applicable in the country of intended use.</p></li>
+<li><p>To reach electromagnetic compatibility in a Eurorack system, the product shall be mounted inside TLQ-MODULE, securely tightened down with the single M.2 mounting screw. TLQ-MODULE should then be mounted securely in a fully enclosed housing made of conductive material (metal). Close all unused spaces with blind panels. Keep all cables, power or patch cables as short as possible.</p></li>
+<li><p>The product is designed for reliable operation at normal ambient room temperature. Do not expose the module to water, moisture or bring the circuit boards in contact with any conductive materials.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tlq_expander.html" class="btn btn-neutral float-left" title="Expander / Euro-PMOD [TLQ-EXPANDER]" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../install.html" class="btn btn-neutral float-right" title="Setup" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

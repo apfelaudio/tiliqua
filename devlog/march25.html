@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>[Devlog 1] EMC Adventures &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Development Blog" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Development Blog</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">[Devlog 1] EMC Adventures</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#new-features">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#in-this-update">In this update</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ce-and-fcc">CE and FCC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-setup">The Setup</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#example-system">Example system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pre-test-chamber">Pre-test chamber</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#spectrum-analyzer">Spectrum Analyzer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dodgy-sniffer-probe">Dodgy sniffer probe</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lisn">LISN</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#pre-testing-findings">Pre-testing: Findings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fail">Fail!</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#learning-1-smps-input-filtering">Learning 1: SMPS input filtering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#learning-2-fpga-drive-strengths-series-resistors">Learning 2: FPGA drive strengths, series resistors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#learning-3-split-ground-planes">Learning 3: Split ground planes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#learning-4-spread-spectrum">Learning 4: Spread Spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#distraction-si5351-driver-and-dynamic-clocking">Distraction: SI5351 Driver and Dynamic Clocking</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#lab-testing-findings">Lab-testing: Findings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#learning-5-long-cables">Learning 5: Long cables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#learning-6-esd-is-no-joke">Learning 6: ESD is no joke</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#learning-7-tem-cell-vs-real-far-field-measurements">Learning 7: TEM cell vs. real far-field measurements</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#emc-conclusion">EMC: Conclusion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bonus-new-amaranth-cores">Bonus: New Amaranth Cores!</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bonus-crowd-supply-trade-tariffs">Bonus: Crowd Supply &amp; Trade Tariffs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#acknowledgements-further-reading">Acknowledgements &amp; further reading</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Development Blog</a></li>
+      <li class="breadcrumb-item active">[Devlog 1] EMC Adventures</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/devlog/march25.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="devlog-1-emc-adventures">
+<h1>[Devlog 1] EMC Adventures<a class="headerlink" href="#devlog-1-emc-adventures" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><em>Thanks for dropping by! Tiliqua is an open-source project (see</em> <a class="reference internal" href="../foss_funding.html"><span class="doc">Funding &amp; Open Source</span></a> <em>). Feel free to join the discussion (see</em> <a class="reference internal" href="../community.html"><span class="doc">Community</span></a>) <em>or join our</em> <a class="reference external" href="https://apf.audio">mailing list</a>.</p>
+</div>
+<p>What a crazy last couple of months! I’ve been super busy bringing up the Tiliqua R4 (latest) hardware revision and getting it ready for production. The trickiest aspect was getting it through EMC testing, so this will be our focus today.</p>
+<a class="reference internal image-reference" href="../_images/tiliqua_back_side_tilted.jpg"><img alt="../_images/tiliqua_back_side_tilted.jpg" src="../_images/tiliqua_back_side_tilted.jpg" style="width: 800px;" /></a>
+<section id="new-features">
+<h2>New Features<a class="headerlink" href="#new-features" title="Link to this heading"></a></h2>
+<p>Before we dive deep into EMC, a quickfire list of unrelated wins from the last couple months:</p>
+<ul class="simple">
+<li><p><strong>R4 Hardware Diagrams</strong>: I put together some detailed hardware diagrams of how the different bits of Tiliqua connect together, you can find them under <a class="reference internal" href="../hardware_design.html"><span class="doc">Electrical Design</span></a>.</p></li>
+<li><p><strong>Self-calibration</strong>: Tiliqua can now semi-automatically calibrate its own CODEC for better control voltage tracking, you’ll find the gruesome details under <a class="reference internal" href="../calibration.html"><span class="doc">Calibration</span></a>.</p></li>
+<li><p><strong>Bitstream Archives</strong>: The format used for sharing and flashing user bitstreams is implemented and relatively stable now, this means you can share a single file which contains everything a project needs (bitstream, firmware, images, description of the contents). Gruesome details under <a class="reference internal" href="../bootloader.html"><span class="doc">Bootloader</span></a>.</p></li>
+<li><p><strong>Parallel builds</strong>: It’s now possible to build all the Tiliqua projects simultaneously, which reduces the build time from about 15min for all projects (about 30 bitstreams) to about 5min on my machine. Try this out with <a class="reference external" href="https://github.com/apfaudio/tiliqua/blob/main/gateware/scripts/build_bitstreams_soc.sh">gateware/scripts/build_bitstreams_soc.sh</a>!</p></li>
+<li><p><strong>Menu system refactor</strong>: The Tiliqua menu system has been <a class="reference external" href="https://github.com/apfaudio/tiliqua/pull/85">completely rewritten</a> , which should make it much easier to modify it for your own purposes. I plan to write a short tutorial on how this works soon.</p></li>
+</ul>
+</section>
+<section id="in-this-update">
+<h2>In this update<a class="headerlink" href="#in-this-update" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>R4 Hardware &amp; EMC</strong>: A lot of work went into getting Tiliqua ready for EMC testing, I’ll go through some lessons learned.</p></li>
+<li><p><strong>Dynamic Clocking</strong>: The latest revision adds an external PLL, useful for EMC (spread spectrum) and dynamic resolution switching. We’ll cover this below.</p></li>
+<li><p><strong>100% Amaranth</strong>: Until recently there were some core Tiliqua components (especially audio CODEC initialization, calibration, the video subsystem) that were still re-using Verilog cores. These are now all removed and <a class="reference external" href="https://github.com/apfaudio/tiliqua/pull/89">ported to Amaranth</a>, which should make the codebase easier to understand!</p></li>
+</ul>
+</section>
+<section id="ce-and-fcc">
+<h2>CE and FCC<a class="headerlink" href="#ce-and-fcc" title="Link to this heading"></a></h2>
+<a class="reference internal image-reference" href="../_images/ce.jpg"><img alt="../_images/ce.jpg" src="../_images/ce.jpg" style="width: 800px;" /></a>
+<p>Any kind of electronic product sold in the EU must have evidence that it meets the requirements for a CE mark, in the US the (almost) equivalent mark is FCC. For a eurorack module like Tiliqua, there 2 most interesting sets of standards:</p>
+<ul class="simple">
+<li><p>EMC: There are hundreds of standards related to EMC (Electromagnetic Compliance: radio emissions and static discharge), however only a few are relevant to a low-voltage musical instrument like Tiliqua.</p></li>
+<li><p>RoHS: Restrictions on Hazardous Substances - this means that we are not using any nasty chemicals or leaded solder for example. Usually no testing is required to meet this, you just collect documentation for every single component and assembly step of your product and make sure that each part meets RoHS.</p></li>
+</ul>
+<p>If you go to a test lab they will tell you exactly which standards are relevant to your product. For something like a Eurorack Module, it’s the emissions requirements (radiated and tolerated radio emissions) and ESD immunity (simulated sparks from fingers) that are the most challenging.</p>
+</section>
+<section id="the-setup">
+<h2>The Setup<a class="headerlink" href="#the-setup" title="Link to this heading"></a></h2>
+<section id="example-system">
+<h3>Example system<a class="headerlink" href="#example-system" title="Link to this heading"></a></h3>
+<p>At a test lab, you are expected to bring a self-contained test system with your product in use. This means in the end it is not just your Eurorack module that must meet EMC, but the entire system, including the mains cable!</p>
+<p>For Tiliqua’s testing I put together a small system like this, including not just the Tiliqua but also a screen module, display cable, headphone interface and so on:</p>
+<figure class="align-default" id="id1">
+<img alt="../_images/headphone_cable.jpg" src="../_images/headphone_cable.jpg" />
+<figcaption>
+<p><span class="caption-text">Small example system with headphones and mains adapter in the professional test lab.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The other modules, mains adapter, case, and DC-DC converters inside the case will all affect the test result. So, if you’re going to a test lab for the first time, best to bring spares to swap out for each part.</p>
+</section>
+<section id="pre-test-chamber">
+<h3>Pre-test chamber<a class="headerlink" href="#pre-test-chamber" title="Link to this heading"></a></h3>
+<p>Time at a test lab can be expensive. To save time and money, I built a small EMC test chamber using a slighty modified version of the <a class="reference external" href="https://essentialscrap.com/tem_cell/">open-source design you’ll find here</a>. Here’s a picture of my build:</p>
+<figure class="align-default" id="id2">
+<img alt="../_images/chamber.jpg" src="../_images/chamber.jpg" />
+<figcaption>
+<p><span class="caption-text">Homebrew TEM cell with TinySA pro and example system inside it.</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The chamber is called a “TEM cell”, and you can visualize it like an oversized transmission line - a huge coax cable, which you can put your device into to take broadband measurements. A chamber like this is even allowed as an official measurement method (if you get a much more expensive and calibrated one!).</p>
+</section>
+<section id="spectrum-analyzer">
+<h3>Spectrum Analyzer<a class="headerlink" href="#spectrum-analyzer" title="Link to this heading"></a></h3>
+<p>For a cheap spectrum analyzer, I decided to use a TinySA Pro.</p>
+<a class="reference internal image-reference" href="../_images/tinysa.jpg"><img alt="../_images/tinysa.jpg" src="../_images/tinysa.jpg" style="width: 400px;" /></a>
+<p>With a TEM cell, there are tables you can use to convert measurements from a cell like this into (rough) far-field measurements, to get an idea of whether you would pass the ‘real’ test or not. You can find lots of details in <a class="reference external" href="https://github.com/PetteriAimonen/tem-cell/tree/main">Petteri Aimonen’s repository</a>.</p>
+<p>In my case, I used the TinySA <a class="reference external" href="https://github.com/PetteriAimonen/tem-cell/blob/main/Model_L500mm_W350mm_H200mm/TinySAUltra_Preset.prs">preset found here</a> to check my own measurements against the rough EMC standard thresholds. This results in a nice red ‘fail line’ that is helpful to identify the problematic areas (you can see the red line in the photo above).</p>
+<p>Note: I discovered the preset above requires firmware version v1.4104 to work properly, you might want to downgrade to that firmware version in order to use the preset</p>
+</section>
+<section id="dodgy-sniffer-probe">
+<h3>Dodgy sniffer probe<a class="headerlink" href="#dodgy-sniffer-probe" title="Link to this heading"></a></h3>
+<p>To help localize the source of radio noise, I put together a super-dodgy sniffer probe using a couple of enamel wire loops:</p>
+<a class="reference internal image-reference" href="../_images/probe.jpg"><img alt="../_images/probe.jpg" src="../_images/probe.jpg" style="width: 400px;" /></a>
+<p>In the end, this probe did not end up being very useful, it worked, but often seemed to point at an area of the board that had nothing to do with the source of the noise. So I’d strongly lean toward just using a TEM cell, the sniffer probe did not help much.</p>
+</section>
+<section id="lisn">
+<h3>LISN<a class="headerlink" href="#lisn" title="Link to this heading"></a></h3>
+<p>For measuring conducted noise (noise travelling back up the eurorack power cable), I built a small LISN (line impedance stabilization network) which is used to measure the amount of conducted noise (i.e emitted on the power supply cables). You can build one yourself following the <a class="reference external" href="https://github.com/bvernoux/EMC_5uH_LISN">open-source design found here</a>. It looks like this:</p>
+<a class="reference internal image-reference" href="../_images/lisn.jpg"><img alt="../_images/lisn.jpg" src="../_images/lisn.jpg" style="width: 800px;" /></a>
+</section>
+</section>
+<section id="pre-testing-findings">
+<h2>Pre-testing: Findings<a class="headerlink" href="#pre-testing-findings" title="Link to this heading"></a></h2>
+<section id="fail">
+<h3>Fail!<a class="headerlink" href="#fail" title="Link to this heading"></a></h3>
+<p>On first measuring Tiliqua R2, things did not look so great. In the TEM cell, radiated emissions looked like this:</p>
+<img alt="../_images/r2_bootloader_850khz.png" src="../_images/r2_bootloader_850khz.png" />
+<p>Gross failures, mostly at harmonics of the audio master clock (12.288MHz) and the video master clock (37.4MHz in this case). Conducted emissions with the LISN were not much better:</p>
+<img alt="../_images/r2_lisn_17db.png" src="../_images/r2_lisn_17db.png" />
+<p>For conducted emissions, our limit is roughly -40dBm. As we measure worse than -60dBm with a 17dB attenuation in-line, this is dangerously close to the limit.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In a eurorack system, there is a bus board and mains adapter between our module and the rest of the world, so likely the conducted noise would not be visible at the mains (and we wouldn’t fail at a test lab), but it’s still good to fix this so we don’t conduct power-supply noise over to other modules in the system and degrade their audio performance.</p>
+</div>
+<p>Clearly, some work had to be done. But where to start?</p>
+</section>
+<section id="learning-1-smps-input-filtering">
+<h3>Learning 1: SMPS input filtering<a class="headerlink" href="#learning-1-smps-input-filtering" title="Link to this heading"></a></h3>
+<p>At the low end of our LISN plot, you can see some spikes and a wideband slice of spectrum suspiciously close to the switching frequency of the +5V switchmode regulator.</p>
+<p>To address this, I added some extra input filtering on the +12V ingress, and then completely re-routed the entire SMPS section, using more polygons and being careful to keep all paths low-inductance. Here’s a comparison of the routing on R2 vs. R4 in this section:</p>
+<figure class="align-default" id="id3">
+<img alt="../_images/routing_pwr_r2_r4.jpg" src="../_images/routing_pwr_r2_r4.jpg" />
+<figcaption>
+<p><span class="caption-text">Left: old routing (R2). Right: new routing (R4)</span><a class="headerlink" href="#id3" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>This made quite a dramatic difference. After this change, the conducted noise looks like this (peaks are around 20dB lower than before!):</p>
+<img alt="../_images/r4_lisn_17db.png" src="../_images/r4_lisn_17db.png" />
+</section>
+<section id="learning-2-fpga-drive-strengths-series-resistors">
+<h3>Learning 2: FPGA drive strengths, series resistors<a class="headerlink" href="#learning-2-fpga-drive-strengths-series-resistors" title="Link to this heading"></a></h3>
+<p>In our initial radiated emissions plot, at various harmonics of 12.288MHz (audio master clock) and of 37.1MHz (video master clock), you can notice a bunch of emissions.</p>
+<p>To address these, I tried to reduce the FPGA pad drive strength as follows:</p>
+<figure class="align-default" id="id4">
+<img alt="../_images/drive_strength.jpg" src="../_images/drive_strength.jpg" />
+<figcaption>
+<p><span class="caption-text">Reducing pad drive strength in Amaranth platform declaration.</span><a class="headerlink" href="#id4" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>This improved things, but we were still way over the limit. So on Tiliqua R3 I tried adding some extra series resistors on the audio clock/data lines for reduced slew rate:</p>
+<figure class="align-default" id="id5">
+<img alt="../_images/series_r.jpg" src="../_images/series_r.jpg" />
+<figcaption>
+<p><span class="caption-text">Series 33R resistors on audio clock/data lines.</span><a class="headerlink" href="#id5" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>These 2 changes got us <em>almost</em> under the limit line. But almost = risky. More work was needed.</p>
+</section>
+<section id="learning-3-split-ground-planes">
+<h3>Learning 3: Split ground planes<a class="headerlink" href="#learning-3-split-ground-planes" title="Link to this heading"></a></h3>
+<p>Tiliqua’s audio board uses split ground planes - that is, the analog and digital grounds are isolated with inductors. This is recommended in the CODEC datasheet, however there is some disagreement in the engineering community as to when it harms products vs. when it helps them.</p>
+<p>One disadvantage of this approach is that it can negatively impact EMC - if anything couples to the isolated ground plane, it can resonate as an antenna. Turns out, this was exactly what was causing most of the emissions at 12.288MHz harmonics (master audio clock).</p>
+<p>As soon as I shorted the isolated analog ground plane to Tiliqua’s metal binding stubs:</p>
+<a class="reference internal image-reference" href="../_images/tiliqua_back_arrow.png"><img alt="../_images/tiliqua_back_arrow.png" src="../_images/tiliqua_back_arrow.png" style="width: 800px;" /></a>
+<a class="reference internal image-reference" href="../_images/tiliqua_stub_bridge.png"><img alt="../_images/tiliqua_stub_bridge.png" src="../_images/tiliqua_stub_bridge.png" style="width: 400px;" /></a>
+<p>The emissions from 12.288MHz harmonics got almost completely squashed! Of course, I think performed a lot of testing to make sure the audio quality did not suffer, and suprisingly it made no difference. So this change was here to stay.</p>
+</section>
+<section id="learning-4-spread-spectrum">
+<h3>Learning 4: Spread Spectrum<a class="headerlink" href="#learning-4-spread-spectrum" title="Link to this heading"></a></h3>
+<p>Haunted by the above lessons and to make <em>absolutely</em> sure we would pass in the real test lab, I decided to add <em>another</em> EMC mitigation to Tiliqua R4 - an external spread-spectrum PLL. This allows the FPGA to have clocks which are modulated by some small percent (say 0.1% to 1% or so) at a low frequency (30kHz in our case). The consequence is that the energy in our harmonics is ‘spread out’ across the band, reducing the peak amplitude.</p>
+<p>To demonstrate this effect, here is 2 captures, Tiliqua R4 with 2 different bitstreams, one configured with spread-spectrum at 0.1% and one with spread-spectrum at 1%:</p>
+<figure class="align-default" id="id6">
+<img alt="../_images/r4_main_macro_osc_374mhz_0p1percssc.png" src="../_images/r4_main_macro_osc_374mhz_0p1percssc.png" />
+<figcaption>
+<p><span class="caption-text">10th harmonic of video master clock with 0.1% spread-spectrum</span><a class="headerlink" href="#id6" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id7">
+<img alt="../_images/r4_main_macro_osc_374mhz_1percssc.png" src="../_images/r4_main_macro_osc_374mhz_1percssc.png" />
+<figcaption>
+<p><span class="caption-text">10th harmonic of video master clock at 1% spread-spectrum</span><a class="headerlink" href="#id7" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>It’s not a magic bullet, but definitely makes a difference. Here you see a reduction in the peak amplitude of around 10dB.</p>
+<p>This is a feature supported internally by some modern FPGA families, but the ECP5 does not have this feature (nor does any FPGA supported by the open-source FPGA tool flow, as far as we know). So we are essentially relying on the ability of the ECP5’s <em>internal</em> PLL to lock onto a slowly frequency-modulating <em>external</em> PLL. In theory, this should depend on the ECP5 PLL’s loop bandwidth as to what modulation depth should work, which is unfortunately undocumented. Fortunately, this arrangement seems to work fine in my testing.</p>
+</section>
+<section id="distraction-si5351-driver-and-dynamic-clocking">
+<h3>Distraction: SI5351 Driver and Dynamic Clocking<a class="headerlink" href="#distraction-si5351-driver-and-dynamic-clocking" title="Link to this heading"></a></h3>
+<p>EMC was not the only reason I decided to add an external PLL, there are 2 more reasons this made a lot of sense for Tiliqua:</p>
+<ul class="simple">
+<li><p>The ECP5-25 only has 2 built-in PLLs. This means we can’t have separate PLLs for USB/RAM/audio/video, and means that we have to sacrifice either the accuracy of the audio or video clocks. Undesirable. An extra external PLL means we don’t have to make this compromise.</p></li>
+<li><p>The ECP5’s internal PLLs cannot be reprogrammed at runtime. This means that the display resolution or audio clocks are fixed after a bitstream has started. With an external PLL, this restriction is lifted. For tiliqua, dynamic resolution switching is a crucial feature, especially as we plan to distribute an optional screen with custom timings. Tiliqua should be able to detect which screen it is attached to and choose its resolution accordingly.</p></li>
+</ul>
+<p>Getting the external PLL to work was not trivial. I had to:</p>
+<ul class="simple">
+<li><p>Make sure the si5351 was routed to the correct ECP5 pins (that is, they can be used as a PLL lock source)</p></li>
+<li><p>Write a driver for the si5351 spread-spectrum capabilities.</p></li>
+<li><p>Rework the Tiliqua clock tree / gateware so that the asynchronous external clocks generate internal resets and can drive internal signals appropriately.</p></li>
+</ul>
+<p>The si5351 Rust driver (and test cases I added) was based on an open-source driver that I heavily modified such that it can support spread-spectrum configuration and more fine-grained divider settings. You can find my implementation <a class="reference external" href="https://github.com/apfaudio/tiliqua/pull/87">here</a> (it was based on this open source driver that had no spread-spectrum support and no test cases).</p>
+<p>I won’t go into more details here, but suffice it to say, if you build a bitstream for Tiliqua R4 now, all this is transparent to you, and you’ll see a nice printout of the resulting clock tree:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>┌─────────────<span class="o">[</span>tiliqua-mobo<span class="o">]</span>──────────────────────────────<span class="o">[</span>soldiercrab<span class="o">]</span>────────────┐
+│<span class="w">                                          </span>┊<span class="o">[</span>48MHz<span class="w"> </span>OSC<span class="o">]</span><span class="w">                            </span>│
+│<span class="w">                                          </span>┊└─&gt;<span class="o">[</span>ECP5<span class="w"> </span>PLL<span class="o">]</span>─┐<span class="w">                        </span>│
+│<span class="w">                                          </span>┊<span class="w">              </span>├&gt;<span class="o">[</span>sync<span class="o">]</span><span class="w">     </span><span class="m">60</span>.0000<span class="w"> </span>MHz<span class="w"> </span>│
+│<span class="w">                                          </span>┊<span class="w">              </span>├&gt;<span class="o">[</span>usb<span class="o">]</span><span class="w">      </span><span class="m">60</span>.0000<span class="w"> </span>MHz<span class="w"> </span>│
+│<span class="w">                                          </span>┊<span class="w">              </span>└&gt;<span class="o">[</span>fast<span class="o">]</span><span class="w">    </span><span class="m">120</span>.0000<span class="w"> </span>MHz<span class="w"> </span>│
+│<span class="w"> </span><span class="o">[</span>25MHz<span class="w"> </span>OSC<span class="o">]</span>─┐<span class="w">                            </span>┊<span class="w">                                       </span>│
+│<span class="w">             </span>└&gt;<span class="o">[</span>si5351<span class="w"> </span>PLL<span class="o">]</span>─┐<span class="w">             </span>┊<span class="w">                                       </span>│
+│<span class="w">                </span><span class="o">(</span>dynamic<span class="o">)</span><span class="w">   </span>├&gt;<span class="o">[</span>expll_clk0<span class="o">]</span>────────────────&gt;<span class="o">[</span>audio<span class="o">]</span><span class="w">    </span><span class="m">12</span>.2880<span class="w"> </span>MHz<span class="w"> </span>│
+│<span class="w">                            </span>└&gt;<span class="o">[</span>expll_clk1<span class="o">]</span>─&gt;<span class="o">[</span>ECP5<span class="w"> </span>PLL<span class="o">]</span>──┐<span class="w">                         </span>│
+│<span class="w">                                          </span>┊<span class="w">             </span>├─&gt;<span class="o">[</span>dvi<span class="o">]</span><span class="w">      </span><span class="m">74</span>.2500<span class="w"> </span>MHz<span class="w"> </span>│
+│<span class="w">                                          </span>┊<span class="w">             </span>└─&gt;<span class="o">[</span>dvi5x<span class="o">]</span><span class="w">   </span><span class="m">371</span>.2500<span class="w"> </span>MHz<span class="w"> </span>│
+└──────────────────────────────────────────────────────────────────────────────────┘
+</pre></div>
+</div>
+<p>This gives you a picture of how all the oscillators and PLLs both inside the FPGA SoM (soldiercrab) and on the Tiliqua motherboard fit together. Most clocks go through an internal ECP5 PLL, except the audio clock, which is routed straight to the fabric.</p>
+<p>The dynamic clock tree settings get saved into the bitstream manifest (describing user bitstreams), so the bootloader can dynamically configure the external PLL based on what any particular user bitstream wants.</p>
+</section>
+</section>
+<section id="lab-testing-findings">
+<h2>Lab-testing: Findings<a class="headerlink" href="#lab-testing-findings" title="Link to this heading"></a></h2>
+<p>To see the effect of applying all the above changes, here’s a control (empty chamber), before (R2 hardware) and after (R4 hardware) comparison:</p>
+<figure class="align-default" id="id8">
+<img alt="../_images/control_100khz.png" src="../_images/control_100khz.png" />
+<figcaption>
+<p><span class="caption-text">Control (empty chamber)</span><a class="headerlink" href="#id8" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id9">
+<img alt="../_images/r2_bootloader_100khz.png" src="../_images/r2_bootloader_100khz.png" />
+<figcaption>
+<p><span class="caption-text">Tiliqua R2 (none of the above learnings applied)</span><a class="headerlink" href="#id9" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<figure class="align-default" id="id10">
+<img alt="../_images/r4_ea8c_100khz.png" src="../_images/r4_ea8c_100khz.png" />
+<figcaption>
+<p><span class="caption-text">Tiliqua R4 (all of the above learnings applied)</span><a class="headerlink" href="#id10" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>Interestingly, in these plots it is the 300-400MHz region that seems the ‘worst’, however, as we’ll see later, in the real test lab this region was not problematic at all and in fact the 100-200MHz region was more critical, likely due to coupling into the long headphone cable.</p>
+<p>Anyway, after all this effort, it was finally time to take Tiliqua to an EMC test lab! To spoil the result, we passed! But it was not without hiccups.</p>
+<section id="learning-5-long-cables">
+<h3>Learning 5: Long cables<a class="headerlink" href="#learning-5-long-cables" title="Link to this heading"></a></h3>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../_images/long_cable2.jpg"><img alt="../_images/long_cable2.jpg" src="../_images/long_cable2.jpg" style="width: 300px;" /></a>
+</figure>
+<p>One thing that surprised us was how much the headphone cables going into our Eurorack system were affecting the results. It did not bring us over the limit lines (fortunately), but shortening or lengthening the headphone cable made quite a difference to the radiated emissions.</p>
+<p>So, be careful with this. In theory, your device should work with any sane length of headphone cable, but if you want to be more certain that things will go well, it might be safer to use something shorter than the 3 meter headphone cable I was using. 3 meters is right in that 100-200MHz resonance where we were close to failing with EMC.</p>
+<p>Additionally, long cables are impossible to simulate with a small test chamber (or custom TEM cell like we have).</p>
+</section>
+<section id="learning-6-esd-is-no-joke">
+<h3>Learning 6: ESD is no joke<a class="headerlink" href="#learning-6-esd-is-no-joke" title="Link to this heading"></a></h3>
+<p>Part of CE testing involves zapping the DUT with an ESD gun. I was especially scared of this given Tiliqua has touch-sensitive jacks where we have the pins of a touch IC exposed to the outside world. Fortunately, I followed Cypress’ recommendations of having a large series resistance to the touch pads, which is supposed to mitigate any ESD frying the touch IC. Normally, adding TVS diodes is a no-brainer for this, but since they add extra capacitance, my fear was that they would negatively effect the touch sensing capabilities.</p>
+<p>Surprisingly, however, I discovered that zapping the touchpads with extremely high voltage (i.e. a bit above the standard), the touch sensors would momentarily stop working. After some investigation, I discovered the zap was actually erasing the NVM (non-volatile memory) in the touch IC, the Tiliqua firmware was then detecting this and reprogramming the NVM.</p>
+<p>So: be prepared. Add watchdogs to your code. ESD is no joke.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="../_images/touch_route.png"><img alt="../_images/touch_route.png" src="../_images/touch_route.png" style="width: 400px;" /></a>
+</figure>
+<p><em>Routing of one of the touch pads through a series resistor</em></p>
+</section>
+<section id="learning-7-tem-cell-vs-real-far-field-measurements">
+<h3>Learning 7: TEM cell vs. real far-field measurements<a class="headerlink" href="#learning-7-tem-cell-vs-real-far-field-measurements" title="Link to this heading"></a></h3>
+<p>Because all our pre-testing was in a custom-built TEM cell, I found it interesting to compare the spectrum from our “super-cheap” option with the real thing. In general, we noticed the ‘real’ measurements were about 5-10dB lower in the 300MHz+ region than the TEM cell, but in the 100-200MHz region, the real measurements were about 5-10dB higher than the TEM cell (!). I think the reasons are:</p>
+<ul class="simple">
+<li><p>The long headphone cable, which couldn’t be contained inside the TEM cell.</p></li>
+<li><p>The Eurorack case is a bit too big for this size of TEM cell. Ideally our chamber would be larger.</p></li>
+<li><p>Imperfections in the TEM cell construction itself.</p></li>
+</ul>
+<p><em>(Note: I am not sure if I am allowed to publish the lab measurements here, hence the quantitative description of the differences in plots)</em></p>
+</section>
+</section>
+<section id="emc-conclusion">
+<h2>EMC: Conclusion<a class="headerlink" href="#emc-conclusion" title="Link to this heading"></a></h2>
+<p>Even though our cheap pre-compliance chamber was not so accurate, it allowed us to figure out which parts of the design needed changes early and squashed the need for doing a second visit.</p>
+<p>Tiliqua R4 is now, to our knowledge, EMC compliant. Although this was a LOT of effort, we are confident that all the changes will result in a more robust instrument that stands the test of time, and doesn’t interfere with anything else in your rack.</p>
+</section>
+<section id="bonus-new-amaranth-cores">
+<h2>Bonus: New Amaranth Cores!<a class="headerlink" href="#bonus-new-amaranth-cores" title="Link to this heading"></a></h2>
+<p>We’re happy to report that we’ve finally finished porting <em>all remaining verilog</em> to Amaranth! This will hopefully decrease the learning curve when getting started with this project. Specifically, we rewrote the following:</p>
+<ul class="simple">
+<li><p>The audio I2S controller gateware and online sample calibration module <a class="reference external" href="https://github.com/apfaudio/tiliqua/pull/82">(link to PR 82)</a></p></li>
+<li><p>The I2C controller gateware for all I2C peripherals on the audio board (LEDs, jack detect, touch detect, codec init) <a class="reference external" href="https://github.com/apfaudio/tiliqua/pull/72">(link to PR)</a></p></li>
+<li><p>The display serializer (tmds) and video generator <a class="reference external" href="https://github.com/apfaudio/tiliqua/pull/89">(link to PR 89)</a></p></li>
+</ul>
+<p>As a result of this rewrite we’re also using a few percent less area of the ECP5. So more space for other things!</p>
+<p>Note: Our CPU is as of now the only non-amaranth component (SpinalHDL), however VexRiscv has proven faster and has better area usage than any other core we could find. For this reason, we plan to stick to VexRiscv for the CPU (and perhaps VexiiRiscv in a few monts).</p>
+</section>
+<section id="bonus-crowd-supply-trade-tariffs">
+<h2>Bonus: Crowd Supply &amp; Trade Tariffs<a class="headerlink" href="#bonus-crowd-supply-trade-tariffs" title="Link to this heading"></a></h2>
+<p>Obviously everyone in our industry is trying to figure out what to do with the ongoing trade war. For us, our plan was always to launch through CrowdSupply. But with these tariffs, this would imply an undesired price hike. We’re currently talking to Crowd Supply to see what our options are here.</p>
+<p>If we launch through Crowd Supply, EU customers (and me of course) would have to eat the cost of US tariffs and then potentially any reciprocal tariffs the EU may set up - which makes zero sense as this is a project centered in the EU. I’m currently working hard to figure out what the best path forward is here and will provide an update once I have more information.</p>
+</section>
+<section id="acknowledgements-further-reading">
+<h2>Acknowledgements &amp; further reading<a class="headerlink" href="#acknowledgements-further-reading" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Massive thanks to NLnet for supporting this project (<a class="reference internal" href="../foss_funding.html"><span class="doc">Funding &amp; Open Source</span></a>).</p></li>
+<li><p>Petteri Aimonen’s <a class="reference external" href="https://essentialscrap.com/tem_cell/">open-source TEM cell design</a> saved loads of time and worked great.</p></li>
+<li><p>bvernaux’ <a class="reference external" href="https://github.com/bvernoux/EMC_5uH_LISN">open-source LISN design</a> saved lots of time and worked great.</p></li>
+<li><p>Mutable Instruments also has a <a class="reference external" href="https://pichenettes.github.io/mutable-instruments-documentation/tech_notes/emc_certification_process/">nice practical overview</a> of the steps involved in EMC certification of Eurorack modules.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Development Blog" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

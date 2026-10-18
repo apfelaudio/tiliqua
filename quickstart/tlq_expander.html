@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expander / Euro-PMOD [TLQ-EXPANDER] &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Soldiercrab SoM [TLQ-SOLDIERCRAB]" href="tlq_soldiercrab.html" />
+    <link rel="prev" title="Tiliqua Screen [TLQ-SCREEN]" href="tlq_screen.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#use-cases">Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cables">Cables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-to-tiliqua">Connecting to Tiliqua</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hardware-block-diagram">Hardware Block Diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#instructions-for-safe-use">Instructions for Safe Use</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/quickstart/tlq_expander.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="expander-euro-pmod-tlq-expander">
+<h1>Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]<a class="headerlink" href="#expander-euro-pmod-tlq-expander" title="Link to this heading"></a></h1>
+<p>A eurorack-friendly audio frontend compatible with many FPGA boards (including Tiliqua), based on the AK4619VN audio CODEC</p>
+<figure class="align-default">
+<img alt="../_images/pmod_photos.jpeg" src="../_images/pmod_photos.jpeg" />
+</figure>
+<section id="use-cases">
+<h2>Use Cases<a class="headerlink" href="#use-cases" title="Link to this heading"></a></h2>
+<p>This board needs a <code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code> or any FPGA board that has a PMOD port in order to do something. Some examples of how you can use it:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><strong>Expander for TLQ-MODULE</strong></dt><dd><ul>
+<li><p>Add more audio channels to Tiliqua, by plugging it into either the <code class="docutils literal notranslate"><span class="pre">ex0</span></code> or <code class="docutils literal notranslate"><span class="pre">ex1</span></code> PMOD expansion ports. An example of instantiating extra audio channels inside Tiliqua bitstreams can be found in the <a class="reference internal" href="../examples/no_soc_examples.html#top.dsp.top.TripleMirror" title="top.dsp.top.TripleMirror"><code class="xref py py-class docutils literal notranslate"><span class="pre">TRIPLE-MIRROR</span></code></a> example project.</p></li>
+<li><p><strong>NEW:</strong> I now have an experimental build called <code class="docutils literal notranslate"><span class="pre">xbeam-ex</span></code> which is similar to <code class="docutils literal notranslate"><span class="pre">xbeam</span></code>, but exposes a 12in/12out USB interface, expecting 1 or 2 expanders connected. <a class="reference external" href="https://github.com/apfaudio/tiliqua/issues/155">See here for detailed instructions</a> !</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><strong>Audio IO for different FPGA board</strong></dt><dd><ul>
+<li><p><strong>For Amaranth:</strong> I would suggest re-using the <code class="docutils literal notranslate"><span class="pre">EurorackPmod</span></code> component in <code class="docutils literal notranslate"><span class="pre">src/tiliqua/periph/eurorack_pmod.py</span></code>. It has drivers for every chip on this board. You can use it in the same way as the <a class="reference internal" href="../examples/no_soc_examples.html#top.dsp.top.TripleMirror" title="top.dsp.top.TripleMirror"><code class="xref py py-class docutils literal notranslate"><span class="pre">TRIPLE-MIRROR</span></code></a> example linked above, on any FPGA board.</p></li>
+<li><p><strong>For Verilog:</strong> take a look at the <a class="reference external" href="https://github.com/apfaudio/eurorack-pmod">eurorack-pmod repository</a>, where I provide some DSP examples for different FPGA boards. <em>Note: at this time, the verilog repo is a bit out of date and refers to R3.3, even though I am shipping R3.5. The hardware is fully backward compatible excluding the touch sensing, which had its mapping changed. So if you compile bitstreams for R3.3 in that repository, they will also work on R3.5, except the touch sensing, which I am happy to update if there is interest.</em></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+<section id="cables">
+<h2>Cables<a class="headerlink" href="#cables" title="Link to this heading"></a></h2>
+<p>In the box, you will find 2 cables:</p>
+<ul class="simple">
+<li><p>One for the +/- 12V power supply (standard 10-pin to 16-pin Eurorack cable, brown is -12V).</p></li>
+<li><p>One male-to-female PMOD expansion ribbon cable.</p></li>
+</ul>
+<p>Both of these need to be connected for the board to work. The board uses 3.3V from the PMOD input to power some internal digital circuitry, but all the analog circuitry is powered from the +/- 12V rails (including a 3.3V LDO that powers the analog half of the audio codec, to reduce noise coupling from the digital side).</p>
+</section>
+<section id="connecting-to-tiliqua">
+<h2>Connecting to Tiliqua<a class="headerlink" href="#connecting-to-tiliqua" title="Link to this heading"></a></h2>
+<p>To use this board on <code class="docutils literal notranslate"><span class="pre">ex0</span></code> or <code class="docutils literal notranslate"><span class="pre">ex1</span></code>, make sure your system is powered off. Both <code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code> and <code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code> should have their own Eurorack power cables connected. Then, using the PMOD ribbon cable, connect the <code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code> to one of the Tiliqua expansion ports, <strong>making sure sure the +3.3V line is on the correct side of the expander and the expansion port!!</strong>.</p>
+</section>
+<section id="hardware-block-diagram">
+<h2>Hardware Block Diagram<a class="headerlink" href="#hardware-block-diagram" title="Link to this heading"></a></h2>
+<p>For deeper details (and schematics) of the hardware, see the <a class="reference external" href="https://github.com/apfaudio/eurorack-pmod">eurorack-pmod README</a>.</p>
+<figure class="align-default">
+<img alt="../_images/pmod_block.jpeg" src="../_images/pmod_block.jpeg" />
+</figure>
+</section>
+<section id="instructions-for-safe-use">
+<h2>Instructions for Safe Use<a class="headerlink" href="#instructions-for-safe-use" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Do not supply power to the product through any receptacle except the main +/- 12V power input and +3.3v PMOD power pins. The incorrect usage or connection of unapproved devices to any receptacle may affect compliance or result in damage to the unit and invalidate the warranty.</p></li>
+<li><p>Use with the ribbon cables connected to any hardware other than TLQ-MODULE, or at clock frequencies outside those supported by manufacturer-supplied TLQ-MODULE gateware is to be done at your own risk, in a controlled laboratory environment. Any external FPGA board, case, power supply, cables, or modules shall comply with relevant regulations and standards applicable in the country of intended use.</p></li>
+<li><p>The product shall only be used in a Eurorack system, providing a standard Eurorack power supply not exceeding +/- 12V, and at least 500mA.</p></li>
+<li><p>To reach electromagnetic compatibility in a Eurorack system, the product shall be mounted securely in a fully enclosed housing made of conductive material (metal). Close all unused spaces with blind panels. Keep all cables, power or patch cables as short as possible.</p></li>
+<li><p>The product should only be operated in a well ventilated case and should not be covered, except by the Eurorack case itself or other module panels. The product is designed for reliable operation at normal ambient room temperature. Do not expose the module to water, moisture or bring the circuit boards in contact with any conductive materials.</p></li>
+<li><p>Take care whilst handling to avoid mechanical or electrical damage. When the product is powered on, do not touch any of the circuit boards behind the front panel. When the product is outside a case, only handle it unpowered and by the edges to minimize the risk of damage from electrostatic discharge.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tlq_screen.html" class="btn btn-neutral float-left" title="Tiliqua Screen [TLQ-SCREEN]" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tlq_soldiercrab.html" class="btn btn-neutral float-right" title="Soldiercrab SoM [TLQ-SOLDIERCRAB]" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tiliqua Module [TLQ-MODULE] &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tiliqua Screen [TLQ-SCREEN]" href="tlq_screen.html" />
+    <link rel="prev" title="Tiliqua Project" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-power">Connecting Power</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-a-display">Connecting a Display</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bootloader">Bootloader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#menu-help-system">Menu / Help system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-bitstreams">Using Bitstreams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#jack-leds">Jack LEDs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#touch-sensors">Touch Sensors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#usb-the-dbg-and-usb2-ports">USB: the <code class="docutils literal notranslate"><span class="pre">dbg</span></code> and <code class="docutils literal notranslate"><span class="pre">usb2</span></code> ports</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#flashing-updating-bitstreams">Flashing/Updating Bitstreams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#calibration">Calibration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hardware-block-diagram">Hardware Block Diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#instructions-for-safe-use">Instructions for Safe Use</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/quickstart/tlq_module.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tiliqua-module-tlq-module">
+<h1>Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]<a class="headerlink" href="#tiliqua-module-tlq-module" title="Link to this heading"></a></h1>
+<p><strong>Tiliqua is shipped with a bunch of example bitstreams already flashed to it. So, to get started, all you need to do is connect the Eurorack +/- 12V ribbon cable, connect a screen, and then switch the Eurorack power on.</strong></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>I recommend <strong>only plugging or unplugging the display, power, or expansion headers while your system is OFF</strong>. All other TRS jacks / USB connectors are fine to hotplug!</p>
+</div>
+<figure class="align-default">
+<img alt="../_images/tiliqua_photos.jpeg" src="../_images/tiliqua_photos.jpeg" />
+</figure>
+<section id="connecting-power">
+<h2>Connecting Power<a class="headerlink" href="#connecting-power" title="Link to this heading"></a></h2>
+<p>To power Tiliqua, you only need to connect the 16-pin Eurorack power input (+/- 12V) which, out of the box, is already attached to Tiliqua in the correct orientation.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Tiliqua comes with a rainbow power cable rather than a boring gray one. The connector is keyed correctly and the BROWN wire is the -12V wire. RED is still closest to -12V like on a standard gray one. Nothing bad will happen if you accidentally connect it backwards (on the 10-pin side), as Tiliqua has input diodes and fuses.</p>
+</div>
+</section>
+<section id="connecting-a-display">
+<h2>Connecting a Display<a class="headerlink" href="#connecting-a-display" title="Link to this heading"></a></h2>
+<p>Any standard monitor or projector (or our <code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code> module) should work fine as a display for Tiliqua. In general, Tiliqua tries to use the native resolution of any attached screen. However, if the native resolution is higher than <code class="docutils literal notranslate"><span class="pre">1280x720p60</span></code>, or no screen is connected at all, we always emit a display signal at <code class="docutils literal notranslate"><span class="pre">1280x720p60</span></code> as a fallback - as the vast majority of screens support this resolution.</p>
+</section>
+<section id="bootloader">
+<h2>Bootloader<a class="headerlink" href="#bootloader" title="Link to this heading"></a></h2>
+<p>After powering on your system, you will be greeted by the bootloader screen:</p>
+<figure class="align-default">
+<img alt="../_images/bootloader_screen.png" src="../_images/bootloader_screen.png" />
+</figure>
+<p>From here, you can use the encoder to select one of 8 slots. As each slot is highlighted, the I/O mapping of each jack and plug is pictured on the right. You will notice some bitstreams have USB, some don’t, some have a display output and others don’t (like the audio-only bitstreams).</p>
+<p>To reboot into a selected bitstream, just press the encoder button. <strong>Once you’re in a bitstream, you can always hold the encoder button down for 3sec (long press) to mute Tiliqua and re-enter the bootloader.</strong></p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At the moment, the screen resolution and/or any screen hotplugs are only detected in the bootloader. This is not a hardware limitation, but it does mean that for now you always need to be in the bootloader to change screen resolutions. The current resolution is displayed at the bottom of the bootloader screen.</p>
+<p>In general, bitstreams will show <code class="docutils literal notranslate"><span class="pre">video:</span> <span class="pre">&lt;match-bootloader&gt;</span></code> if they are able to inherit the resolution automatically detected by the bootloader. If a bitstream only supports a static mode, you will see something like <code class="docutils literal notranslate"><span class="pre">video:</span> <span class="pre">1280x720p60</span></code>. If a bitstream does not have any video output, you will see <code class="docutils literal notranslate"><span class="pre">video:</span> <span class="pre">&lt;none&gt;</span></code>.</p>
+</div>
+</section>
+<section id="menu-help-system">
+<h2>Menu / Help system<a class="headerlink" href="#menu-help-system" title="Link to this heading"></a></h2>
+<p>In theory, each user bitstream could have a completely different UI. For now though, most bitstreams that have a display output and are shipped with Tiliqua follow the same menu UI. That is:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Each bitstream has multiple ‘pages’, where the first page is a ‘HELP’ page.</p></li>
+<li><p>Rotating the encoder allows you to select a different menu option or the current page name.</p></li>
+<li><p>If the current page name is selected, pressing the encoder will toggle between modifying the current page or not, rotating it will switch to a different page.</p></li>
+<li><p>If normal option is selected, pressing the encoder will toggle between modifying the value or not, rotating it will increase or decrease the value.</p></li>
+<li><p>In this way, you can access one of many pages and modify one of many options on each page with the single encoder.</p></li>
+<li><p>If no option is selected for modification and we are not on the help page, the UI will disappear after some time (useful for generating visualizations).</p></li>
+</ul>
+</div></blockquote>
+<figure class="align-default" id="id1">
+<img alt="../_images/xbeam_help.png" src="../_images/xbeam_help.png" />
+<figcaption>
+<p><span class="caption-text">HELP page for XBEAM user bitstream.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="using-bitstreams">
+<h2>Using Bitstreams<a class="headerlink" href="#using-bitstreams" title="Link to this heading"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The instructions here are always for the <strong>latest firmware</strong> - if the version shown at the bottom of the screen for any bitstream is not up-to-date (matching the latest <a class="reference external" href="https://github.com/apfaudio/tiliqua/releases">version number / changelist here</a>), I recommend updating! (instructions below)</p>
+</div>
+<p>Out of the box, Tiliqua ships with the following example bitstreams flashed. Many of them have built-in help pages. Here is a link to some more info on each one:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../examples/soc_examples.html#xbeam"><span class="std std-ref">XBEAM</span></a></p></li>
+<li><p><a class="reference internal" href="../examples/soc_examples.html#polysyn"><span class="std std-ref">POLYSYN</span></a></p></li>
+<li><p><a class="reference internal" href="../examples/soc_examples.html#macro-osc"><span class="std std-ref">MACRO-OSC</span></a></p></li>
+<li><p><a class="reference internal" href="../examples/soc_examples.html#sid"><span class="std std-ref">SID</span></a></p></li>
+<li><p><a class="reference internal" href="../calibration.html"><span class="doc">SELFTEST</span></a></p></li>
+<li><p><a class="reference internal" href="../examples/soc_examples.html#sampler"><span class="std std-ref">SAMPLER</span></a></p></li>
+<li><p><a class="reference internal" href="../examples/no_soc_examples.html#top.dsp.top.PSRAMMultiDiffuser" title="top.dsp.top.PSRAMMultiDiffuser"><code class="xref py py-class docutils literal notranslate"><span class="pre">DSP-MDIFF</span></code></a></p></li>
+<li><p><a class="reference external" href="https://github.com/apfaudio/tiliqua/issues/160">VSYNTH</a> (preview!)</p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The documentation for each bitstream is not quite polished yet, but I hope there is enough material for you to be able to get started with the most important ones.</p>
+</div>
+</section>
+<section id="jack-leds">
+<h2>Jack LEDs<a class="headerlink" href="#jack-leds" title="Link to this heading"></a></h2>
+<p>Normally, the Jack LEDs on each audio jack show the current voltage on the jack. However, whenever you are modifying an option or touching the encoder, the jack LEDs take on a different meaning.</p>
+<p>This is because, in cases where you want to use a bitstream that has a menu system but <strong>don’t have space for a display</strong> (and are extremely dedicated and memorised the menu) it is possible to navigate purely based on the jack LEDs!</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>If jack LED is green: we are selecting a page. The jack LED number (0-7) is the page number.</p></li>
+<li><p>If jack LED is red: we are selecting an option. The jack LED number (0-7) is the option index.</p></li>
+<li><p>If the jack LED is flashing: we are in ‘modify’ mode. If it is not flashing, we are NOT in ‘modify’ mode.</p></li>
+<li><p>The bar graph LEDs around the encoder show the currently selected option’s value on a scale from min (fully green) to max (fully red).</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="touch-sensors">
+<h2>Touch Sensors<a class="headerlink" href="#touch-sensors" title="Link to this heading"></a></h2>
+<p>The capacitive touch sensors on each jack are calibrated when Tiliqua is turned on, and in some bitstreams (like POLYSYN), automatically re-calibrated every time a jack is plugged or unplugged. If you are having issues with ‘ghost’ touches, it’s often worth power cycling tiliqua with nothing patched on the jacks you want to use for touch sensing.</p>
+<section id="usb-the-dbg-and-usb2-ports">
+<h3>USB: the <code class="docutils literal notranslate"><span class="pre">dbg</span></code> and <code class="docutils literal notranslate"><span class="pre">usb2</span></code> ports<a class="headerlink" href="#usb-the-dbg-and-usb2-ports" title="Link to this heading"></a></h3>
+<p>For flashing bitstreams, you want the <code class="docutils literal notranslate"><span class="pre">dbg</span></code> USB port. This is routed to the on-board RP2040. For USB audio or USB device / host usage from bitstreams, you want the <code class="docutils literal notranslate"><span class="pre">usb2</span></code> USB port. This is routed through a ULPI PHY directly to the FPGA fabric.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>If you are having trouble with the ``usb2`` port for USB audio streaming or as a MIDI host</strong>, I have collected some <a class="reference internal" href="../usb_troubleshooting.html"><span class="doc">USB troubleshooting tips here</span></a>.</p>
+</div>
+</section>
+</section>
+<section id="flashing-updating-bitstreams">
+<h2>Flashing/Updating Bitstreams<a class="headerlink" href="#flashing-updating-bitstreams" title="Link to this heading"></a></h2>
+<p>Tiliqua can be updated / flashed in 2 ways:</p>
+<ul class="simple">
+<li><p>Use the <strong>tiliqua-webflash</strong> <a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">(LINK)</a> tool, which works in any Chromium-based browser and allows you to flash bitstream archives to Tiliqua using any OS.</p></li>
+<li><p>Using our <code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">flash</span></code> <strong>command line tool</strong>, which requires setting up the Tiliqua development environment first. More details in <a class="reference internal" href="../install.html"><span class="doc">Setup</span></a>.</p></li>
+</ul>
+<p>With <strong>tiliqua-webflash</strong>, the latest release is always shown - no need to download anything. For command line, you can find the latest <a class="reference external" href="https://github.com/apfaudio/tiliqua/releases">published release here</a>.</p>
+<p>Tiliqua has 9 slots (bootloader + 8 user slots). Generally, you want to keep all of these up-to-date, however, as they are independent, you can have different versions of things in every slot. You’ll find instructions on how to update each slot in the respective flashing tool.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Technical details for the curious!</strong> Tiliqua has 3 persistent memory chips that come pre-flashed out of the box. <strong>Flashing / updating bitstreams only touches the first one.</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>On the ‘Soldiercrab’: one 16MB SPI flash for the FPGA: This one contains the bootloader bitstream and all the user bitstreams, and any saved options.</p></li>
+<li><p>On the ‘Motherboard’:  16MB SPI flash for the RP2040 / debugger: this one contains the debugger firmware used as a bridge between the <code class="docutils literal notranslate"><span class="pre">dbg</span></code> USB port and the FPGA JTAG.</p></li>
+<li><p>On the ‘Audio Board’: one small EEPROM for storing calibration constants, as well as the last entered bitstream used for autoboot. This contains the factory calibration.</p></li>
+</ul>
+</div></blockquote>
+<p><strong>Under the hood</strong>: updating or changing the bootloader bitstream or user bitstreams is performed using an open-source tool called <code class="docutils literal notranslate"><span class="pre">openFPGALoader</span></code>, as Tiliqua shows up as a <code class="docutils literal notranslate"><span class="pre">dirtyJtag</span></code>-compatible debug adapter. Bitstreams for Tiliqua are distributed as <em>Bitstream Archives</em>, which contain firmware and metadata alongside the bitstream itself. For technical details on how this works, see <a class="reference internal" href="../bootloader.html"><span class="doc">Bootloader</span></a>).</p>
+</div>
+</section>
+<section id="calibration">
+<h2>Calibration<a class="headerlink" href="#calibration" title="Link to this heading"></a></h2>
+<p>Tiliqua is shipped with a factory calibration to within 5mV or so. If you want to get even better, you can try to calibrate it yourself by following the calibration sequence here: <a class="reference internal" href="../calibration.html"><span class="doc">Calibration</span></a></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Before you conclude the NCO V/oct calibration is bad, note the calibration currently is only applied in bitstreams that have a menu system as reading the calibration uses a CPU. This limitation will be removed in a future update.</p>
+</div>
+</section>
+<section id="hardware-block-diagram">
+<h2>Hardware Block Diagram<a class="headerlink" href="#hardware-block-diagram" title="Link to this heading"></a></h2>
+<p>For deeper details (and schematics) of the hardware, see <a class="reference internal" href="../hardware_design.html"><span class="doc">Electrical Design</span></a></p>
+<figure class="align-default">
+<img alt="../_images/tiliqua_block.jpeg" src="../_images/tiliqua_block.jpeg" />
+</figure>
+</section>
+<section id="instructions-for-safe-use">
+<h2>Instructions for Safe Use<a class="headerlink" href="#instructions-for-safe-use" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>The product shall only be used in a Eurorack system, providing a standard Eurorack power supply not exceeding +/- 12V, and at least 500mA. Any external case, power supply, cables, or modules shall comply with relevant regulations and standards applicable in the country of intended use.</p></li>
+<li><p>To reach electromagnetic compatibility in a Eurorack system, the product shall be mounted securely in a fully enclosed housing made of conductive material (metal). Close all unused spaces with blind panels. Keep all cables, power or patch cables as short as possible.</p></li>
+<li><p>The product should only be operated in a well ventilated case and should not be covered, except by the Eurorack case itself or other module panels. The product is designed for reliable operation at normal ambient room temperature. Do not expose the module to water, moisture or bring the circuit boards in contact with any conductive materials.</p></li>
+<li><p>Take care whilst handling to avoid mechanical or electrical damage. When the product is powered on, do not touch any of the circuit boards behind the front panel. When the product is outside a case, only handle it unpowered and by the edges to minimize the risk of damage from electrostatic discharge.</p></li>
+<li><p>Do not supply power to the product through any receptacle except the main +/- 12V power input. Any external devices not sharing the product’s main power bus (e.g. USB host devices or externally powered displays) should be disconnected when the product is unpowered. The incorrect usage or connection of unapproved devices to any receptacle may affect compliance or result in damage to the unit and invalidate the warranty.</p></li>
+<li><p>Use of any firmware, gateware or clock frequencies not explicitly provided by the manufacturer is to be done at your own risk, in a controlled laboratory environment, with respect to relevant regulations and standards applicable in the country of intended use.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Tiliqua Project" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tlq_screen.html" class="btn btn-neutral float-right" title="Tiliqua Screen [TLQ-SCREEN]" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

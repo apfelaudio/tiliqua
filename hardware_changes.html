@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelist &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Community" href="community.html" />
+    <link rel="prev" title="Electrical Design" href="hardware_design.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Tiliqua
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelist</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#tiliqua-r5-1">Tiliqua R5.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#r5-1-changes-compared-to-r4">R5.1 changes (compared to R4)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tiliqua-r4">Tiliqua R4</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#r4-changes-compared-to-r3">R4 changes (compared to R3)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tiliqua-r3">Tiliqua R3</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#r3-changes-compared-to-r2">R3 changes (compared to R2)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tiliqua-r2">Tiliqua R2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tiliqua-r1">Tiliqua R1</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Changelist</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/hardware_changes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="changelist">
+<h1>Changelist<a class="headerlink" href="#changelist" title="Link to this heading"></a></h1>
+<p>There were some Tiliqua hardware released before the production R5 version. This page serves as a brief history of the differences between these versions, as well as any changes in post-production batches.</p>
+<section id="tiliqua-r5-1">
+<h2>Tiliqua R5.1<a class="headerlink" href="#tiliqua-r5-1" title="Link to this heading"></a></h2>
+<p>First production hardware release.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>SoldierCrab R3</strong> FPGA SoM (LFE5U-25F, 1.8V 32MByte oSPIRAM)</p></li>
+<li><p><strong>Tiliqua R5</strong> motherboard and front panel.</p></li>
+<li><p><strong>eurorack-pmod R3.5</strong> audio interface.</p></li>
+</ul>
+</div></blockquote>
+<section id="r5-1-changes-compared-to-r4">
+<h3>R5.1 changes (compared to R4)<a class="headerlink" href="#r5-1-changes-compared-to-r4" title="Link to this heading"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>Add DVI redriver IC between ECP5 and video port (PI3HDX511) - improves signal integrity with longer cables, improves EMC performance.</p></li>
+<li><p>Add extra I2C switch between GPDI and internal I2C bus, so the GPDI level shifter can be decoupled from the internal I2C bus. Remove <code class="docutils literal notranslate"><span class="pre">MOBO_LED_EN</span></code> and re-use the pin for this switch:<code class="docutils literal notranslate"><span class="pre">GPDI_DDC_EN</span></code>.</p></li>
+<li><p>Bump +12V ingress fuse from 350mA to 500mA to support the extra redriver current draw.</p></li>
+<li><p>Swap +3V3 supply from an LDO to an SMPS to reduce power dissipation.</p></li>
+<li><p>Update audio board from R3.3 to R3.5, which has improve DC tracking, noise, and soft-mute performance.</p></li>
+<li><p>Add 33R series resistors on all expansion header pins.</p></li>
+<li><p>Add more ESD protection to USB1/USB2 pins.</p></li>
+<li><p>Pinswaps: see <code class="docutils literal notranslate"><span class="pre">tiliqua_platform.py</span></code> in the main repository.</p></li>
+<li><p>ECOs: Added 909R resistor in parallel with C34 to prevent backward leakage current across U9. All production units have this ECO applied.</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+<section id="tiliqua-r4">
+<h2>Tiliqua R4<a class="headerlink" href="#tiliqua-r4" title="Link to this heading"></a></h2>
+<p>Production prototype that some beta testers have. Only 15 were produced.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>SoldierCrab R3</strong> FPGA SoM (LFE5U-25F, 1.8V 32MByte oSPIRAM)</p></li>
+<li><p><strong>Tiliqua R4</strong> motherboard and front panel.</p></li>
+<li><p><strong>eurorack-pmod R3.3</strong> audio interface.</p></li>
+</ul>
+</div></blockquote>
+<section id="r4-changes-compared-to-r3">
+<h3>R4 changes (compared to R3)<a class="headerlink" href="#r4-changes-compared-to-r3" title="Link to this heading"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>Add external PLL SI5351 and route 2x clocks to ECP5 (useful for EMC as it supports spread-spectrum, also for runtime clock/resolution switching).</p></li>
+<li><p>Add series 27R/33R on all FFC lines to reduce radiated emissions.</p></li>
+<li><dl class="simple">
+<dt>Pinswaps to ensure external PLL is routed to true ECP5 clock input pins:</dt><dd><ul>
+<li><p>FFC_SDIN1: 44 -&gt; 42</p></li>
+<li><p>ENC_B: 40 -&gt; 12</p></li>
+<li><p>ENC_A: 42 -&gt; 8</p></li>
+<li><p>PLL_CLK1 -&gt; 40 (removed: spare FPGA to RP2040 line)</p></li>
+<li><p>PLL_CLK0 -&gt; 44 (removed: spare FPGA to RP2040 line)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Route 4 new ex0/ex1 pins to RP2040 spare pins (shared with expansion connectors)</p></li>
+<li><p>Swap RP2040 SPI flash for 128MBit part</p></li>
+<li><p>Put spare RP2040 I2C pins on main tiliqua-mobo I2C bus.</p></li>
+<li><p>Switch from 4L stackup to 6L stackup to improve SI/EMC.</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+<section id="tiliqua-r3">
+<h2>Tiliqua R3<a class="headerlink" href="#tiliqua-r3" title="Link to this heading"></a></h2>
+<p>Another hardware revision that some beta testers have. Only 5 were produced.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>SoldierCrab R3</strong> FPGA SoM (LFE5U-25F, 1.8V 32MByte oSPIRAM)</p></li>
+<li><p><strong>Tiliqua R3</strong> motherboard and front panel.</p></li>
+<li><p><strong>eurorack-pmod R3.3</strong> audio interface.</p></li>
+</ul>
+</div></blockquote>
+<section id="r3-changes-compared-to-r2">
+<h3>R3 changes (compared to R2)<a class="headerlink" href="#r3-changes-compared-to-r2" title="Link to this heading"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>Pinswap all DVI pins to true ECP5 complementary pairs.</p></li>
+<li><p>Swap all tantalums for ceramics, clean up PSU routing, swap LDO for TPS7A91, add choke input capacitors</p></li>
+<li><p>Delete unused LEDs (MIDI bottom-side)</p></li>
+<li><p>Fix EDID +5V I2C bridge schematic and enable.</p></li>
+<li><p>Adjust fuses: +12V ingress 200mA-&gt;350mA fuse, GPDI +5V NONE-&gt;50mA fuse (so USB host doesn’t pop the fuse!)</p></li>
+<li><p>Move encoder footprint 0.4mm in, midi 0.1mm out for 0.5mm shim washer on encoder</p></li>
+<li><p>Pinswap ex0 / ex1 / ffc connectors for improved routing and SI.</p></li>
+<li><p>Update LED current limiting resistors s/120R/220R</p></li>
+<li><p>Swap rp2040 xtal to ABM8/15pF/1K (improve yield)</p></li>
+<li><p>New M2.5 standoff footprint</p></li>
+<li><p>Move 12V ingress connector in 1.5mm so we can better fit in skiffs.</p></li>
+<li><p>Switch from 1.6mm to 1.2mm PCBA stackup for mechanical reasons (and improve usb2 connector yield)</p></li>
+<li><p>(panel) fix DVI connector cutout</p></li>
+<li><p>Add 2x spare pins for RP2040/ECP5 I2C (no pullups)</p></li>
+<li><p>Layerswap In1 / In2 (move GND closer to SMPS)</p></li>
+<li><p>Add flip-flop on CODEC PDN pin (allows for soft-mute when swapping bitstreams)</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+<section id="tiliqua-r2">
+<h2>Tiliqua R2<a class="headerlink" href="#tiliqua-r2" title="Link to this heading"></a></h2>
+<p>This was the first hardware revision that some beta testers have. Only 5 were produced.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>SoldierCrab R2</strong> FPGA SoM (LFE5U-45F, 3.3V 16MByte HyperRAM)</p></li>
+<li><p><strong>Tiliqua R2</strong> motherboard and front panel.</p></li>
+<li><p><strong>eurorack-pmod R3.3</strong> audio interface.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="tiliqua-r1">
+<h2>Tiliqua R1<a class="headerlink" href="#tiliqua-r1" title="Link to this heading"></a></h2>
+<p>This prototype was shown at SuperBooth 2024. It was never shipped to anyone.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>SoldierCrab R1</strong> FPGA SoM (LFE5U-45F, 3.3V 16MByte HyperRAM, no USB2 PHY)</p></li>
+<li><p><strong>Tiliqua R1</strong> motherboard and front panel.</p></li>
+<li><p><strong>eurorack-pmod R3.3</strong> audio interface.</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hardware_design.html" class="btn btn-neutral float-left" title="Electrical Design" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="community.html" class="btn btn-neutral float-right" title="Community" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

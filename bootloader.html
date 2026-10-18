@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bootloader &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Example Projects" href="examples/index.html" />
+    <link rel="prev" title="Tutorial 5: Using (third-party) PMODs" href="pmods.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Tiliqua
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Bootloader</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#user-interface">User Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bitstream-archives-and-flash-memory-layout">Bitstream Archives and Flash Memory Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flashing-the-rp2040-and-bootloader-bitstream">Flashing the RP2040 and bootloader bitstream</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#flashing-steps">Flashing Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#technical-details">Technical Details</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#bootloader-bitstream-ecp5">Bootloader bitstream: ECP5</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apfbug-debugger-firmware-rp2040"><cite>apfbug</cite> debugger firmware: RP2040</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#recording-new-jtag-streams-for-rp2040">Recording new JTAG streams for RP2040</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Bootloader</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/bootloader.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bootloader">
+<h1>Bootloader<a class="headerlink" href="#bootloader" title="Link to this heading"></a></h1>
+<section id="user-interface">
+<h2>User Interface<a class="headerlink" href="#user-interface" title="Link to this heading"></a></h2>
+<p>The bootloader allows you to arbitrarily select from one of 8 bitstreams after the Tiliqua powers on, without needing to connect a computer. In short:</p>
+<ul class="simple">
+<li><p>When Tiliqua boots, you can select a bitstream with the encoder (either using the display output, or by reading the currently lit LED if no display is connected).</p></li>
+<li><dl class="simple">
+<dt>When you select a bitstream (press encoder), the bootloader bitstream:</dt><dd><ul>
+<li><p>Loads any required firmware to PSRAM and sets up any other settings requested in the bitstream manifest.</p></li>
+<li><p>Commands the RP2040 over UART to issue a bitstream reconfiguration.</p></li>
+<li><p>The RP2040 then commands the ECP5 (over JTAG) to reconfigure itself and enter the selected bitstream (loaded from the SPI flash local to the ECP5).</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>From any bitstream, you can always go back to the bootloader by holding the encoder for 3sec (this is built into the logic of every bitstream).</p></li>
+</ul>
+</section>
+<section id="bitstream-archives-and-flash-memory-layout">
+<h2>Bitstream Archives and Flash Memory Layout<a class="headerlink" href="#bitstream-archives-and-flash-memory-layout" title="Link to this heading"></a></h2>
+<p>Tiliqua user projects are packaged into <em>Bitstream Archives</em>, which are <code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code> files that contain everything the bootloader needs to start a custom bitstream. Each bitstream archive contains:</p>
+<ul class="simple">
+<li><p>Bitstream file (top.bit)</p></li>
+<li><p>Firmware binary (if applicable)</p></li>
+<li><p>Any extra resources to be loaded into PSRAM (if applicable)</p></li>
+<li><p>Manifest file (human-readable <code class="docutils literal notranslate"><span class="pre">.json</span></code>) describing the contents</p></li>
+<li><p>Options storage region for persistent settings (if applicable)</p></li>
+</ul>
+<p>Tiliqua’s <code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">flash</span></code> command manages the memory layout on the SoldierCrab’s SPI flash, ensuring that the components of a bitstream archive end up in the correct place. A picture of how the SPI flash is organized:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌────────────────────────────┐  0x000000
+│                            │
+│    Bootloader Bitstream    │
+│                            │
+├────────────────────────────┤
+│          (padding)         │
+├────────────────────────────┤  0x0B0000
+│                            │
+│    Bootloader FW (XiP)     │
+│                            │
+├────────────────────────────┤
+│          (padding)         │
+╞════════════════════════════╡  0x100000
+│                            │
+│      Slot 0 Bitstream      │
+│                            │
+├────────────────────────────┤
+│          (padding)         │
+├────────────────────────────┤  0x1B0000
+│                            │
+│        Slot 0 FW           │
+│  NOT XiP, copied to PSRAM  │
+│                            │
+├────────────────────────────┤  (any additional slot 0 resources appended here)
+│          (padding)         │
+├────────────────────────────┤  0x1FD000
+│    Slot 0 Options Storage  │
+│                            │
+├────────────────────────────┤  0x1FF000
+│      Slot 0 Manifest       │
+╞════════════════════════════╡  0x200000 (End of Slot 0, start of Slot 1)
+│                            │
+│      Slot 1 Bitstream      │
+│                            │
+├────────────────────────────┤
+│          (padding)         │
+├────────────────────────────┤  0x2B0000
+│                            │
+│        Slot 1 FW           │
+│  NOT XiP, copied to PSRAM  │
+│                            │
+├────────────────────────────┤ (any additional slot 1 resources appended here)
+│          (padding)         │
+├────────────────────────────┤  0x2FD000
+│    Slot 1 Options Storage  │
+│                            │
+├────────────────────────────┤  0x2FF000
+│       Slot 1 Manifest      │
+╞════════════════════════════╡  0x300000 (End of Slot 1, start of Slot 2)
+│                            │
+
+... continued up to Slot 7
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Bootloader bitstream: 0x000000</p></li>
+<li><p>User bitstream slots: 0x100000, 0x200000, etc (1MB spacing)</p></li>
+<li><p>Manifest: End of each slot (slot 0: 0x100000 + 0x100000 - 4096 (manifest size))</p></li>
+<li><p>Firmware: Loaded into PSRAM by bootloader, usually fixed offset from the bitstream start (i.e firmware for slot 0 is loaded from 0x100000 + 0xB0000 = 0x1B0000)</p></li>
+<li><p>Options storage: Located at fixed offset before manifest (slot 0: 0x1FD000, slot 1: 0x2FD000, etc)</p></li>
+</ul>
+<p>The manifest includes metadata like the bitstream name and version, as well as information about where firmware should be loaded in PSRAM. It may also include an options storage region for persistent settings that survive power cycles.</p>
+<p>If an image requires firmware loaded to PSRAM, the SPI flash source address (in the manifest) is set to the true firmware base address by the flash tool when it is flashed.
+That is, the value of <code class="docutils literal notranslate"><span class="pre">spiflash_src</span></code> is not preserved by the flash tool and instead depends on the slot number.
+This allows a bitstream that requires firmware to be loaded to PSRAM to be flashed to any slot, and the bootloader will load the firmware from the correct address.</p>
+</section>
+<section id="flashing-the-rp2040-and-bootloader-bitstream">
+<h2>Flashing the RP2040 and bootloader bitstream<a class="headerlink" href="#flashing-the-rp2040-and-bootloader-bitstream" title="Link to this heading"></a></h2>
+<p>During normal use, it should not be necessary to flash the RP2040 or bootloader bitstream. However the instructions here may be useful for unbricking a device if you accidentally erased the bootloader, or want to update the bootloader on older hardware revisions. The bootloader is composed of 2 components that work together:</p>
+<ul class="simple">
+<li><p>The RP2040 firmware (<a class="reference external" href="https://github.com/apfaudio/apfbug">apfbug - fork of dirtyJTAG</a>)</p></li>
+<li><p>The <a class="reference external" href="https://github.com/apfaudio/tiliqua/tree/main/gateware/src/top/bootloader">bootloader</a> top-level bitstream.</p></li>
+</ul>
+<section id="flashing-steps">
+<h3>Flashing Steps<a class="headerlink" href="#flashing-steps" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Flash the RP2040. Use the latest pre-built binaries <a class="reference external" href="https://github.com/apfaudio/apfbug/releases">found here</a>. To flash them, hold RP2040 BOOTSEL (golden button on the Tiliqua motherboard) before applying power, then copy the <code class="code docutils literal notranslate"><span class="pre">build/*.uf2</span></code> to the usb storage device and power cycle Tiliqua again. If you don’t want to remove Tiliqua from your rack, you can also enter the RP2040 bootloader by opening a serial port at 1200 baud.</p></li>
+<li><p>Build and flash the bootloader bitstream using the built-in flash tool (alternatively just download the latest bootloader archive from the CI artifacts):</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Flash bootloader to start of flash, build assuming XIP (execute directly from SPI flash, not PSRAM)</span>
+<span class="c1"># Be careful to replace `--hw r4` with your hardware revision!</span>
+pdm<span class="w"> </span>bootloader<span class="w"> </span>build<span class="w"> </span>--hw<span class="w"> </span>r4<span class="w"> </span>--fw-location<span class="o">=</span>spiflash
+pdm<span class="w"> </span>flash<span class="w"> </span>archive<span class="w"> </span>build/bootloader-r4/bootloader-*.tar.gz
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Build and flash any other bitstreams you want to slots 0..7 (you can also download these archives from CI artifacts):</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># assuming the archive has already been built / downloaded</span>
+pdm<span class="w"> </span>flash<span class="w"> </span>archive<span class="w"> </span>build/xbeam-r4/xbeam-*.tar.gz<span class="w"> </span>--slot<span class="w"> </span><span class="m">2</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Check what is currently flashed in each slot (by reading out the flash manifests):</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pdm<span class="w"> </span>flash<span class="w"> </span>status
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Before using the new bitstreams, disconnect the USB port and power cycle Tiliqua. (note: for the latest RP2040 firmware, this is not necessary and you can use them straight away).</p></li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Before <code class="docutils literal notranslate"><span class="pre">apfbug</span></code> beta2 firmware, the bootloader would NOT reboot correctly (just show a blank screen) if you have
+the <code class="code highlight py python docutils literal highlight-python"><span class="n">dbg</span></code> USB port connected WITHOUT a tty open. You HAD to have the
+<code class="docutils literal notranslate"><span class="pre">/dev/ttyACM0</span></code> open OR have the <code class="docutils literal notranslate"><span class="pre">dbg</span></code> USB port disconnected for it to work correctly.
+<a class="reference external" href="https://github.com/apfaudio/apfbug/issues/2">Tracking issue (linked)</a> (resolved in beta2 FW).</p>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>Now when Tiliqua boots you will enter the bootloader. Use the encoder to select an image. Hold the encoder for &gt;3sec in any image to go back to the bootloader.</p></li>
+</ol>
+</section>
+</section>
+<section id="technical-details">
+<h2>Technical Details<a class="headerlink" href="#technical-details" title="Link to this heading"></a></h2>
+<section id="bootloader-bitstream-ecp5">
+<h3>Bootloader bitstream: ECP5<a class="headerlink" href="#bootloader-bitstream-ecp5" title="Link to this heading"></a></h3>
+<p>The ECP5 <code class="code docutils literal notranslate"><span class="pre">bootloader</span></code> bitstream copies firmware from SPI flash to PSRAM before jumping to user bitstreams by asking the RP2040 to execute a stub bitstream replay (load a special bitstream to SRAM that jumps to the new bitstream). The request is issued over UART from the ECP5 to the RP2040, so it is visible if you have the <code class="docutils literal notranslate"><span class="pre">/dev/ttyACMX</span></code> open. User bitstreams are responsible for asserting PROGRAMN when the encoder is held to reconfigure back to the bootloader.</p>
+</section>
+<section id="apfbug-debugger-firmware-rp2040">
+<h3><cite>apfbug</cite> debugger firmware: RP2040<a class="headerlink" href="#apfbug-debugger-firmware-rp2040" title="Link to this heading"></a></h3>
+<p><code class="code docutils literal notranslate"><span class="pre">apfbug</span></code> firmware includes the same features as <code class="code docutils literal notranslate"><span class="pre">pico-dirtyjtag</span></code> (USB-JTAG and USB-UART bridge), with some additions:</p>
+<ul class="simple">
+<li><p>UART traffic is inspected to look for keywords.</p></li>
+<li><p>If a keyword is encountered e.g. <code class="code docutils literal notranslate"><span class="pre">BITSTREAM1</span></code>, a pre-recorded JTAG stream stored on the RP2040’s SPI flash is decompressed and replayed. The JTAG streams are instances of the <a class="reference external" href="https://github.com/apfaudio/tiliqua/blob/main/gateware/src/top/bootstub/top.py">bootstub</a> top-level bitstream. These are tiny bitstreams that are programmed directly into SRAM with the target <code class="code docutils literal notranslate"><span class="pre">bootaddr</span></code> and PROGRAMN assertion.</p></li>
+<li><p>This facilitates ECP5 multiboot (jumping to arbitrary bitstreams) without needing to write to the ECP5’s SPI flash and exhausting write cycles.</p></li>
+</ul>
+</section>
+<section id="recording-new-jtag-streams-for-rp2040">
+<h3>Recording new JTAG streams for RP2040<a class="headerlink" href="#recording-new-jtag-streams-for-rp2040" title="Link to this heading"></a></h3>
+<p>TODO documentation on recording new JTAG bitstreams for storage on RP2040 flash - not necessary to change this for ordinary Tiliqua usecases. Note: SoldierCrab R3 and R2 use different ECP5 variants, so they need different RP2040 images. This is addressed by the <code class="docutils literal notranslate"><span class="pre">TILIQUA_HW_VERSION_MAJOR</span></code> cmake flag in the <code class="docutils literal notranslate"><span class="pre">apfbug</span></code> project.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pmods.html" class="btn btn-neutral float-left" title="Tutorial 5: Using (third-party) PMODs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="examples/index.html" class="btn btn-neutral float-right" title="Example Projects" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

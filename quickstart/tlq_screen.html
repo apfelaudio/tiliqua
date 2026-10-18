@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tiliqua Screen [TLQ-SCREEN] &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Expander / Euro-PMOD [TLQ-EXPANDER]" href="tlq_expander.html" />
+    <link rel="prev" title="Tiliqua Module [TLQ-MODULE]" href="tlq_module.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-power">Connecting Power</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#connecting-video">Connecting Video</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#display-timings">Display Timings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#native-rotation">Native Rotation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#firmware-updates">Firmware Updates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hardware-block-diagram">Hardware Block Diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#instructions-for-safe-use">Instructions for Safe Use</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/quickstart/tlq_screen.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tiliqua-screen-tlq-screen">
+<h1>Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]<a class="headerlink" href="#tiliqua-screen-tlq-screen" title="Link to this heading"></a></h1>
+<p><strong>Tiliqua Screen is shipped ready-to-use. To get started, all you need to do is connect the Eurorack +/- 12V ribbon cable, connect the display cable to Tiliqua, and then switch the Eurorack power on.</strong></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>I recommend <strong>only plugging or unplugging the display and power while your system is OFF</strong>.</p>
+</div>
+<figure class="align-default">
+<img alt="../_images/screen_photos.jpeg" src="../_images/screen_photos.jpeg" />
+</figure>
+<section id="connecting-power">
+<h2>Connecting Power<a class="headerlink" href="#connecting-power" title="Link to this heading"></a></h2>
+<p>To power the screen, you only need to connect the 16-pin Eurorack power input (+/- 12V) which, out of the box, is already attached to Tiliqua in the correct orientation.</p>
+</section>
+<section id="connecting-video">
+<h2>Connecting Video<a class="headerlink" href="#connecting-video" title="Link to this heading"></a></h2>
+<p>In the box, you have 2 display cables. One short and one long. It’s up to you which cable you want to use and which panel hole, depending how far the screen is from Tiliqua in your modular system.</p>
+<p>I prefer to use the long one and hide the spiral portion behind the screen, which gives me the option of moving it around without needing to reconnect the cable. In the box you will also find a 6hp spacer blank panel, which can be useful if you are using the spiral cable and need more space behind the panel in a skiff that is very thin.</p>
+<figure class="align-default" id="id1">
+<img alt="../_images/polysyn_menu.jpg" src="../_images/polysyn_menu.jpg" />
+<figcaption>
+<p><span class="caption-text">You can connect with whichever cable or panel hole works for your system.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="display-timings">
+<h2>Display Timings<a class="headerlink" href="#display-timings" title="Link to this heading"></a></h2>
+<p>This screen only supports 720x720p60 resolution and has no built-in scaler. Whenever Tiliqua is in the bootloader, it reads the EDID from the display and switches to the correct resolution. This means, any user bitstreams used with the screen should have <code class="docutils literal notranslate"><span class="pre">video:</span> <span class="pre">&lt;match-bootloader&gt;</span></code> (dynamic modeline) or <code class="docutils literal notranslate"><span class="pre">video:</span> <span class="pre">720x720p60</span></code> (fixed modeline) to display correctly.</p>
+<p>If you instead connect <code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code> to a computer, it should also pick up the correct <code class="docutils literal notranslate"><span class="pre">720x720p60</span></code> timings from its EDID automatically and work as a monitor. It’s not a use case I explicitly support, but should work fine :)</p>
+</section>
+<section id="native-rotation">
+<h2>Native Rotation<a class="headerlink" href="#native-rotation" title="Link to this heading"></a></h2>
+<p>To fit such a large LCD panel into the Eurorack form factor, the entire panel is rotated 90 degrees. Normally, you won’t notice this as Tiliqua detects when <code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code> is attached and automatically rotates the whole framebuffer 90 degrees in the bootloader and all user bitstreams.</p>
+<p>However, if you connect <code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code> to a computer or use a bitstream that does not support dynamic framebuffer rotation, then you will notice that the image will be rotated.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you want to physically rotate the entire screen in your rack (i.e upside-down or 90 degrees), some bitstreams let you rotate the entire display arbitrarily. <code class="docutils literal notranslate"><span class="pre">XBEAM</span></code> for example has an option that allows you to rotate the display in 90 degree increments, which can also be useful for inverted overhead projectors.</p>
+</div>
+</section>
+<section id="firmware-updates">
+<h2>Firmware Updates<a class="headerlink" href="#firmware-updates" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code> has an RP2040 inside it that contains firmware which contains the LCD panel initialization sequence, controls the built-in power switches and can modify the EDID. I don’t forsee this needing to be updated, nevertheless, if for some reason you need to update the firmware:</p>
+<ul class="simple">
+<li><p>With <code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code> unpowered, connect your computer to the update port and hold down the firmware update button.</p></li>
+<li><p>Apply power to <code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>. A USB drive should appear. The LEDs should not be blinking.</p></li>
+<li><p>Copy the new firmware image to the USB drive and wait for the LEDs to start blinking.</p></li>
+</ul>
+<p>TODO add link the the screen firmware repository when it is cleaned up.</p>
+</section>
+<section id="hardware-block-diagram">
+<h2>Hardware Block Diagram<a class="headerlink" href="#hardware-block-diagram" title="Link to this heading"></a></h2>
+<p>For deeper details (and schematics) of the hardware, see TODO.</p>
+<figure class="align-default">
+<img alt="../_images/screen_block.jpeg" src="../_images/screen_block.jpeg" />
+</figure>
+</section>
+<section id="instructions-for-safe-use">
+<h2>Instructions for Safe Use<a class="headerlink" href="#instructions-for-safe-use" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>TLQ-SCREEN shall only be used at the provided 720x720p60 display timings. To guarantee this, only connect TLQ-SCREEN to TLQ-MODULE when the Eurorack system is powered off. Use with video sources other than TLQ-MODULE, or different display resolutions is not supported.</p></li>
+<li><p>The product shall only be used in a Eurorack system, providing a standard Eurorack power supply not exceeding +/- 12V, and at least 500mA. Any external case, power supply, cables, or modules shall comply with relevant regulations and standards applicable in the country of intended use.</p></li>
+<li><p>To reach electromagnetic compatibility in a Eurorack system, the product shall be mounted securely in a fully enclosed housing made of conductive material (metal). Close all unused spaces with blind panels. Keep all cables, power or patch cables as short as possible.</p></li>
+<li><p>The product should only be operated in a well ventilated case and should not be covered, except by the Eurorack case itself or other module panels. The product is designed for reliable operation at normal ambient room temperature. Do not expose the module to water, moisture or bring the circuit boards in contact with any conductive materials.</p></li>
+<li><p>Take care whilst handling to avoid mechanical or electrical damage. When the product is powered on, do not touch any of the circuit boards behind the front panel. When the product is outside a case, only handle it unpowered and by the edges to minimize the risk of damage from electrostatic discharge.</p></li>
+<li><p>Do not supply power to the product through any receptacle except the main +/- 12V power input. Any external devices not sharing the product’s main power bus (e.g. USB host devices or devices providing a display signal) should be disconnected when the product is unpowered. The incorrect usage or connection of unapproved devices to any receptacle may affect compliance or result in damage to the unit and invalidate the warranty.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="tlq_module.html" class="btn btn-neutral float-left" title="Tiliqua Module [TLQ-MODULE]" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tlq_expander.html" class="btn btn-neutral float-right" title="Expander / Euro-PMOD [TLQ-EXPANDER]" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

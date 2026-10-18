@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSP Library &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Delay Lines" href="delay_lines.html" />
+    <link rel="prev" title="non-SoC projects" href="../examples/no_soc_examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">DSP Library</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#philosophy">Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interconnect">Interconnect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-and-specialized-components">‘Basic’ and ‘Specialized’ components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-dsp-components">Basic DSP Components</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="delay_lines.html">Delay Lines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="filters.html">Filters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oscillators.html">Oscillators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="effects.html">Effects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vca.html">VCAs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mix.html">Mixing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="resample.html">Resampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oneshot.html">One-shot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stream_util.html">Stream utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="misc.html">Miscellaneous utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#specialized-modules">Specialized Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="delay_effect.html">Delay Effects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fft.html">FFT Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="spectral.html">Spectral Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mac.html">Multiplier sharing (<code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="block.html">Block-based Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cordic.html">Trigonometry / CORDIC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">DSP Library</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dsp/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dsp-library">
+<h1>DSP Library<a class="headerlink" href="#dsp-library" title="Link to this heading"></a></h1>
+<section id="philosophy">
+<h2>Philosophy<a class="headerlink" href="#philosophy" title="Link to this heading"></a></h2>
+<p>Tiliqua’s DSP library is designed as a suite of DSP components - independent ‘cores’ which can be connected together in different ways in order to build a custom DSP pipeline. It makes heavy use of Amaranth streams (<a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/stream.html">lib.stream</a>) for connecting components and <a class="reference external" href="https://github.com/amaranth-lang/amaranth/pull/1578">lib.fixed</a> for fixed-point types. <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/stream.html">lib.stream</a> makes it possible to chain DSP components together in different ways (without components needing to know implementation details of each other), and <a class="reference external" href="https://github.com/amaranth-lang/amaranth/pull/1578">lib.fixed</a> makes it easier to write common numeric operations in Amaranth.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Streams are an Amaranth construct describing a <em>stream of data</em> that is accompanied by a <code class="docutils literal notranslate"><span class="pre">valid</span></code>/<code class="docutils literal notranslate"><span class="pre">ready</span></code> handshake. This is a simple protocol used commonly in digital logic. For more details, see <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/stream.html">Data streams</a> in the Amaranth documentation.</p>
+</div>
+</section>
+<section id="interconnect">
+<h2>Interconnect<a class="headerlink" href="#interconnect" title="Link to this heading"></a></h2>
+<p>Building a custom DSP pipeline with the components provided here is often an act of figuring out how to massage the input and output ports of each component such that the design does what you want. In simple cases, like oscillators or filters, DSP components will often have a <code class="docutils literal notranslate"><span class="pre">self.i</span></code> stream for incoming and <code class="docutils literal notranslate"><span class="pre">self.o</span></code> stream for outgoing samples - these can be chained together in any order using <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/wiring.html">wiring.connect()</a>. In more complex cases, like delay lines, components may expose a memory bus (for writes to external memory), multiple input or output ports, or global registers. It is important to read the documentation of each component and take a look at some of the example cores in order to understand how each component can be used, and how exactly input and output samples are synchronized.</p>
+<p>As of now, input and output ports of DSP components generally take on one of the following shapes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stream.Signature(fixed.SQ)</span></code>: A stream of audio samples, one at a time.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stream.Signature(ArrayLayout(N,</span> <span class="pre">fixed.SQ))</span></code>: A stream of N audio samples, one 1D array at a time. This is used for multi-channel, time-synchronized inputs and outputs – like Tiliqua’s 4 inputs or 4 outputs, or the <a class="reference internal" href="mix.html#tiliqua.dsp.MatrixMix" title="tiliqua.dsp.MatrixMix"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.MatrixMix</span></code></a> component. These can be split into streams of single samples using <a class="reference internal" href="stream_util.html#tiliqua.dsp.Split" title="tiliqua.dsp.Split"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.Split</span></code></a> or <a class="reference internal" href="stream_util.html#tiliqua.dsp.Merge" title="tiliqua.dsp.Merge"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.Merge</span></code></a> (see <a class="reference internal" href="stream_util.html"><span class="doc">Stream utilities</span></a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stream.Signature(StructLayout({...}))</span></code>: A stream of N different types of data, one set at a time. This is often used when each audio sample needs a piece of metadata alongside it (e.g. realtime tweakable filters like <a class="reference internal" href="filters.html#tiliqua.dsp.SVF" title="tiliqua.dsp.SVF"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.SVF</span></code></a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stream.Signature(Block(...))</span></code>: Some components can only operate on blocks of samples, like <a class="reference internal" href="fft.html#tiliqua.dsp.fft.FFT" title="tiliqua.dsp.fft.FFT"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.fft.FFT</span></code></a> - see <a class="reference internal" href="block.html"><span class="doc">Block-based Processing</span></a> for details.</p></li>
+</ul>
+</div></blockquote>
+<p>The art is in knowing exactly which components can be used in translating between the interface styles. For example, <a class="reference internal" href="fft.html#tiliqua.dsp.fft.ComputeOverlappingBlocks" title="tiliqua.dsp.fft.ComputeOverlappingBlocks"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.fft.ComputeOverlappingBlocks</span></code></a> can help going from a sample stream to a block stream. <a class="reference internal" href="stream_util.html#tiliqua.dsp.Split" title="tiliqua.dsp.Split"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.Split</span></code></a> for going from an <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/data.html#amaranth.lib.data.ArrayLayout">ArrayLayout</a> to independent sample streams. Depending on the application, often <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/data.html#amaranth.lib.data.StructLayout">StructLayout</a> streams will need some manual handshaking logic. There is no one right answer for every adaptation, especially in cases where you have some control signals alongside synchronized audio streams.</p>
+<p>A few components have auxiliary interfaces to the outside world. Examples are <a class="reference internal" href="delay_lines.html#tiliqua.dsp.DelayLine" title="tiliqua.dsp.DelayLine"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.DelayLine</span></code></a>, which may have a <code class="docutils literal notranslate"><span class="pre">bus</span></code> port to talk to external memory (for storing audio samples), or <code class="docutils literal notranslate"><span class="pre">usb_audio</span></code> components which require a connection to a USB PHY to service their audio in/out streams.</p>
+</section>
+<section id="basic-and-specialized-components">
+<h2>‘Basic’ and ‘Specialized’ components<a class="headerlink" href="#basic-and-specialized-components" title="Link to this heading"></a></h2>
+<p>DSP cores are split into 2 types, ‘Basic’ and ‘Specialized’. Basic cores do not require qualified access - after a statement like <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">tiliqua</span> <span class="pre">import</span> <span class="pre">dsp</span></code>, these can be accessed through <a class="reference internal" href="stream_util.html#tiliqua.dsp.Split" title="tiliqua.dsp.Split"><code class="xref py py-class docutils literal notranslate"><span class="pre">dsp.Split</span></code></a> or similar. ‘Specialized’ cores need qualified access and may be accessed through <a class="reference internal" href="fft.html#tiliqua.dsp.fft.STFTProcessor" title="tiliqua.dsp.fft.STFTProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">dsp.fft.STFTProcessor</span></code></a> or similar.</p>
+</section>
+<section id="basic-dsp-components">
+<h2>Basic DSP Components<a class="headerlink" href="#basic-dsp-components" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="delay_lines.html">Delay Lines</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="delay_lines.html#tiliqua.dsp.DelayLine"><code class="docutils literal notranslate"><span class="pre">DelayLine</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="delay_lines.html#tiliqua.dsp.DelayLineTap"><code class="docutils literal notranslate"><span class="pre">DelayLineTap</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="filters.html">Filters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="filters.html#tiliqua.dsp.SVF"><code class="docutils literal notranslate"><span class="pre">SVF</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="filters.html#tiliqua.dsp.FIR"><code class="docutils literal notranslate"><span class="pre">FIR</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="filters.html#tiliqua.dsp.DCBlock"><code class="docutils literal notranslate"><span class="pre">DCBlock</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="oscillators.html">Oscillators</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="oscillators.html#tiliqua.dsp.SawNCO"><code class="docutils literal notranslate"><span class="pre">SawNCO</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="oscillators.html#tiliqua.dsp.WhiteNoise"><code class="docutils literal notranslate"><span class="pre">WhiteNoise</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="oscillators.html#tiliqua.dsp.DWO"><code class="docutils literal notranslate"><span class="pre">DWO</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="effects.html">Effects</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="effects.html#tiliqua.dsp.WaveShaper"><code class="docutils literal notranslate"><span class="pre">WaveShaper</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="effects.html#tiliqua.dsp.PitchShift"><code class="docutils literal notranslate"><span class="pre">PitchShift</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="vca.html">VCAs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vca.html#tiliqua.dsp.VCA"><code class="docutils literal notranslate"><span class="pre">VCA</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mix.html">Mixing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mix.html#tiliqua.dsp.MatrixMix"><code class="docutils literal notranslate"><span class="pre">MatrixMix</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="resample.html">Resampling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="resample.html#tiliqua.dsp.Resample"><code class="docutils literal notranslate"><span class="pre">Resample</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="oneshot.html">One-shot</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="oneshot.html#tiliqua.dsp.Trigger"><code class="docutils literal notranslate"><span class="pre">Trigger</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="oneshot.html#tiliqua.dsp.Ramp"><code class="docutils literal notranslate"><span class="pre">Ramp</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="stream_util.html">Stream utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="stream_util.html#splitting-merging-streams">Splitting / merging streams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stream_util.html#remapping-streams">Remapping streams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stream_util.html#connecting-streams-in-feedback-loops">Connecting streams in feedback loops</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="misc.html">Miscellaneous utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="misc.html#tiliqua.dsp.named_submodules"><code class="docutils literal notranslate"><span class="pre">named_submodules()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="specialized-modules">
+<h2>Specialized Modules<a class="headerlink" href="#specialized-modules" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="delay_effect.html">Delay Effects</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="delay_effect.html#tiliqua.dsp.delay_effect.PingPongDelay"><code class="docutils literal notranslate"><span class="pre">PingPongDelay</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="delay_effect.html#tiliqua.dsp.delay_effect.Diffuser"><code class="docutils literal notranslate"><span class="pre">Diffuser</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="delay_effect.html#tiliqua.dsp.delay_effect.Boxcar"><code class="docutils literal notranslate"><span class="pre">Boxcar</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="fft.html">FFT Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="fft.html#ffts">FFTs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html#windowing">Windowing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html#overlap-add">Overlap / Add</a></li>
+<li class="toctree-l2"><a class="reference internal" href="fft.html#stfts">STFTs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="spectral.html">Spectral Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="spectral.html#tiliqua.dsp.spectral.SpectralCrossSynthesis"><code class="docutils literal notranslate"><span class="pre">SpectralCrossSynthesis</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="spectral.html#tiliqua.dsp.spectral.SpectralEnvelope"><code class="docutils literal notranslate"><span class="pre">SpectralEnvelope</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mac.html">Multiplier sharing (<code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mac.html#module-tiliqua.dsp.mac"><code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>: DSP tile sharing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mac.html#module-tiliqua.ringnoc"><code class="docutils literal notranslate"><span class="pre">ringnoc</span></code>: Message Ring implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="block.html">Block-based Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="block.html#tiliqua.dsp.block.Block"><code class="docutils literal notranslate"><span class="pre">Block</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="block.html#tiliqua.dsp.block.WrapCore"><code class="docutils literal notranslate"><span class="pre">WrapCore</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="complex.html">Complex Numbers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="complex.html#tiliqua.dsp.complex.CQ"><code class="docutils literal notranslate"><span class="pre">CQ</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="complex.html#tiliqua.dsp.complex.Polar"><code class="docutils literal notranslate"><span class="pre">Polar</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cordic.html">Trigonometry / CORDIC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cordic.html#tiliqua.dsp.cordic.RectToPolarCordic"><code class="docutils literal notranslate"><span class="pre">RectToPolarCordic</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../examples/no_soc_examples.html" class="btn btn-neutral float-left" title="non-SoC projects" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="delay_lines.html" class="btn btn-neutral float-right" title="Delay Lines" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

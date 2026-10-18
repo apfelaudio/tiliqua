@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building and Flashing &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial 1: Audio cores (top.dsp)" href="audio_bitstreams.html" />
+    <link rel="prev" title="Setup" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Tiliqua
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Building and Flashing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building">Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#logs-and-useful-flags">Logs and useful flags</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flashing-to-a-bitstream-slot">Flashing to a Bitstream Slot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#webflasher">Webflasher</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flashing-to-sram">Flashing to SRAM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flash-status">Flash Status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#debug-serial-logs">Debug / Serial logs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Building and Flashing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/building_flashing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="building-and-flashing">
+<h1>Building and Flashing<a class="headerlink" href="#building-and-flashing" title="Link to this heading"></a></h1>
+<p><em>Note: this section assumes you have already followed all steps in</em> <a class="reference internal" href="install.html"><span class="doc">Setup</span></a></p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>In the <code class="docutils literal notranslate"><span class="pre">tiliqua</span></code> repository, all top-level bitstreams that can be flashed to the hardware are located in <a class="reference external" href="https://github.com/apfaudio/tiliqua/tree/main/gateware/src/top">gateware/src/top</a>. Each folder is a project, which may contain gateware, test harnesses, firmware (if it has a CPU) and additional command-line arguments.</p>
+<p>In <a class="reference external" href="https://github.com/apfaudio/tiliqua/tree/main/gateware/pyproject.toml">gateware/pyproject.toml</a>, there are some <code class="docutils literal notranslate"><span class="pre">pdm</span></code> command-line aliases set up to make these examples easier to type. For example, in this file we have a section like this:</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="k">[tool.pdm.scripts]</span>
+<span class="n">dsp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;src/top/dsp/top.py&quot;</span>
+</pre></div>
+</div>
+<p>This means that when we run the command <code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">dsp</span></code>, this will expand to a Python interpreter running the file <code class="docutils literal notranslate"><span class="pre">src/top/dsp/top.py</span></code> in the current virtual environment (using the dependencies we installed in <a class="reference internal" href="install.html"><span class="doc">Setup</span></a>). There is nothing special going on here, it’s just a shortcut for needing to type out the whole path every time. The following 2 commands are equivalent:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from `gateware` directory</span>
+pdm<span class="w"> </span>dsp
+<span class="c1"># or equivalently, not using the alias</span>
+pdm<span class="w"> </span>run<span class="w"> </span>src/top/dsp/top.py
+</pre></div>
+</div>
+</section>
+<section id="building">
+<h2>Building<a class="headerlink" href="#building" title="Link to this heading"></a></h2>
+<p>Each <code class="docutils literal notranslate"><span class="pre">top.py</span></code> has its own command-line interface. You can see the options by running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from `gateware` directory</span>
+pdm<span class="w"> </span>dsp<span class="w"> </span>-h
+</pre></div>
+</div>
+<p>The available options change depending on which project you are building. For example, if a bitstream supports video, it will have an extra CLI option for <code class="docutils literal notranslate"><span class="pre">--modeline</span></code>. If it supports different clock speeds, you will see an <code class="docutils literal notranslate"><span class="pre">--fs-192khz</span></code> option. If it has a CPU, you can pick where the firmware should be stored, and so on.</p>
+<p>The <cite>dsp/top.py</cite> project contains lots of example cores demonstrating different parts of the DSP library. I encourage taking a peek through it. The project is structured that an extra CLI argument <code class="docutils literal notranslate"><span class="pre">--dsp-core</span></code> can be used to select which particular core to build. For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build example that just sends audio inputs to outputs unmodified.</span>
+pdm<span class="w"> </span>dsp<span class="w"> </span>build<span class="w"> </span>--dsp-core<span class="o">=</span>mirror
+</pre></div>
+</div>
+<p>After a while, you should see something like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Building<span class="w"> </span>bitstream<span class="w"> </span><span class="k">for</span><span class="w"> </span>Tiliqua<span class="w"> </span>R5<span class="w"> </span>/<span class="w"> </span>SoldierCrab<span class="w"> </span>R3<span class="w"> </span><span class="o">(</span>LFE5U-25F/APS256XXN-OBR<span class="o">)</span>
+┌─────────────<span class="o">[</span>tiliqua-mobo<span class="o">]</span>────────────────────────────<span class="o">[</span>soldiercrab<span class="o">]</span>─────────┐
+│<span class="w">                                      </span>┊┌─<span class="o">[</span>48MHz<span class="w"> </span>OSC<span class="o">]</span><span class="w">                         </span>│
+│<span class="w">                                      </span>┊└─&gt;<span class="o">[</span>ECP5<span class="w"> </span>PLL<span class="o">]</span>┐<span class="w">                        </span>│
+│<span class="w">                                      </span>┊<span class="w">             </span>├&gt;<span class="o">[</span>sync<span class="o">]</span><span class="w">     </span><span class="m">60</span>.0000<span class="w"> </span>MHz<span class="w"> </span>│
+│<span class="w">                                      </span>┊<span class="w">             </span>├&gt;<span class="o">[</span>usb<span class="o">]</span><span class="w">      </span><span class="m">60</span>.0000<span class="w"> </span>MHz<span class="w"> </span>│
+│<span class="w">                                      </span>┊<span class="w">             </span>└&gt;<span class="o">[</span>fast<span class="o">]</span><span class="w">    </span><span class="m">120</span>.0000<span class="w"> </span>MHz<span class="w"> </span>│
+│<span class="w"> </span><span class="o">[</span>25MHz<span class="w"> </span>OSC<span class="o">]</span>──&gt;<span class="o">[</span>si5351<span class="w"> </span>PLL<span class="o">]</span>─┬&gt;<span class="o">[</span>clk0<span class="o">]</span>─────────────────&gt;<span class="o">[</span>audio<span class="o">]</span><span class="w">    </span><span class="m">12</span>.2880<span class="w"> </span>MHz<span class="w"> </span>│
+│<span class="w">                            </span>└&gt;<span class="o">[</span>clk1<span class="o">]</span>─────────────────&gt;<span class="o">[</span>disable<span class="o">]</span><span class="w">              </span>│
+└─────────────────────────────────────────────────────────────────────────────┘
+Video<span class="w"> </span>clocks<span class="w"> </span>disabled<span class="w"> </span><span class="o">(</span>no<span class="w"> </span>video<span class="w"> </span>out<span class="o">)</span>.
+&lt;...&gt;
+Contents:
+<span class="w">  </span>top.bit<span class="w">       </span><span class="m">122</span><span class="w"> </span>KiB
+<span class="w">  </span>manifest.json<span class="w">    </span><span class="m">0</span><span class="w"> </span>KiB
+&lt;...&gt;
+Saved<span class="w"> </span>to<span class="w"> </span><span class="s1">&#39;/Users/seb/dev/tiliqua/gateware/build/dsp-mirror-r5/dsp-mirror-9cd67c90-r5.tar.gz&#39;</span>
+</pre></div>
+</div>
+<p>As we have built a simple audio-only bitstream without a CPU, there are only 2 artifacts produced:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">top.bit</span></code>: the synthesized bitstream to configure the FPGA</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">manifest.json</span></code>: Metadata about the bitstream, used to display the bootloader help screen, IO assignments, for example.</p></li>
+</ul>
+</div></blockquote>
+<p>Both of these end up in <code class="docutils literal notranslate"><span class="pre">build/dsp-mirror-r5/</span></code>, however, they are finally zipped together into <code class="docutils literal notranslate"><span class="pre">dsp-mirror-9cd67c90-r5.tar.gz</span></code> - which is a <em>Bitstream Archive</em>. This archive (bitstream + dependencies + metadata) is what can be flashed into a Tiliqua slot and seen by the bootloader.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For details on the format of these <em>Bitstream Archives</em> and how they are used, see <a class="reference internal" href="bootloader.html"><span class="doc">Bootloader</span></a>.</p>
+</div>
+</section>
+<section id="logs-and-useful-flags">
+<h2>Logs and useful flags<a class="headerlink" href="#logs-and-useful-flags" title="Link to this heading"></a></h2>
+<p>After building a bitstream, the most interesting log is found in <code class="docutils literal notranslate"><span class="pre">build/&lt;my_bitstream&gt;/top.tim</span></code>. There you will find a resource utilization report (how much of the FPGA was used) as well as a timing report, both emitted by <code class="docutils literal notranslate"><span class="pre">nextpnr-ecp5</span></code>.</p>
+<p>When building bitstreams for ECP5, it’s often the block RAMs, multipliers or combinational logic that is exhausted first, as shown in an excerpt from <code class="docutils literal notranslate"><span class="pre">top.tim</span></code> below:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Info:<span class="w"> </span>Device<span class="w"> </span>utilisation:
+&lt;...&gt;
+Info:<span class="w">                     </span>DP16KD:<span class="w">       </span><span class="m">0</span>/<span class="w">     </span><span class="m">56</span><span class="w">     </span><span class="m">0</span>%<span class="w"> </span><span class="c1"># amount of block RAMs used</span>
+&lt;...&gt;
+Info:<span class="w">                 </span>MULT18X18D:<span class="w">       </span><span class="m">1</span>/<span class="w">     </span><span class="m">28</span><span class="w">     </span><span class="m">3</span>%<span class="w"> </span><span class="c1"># amount of multipliers (DSP tiles) used</span>
+&lt;...&gt;
+Info:<span class="w">                 </span>TRELLIS_FF:<span class="w">     </span><span class="m">731</span>/<span class="w">  </span><span class="m">24288</span><span class="w">     </span><span class="m">3</span>%
+Info:<span class="w">               </span>TRELLIS_COMB:<span class="w">    </span><span class="m">1702</span>/<span class="w">  </span><span class="m">24288</span><span class="w">     </span><span class="m">7</span>%<span class="w"> </span><span class="c1"># amount of combination logic used</span>
+Info:<span class="w">               </span>TRELLIS_RAMW:<span class="w">      </span><span class="m">39</span>/<span class="w">   </span><span class="m">3036</span><span class="w">     </span><span class="m">1</span>%
+</pre></div>
+</div>
+<p>Some more flags useful for development are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--verbose</span></code>: print the <code class="docutils literal notranslate"><span class="pre">yosys</span></code> and <code class="docutils literal notranslate"><span class="pre">nextpnr</span></code> log output to the terminal while synthesis is happening.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--noflatten</span></code>: synthesize the design without flattening all modules together. This will lead to a larger, unoptimized design, but the benefit is that the Yosys logs <code class="docutils literal notranslate"><span class="pre">build/&lt;my_bitstream&gt;/top.rpt</span></code> will contain a separate synthesis report for each module in your design - so you can see roughly how many resources each component is using.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--debug-verilog</span></code>: dump a verilog translation of the entire project to <code class="docutils literal notranslate"><span class="pre">build/&lt;my_bitstream&gt;/top.debug.v</span></code>. Note that normally, the Amaranth toolchain does not emit any verilog but instead translates your project directly into an intermediate language called RTLIL which is passed to Yosys. However, if you are familiar with verilog, this can be useful for understanding what is going on under the hood.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="flashing-to-a-bitstream-slot">
+<h2>Flashing to a Bitstream Slot<a class="headerlink" href="#flashing-to-a-bitstream-slot" title="Link to this heading"></a></h2>
+<p>A <code class="docutils literal notranslate"><span class="pre">.tar.gz</span></code> <em>Bitstream Archive</em> contains everything the bootloader needs to start a custom bitstream. You can build these yourself, or download pre-built archives from the <a class="reference external" href="https://github.com/apfaudio/tiliqua/releases">release page</a>.</p>
+<p>You can flash custom bitstreams to one of 8 slots, using the built-in <code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">flash</span></code> command. To flash a bitstream archive you have just built, you can use <code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">flash</span> <span class="pre">archive</span></code> as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Flash user bitstreams to the desired slot (0-7)</span>
+pdm<span class="w"> </span>flash<span class="w"> </span>archive<span class="w"> </span>build/dsp-mirror-r5/dsp-mirror*.tar.gz<span class="w"> </span>--slot<span class="w"> </span><span class="m">6</span>
+<span class="c1"># Same, without Y/N confirmation:</span>
+pdm<span class="w"> </span>flash<span class="w"> </span>archive<span class="w"> </span>build/dsp-mirror-r5/dsp-mirror*.tar.gz<span class="w"> </span>--slot<span class="w"> </span><span class="m">6</span><span class="w"> </span>--noconfirm
+</pre></div>
+</div>
+<p>After flashing the above bitstream, you should see its name in the bootloader screen. You can then select it, and if you feed any audio/CV in on input channel 0, you will see it come out on output channel 0. As usual, you can hold the encoder for 3sec to return to the bootloader screen at any time.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you want to avoid audio pops while flashing, it is best to flash from the bootloader bitstream, as the audio CODEC is always muted in that bitstream.</p>
+</div>
+</section>
+<section id="webflasher">
+<h2>Webflasher<a class="headerlink" href="#webflasher" title="Link to this heading"></a></h2>
+<p>Another option for flashing bitstreams is <a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash">tiliqua-webflash</a>, which lets you flash a bitstream archive from Chrome on any OS.</p>
+<p>You can upload bitstream archives from your computer, or flash one from the server from the latest release package.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Generally, using the web flasher is a bit slower than using <code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">flash</span></code>.</p>
+</div>
+</section>
+<section id="flashing-to-sram">
+<h2>Flashing to SRAM<a class="headerlink" href="#flashing-to-sram" title="Link to this heading"></a></h2>
+<p>For simple bitstreams that don’t have a CPU, it can be convenient to skip the whole ‘permanently flash to a slot’ procedure and instead write straight into the FPGA’s configuration SRAM. This is much faster as it does not touch the SPI flash or persist permanently.</p>
+<p>For our <code class="docutils literal notranslate"><span class="pre">dsp-mirror</span></code> example, here’s an example of doing so:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>openFPGALoader<span class="w"> </span>-c<span class="w"> </span>dirtyJtag<span class="w"> </span>build/dsp-mirror-r5/top.bit
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Be careful when writing straight to SRAM that your audio and video clocks are exactly the same as what the bootloader was using, otherwise your bitstream won’t start correctly. For audio-only bitstreams, this is the case if you don’t use the <code class="docutils literal notranslate"><span class="pre">--fs-192khz</span></code> flag. For video bitstreams, your <code class="docutils literal notranslate"><span class="pre">--modeline</span></code> must match what the bootloader determined.</p>
+<p>If this sounds confusing, I would suggest always flashing to a Bootloader Slot, as it will guarantee things work as expected.</p>
+</div>
+</section>
+<section id="flash-status">
+<h2>Flash Status<a class="headerlink" href="#flash-status" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">flash</span></code> also supplies a <code class="docutils literal notranslate"><span class="pre">status</span></code> command to read back the Tiliqua’s SPI flash to see what is currently on there:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pdm<span class="w"> </span>flash<span class="w"> </span>status
+</pre></div>
+</div>
+<p>This will dump every manifest currently flashed to Tiliqua, so you can see what is flashed in which slot. This command simply does a readback, it does not write to the SPI flash.</p>
+</section>
+<section id="debug-serial-logs">
+<h2>Debug / Serial logs<a class="headerlink" href="#debug-serial-logs" title="Link to this heading"></a></h2>
+<p>When Tiliqua is plugged in, you may notice some extra serial ports appear. Tiliqua’s bootloader (and some user bitstreams, if they include a CPU) have a logger that will emit serial traffic on one of the FPGA pins.</p>
+<p>By default, the RP2040 includes (in addition to the <code class="docutils literal notranslate"><span class="pre">dirtyJtag</span></code> adapter) a usb-to-serial CDC device. Upon opening it and restarting the bootloader (by holding down the encoder for 3sec), you will see a full log of some of the decision the bootloader has made, for example a list of all the bitstreams it found, any errors occuring during bitstream loading, or how it determined the current screen resolution. At the moment, only 115200 baud is supported. On Linux, I like to use <code class="docutils literal notranslate"><span class="pre">picocom</span></code>, for example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>picocom<span class="w"> </span>-b<span class="w"> </span><span class="m">115200</span><span class="w"> </span>/dev/ttyACM0
+&lt;...<span class="w"> </span>logs<span class="w"> </span>from<span class="w"> </span>Tiliqua<span class="w"> </span>appear<span class="w"> </span>here...&gt;
+</pre></div>
+</div>
+<p>However, you’re free to use any serial client. Note that the special baud rate <code class="docutils literal notranslate"><span class="pre">1200</span></code> will reset the RP2040 and put it back in its bootloader. You probably don’t want that under normal use, but it can be useful if you don’t want unscrew Tiliqua from a rack to be able to press the BOOTSEL button for RP2040 updates. Technical details on the role of the RP2040 in the bootloading process and updating it can be found in <a class="reference internal" href="bootloader.html"><span class="doc">Bootloader</span></a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install.html" class="btn btn-neutral float-left" title="Setup" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="audio_bitstreams.html" class="btn btn-neutral float-right" title="Tutorial 1: Audio cores (top.dsp)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

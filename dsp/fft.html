@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FFT Processing &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Spectral Processing" href="spectral.html" />
+    <link rel="prev" title="Delay Effects" href="delay_effect.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">DSP Library</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#philosophy">Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#interconnect">Interconnect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-and-specialized-components">‘Basic’ and ‘Specialized’ components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-dsp-components">Basic DSP Components</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#specialized-modules">Specialized Modules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="delay_effect.html">Delay Effects</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">FFT Processing</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ffts">FFTs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#windowing">Windowing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#overlap-add">Overlap / Add</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#stfts">STFTs</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="spectral.html">Spectral Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mac.html">Multiplier sharing (<code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="block.html">Block-based Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cordic.html">Trigonometry / CORDIC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">DSP Library</a></li>
+      <li class="breadcrumb-item active">FFT Processing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dsp/fft.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="fft-processing">
+<h1>FFT Processing<a class="headerlink" href="#fft-processing" title="Link to this heading"></a></h1>
+<p>Building blocks for frequency-domain transforms.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For utilities that operate on blocks in the frequency domain, see <a class="reference internal" href="spectral.html"><span class="doc">Spectral Processing</span></a>.</p>
+</div>
+<section id="ffts">
+<h2>FFTs<a class="headerlink" href="#ffts" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.FFT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.fft.</span></span><span class="sig-name descname"><span class="pre">FFT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.FFT" title="Link to this definition"></a></dt>
+<dd><p>Fixed-point Fast Fourier Transform.</p>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
+<p>This core computes the DFT of complex, fixed-point samples (specifically,
+power-of-two chunks, represented by <code class="xref py py-class docutils literal notranslate"><span class="pre">Block</span></code> of <code class="xref py py-class docutils literal notranslate"><span class="pre">CQ</span></code>). It can be run
+in ‘forward’ or ‘inverse’ mode, and is generally designed to match the behaviour
+of <code class="docutils literal notranslate"><span class="pre">scipy.fft(norm=&quot;forward&quot;)</span></code>.</p>
+<p>Input and output samples are clocked in FIFO order. Block processing only begins
+once <code class="docutils literal notranslate"><span class="pre">sz</span></code> elements (an entire block) has been clocked at <code class="docutils literal notranslate"><span class="pre">self.i</span></code>. Some time
+later, the core clocks the transformed block out <code class="docutils literal notranslate"><span class="pre">self.o</span></code>, before clocking in
+the next block. See the ‘Design’ section for further details on throughput.</p>
+</section>
+<section id="switching-modes">
+<h3>Switching modes<a class="headerlink" href="#switching-modes" title="Link to this heading"></a></h3>
+<p>When the core is idle (nothing is clocked into the core and <code class="docutils literal notranslate"><span class="pre">i.ready</span></code> is strobed),
+the <code class="docutils literal notranslate"><span class="pre">ifft</span></code> signal may be set to 1 to put the core into ‘inverse FFT’ mode.
+Otherwise, it is in ‘forward FFT’ mode.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>In forward mode, this FFT core normalizes the outputs by 1/N, and the
+twiddle factors are not conjugated.</p></li>
+<li><p>In ‘inverse FFT’ mode, there is no normalization, and the twiddle factors
+are conjugated as required.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="design">
+<h3>Design<a class="headerlink" href="#design" title="Link to this heading"></a></h3>
+<p>There are many tradeoffs an FFT implementation can make. This one aims
+for low area and DSP tile usage. It is an iterative implementation that
+only performs 2 multiplies at a time. The core FFT loop takes 6 cycles,
+where 2 of these are arithmetic and the rest are memory operations.
+The algorithm implemented here is ‘Cooley-Tukey, Decimation-in-Time, Radix-2’.</p>
+<section id="latency-resource-usage">
+<h4>Latency, resource usage<a class="headerlink" href="#latency-resource-usage" title="Link to this heading"></a></h4>
+<p>As this core only performs 2 multiplies at a time, it only requires 2 DSP tiles,
+assuming the <code class="docutils literal notranslate"><span class="pre">shape</span></code> specified is small enough. For 16-bit samples at an
+FFT size of 1024, the extra bits needed to account for overflow requires 4x
+18-bit multipliers on an ECP5.</p>
+<p>Outputs take <code class="docutils literal notranslate"><span class="pre">sz*log2(sz)*6</span></code> system clocks to be computed after all the
+inputs have been clocked in. That is, an FFT of size 1024 would take about
+<code class="docutils literal notranslate"><span class="pre">log2(1024)*6</span> <span class="pre">==</span> <span class="pre">60</span></code> system clocks per sample, for a maximum throughput around
+1Msample/sec if we had a 60MHz master clock (in reality a bit less accounting for
+the input and output clocking times).</p>
+<p>This core instantiates 3 memories, which all scale with <code class="docutils literal notranslate"><span class="pre">sz</span></code>. A ROM for the
+twiddle factor (coefficient) memory, and 2 RAMs which are shared for input
+and output sample storage as well as intermediate calculations. An interesting
+addition to this core in the future may be to support external memory for huge
+FFT sizes.</p>
+</section>
+<section id="internals">
+<h4>Internals<a class="headerlink" href="#internals" title="Link to this heading"></a></h4>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Reading this is not necessary to use the core. I advise reading up a bit on how
+FFT algorithms work before diving deeper into this. It’s just a few notes to anyone
+interested in understanding this core more deeply.</p>
+</div>
+<p>This core has 3 main ‘phases’ in its overall state machine - an input phase (<code class="docutils literal notranslate"><span class="pre">LOAD1</span></code> and
+<code class="docutils literal notranslate"><span class="pre">LOAD2</span></code>), calculation/loop phases (<code class="docutils literal notranslate"><span class="pre">FFTLOOP</span></code> to <code class="docutils literal notranslate"><span class="pre">WRITE-D</span></code>) and an output phase
+(<code class="docutils literal notranslate"><span class="pre">READ-OUTPUT</span></code>).</p>
+<p>The loop phase has an inner counter <code class="docutils literal notranslate"><span class="pre">idx</span></code>, for the index of the current sample compared
+to the total block size, and an outer counter <code class="docutils literal notranslate"><span class="pre">stage</span></code> which goes from 0 to <code class="docutils literal notranslate"><span class="pre">log2(sz)</span></code>.
+Once <code class="docutils literal notranslate"><span class="pre">stage</span></code> reaches <code class="docutils literal notranslate"><span class="pre">log2(sz)</span></code>, the calculations are complete. The input and output
+phases are simpler to understand, so we’ll focus on this loop phase.</p>
+<p>On every loop iteration, we read all needed values from memory and calculate the butterfly
+sum/difference outputs. Muxes are shown to represent the A / B ping-ponging between
+which memory they fetch from in even and odd stages (Stage 0 <code class="docutils literal notranslate"><span class="pre">X-&gt;A,</span> <span class="pre">Y-&gt;B</span></code>, Stage 1
+<code class="docutils literal notranslate"><span class="pre">X-&gt;B,</span> <span class="pre">Y-&gt;A</span></code> and so on up to Stage <code class="docutils literal notranslate"><span class="pre">log2(sz)</span></code>).</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌─────────┐     ┌─────────┐     ┌─────────┐
+│  X RAM  │-\ /-│  Y RAM  │     │  W ROM  │
+└────┬────┘  X  └────┬────┘     └────┬────┘
+     ▼      / \      ▼               │
+    MUX&lt;────   ────&gt;MUX              │
+     │               │               │
+     A               B               │
+     │               │               │
+     │         ┌─────┴─────┐         │
+     └────────&gt;┤ Butterfly ├&lt;────────┘
+               │  S=A+B×W  │
+               │  D=A-B×W  │
+               └─────┬─────┘
+                     │S,D
+</pre></div>
+</div>
+<p>Once the calculation is complete, the S, D values are written back in a similar ping-pong
+way to either the X or Y RAMs, depending on which ‘stage’ we are in. There are 6 states
+inside the FFT loop required for each iteration of this calculation. Some of them do
+arithmetic and memory accesses in the same state - in general the timing of each state is
+optimized to hit around 80MHz on a slowest speed-grade ECP5.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="n">CQ</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))))</span></code>) – Incoming stream of blocks of complex samples.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="n">CQ</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))))</span></code>) – Outgoing stream of blocks of complex samples.</p></li>
+<li><p><strong>ifft</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="n">default_ifft</span><span class="p">)</span></code>) – <code class="docutils literal notranslate"><span class="pre">0</span></code> for forward FFT with <code class="docutils literal notranslate"><span class="pre">1/N</span></code> normalization. <code class="docutils literal notranslate"><span class="pre">1</span></code> for inverse FFT.
+May only be changed when the core is idle (‘ready’ and not midway through
+a block!).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.FFT.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">fixed.SQ(1,</span> <span class="pre">15)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_ifft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.FFT.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point types used for inputs and outputs. This is
+the shape of a single number, this core wraps it in <code class="xref py py-class docutils literal notranslate"><span class="pre">Block</span></code>(<code class="xref py py-class docutils literal notranslate"><span class="pre">CQ</span></code>(shape)).</p>
+</dd>
+<dt>sz<span class="classifier">int</span></dt><dd><p>Size of the FFT/IFFT blocks. Must be a power of 2.</p>
+</dd>
+<dt>default_ifft<span class="classifier">bool</span></dt><dd><p>Default state of the <code class="docutils literal notranslate"><span class="pre">self.ifft</span></code> signal, can be used to create an IFFT
+instead of an FFT by default, without needing to explicitly connect the signal.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</dd></dl>
+
+</section>
+<section id="windowing">
+<h2>Windowing<a class="headerlink" href="#windowing" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.Window">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.fft.</span></span><span class="sig-name descname"><span class="pre">Window</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.Window" title="Link to this definition"></a></dt>
+<dd><p>Pointwise window function.</p>
+<p>Apply a real window function of size <code class="docutils literal notranslate"><span class="pre">sz</span></code> to blocks of <code class="docutils literal notranslate"><span class="pre">shape</span></code>.
+The window function is synchronized to the block <code class="docutils literal notranslate"><span class="pre">payload.first</span></code>.</p>
+<section id="id1">
+<h3>Design<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>This core is iterative and uses a single multiplier. It does not
+store any samples, the windowed samples are available at the output
+2 clocks after they are provided at the input.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span></code>) – Incoming stream of blocks of real samples.
+at intervals matching the <code class="docutils literal notranslate"><span class="pre">sz</span></code> of this component.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span></code>) – Outgoing stream of blocks of real samples.
+at intervals matching the <code class="docutils literal notranslate"><span class="pre">sz</span></code> of this component.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.Window.Function">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">_not_given</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.Window.Function" title="Link to this definition"></a></dt>
+<dd><p>Enumeration representing different window functions for <a class="reference internal" href="#tiliqua.dsp.fft.Window" title="tiliqua.dsp.fft.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.Window.Function.HANN">
+<span class="sig-name descname"><span class="pre">HANN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.Window.Function.HANN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.Window.Function.SQRT_HANN">
+<span class="sig-name descname"><span class="pre">SQRT_HANN</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.Window.Function.SQRT_HANN" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.Window.Function.RECT">
+<span class="sig-name descname"><span class="pre">RECT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.Window.Function.RECT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.Window.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Function.SQRT_HANN</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.Window.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point types used for inputs and outputs. This is
+the shape of a single number, this core wraps it in <code class="xref py py-class docutils literal notranslate"><span class="pre">Block</span></code>(shape).</p>
+</dd>
+<dt>sz<span class="classifier">int</span></dt><dd><p>Size of the window function.</p>
+</dd>
+<dt>window_function<span class="classifier">Function</span></dt><dd><p>Function used to calculate window function constants (type of window).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+</section>
+<section id="overlap-add">
+<h2>Overlap / Add<a class="headerlink" href="#overlap-add" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.ComputeOverlappingBlocks">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.fft.</span></span><span class="sig-name descname"><span class="pre">ComputeOverlappingBlocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.ComputeOverlappingBlocks" title="Link to this definition"></a></dt>
+<dd><p>Real sample stream to (overlapping) <code class="xref py py-class docutils literal notranslate"><span class="pre">Block</span></code> stream conversion.</p>
+<p>This core is a building block for the <a class="reference internal" href="#tiliqua.dsp.fft.STFTProcessor" title="tiliqua.dsp.fft.STFTProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTProcessor</span></code></a> family of components. It takes
+a continuous (non-delineated) stream of samples, and sends delineated blocks
+of samples, which may be overlapping, for use by further processing.</p>
+<p>Here is a quick example to illustrate. From the input perspective, each sample
+would correspond to the following output samples (taking sz=8, n_overlap=4):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Input:    0 1 2 3 4 5 6 7 8 9 A B C D E F ...
+Block 1:  0 1 2 3 4 5 6 7
+Block 2:          4 5 6 7 8 9 A B
+Block 3:                  8 9 A B C D E F
+</pre></div>
+</div>
+<p>Looking at this from the output perspective:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>payload.sample:  0 1 2 3 4 5 6 7 4 5 6 7 8 9 A B 8 9 A B C D E F
+payload.first:   1               1               1
+</pre></div>
+</div>
+<p>To avoid backpressure on the input stream, the incoming sample rate should be much
+slower than the system clock, and rate of processing the output blocks (which is easily
+achievable with audio signals).</p>
+<section id="id2">
+<h3>Design<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<p>This core uses a single <code class="docutils literal notranslate"><span class="pre">SyncFIFO</span></code> for storage of size <code class="docutils literal notranslate"><span class="pre">n_overlap</span></code>, which is
+continuously filled and drained between blocks to create overlapping outputs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span></code>) – Incoming (continuous) stream of real samples.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span></code>) – Outgoing stream of blocks of real samples.
+at intervals matching the <code class="docutils literal notranslate"><span class="pre">sz</span></code> of this component.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.ComputeOverlappingBlocks.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_overlap</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.ComputeOverlappingBlocks.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point types used for inputs and outputs. This is
+the shape of a single number, this core wraps it in <code class="xref py py-class docutils literal notranslate"><span class="pre">Block</span></code>(shape).</p>
+</dd>
+<dt>sz<span class="classifier">int</span></dt><dd><p>Size of the output blocks.</p>
+</dd>
+<dt>n_overlap<span class="classifier">int</span></dt><dd><p>Number of elements shared between adjacent output blocks.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.OverlapAddBlocks">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.fft.</span></span><span class="sig-name descname"><span class="pre">OverlapAddBlocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.OverlapAddBlocks" title="Link to this definition"></a></dt>
+<dd><p>Convert <code class="xref py py-class docutils literal notranslate"><span class="pre">Block</span></code> stream to continuous samples by ‘Overlap-Add’.</p>
+<p>This core is a building block for the <a class="reference internal" href="#tiliqua.dsp.fft.STFTProcessor" title="tiliqua.dsp.fft.STFTProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTProcessor</span></code></a> family of components. It takes
+overlapping, delineated blocks of samples, adds up the overlapping elements
+and sends a stream of (non-delineated) continuous samples.</p>
+<p>Again, an example for (sz=8, n_overlap=4). From the input perspective, say we have:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>payload.sample:  0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J ...
+payload.first:   1               1               1
+</pre></div>
+</div>
+<p>This core would send out the following stream:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Block 1:  0 1 2 3 4 5 6 7
+Block 2:          8 9 A B C D E F
+Block 3:                  G H I J ...
+
+Out:      0 1 2 3 4 5 6 7 C D E J
+          + + + + + + + + + + + +
+          X X X X 8 9 A B G H I F ... (X == zero padding)
+</pre></div>
+</div>
+<p>From above, it should be clear that each output sample is formed by summing the
+‘overlapping’ parts of each input block, and that there are less output samples
+than input samples as a result.</p>
+<p>Note that connecting a <a class="reference internal" href="#tiliqua.dsp.fft.ComputeOverlappingBlocks" title="tiliqua.dsp.fft.ComputeOverlappingBlocks"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComputeOverlappingBlocks</span></code></a> straight to an <a class="reference internal" href="#tiliqua.dsp.fft.OverlapAddBlocks" title="tiliqua.dsp.fft.OverlapAddBlocks"><code class="xref py py-class docutils literal notranslate"><span class="pre">OverlapAddBlocks</span></code></a>
+will not reconstruct the original signal, unless the samples are windowed (tapered)
+for perfect reconstruction. For an example, see the <a class="reference internal" href="#tiliqua.dsp.fft.STFTProcessor" title="tiliqua.dsp.fft.STFTProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTProcessor</span></code></a> family of components.</p>
+<section id="id3">
+<h3>Design<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<p>This core uses two <code class="docutils literal notranslate"><span class="pre">SyncFIFO</span></code> for storage of size <code class="docutils literal notranslate"><span class="pre">sz</span></code>, which are both
+continuously filled and drained as necessary to add up the correct overlapping parts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span></code>) – Incoming stream of blocks of overlapping real samples.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span></code>) – Outgoing stream of continuous real samples.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.OverlapAddBlocks.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_overlap</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.OverlapAddBlocks.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point types used for inputs and outputs. This is
+the shape of a single number, this core wraps it in <code class="xref py py-class docutils literal notranslate"><span class="pre">Block</span></code>(shape).</p>
+</dd>
+<dt>sz<span class="classifier">int</span></dt><dd><p>Size of the input blocks.</p>
+</dd>
+<dt>n_overlap<span class="classifier">int</span></dt><dd><p>Number of elements shared between adjacent input blocks.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+</section>
+<section id="stfts">
+<h2>STFTs<a class="headerlink" href="#stfts" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.STFTProcessor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.fft.</span></span><span class="sig-name descname"><span class="pre">STFTProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.STFTProcessor" title="Link to this definition"></a></dt>
+<dd><p>Short-Time Fourier Transform (‘Overlap-Add’) with shared FFT core.</p>
+<p>This core performs both analysis and re-synthesis of time-domain samples by passing
+them through the frequency domain for spectral processing by user logic.</p>
+<p>The general flow of operations:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">i</span></code> (samples in) -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.ComputeOverlappingBlocks" title="tiliqua.dsp.fft.ComputeOverlappingBlocks"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComputeOverlappingBlocks</span></code></a> -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.Window" title="tiliqua.dsp.fft.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.FFT" title="tiliqua.dsp.fft.FFT"><code class="xref py py-class docutils literal notranslate"><span class="pre">FFT</span></code></a> -&gt; <code class="docutils literal notranslate"><span class="pre">o_freq</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i_freq</span></code> -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.FFT" title="tiliqua.dsp.fft.FFT"><code class="xref py py-class docutils literal notranslate"><span class="pre">FFT</span></code></a> (inverse) -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.Window" title="tiliqua.dsp.fft.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.OverlapAddBlocks" title="tiliqua.dsp.fft.OverlapAddBlocks"><code class="xref py py-class docutils literal notranslate"><span class="pre">OverlapAddBlocks</span></code></a> -&gt; <code class="docutils literal notranslate"><span class="pre">o</span></code> (samples out)</p></li>
+</ul>
+</div></blockquote>
+<p>If <code class="docutils literal notranslate"><span class="pre">o_freq</span></code> and <code class="docutils literal notranslate"><span class="pre">i_freq</span></code> frequency-domain streams are directly connected together
+with no processing logic, this core will perfectly resynthesize the original signal.</p>
+<p><a class="reference internal" href="#tiliqua.dsp.fft.Window.Function.SQRT_HANN" title="tiliqua.dsp.fft.Window.Function.SQRT_HANN"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window.Function.SQRT_HANN</span></code></a> windowing is used in both the analysis and synthesis stages.</p>
+<section id="id4">
+<h3>Design<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<p>Unlike <a class="reference internal" href="#tiliqua.dsp.fft.STFTProcessorPipelined" title="tiliqua.dsp.fft.STFTProcessorPipelined"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTProcessorPipelined</span></code></a>, this implementation saves area by time-multiplexing
+<a class="reference internal" href="#tiliqua.dsp.fft.FFT" title="tiliqua.dsp.fft.FFT"><code class="xref py py-class docutils literal notranslate"><span class="pre">FFT</span></code></a> and <a class="reference internal" href="#tiliqua.dsp.fft.Window" title="tiliqua.dsp.fft.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> cores between analysis and synthesis operations, at the cost of
+reduced throughput. For audio purposes, this core is easily still fast enough for real-time
+processing.</p>
+<p>At a high level, the components are connected in a different sequence depending
+on which state the core is in. The core contains a single <cite>SyncFIFO</cite> used to buffer
+all the outputs of user (frequency domain) processing logic. This is required to
+avoid backpressure on the user logic while it is disconnected from the IFFT stage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span></code>) – Continuous time-domain input stream</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span></code>) – Continuous time-domain output stream (reconstructed)</p></li>
+<li><p><strong>o_freq</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="n">CQ</span><span class="p">(</span><span class="n">shape</span><span class="p">))))</span></code>) – Frequency-domain output blocks for processing by user logic</p></li>
+<li><p><strong>i_freq</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="n">CQ</span><span class="p">(</span><span class="n">shape</span><span class="p">))))</span></code>) – Frequency-domain input blocks after processing by user logic</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.STFTProcessor.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.STFTProcessor.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point samples used for inputs and outputs.</p>
+</dd>
+<dt>sz<span class="classifier">int</span></dt><dd><p>Size of the frequency-domain blocks used internally and exposed for frequency
+domain processing. <code class="docutils literal notranslate"><span class="pre">o_freq</span></code> and <code class="docutils literal notranslate"><span class="pre">i_freq</span></code> are delineated by blocks
+with a <code class="docutils literal notranslate"><span class="pre">payload.first</span></code> strobe every <code class="docutils literal notranslate"><span class="pre">sz</span></code> elements.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.STFTAnalyzer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.fft.</span></span><span class="sig-name descname"><span class="pre">STFTAnalyzer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.STFTAnalyzer" title="Link to this definition"></a></dt>
+<dd><p>Short-Time Fourier Transform for spectral analysis.</p>
+<p>This core allows frequency-domain analysis of time-domain samples by passing them through
+the following signal flow:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">i</span></code> (samples in) -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.ComputeOverlappingBlocks" title="tiliqua.dsp.fft.ComputeOverlappingBlocks"><code class="xref py py-class docutils literal notranslate"><span class="pre">ComputeOverlappingBlocks</span></code></a> -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.Window" title="tiliqua.dsp.fft.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.FFT" title="tiliqua.dsp.fft.FFT"><code class="xref py py-class docutils literal notranslate"><span class="pre">FFT</span></code></a> -&gt; <code class="docutils literal notranslate"><span class="pre">o</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>For a more resource-efficient STFT that performs both analysis and synthesis, see <a class="reference internal" href="#tiliqua.dsp.fft.STFTProcessor" title="tiliqua.dsp.fft.STFTProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTProcessor</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span></code>) – Continuous time-domain input stream</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="n">CQ</span><span class="p">(</span><span class="n">shape</span><span class="p">))))</span></code>) – Frequency-domain output blocks for processing by user logic</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.STFTAnalyzer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Window.Function.HANN</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.STFTAnalyzer.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point samples used for inputs and outputs.</p>
+</dd>
+<dt>sz<span class="classifier">int</span></dt><dd><p>Size of the frequency-domain blocks used internally and exposed for frequency
+domain processing.</p>
+</dd>
+<dt>window<span class="classifier">Window.Function</span></dt><dd><p>Window function applied to time-domain blocks the FFT.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.STFTSynthesizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.fft.</span></span><span class="sig-name descname"><span class="pre">STFTSynthesizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.STFTSynthesizer" title="Link to this definition"></a></dt>
+<dd><p>Short-Time Fourier Transform for spectral synthesis.</p>
+<p>This core allows frequency-domain synthesis of time-domain samples by passing them through
+the following signal flow:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">i_freq</span></code> -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.FFT" title="tiliqua.dsp.fft.FFT"><code class="xref py py-class docutils literal notranslate"><span class="pre">FFT</span></code></a> (inverse) -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.Window" title="tiliqua.dsp.fft.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> -&gt; <a class="reference internal" href="#tiliqua.dsp.fft.OverlapAddBlocks" title="tiliqua.dsp.fft.OverlapAddBlocks"><code class="xref py py-class docutils literal notranslate"><span class="pre">OverlapAddBlocks</span></code></a> -&gt; <code class="docutils literal notranslate"><span class="pre">o</span></code> (samples out)</p></li>
+</ul>
+</div></blockquote>
+<p>For a more resource-efficient STFT that performs both analysis and synthesis, see <a class="reference internal" href="#tiliqua.dsp.fft.STFTProcessor" title="tiliqua.dsp.fft.STFTProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTProcessor</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="n">CQ</span><span class="p">(</span><span class="n">shape</span><span class="p">))))</span></code>) – Frequency-domain input blocks used for synthesis.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span></code>) – Continuous time-domain output stream</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.STFTSynthesizer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Window.Function.HANN</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.STFTSynthesizer.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point samples used for inputs and outputs.</p>
+</dd>
+<dt>sz<span class="classifier">int</span></dt><dd><p>Size of the frequency-domain blocks used internally and exposed for frequency
+domain processing.</p>
+</dd>
+<dt>window<span class="classifier">Window.Function</span></dt><dd><p>Window function applied to time-domain blocks after the IFFT, but before overlap-add.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.STFTProcessorPipelined">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.fft.</span></span><span class="sig-name descname"><span class="pre">STFTProcessorPipelined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.STFTProcessorPipelined" title="Link to this definition"></a></dt>
+<dd><p>Short-Time Fourier Transform (‘Overlap-Add’) with separate FFT/IFFT cores.</p>
+<p>This core performs both analysis and re-synthesis of time-domain samples by passing
+them through the frequency domain for spectral processing by user logic.</p>
+<p>This is a simpler-to-understand version of <a class="reference internal" href="#tiliqua.dsp.fft.STFTProcessor" title="tiliqua.dsp.fft.STFTProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTProcessor</span></code></a> as it does not share
+the <a class="reference internal" href="#tiliqua.dsp.fft.Window" title="tiliqua.dsp.fft.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> or <a class="reference internal" href="#tiliqua.dsp.fft.FFT" title="tiliqua.dsp.fft.FFT"><code class="xref py py-class docutils literal notranslate"><span class="pre">FFT</span></code></a> cores, making it higher throughput, but also higher
+resource usage, because it can perform the FFT and IFFT at the same time.</p>
+<p>This core is mostly used for testing the <a class="reference internal" href="#tiliqua.dsp.fft.STFTAnalyzer" title="tiliqua.dsp.fft.STFTAnalyzer"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTAnalyzer</span></code></a> and <a class="reference internal" href="#tiliqua.dsp.fft.STFTSynthesizer" title="tiliqua.dsp.fft.STFTSynthesizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTSynthesizer</span></code></a>
+components in isolation, and doesn’t make much sense to use in real projects compared
+to just using the <a class="reference internal" href="#tiliqua.dsp.fft.STFTProcessor" title="tiliqua.dsp.fft.STFTProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">STFTProcessor</span></code></a> above, which is much more resource efficient
+for audio applications. Unless you have super high sample rates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span></code>) – Continuous time-domain input stream</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span></code>) – Continuous time-domain output stream (reconstructed)</p></li>
+<li><p><strong>o_freq</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="n">CQ</span><span class="p">(</span><span class="n">shape</span><span class="p">))))</span></code>) – Frequency-domain output blocks for processing by user logic</p></li>
+<li><p><strong>i_freq</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">Block</span><span class="p">(</span><span class="n">CQ</span><span class="p">(</span><span class="n">shape</span><span class="p">))))</span></code>) – Frequency-domain input blocks after processing by user logic</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.fft.STFTProcessorPipelined.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.fft.STFTProcessorPipelined.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>shape<span class="classifier">fixed.SQ</span></dt><dd><p>Shape of the fixed-point samples used for inputs and outputs.</p>
+</dd>
+<dt>sz<span class="classifier">int</span></dt><dd><p>Size of the frequency-domain blocks used internally and exposed for frequency
+domain processing.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="delay_effect.html" class="btn btn-neutral float-left" title="Delay Effects" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="spectral.html" class="btn btn-neutral float-right" title="Spectral Processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Filters &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Oscillators" href="oscillators.html" />
+    <link rel="prev" title="Delay Lines" href="delay_lines.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">DSP Library</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#philosophy">Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#interconnect">Interconnect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-and-specialized-components">‘Basic’ and ‘Specialized’ components</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#basic-dsp-components">Basic DSP Components</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="delay_lines.html">Delay Lines</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Filters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.SVF"><code class="docutils literal notranslate"><span class="pre">SVF</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.FIR"><code class="docutils literal notranslate"><span class="pre">FIR</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tiliqua.dsp.DCBlock"><code class="docutils literal notranslate"><span class="pre">DCBlock</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="oscillators.html">Oscillators</a></li>
+<li class="toctree-l3"><a class="reference internal" href="effects.html">Effects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="vca.html">VCAs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mix.html">Mixing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="resample.html">Resampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="oneshot.html">One-shot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stream_util.html">Stream utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="misc.html">Miscellaneous utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#specialized-modules">Specialized Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">DSP Library</a></li>
+      <li class="breadcrumb-item active">Filters</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dsp/filters.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="filters">
+<h1>Filters<a class="headerlink" href="#filters" title="Link to this heading"></a></h1>
+<p>Basic fixed-point audio filters.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.SVF">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">SVF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.SVF" title="Link to this definition"></a></dt>
+<dd><p>Oversampled Chamberlin State Variable Filter. Provides tunable high-, low-, and
+band-pass outputs given a stream of input samples. Filter <code class="docutils literal notranslate"><span class="pre">cutoff</span></code> and
+<code class="docutils literal notranslate"><span class="pre">resonance</span></code> are tunable at the system sample rate, with highpass, lowpass,
+bandpass outputs available on stream payloads <cite>hp</cite>, <cite>lp</cite>, <cite>bp</cite>.</p>
+<p>Includes 2x oversampling internally for improved stability close to Nyquist
+/ at high resonances. Each output sample uses 6 multiplies.</p>
+<p>Reference: Fig.3 in <a class="reference external" href="https://arxiv.org/pdf/2111.05592">https://arxiv.org/pdf/2111.05592</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">StructLayout</span><span class="p">({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">sq</span><span class="p">,</span> <span class="s2">&quot;cutoff&quot;</span><span class="p">:</span> <span class="n">sq</span><span class="p">,</span> <span class="s2">&quot;resonance&quot;</span><span class="p">:</span> <span class="n">sq</span><span class="p">}))</span></code>) – Input stream for sending input <code class="docutils literal notranslate"><span class="pre">x</span></code> and tuning values <code class="docutils literal notranslate"><span class="pre">cutoff</span></code>, <code class="docutils literal notranslate"><span class="pre">resonance</span></code> to the filter.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">StructLayout</span><span class="p">({</span><span class="s2">&quot;lp&quot;</span><span class="p">:</span> <span class="n">sq</span><span class="p">,</span> <span class="s2">&quot;hp&quot;</span><span class="p">:</span> <span class="n">sq</span><span class="p">,</span> <span class="s2">&quot;bp&quot;</span><span class="p">:</span> <span class="n">sq</span><span class="p">}))</span></code>) – Output stream for getting high-, low-, bandpass samples from the filter.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.SVF.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ASQ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">macp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.SVF.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>sq<span class="classifier">fixed.SQ</span></dt><dd><p>Data type for all input/output payloads of the SVF.</p>
+</dd>
+<dt>macp<span class="classifier">mac.MAC</span></dt><dd><p>Optional shared MAC provider.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.FIR">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">FIR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.FIR" title="Link to this definition"></a></dt>
+<dd><p>Fixed-point FIR filter that uses a single multiplier.</p>
+<p>This filter contains some optional optimizations to act as an efficient
+interpolator/decimator. For details, see <code class="code highlight py python docutils literal highlight-python"><span class="n">stride_i</span></code>, <code class="code highlight py python docutils literal highlight-python"><span class="n">stride_o</span></code> below.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Members<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Input stream for sending samples to the filter.</p></li>
+<li><p><strong>o</strong> (<code class="code highlight py python docutils literal highlight-python"><span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">ASQ</span><span class="p">))</span></code>) – Output stream for getting samples from the filter. There is 1 output
+sample per input sample, presented <code class="code highlight py python docutils literal highlight-python"><span class="n">filter_order</span><span class="o">+</span><span class="mi">1</span></code> cycles after
+the input sample. For <code class="code highlight py python docutils literal highlight-python"><span class="n">stride_o</span> <span class="o">&gt;</span> <span class="mi">1</span></code>, there is only 1 output
+sample per <code class="code highlight py python docutils literal highlight-python"><span class="n">stride_o</span></code> input samples.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.FIR.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_cutoff_hz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lowpass'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prescale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride_i</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride_o</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ASQ</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.FIR.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>fs<span class="classifier">int</span></dt><dd><p>Sample rate of the filter, used for calculating FIR coefficients.</p>
+</dd>
+<dt>filter_cutoff_hz<span class="classifier">int</span></dt><dd><p>Cutoff frequency of the filter, used for calculating FIR coefficients.</p>
+</dd>
+<dt>filter_order<span class="classifier">int</span></dt><dd><p>Size of the filter (number of coefficients).</p>
+</dd>
+<dt>filter_type<span class="classifier">str</span></dt><dd><p>Type of the filter passed to <code class="code highlight py python docutils literal highlight-python"><span class="n">signal</span><span class="o">.</span><span class="n">firwin</span></code> - <code class="code highlight py python docutils literal highlight-python"><span class="s2">&quot;lowpass&quot;</span></code>,
+<code class="code highlight py python docutils literal highlight-python"><span class="s2">&quot;highpass&quot;</span></code> or so on.</p>
+</dd>
+<dt>prescale<span class="classifier">float</span></dt><dd><p>All taps are scaled by <code class="code highlight py python docutils literal highlight-python"><span class="n">prescale</span></code>. This is used in cases where
+you are upsampling and need to preserve energy. Be careful with this,
+it can overflow the tap coefficients (you’ll get a warning).</p>
+</dd>
+<dt>stride_i<span class="classifier">int</span></dt><dd><p>When an FIR filter is used as an interpolator, a common pattern is
+to provide 1 ‘actual’ sample and pad S-1 zeroes for every S
+output samples needed. For any <code class="code highlight py python docutils literal highlight-python"><span class="n">stride</span> <span class="o">&gt;</span> <span class="mi">1</span></code>, the <code class="code highlight py python docutils literal highlight-python"><span class="n">stride</span></code>
+must evenly divide <code class="code highlight py python docutils literal highlight-python"><span class="n">filter_order</span></code> (i.e. no remainder). For
+<code class="code highlight py python docutils literal highlight-python"><span class="n">stride</span> <span class="o">&gt;</span> <span class="mi">1</span></code>, this core applies some optimizations, assuming
+every S’th sample is nonzero, and the rest are zero. This results in
+a factor S reduction in MAC ops (latency) and a factor S reduction in
+RAM needed for sample storage. The tap storage remains of size
+<code class="code highlight py python docutils literal highlight-python"><span class="n">filter_order</span></code> as all taps are still mathematically required.
+The nonzero sample must be the first sample to arrive.</p>
+</dd>
+<dt>stride_o<span class="classifier">int</span></dt><dd><p>When an FIR filter is used as a decimator, it is common to keep only
+1 sample and discard M-1 samples (if decimating by factor M). For
+<code class="code highlight py python docutils literal highlight-python"><span class="n">stride_o</span> <span class="o">==</span> <span class="n">M</span></code>, only 1 output sample is produced per M input
+samples. This does not reduce LUT/RAM usage, but avoids performing
+MACs to produce samples that will be discarded.</p>
+</dd>
+<dt>shape<span class="classifier">fixed.Shape</span></dt><dd><p>Fixed-point shape for input/output samples. Defaults to ASQ.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.DCBlock">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.</span></span><span class="sig-name descname"><span class="pre">DCBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.DCBlock" title="Link to this definition"></a></dt>
+<dd><p>DC blocker (single-pole IIR with a cutoff near DC). Useful before components
+that can stack DC and overflow (e.g. matrix mixers). Only needs a single multiply
+per sample.</p>
+<p>Loosely based on:
+<a class="reference external" href="https://dspguru.com/dsp/tricks/fixed-point-dc-blocking-filter-with-noise-shaping/">https://dspguru.com/dsp/tricks/fixed-point-dc-blocking-filter-with-noise-shaping/</a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.DCBlock.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pole</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">ASQ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">macp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.DCBlock.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>pole<span class="classifier">float</span></dt><dd><p>Filter cutoff. Closer to 1 is closer to DC.</p>
+</dd>
+<dt>sq<span class="classifier">fixed.SQ</span></dt><dd><p>Data type for all input/output payloads of the filter.</p>
+</dd>
+<dt>macp<span class="classifier">mac.MAC</span></dt><dd><p>Optional shared MAC provider.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="delay_lines.html" class="btn btn-neutral float-left" title="Delay Lines" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="oscillators.html" class="btn btn-neutral float-right" title="Oscillators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

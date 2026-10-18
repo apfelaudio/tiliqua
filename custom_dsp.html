@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 2: DSP blocks (tiliqua.dsp) &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial 3: Video cores (top.beamrace)" href="beamrace_video.html" />
+    <link rel="prev" title="Tutorial 1: Audio cores (top.dsp)" href="audio_bitstreams.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Tiliqua
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#fixed-point-lorenz-attractor">Fixed-point Lorenz Attractor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#oscillator-skeleton">Oscillator Skeleton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#implementing-lorenz">Implementing <code class="docutils literal notranslate"><span class="pre">Lorenz</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#testing-with-amaranth-sim">Testing with <code class="docutils literal notranslate"><span class="pre">amaranth.sim</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-on-hardware">Running on hardware</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#side-quest-squashing-multipliers">Side quest: squashing multipliers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#multiplies-can-be-shifts">Multiplies can be shifts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sharing-multipliers">Sharing multipliers</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-more-blocks">Adding more blocks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/custom_dsp.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-2-dsp-blocks-tiliqua-dsp">
+<h1>Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)<a class="headerlink" href="#tutorial-2-dsp-blocks-tiliqua-dsp" title="Link to this heading"></a></h1>
+<p>When building audio pipelines, you have the option of re-using cores already present in Tiliqua’s DSP library (connecting them together in different ways), or of building your own DSP blocks from scratch to add to the library.</p>
+<p>In this tutorial, we’ll start by implementing our own custom DSP block (a ‘chaos oscillator’, from scratch), and then integrate it with some of the existing blocks. The goal of this tutorial is to add a new DSP block to the library and use it in a new example bitstream in <a class="reference external" href="https://github.com/apfaudio/tiliqua/tree/main/gateware/src/top/dsp">gateware/src/top/dsp</a>, so we can run it on Tiliqua hardware.</p>
+<section id="fixed-point-lorenz-attractor">
+<h2>Fixed-point Lorenz Attractor<a class="headerlink" href="#fixed-point-lorenz-attractor" title="Link to this heading"></a></h2>
+<p>First, let’s construct a new DSP block. We’ll be implementing a <a class="reference external" href="https://en.wikipedia.org/wiki/Lorenz_system">Lorenz Attractor</a>. This is a system of equations which, when solved, create an interesting time-evolving 3D pattern like this:</p>
+<figure class="align-default">
+<img alt="_images/test_lorenz_plot2.png" src="_images/test_lorenz_plot2.png" />
+</figure>
+<p>Taking the equations straight from the Wikipedia page:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>dx/dt = σ * (y - x)
+dy/dt = x * (ρ - z) - y
+dz/dt = x * y - β * z
+
+Where the constants:
+    σ = 10
+    ρ = 28
+    β = 8/3
+(for the standard Lorenz attractor shape)
+</pre></div>
+</div>
+<p>Don’t be scared by the derivatives! One way to see the equations as a set of multiplies / adds / accumulations, which when executed iteratively in steps, will create the interesting pattern above.</p>
+</section>
+<section id="oscillator-skeleton">
+<h2>Oscillator Skeleton<a class="headerlink" href="#oscillator-skeleton" title="Link to this heading"></a></h2>
+<p>Let’s start by adding a skeleton to the bottom of <code class="docutils literal notranslate"><span class="pre">gateware/src/tiliqua/dsp/oscillators.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Lorenz</span><span class="p">(</span><span class="n">wiring</span><span class="o">.</span><span class="n">Component</span><span class="p">):</span>
+
+    <span class="c1"># Outgoing sample stream, 3 channels (for X, Y, Z)</span>
+    <span class="c1"># ASQ is the native sample type (16-bits wide, fixed-point)</span>
+    <span class="n">o</span><span class="p">:</span> <span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">elaborate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+
+        <span class="n">m</span> <span class="o">=</span> <span class="n">Module</span><span class="p">()</span>
+
+        <span class="c1"># TODO: add logic here</span>
+
+        <span class="k">return</span> <span class="n">m</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As we saw previously, a <code class="docutils literal notranslate"><span class="pre">stream.Signature</span></code> is an Amaranth construct describing a <em>stream of data</em> that is accompanied by a <code class="docutils literal notranslate"><span class="pre">valid</span></code>/<code class="docutils literal notranslate"><span class="pre">ready</span></code> handshake. This is a simple protocol used commonly in digital logic. For more details, see <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/stream.html">Data streams</a> in the Amaranth documentation.</p>
+</div>
+<p>As this is an oscillator with no tuning input, we only have <code class="docutils literal notranslate"><span class="pre">self.o</span></code>, which is an outgoing stream. The oscillator will be allowed to emit samples as long as the downstream component is ready for one, which is signalled by <code class="docutils literal notranslate"><span class="pre">self.o.ready</span></code>. As we’ll see, this backpressure will be used to throttle our outgoing samples to exactly match the audio codec sample rate.</p>
+</section>
+<section id="implementing-lorenz">
+<h2>Implementing <code class="docutils literal notranslate"><span class="pre">Lorenz</span></code><a class="headerlink" href="#implementing-lorenz" title="Link to this heading"></a></h2>
+<p>Next, we’ll implement the oscillator logic at the <code class="docutils literal notranslate"><span class="pre">TODO</span></code> point above. To start, let’s pick a numeric type for our calculations and then define the required constants:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Type used for internal computations.</span>
+<span class="c1"># Signed fixed-point, 8 integer bits, 8 fractional bits.</span>
+<span class="n">sq</span> <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">SQ</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+<span class="c1"># System constants for standard Lorenz shape.</span>
+<span class="c1"># Cast all floating point values to fit in the fixed-point type above</span>
+<span class="c1"># (with loss of precision!)</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+<span class="n">rho</span>   <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">28.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+<span class="n">beta</span>  <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">8.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">sq</span></code> type has more integer bits than the native audio sample format (which only has 1 integer bit), because the Lorenz calculations span approximately <code class="docutils literal notranslate"><span class="pre">(-30..30)</span></code>, which would overflow 1 integer bit, as we’ll see during simulation.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Be careful when picking fixed-point types, as <strong>one ECP5 multiplier takes a maximum width of 18 bits</strong> - if your type is larger, more multipliers might be consumed than you expect.</p>
+</div>
+<p>For calculating each iteration and scaling the outputs, we’ll need 2 more constants:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Timestep - this is how fast our output point X, Y, Z moves around - which is</span>
+<span class="c1"># directly proportional to the oscillator frequency</span>
+<span class="n">dt_inv</span> <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+
+<span class="c1"># Output scale - Since the equations will emit results between ``(-30..30)`` and</span>
+<span class="c1"># this component sends native audio samples in the range ``(-1..1)``, we will</span>
+<span class="c1"># need to scale each point down before sending it out.</span>
+<span class="n">scale</span> <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">0.015</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now, we can create 3 registers, one each for the current X, Y and Z position, (as well as their initial values, which are also taken from the Wikipedia page):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># State variables and initial conditions</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">sq</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">))</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">sq</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">))</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">sq</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>You will note in the Lorenz equations above, only the current position and some constants appear in them. So, using <code class="docutils literal notranslate"><span class="pre">lib.fixed</span></code>, we can just write these equations in Amaranth directly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute derivative terms (without timestep)</span>
+<span class="n">dx</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+<span class="n">dy</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="n">rho</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span> <span class="o">-</span> <span class="n">y</span>
+<span class="n">dz</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span> <span class="o">-</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">z</span>
+</pre></div>
+</div>
+<p>This creates 3 new signals, <code class="docutils literal notranslate"><span class="pre">dx</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code> and <code class="docutils literal notranslate"><span class="pre">dz</span></code>, which are combinatorially dependent on <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code>. That is, they do not change as long as <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">z</span></code> do not change.</p>
+<p>Finally, we can add the update logic that executes a timestep. This should only happen when the downstream component is <code class="docutils literal notranslate"><span class="pre">ready</span></code>, so we are only stepping forward in time as fast as the downstream component can consume our outputs:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">m</span><span class="o">.</span><span class="n">If</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">ready</span><span class="p">):</span>
+    <span class="c1"># Update state only when output is consumed.</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">sync</span> <span class="o">+=</span> <span class="p">[</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">dt_inv</span><span class="p">),</span> <span class="c1"># x = x + dx/dt</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="n">dt_inv</span><span class="p">),</span>
+        <span class="n">z</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">dz</span> <span class="o">*</span> <span class="n">dt_inv</span><span class="p">),</span>
+    <span class="p">]</span>
+</pre></div>
+</div>
+<p>Now we have a system where <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code> are evolving, however they are not connected to our <code class="docutils literal notranslate"><span class="pre">self.o</span></code> output stream. Let’s do that:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Scale all outputs to fit in [-1, +1]</span>
+<span class="n">m</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">comb</span> <span class="o">+=</span> <span class="p">[</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">z</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">valid</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this example, we are also wiring <code class="docutils literal notranslate"><span class="pre">self.o.valid</span></code> to be permanently asserted. We can do this, because our outputs are always valid. Some components may present invalid outputs or take many clocks to produce the next output, in which case <code class="docutils literal notranslate"><span class="pre">self.o.valid</span></code> should be deasserted to prevent downstream components from consuming the output sample.</p>
+</div>
+<p>And that’s it! Here’s the complete <code class="docutils literal notranslate"><span class="pre">Lorenz</span></code> component:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Lorenz</span><span class="p">(</span><span class="n">wiring</span><span class="o">.</span><span class="n">Component</span><span class="p">):</span>
+
+    <span class="n">o</span><span class="p">:</span> <span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">elaborate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+
+        <span class="n">m</span> <span class="o">=</span> <span class="n">Module</span><span class="p">()</span>
+
+        <span class="n">sq</span> <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">SQ</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+
+        <span class="n">sigma</span>  <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+        <span class="n">rho</span>    <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">28.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+        <span class="n">beta</span>   <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">8.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+        <span class="n">dt_inv</span> <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+        <span class="n">scale</span>  <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">0.015</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">sq</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">sq</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">))</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">sq</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">))</span>
+
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="n">rho</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span> <span class="o">-</span> <span class="n">y</span>
+        <span class="n">dz</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span> <span class="o">-</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">z</span>
+
+        <span class="k">with</span> <span class="n">m</span><span class="o">.</span><span class="n">If</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">ready</span><span class="p">):</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">sync</span> <span class="o">+=</span> <span class="p">[</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">dt_inv</span><span class="p">),</span>
+                <span class="n">y</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="n">dt_inv</span><span class="p">),</span>
+                <span class="n">z</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">dz</span> <span class="o">*</span> <span class="n">dt_inv</span><span class="p">),</span>
+            <span class="p">]</span>
+
+        <span class="n">m</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">comb</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">z</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">valid</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">m</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-with-amaranth-sim">
+<h2>Testing with <code class="docutils literal notranslate"><span class="pre">amaranth.sim</span></code><a class="headerlink" href="#testing-with-amaranth-sim" title="Link to this heading"></a></h2>
+<p><a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/simulator.html">Amaranth’s built-in simulator</a> provides fantastic infrastructure for testing gateware blocks in Python. Let’s use this to test the <code class="docutils literal notranslate"><span class="pre">Lorenz</span></code> core we just implemented.</p>
+<p>We can start by adding a new test to <code class="docutils literal notranslate"><span class="pre">tests/test_dsp.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_lorenz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="c1"># Oscillator instance</span>
+    <span class="n">dut</span> <span class="o">=</span> <span class="n">dsp</span><span class="o">.</span><span class="n">oscillators</span><span class="o">.</span><span class="n">Lorenz</span><span class="p">()</span>
+
+    <span class="c1"># Testbench: run it for as long as it takes to compute 5000 samples,</span>
+    <span class="c1"># and store the samples as arrays of length 3 e.g.</span>
+    <span class="c1"># points = [[x1,y1,z1], [x2,y2,z2], ...]</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">testbench</span><span class="p">(</span><span class="n">ctx</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5000</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">stream</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">dut</span><span class="o">.</span><span class="n">o</span><span class="p">)</span>
+            <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">r</span><span class="o">.</span><span class="n">as_float</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">result</span><span class="p">])</span>
+
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">Simulator</span><span class="p">(</span><span class="n">dut</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_clock</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_testbench</span><span class="p">(</span><span class="n">testbench</span><span class="p">)</span>
+    <span class="c1"># Save the waveform dump to a `*.vcd` file viewable in</span>
+    <span class="c1"># `gtkwave` or `surfer`.</span>
+    <span class="k">with</span> <span class="n">sim</span><span class="o">.</span><span class="n">write_vcd</span><span class="p">(</span><span class="n">vcd_file</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="s2">&quot;test_lorenz.vcd&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)):</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>At this point, we probably don’t want to run <code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">test</span></code> to execute every test in the suite, as that can take a while. Instead, to execute only the function we added, we can use something like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># From `gateware` directory</span>
+$<span class="w"> </span>pdm<span class="w"> </span>run<span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_dsp.py<span class="w"> </span>-k<span class="w"> </span>lorenz
+</pre></div>
+</div>
+<p>Upon opening up <code class="docutils literal notranslate"><span class="pre">test_lorenz.vcd</span></code> with <code class="docutils literal notranslate"><span class="pre">gtkwave</span></code> and adding the <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code> signals to the plot, and then viewing the traces as analog values (again by right-clicking on a signal name in the right panel and setting <code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">Format-&gt;Analog-&gt;Step</span></code> and <code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">Format-&gt;Signed</span> <span class="pre">Decimal</span></code>), you will see:</p>
+<figure class="align-default" id="id1">
+<img alt="_images/lorenz_gtkwave.jpg" src="_images/lorenz_gtkwave.jpg" />
+<figcaption>
+<p><span class="caption-text">x, y, z starting at their initial conditions and then evolving over time</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>We could just as easily add the <code class="docutils literal notranslate"><span class="pre">o__payload[n]</span></code> signals, which are the outputs scaled down to fit in <code class="docutils literal notranslate"><span class="pre">-1..1</span></code>. Instead, since we collected the output points into <code class="docutils literal notranslate"><span class="pre">points</span></code> in our test harness above, let’s add some logic to plot them in 3D:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Append to `test_lorenz`, after `sim.run()` has completed</span>
+
+<span class="c1"># Imports here for brevity. Normally you want them at the top of the file</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.mplot3d</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axes3D</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Plot the points in 3D and save to an image.</span>
+<span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">lw</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;test_lorenz_plot.png&#39;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now, on running the test again, we get this nice image saved to <code class="docutils literal notranslate"><span class="pre">test_lorenz_plot.png</span></code>:</p>
+<figure class="align-default">
+<img alt="_images/test_lorenz_plot2.png" src="_images/test_lorenz_plot2.png" />
+</figure>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Feel free to experiment with changing the various constants in <code class="docutils literal notranslate"><span class="pre">Lorenz</span></code> to see if you can make different shapes!</p>
+</div>
+</section>
+<section id="running-on-hardware">
+<h2>Running on hardware<a class="headerlink" href="#running-on-hardware" title="Link to this heading"></a></h2>
+<p>To run this core on hardware, it first needs to be integrated into a <em>top-level bitstream</em>, which contains all the support logic needed to interface with the outside world. As we saw in the previous tutorial, an easy place to do this is by adding a new core to <code class="docutils literal notranslate"><span class="pre">gateware/src/top/dsp/top.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">LorenzAttractor</span><span class="p">(</span><span class="n">wiring</span><span class="o">.</span><span class="n">Component</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lorenz attractor chaotic oscillator.</span>
+
+<span class="sd">    Outputs x, y, z on channels 0, 1, 2 respectively.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Tiliqua&#39;s &#39;standard interface&#39;: 4-in and 4-out audio,</span>
+    <span class="c1"># as expected by `CoreTop` which contains the required drivers.</span>
+    <span class="n">i</span><span class="p">:</span> <span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+    <span class="n">o</span><span class="p">:</span> <span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+
+    <span class="c1"># Metadata shown as help in the bootloader</span>
+    <span class="n">bitstream_help</span> <span class="o">=</span> <span class="n">BitstreamHelp</span><span class="p">(</span>
+        <span class="n">brief</span><span class="o">=</span><span class="s2">&quot;Lorenz attractor (audio-only!)&quot;</span><span class="p">,</span>
+        <span class="n">io_left</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;x out&#39;</span><span class="p">,</span> <span class="s1">&#39;y out&#39;</span><span class="p">,</span> <span class="s1">&#39;z out&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">],</span>
+        <span class="n">io_right</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">elaborate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+
+        <span class="n">m</span> <span class="o">=</span> <span class="n">Module</span><span class="p">()</span>
+
+        <span class="c1"># Instantiate our oscillator</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">lorenz</span> <span class="o">=</span> <span class="n">lorenz</span> <span class="o">=</span> <span class="n">dsp</span><span class="o">.</span><span class="n">oscillators</span><span class="o">.</span><span class="n">Lorenz</span><span class="p">()</span>
+
+        <span class="c1"># Split the output channels (1 stream of 3 samples per payload) into</span>
+        <span class="c1"># 3 independent streams (3 streams each with 1 sample per payload).</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">split3</span> <span class="o">=</span> <span class="n">split3</span> <span class="o">=</span> <span class="n">dsp</span><span class="o">.</span><span class="n">Split</span><span class="p">(</span><span class="n">n_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">lorenz</span><span class="o">.</span><span class="n">o</span><span class="p">)</span>
+
+        <span class="c1"># Merge the 3 independent streams into 1 stream (4 samples per payload),</span>
+        <span class="c1"># to match the expected output width</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">merge4</span> <span class="o">=</span> <span class="n">merge4</span> <span class="o">=</span> <span class="n">dsp</span><span class="o">.</span><span class="n">Merge</span><span class="p">(</span>
+                <span class="n">n_channels</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">sink</span><span class="o">=</span><span class="n">wiring</span><span class="o">.</span><span class="n">flipped</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="p">))</span>
+        <span class="n">wiring</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">split3</span><span class="o">.</span><span class="n">o</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">merge4</span><span class="o">.</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">wiring</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">split3</span><span class="o">.</span><span class="n">o</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">merge4</span><span class="o">.</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">wiring</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">split3</span><span class="o">.</span><span class="n">o</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">merge4</span><span class="o">.</span><span class="n">i</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="c1"># The 4th output channel is unused, we must &#39;fake&#39; that it is valid</span>
+        <span class="c1"># so that the stream does not become blocked.</span>
+        <span class="n">merge4</span><span class="o">.</span><span class="n">wire_valid</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">m</span>
+</pre></div>
+</div>
+<p>As you can see, there is some stream splitting and merging required here to mate the <code class="docutils literal notranslate"><span class="pre">Lorenz</span></code> outputs (3 samples wide) with the Tiliqua outputs (4 samples wide). These <code class="docutils literal notranslate"><span class="pre">dsp.Split</span></code> and <code class="docutils literal notranslate"><span class="pre">dsp.Merge</span></code> components are commonly used to connect components together that might have different channel layouts. For more information on these, see <a class="reference internal" href="dsp/stream_util.html"><span class="doc">Stream utilities</span></a>.</p>
+<p>In order to be able to build this core, we’ll need to add a line to the top level <code class="docutils literal notranslate"><span class="pre">CORES</span></code> array:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Different DSP cores that can be selected at top-level CLI.</span>
+<span class="n">CORES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1">#                 (touch, class name)</span>
+    <span class="s2">&quot;mirror&quot;</span><span class="p">:</span>         <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">Mirror</span><span class="p">),</span>
+    <span class="s2">&quot;nco&quot;</span><span class="p">:</span>            <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">QuadNCO</span><span class="p">),</span>
+    <span class="s2">&quot;svf&quot;</span><span class="p">:</span>            <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">ResonantFilter</span><span class="p">),</span>
+    <span class="c1"># ...</span>
+    <span class="s2">&quot;lorenz&quot;</span><span class="p">:</span>         <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">LorenzAttractor</span><span class="p">),</span> <span class="c1"># &lt;-- add this</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>As a first step, we can run an integration test: that is, our <code class="docutils literal notranslate"><span class="pre">LorenzAttractor</span></code> core inside <code class="docutils literal notranslate"><span class="pre">CoreTop</span></code> including simulated drivers and audio codec and so on. This can be done as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>dsp<span class="w"> </span>sim<span class="w"> </span>--dsp-core<span class="o">=</span>lorenz<span class="w"> </span>--trace-fst
+</pre></div>
+</div>
+<p>As we saw in the last tutorial, this command emits an <code class="docutils literal notranslate"><span class="pre">*.fst</span></code> trace of the complete design for debugging, as well as an <code class="docutils literal notranslate"><span class="pre">*.svg</span></code> that contains a visualization of the output channels. Let’s take a look at the <code class="docutils literal notranslate"><span class="pre">sim-i2s-outputs.svg</span></code>:</p>
+<figure class="align-default" id="id2">
+<img alt="_images/lorenz_integration.jpg" src="_images/lorenz_integration.jpg" />
+<figcaption>
+<p><span class="caption-text">Simulated I2S (codec) outputs of our Lorenz core top-level design</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>It looks like the audio outputs are evolving as we want. Next, we can build a bitstream for Tiliqua:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>dsp<span class="w"> </span>build<span class="w"> </span>--dsp-core<span class="o">=</span>lorenz<span class="w"> </span>--verbose
+...
+Saved<span class="w"> </span>to<span class="w"> </span><span class="s1">&#39;/home/seb/dev/tiliqua/gateware/build/dsp-lorenz-r5/dsp-lorenz-c3bf5dbf-r5.tar.gz&#39;</span>
+</pre></div>
+</div>
+<p>Which we can upload to a bitstream slot of our choosing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>flash<span class="w"> </span>archive<span class="w"> </span>--slot<span class="w"> </span><span class="m">7</span><span class="w"> </span>build/dsp-lorenz-r5/dsp-lorenz-c3bf5dbf-r5.tar.gz
+</pre></div>
+</div>
+<p>Because we haven’t integrated any video logic, there will only be audio output. If I connect the outputs over to a second Tiliqua (or an oscilloscope in XY mode), then we get our nice Lorenz attractor shape:</p>
+<p>TODO (add nice picture of xbeam visualizing the attractor)</p>
+</section>
+<section id="side-quest-squashing-multipliers">
+<h2>Side quest: squashing multipliers<a class="headerlink" href="#side-quest-squashing-multipliers" title="Link to this heading"></a></h2>
+<p>Looking closely at the synthesis report from our last build <code class="docutils literal notranslate"><span class="pre">build/dsp-lorenz-r5/top.tim</span></code>, we are consuming loads of multipliers:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Info: Device utilisation:
+Info:                 TRELLIS_IO:      66/    197    33%
+Info:                       DCCA:       2/     56     3%
+Info:                     DP16KD:       0/     56     0%
+Info:                 MULT18X18D:      11/     28    39% &lt;-- lots of multipliers!
+Info:                     ALU54B:       0/     14     0%
+Info:                    EHXPLLL:       1/      2    50%
+...
+</pre></div>
+</div>
+<p>This is to be expected, as we have made no effort to:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Share multiplier tiles amongst the various calculations or</p></li>
+<li><p>Simplify the calculations to optimize out unnecessary multipliers</p></li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>One advantage of NOT sharing multipliers is that our <code class="docutils literal notranslate"><span class="pre">Lorenz</span></code> core can compute new samples at the full system clock rate (i.e. 60MHz). This is because all the multiplies in our logic are happening in parallel, which gives us more speed at the expense of using more FPGA resources, a classic speed-area tradeoff.</p>
+<p>For audio applications, it’s usually unnecessary to support such high sample rates, outside of extreme oversampling or low-latency applications.</p>
+</div>
+<p>Let’s try to reduce the amount of multipliers needed by <code class="docutils literal notranslate"><span class="pre">Lorenz</span></code>.</p>
+<section id="multiplies-can-be-shifts">
+<h3>Multiplies can be shifts<a class="headerlink" href="#multiplies-can-be-shifts" title="Link to this heading"></a></h3>
+<p>Any time you see a multiplication by a constant, it’s worth asking if that constant could be a power of 2, because this reduces to a simple bit shift. In our set of operations above, we have 10 explicit multiplies:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># ...</span>
+<span class="n">dx</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>                 <span class="c1"># 1</span>
+<span class="n">dy</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="n">rho</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span> <span class="o">-</span> <span class="n">y</span>               <span class="c1"># 1</span>
+<span class="n">dz</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span> <span class="o">-</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">z</span>                <span class="c1"># 2</span>
+<span class="k">with</span> <span class="n">m</span><span class="o">.</span><span class="n">If</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">ready</span><span class="p">):</span>
+    <span class="n">m</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">sync</span> <span class="o">+=</span> <span class="p">[</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">dt_inv</span><span class="p">),</span>       <span class="c1"># 1</span>
+        <span class="n">y</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="n">dt_inv</span><span class="p">),</span>       <span class="c1"># 1</span>
+        <span class="n">z</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">z</span> <span class="o">+</span> <span class="n">dz</span> <span class="o">*</span> <span class="n">dt_inv</span><span class="p">),</span>       <span class="c1"># 1</span>
+    <span class="p">]</span>
+<span class="n">m</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">comb</span> <span class="o">+=</span> <span class="p">[</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="c1"># 1</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="c1"># 1</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">payload</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">z</span> <span class="o">*</span> <span class="n">scale</span><span class="p">),</span> <span class="c1"># 1</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="o">.</span><span class="n">valid</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+<span class="p">]</span>
+<span class="c1"># ...</span>
+</pre></div>
+</div>
+<p>Crucially, most of these are multiplies with constants like <code class="docutils literal notranslate"><span class="pre">dt_inv</span></code>, <code class="docutils literal notranslate"><span class="pre">scale</span></code> and so on. What happens if we redefine all our constants to the nearest power of 2?</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sigma</span>  <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">16.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+<span class="n">rho</span>    <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">32.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+<span class="n">beta</span>   <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+<span class="n">dt_inv</span> <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mf">256.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+<span class="n">scale</span>  <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mf">64.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">sq</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Re-running our <code class="docutils literal notranslate"><span class="pre">test_dsp</span></code> harness, with this change, we still get a <code class="docutils literal notranslate"><span class="pre">Lorenz</span></code>-looking plot, albeit with a slightly different shape:</p>
+<figure class="align-default">
+<img alt="_images/test_lorenz_plot.png" src="_images/test_lorenz_plot.png" />
+</figure>
+<p>And then on re-synthesis, we now get:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Info: Device utilisation:
+Info:                 TRELLIS_IO:      66/    197    33%
+Info:                       DCCA:       2/     56     3%
+Info:                     DP16KD:       0/     56     0%
+Info:                 MULT18X18D:       3/     28    11% &lt;-- less multipliers!
+Info:                     ALU54B:       0/     14     0%
+Info:                    EHXPLLL:       1/      2    50%
+...
+</pre></div>
+</div>
+<p>By simply rounding constants to powers of 2, we were able to remove 8 multipliers from our design. 1 of these is used by the codec driver for DC calibration, but the remaining 2 are consumed by our core. Can we do even better?</p>
+</section>
+<section id="sharing-multipliers">
+<h3>Sharing multipliers<a class="headerlink" href="#sharing-multipliers" title="Link to this heading"></a></h3>
+<p>Taking a closer look at the derivative calculations, we can see where the remaining 2 multipliers are used:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dx</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>   <span class="c1"># line 1: 1 multiply (constant*variable)</span>
+<span class="n">dy</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="n">rho</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span> <span class="o">-</span> <span class="n">y</span> <span class="c1"># line 2: 1 multiply (variable*variable)</span>
+<span class="n">dz</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span> <span class="o">-</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">z</span>  <span class="c1"># line 3: 2 multiplies (variable*variable and constant*variable)</span>
+</pre></div>
+</div>
+<p>So, the 2 tiles are used by these variable-by-variable multiplies:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>On line 2: <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">*</span> <span class="pre">(rho</span> <span class="pre">-</span> <span class="pre">z)</span></code></p></li>
+<li><p>On line 3: <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">*</span> <span class="pre">y</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>To share one tile amongst both statements, we could split them into a state machine and do one after the other. What’s nice is the left-hand side remains the same, so the input only needs to be multiplexed on the right-hand side.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>TODO: write this section on multiplier sharing</strong>.</p>
+<p>For now, if you are curious to see some examples of multiplier sharing, I suggest taking a look the <a class="reference internal" href="dsp/mac.html"><span class="doc">Multiplier sharing (dsp.mac)</span></a> module, and how it is used in <a class="reference internal" href="dsp/filters.html#tiliqua.dsp.SVF" title="tiliqua.dsp.SVF"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.SVF</span></code></a> and instantiated in the <code class="docutils literal notranslate"><span class="pre">top.polysyn</span></code> example bitstream. You’ll find mechanisms for sharing multipliers both within and amongst different cores (e.g. sharing 1 multiplier amongst N different DSP blocks).</p>
+</div>
+</section>
+</section>
+<section id="adding-more-blocks">
+<h2>Adding more blocks<a class="headerlink" href="#adding-more-blocks" title="Link to this heading"></a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>TODO: write this section on adding more DSP blocks to the above example</strong>.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="audio_bitstreams.html" class="btn btn-neutral float-left" title="Tutorial 1: Audio cores (top.dsp)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="beamrace_video.html" class="btn btn-neutral float-right" title="Tutorial 3: Video cores (top.beamrace)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

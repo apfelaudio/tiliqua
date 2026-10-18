@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multiplier sharing (dsp.mac) &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/platformpicker.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Block-based Processing" href="block.html" />
+    <link rel="prev" title="Spectral Processing" href="spectral.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Tiliqua
+              <img src="../_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Example Projects</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">DSP Library</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#philosophy">Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#interconnect">Interconnect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-and-specialized-components">‘Basic’ and ‘Specialized’ components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#basic-dsp-components">Basic DSP Components</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#specialized-modules">Specialized Modules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="delay_effect.html">Delay Effects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fft.html">FFT Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="spectral.html">Spectral Processing</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Multiplier sharing (<code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-tiliqua.dsp.mac"><code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>: DSP tile sharing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-tiliqua.ringnoc"><code class="docutils literal notranslate"><span class="pre">ringnoc</span></code>: Message Ring implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="block.html">Block-based Processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="complex.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cordic.html">Trigonometry / CORDIC</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">DSP Library</a></li>
+      <li class="breadcrumb-item active">Multiplier sharing (<code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dsp/mac.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="multiplier-sharing-dsp-mac">
+<h1>Multiplier sharing (<code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>)<a class="headerlink" href="#multiplier-sharing-dsp-mac" title="Link to this heading"></a></h1>
+<section id="module-tiliqua.dsp.mac">
+<span id="dsp-mac-dsp-tile-sharing"></span><h2><code class="docutils literal notranslate"><span class="pre">dsp.mac</span></code>: DSP tile sharing<a class="headerlink" href="#module-tiliqua.dsp.mac" title="Link to this heading"></a></h2>
+<p>For audio rate signals, where sample rates are low and the desired
+amount of separate functional blocks is high, sharing DSP tiles is
+essential. Without sharing DSP tiles, multipliers are often the first
+FPGA resource to be exhausted.</p>
+<p>This file provides mechanisms for sharing DSP tiles (multipliers)
+amongst multiple components using 2 different strategies:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p><code class="code highlight py python docutils literal highlight-python"><span class="n">MuxMAC</span></code>: One DSP tile is time multiplexed. Latency relatively
+low, however sharing &gt;3x MACs quickly blows up resource usage.</p></li>
+<li><p><code class="code highlight py python docutils literal highlight-python"><span class="n">RingMAC</span></code>: Message ring sharing. Multiple components are connected
+in a message ring (essentially a large circular shift register).
+On each ring, there is a single DSP tile processing multiplies. DSP tile
+throughput of near 100% is still achievable, however latency is higher.</p></li>
+</ol>
+</div></blockquote>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.mac.MAC">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.mac.</span></span><span class="sig-name descname"><span class="pre">MAC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.mac.MAC" title="Link to this definition"></a></dt>
+<dd><p>Base class for MAC strategies. Subclasses provide the concrete strategy.</p>
+<p>Users of this component perform multiplications using <code class="code highlight py python docutils literal highlight-python"><span class="n">MAC</span><span class="o">.</span><span class="n">Multiply</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span></code>,
+which may have different latency depending on the concrete strategy.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.mac.MAC.Multiply">
+<span class="sig-name descname"><span class="pre">Multiply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">operands</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.mac.MAC.Multiply" title="Link to this definition"></a></dt>
+<dd><p>Compute <code class="docutils literal notranslate"><span class="pre">z</span> <span class="pre">=</span> <span class="pre">a*b</span></code>, returning a context object which is active
+in the same clock that the answer is available on <code class="docutils literal notranslate"><span class="pre">self.result.z</span></code>.</p>
+<p>Ensure operands do NOT change until the operation completes.</p>
+<p>For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">s_a</span> <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">mac</span><span class="o">.</span><span class="n">SQNative</span><span class="p">)</span>
+<span class="n">s_b</span> <span class="o">=</span> <span class="n">fixed</span><span class="o">.</span><span class="n">Const</span><span class="p">(</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">mac</span><span class="o">.</span><span class="n">SQNative</span><span class="p">)</span>
+<span class="n">s_z</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">ASQ</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">m</span><span class="o">.</span><span class="n">FSM</span><span class="p">()</span> <span class="k">as</span> <span class="n">fsm</span><span class="p">:</span>
+    <span class="c1"># ... some states ...</span>
+    <span class="k">with</span> <span class="n">m</span><span class="o">.</span><span class="n">State</span><span class="p">(</span><span class="s1">&#39;MAC&#39;</span><span class="p">):</span>
+        <span class="c1"># Set up multiplication</span>
+        <span class="c1"># Read as: ``m.If(result_available)``</span>
+        <span class="k">with</span> <span class="n">mp</span><span class="o">.</span><span class="n">Multiply</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">s_a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">s_b</span><span class="p">):</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">sync</span> <span class="o">+=</span> <span class="n">s_z</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">mp</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="s1">&#39;DONE&#39;</span>
+    <span class="c1"># ... some more states ...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.dsp.mac.MAC.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.mac.MAC.default" title="Link to this definition"></a></dt>
+<dd><p>Default MAC provider for DSP components if None is specified.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.mac.MuxMAC">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.mac.</span></span><span class="sig-name descname"><span class="pre">MuxMAC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.mac.MuxMAC" title="Link to this definition"></a></dt>
+<dd><p>A Multiplexing multiplication provider.</p>
+<p>Instantiates a single multiplier, shared between users of this
+MuxMAC using time division multiplexing, as follows:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>a₁*b₁ ───►│                ├───► result₁
+a₂*b₂ ───►├──►[DSP Tile]──►┼───► result₂
+a₃*b₃ ───►│                ├───► result₃
+         mux             demux
+</pre></div>
+</div>
+<p>When sharing amongst lots of cores, the required multiplexer
+size can quickly become unusably large.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.dsp.mac.RingMAC">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.mac.</span></span><span class="sig-name descname"><span class="pre">RingMAC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.mac.RingMAC" title="Link to this definition"></a></dt>
+<dd><p>A message-ring-backed multiplication provider, where DSP
+tiles are shared between many components.</p>
+<p>The common pattern here is that each functional block tends
+to use a single <code class="code highlight py python docutils literal highlight-python"><span class="n">RingMAC</span></code>, even if it has multiple MAC
+steps. That is, the <code class="code highlight py python docutils literal highlight-python"><span class="n">RingMAC</span></code> itself is Mux’d <em>within</em> a
+core, however all requests land on the same shared bus
+which is a message ring connecting <em>different</em> cores. This
+keeps multiplexers local to each core:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>                  ┌─────────────────────────────┐
+                  │                             │
+┌─────────────────┼─────────────────────┐       │
+│                 │                     │       │
+│a₁b₁ ───►│       │        ├───► result₁│       │
+│a₂b₂ ───►├──[RingClient]─►┼───► result₂│       │
+│a₃b₃ ───►│       ▲        ├───► result₃│       │
+│        mux      │      demux          │       │
+└─────────────────┼─────────────────────┘       │
+Component1        │                             │
+                  │                             │
+┌─────────────────┼─────────────────────┐       ▼
+│                 │                     │   ┌──────────┐
+│a₁b₁ ───►│       │        ├───► result₁│   │          │
+│a₂b₂ ───►├──[RingClient]─►┼───► result₂│   │[DSP Tile]│
+│a₃b₃ ───►│       ▲        ├───► result₃│   │          │
+│        mux      │      demux          │   └──────────┘
+└─────────────────┼─────────────────────┘   RingMACServer
+Component2        │                             │
+                  │                             │
+┌─────────────────┼─────────────────────┐       │
+│                 │                     │       │
+│a₁b₁ ───►│       │        ├───► result₁│       │
+│a₂b₂ ───►├──[RingClient]─►┼───► result₂│       │
+│a₃b₃ ───►│       ▲        ├───► result₃│       │
+│        mux      │      demux          │       │
+└─────────────────┼─────────────────────┘       │
+Component3        │                             │
+                  └─────────────────────────────┘
+</pre></div>
+</div>
+<p>This provides near-optimal scheduling for message rings composed
+of components that have the same state machines.</p>
+<p>Normally these should only be created from an existing server
+using <code class="code highlight py python docutils literal highlight-python"><span class="n">RingMACServer</span><span class="o">.</span><span class="n">new_client</span><span class="p">()</span></code>. This automatically
+hooks up the <code class="code highlight py python docutils literal highlight-python"><span class="n">ring</span></code> and <code class="code highlight py python docutils literal highlight-python"><span class="n">tag</span></code> attributes, but does
+NOT add it as a submodule for elaboration (you must do this).</p>
+<p>Contains no multiplier, <code class="code highlight py python docutils literal highlight-python"><span class="n">ring</span></code> must be hooked up to a
+message ring on which a <code class="code highlight py python docutils literal highlight-python"><span class="n">RingMACServer</span></code> can be found.
+<code class="code highlight py python docutils literal highlight-python"><span class="n">tag</span></code> MUST uniquely identify the underlying <code class="code highlight py python docutils literal highlight-python"><span class="n">ringnoc</span><span class="o">.</span><span class="n">Client</span></code>
+instantiated inside this <code class="code highlight py python docutils literal highlight-python"><span class="n">RingMAC</span></code>. If you are careful to only
+use <code class="code highlight py python docutils literal highlight-python"><span class="n">RingMACServer</span><span class="o">.</span><span class="n">new_client</span><span class="p">()</span></code> to create these, all of
+these assumptions will be held.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tiliqua.dsp.mac.RingMACServer">
+<span class="sig-prename descclassname"><span class="pre">tiliqua.dsp.mac.</span></span><span class="sig-name descname"><span class="pre">RingMACServer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_clients</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">SQNative</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.dsp.mac.RingMACServer" title="Link to this definition"></a></dt>
+<dd><p>Factory for creating a MAC message ring.</p>
+<p>Prior to elaboration, <code class="code highlight py python docutils literal highlight-python"><span class="n">Server</span><span class="o">.</span><span class="n">new_client</span><span class="p">()</span></code> may be used to
+add additional client nodes to this ring. During elaboration, all clients (and this server) are connected in
+a ring, and a single shared DSP tile is instantiated to serve requests.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>ringnoc.Server configured for DSP tile sharing of <code class="docutils literal notranslate"><span class="pre">operands.a</span> <span class="pre">*</span> <span class="pre">operands.b</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-tiliqua.ringnoc">
+<span id="ringnoc-message-ring-implementation"></span><h2><code class="docutils literal notranslate"><span class="pre">ringnoc</span></code>: Message Ring implementation<a class="headerlink" href="#module-tiliqua.ringnoc" title="Link to this heading"></a></h2>
+<p>‘Message Ring’ Network-on-Chip (NoC) implementation.</p>
+<p>Components for connecting N ‘clients’ and 1 ‘server’ in a circular shift
+register topology. This enables efficient resource sharing (e.g., DSP tiles)
+across many components without needing huge muxes. For example:</p>
+<blockquote>
+<div><div class="highlight-text notranslate"><div class="highlight"><pre><span></span>  tag=0      tag=1      tag=2      tag=3
+┌───────┐  ┌───────┐  ┌───────┐  ┌───────┐
+│client0┼──►client1┼──►client2┼──►client3│
+└───▲───┘  └───────┘  └───────┘  └───┬───┘
+    │                                │
+    │            ┌──────┐            │
+    └────────────┼server│◄───────────┘
+                 └──────┘
+</pre></div>
+</div>
+</div></blockquote>
+<p>On the message ring, messages are shifted in a large circular shift register
+by one node every clock. Each message is of layout <code class="docutils literal notranslate"><span class="pre">Config.msg_layout</span></code>.</p>
+<p>A client may only send a message if there is an INVALID message being shifted
+into it. This keeps latency bounded and removes the need for extra storage.
+A server may ‘respond’ to a client message by shifting in the payload and
+shifting out the response. Each message contains a unique <code class="docutils literal notranslate"><span class="pre">tag</span></code> per client,
+so servers know where a request came from, and clients know if an incoming
+message is destined for it.</p>
+<p>Assuming all N clients send a request message in the same clock, and the
+server processes one request per clock, the result will arrive at all clients
+N+1 clocks later, with the server busy for N out of N+1 of those clocks.</p>
+<p>To use this, you will want to create your components building on <code class="docutils literal notranslate"><span class="pre">ringnoc.Client</span></code>
+and <code class="docutils literal notranslate"><span class="pre">ringnoc.Server</span></code>. An example of this (sharing DSP tiles) is found in
+this repository as <code class="docutils literal notranslate"><span class="pre">mac.RingMAC</span></code> (client) and <code class="docutils literal notranslate"><span class="pre">mac.RingMACServer</span></code>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.ringnoc.Config">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.ringnoc.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_bits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload_type_client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload_type_server</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.ringnoc.Config" title="Link to this definition"></a></dt>
+<dd><p>Configuration (message layout) of a message ring.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.ringnoc.NodeSignature">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.ringnoc.</span></span><span class="sig-name descname"><span class="pre">NodeSignature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.ringnoc.NodeSignature" title="Link to this definition"></a></dt>
+<dd><p>Both Client and Server nodes must have these connections in order to participate
+in the message ring.</p>
+<p>Messages shift in on <code class="code highlight py python docutils literal highlight-python"><span class="n">i</span></code> and out on <code class="code highlight py python docutils literal highlight-python"><span class="n">o</span></code>. <code class="docutils literal notranslate"><span class="pre">Server</span></code> is currently responsible
+for connecting these as appropriate after all <code class="docutils literal notranslate"><span class="pre">Client</span></code> instances are created.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.ringnoc.Client">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.ringnoc.</span></span><span class="sig-name descname"><span class="pre">Client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.ringnoc.Client" title="Link to this definition"></a></dt>
+<dd><p>Client node. Nominally transparent (shifting incoming messages
+to outgoing messages unmodified).</p>
+<p>To issue a request, <code class="code highlight py python docutils literal highlight-python"><span class="n">i</span></code> should be set,
+and <code class="code highlight py python docutils literal highlight-python"><span class="n">strobe</span></code> asserted, until <code class="code highlight py python docutils literal highlight-python"><span class="n">valid</span></code> is asserted. On
+the same clock that <code class="code highlight py python docutils literal highlight-python"><span class="n">valid</span></code> is asserted, <code class="code highlight py python docutils literal highlight-python"><span class="n">o</span></code> contains
+the answer from the server to our request.</p>
+<p>Under the hood, <code class="code highlight py python docutils literal highlight-python"><span class="n">Client</span></code> will take care of not
+sending our request until the bus is free, and not asserting
+<code class="code highlight py python docutils literal highlight-python"><span class="n">valid</span></code> until an appropriate response has arrived.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tiliqua.ringnoc.Server">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tiliqua.ringnoc.</span></span><span class="sig-name descname"><span class="pre">Server</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_loc_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.ringnoc.Server" title="Link to this definition"></a></dt>
+<dd><p>Process client requests. This component also manages the ring topology by
+creating clients and wiring them into a ring. When a valid client message
+arrives, <code class="docutils literal notranslate"><span class="pre">process_request</span></code> is used to compute a response.</p>
+<p><code class="docutils literal notranslate"><span class="pre">client_class</span></code> can be any class that exposes a <code class="docutils literal notranslate"><span class="pre">NodeSignature</span></code>, as
+long as it has a constructor that can take <code class="docutils literal notranslate"><span class="pre">tag:</span> <span class="pre">int</span></code> and <code class="docutils literal notranslate"><span class="pre">cfg:</span> <span class="pre">Config</span></code>.
+A new instance of this is created whenever the user calls <code class="docutils literal notranslate"><span class="pre">new_client</span></code>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tiliqua.ringnoc.Server.new_client">
+<span class="sig-name descname"><span class="pre">new_client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tiliqua.ringnoc.Server.new_client" title="Link to this definition"></a></dt>
+<dd><p>Create and add a new client to the ring.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="spectral.html" class="btn btn-neutral float-left" title="Spectral Processing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="block.html" class="btn btn-neutral float-right" title="Block-based Processing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

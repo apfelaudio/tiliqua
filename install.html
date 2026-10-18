@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setup &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Building and Flashing" href="building_flashing.html" />
+    <link rel="prev" title="Soldiercrab SoM [TLQ-SOLDIERCRAB]" href="quickstart/tlq_soldiercrab.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Tiliqua
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-basics">1. The Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#check-installation">2. Check Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#check-usb-device-permissions">3. Check USB device permissions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#initialize-submodules">4. Initialize submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#set-up-python-environment">5. Set up python environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optional-for-cpu-bitstreams-a-rust-toolchain">6. (optional, for CPU Bitstreams) A Rust toolchain</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Setup</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="setup">
+<h1>Setup<a class="headerlink" href="#setup" title="Link to this heading"></a></h1>
+<section id="the-basics">
+<h2>1. The Basics<a class="headerlink" href="#the-basics" title="Link to this heading"></a></h2>
+<p>To build, simulate and flash Tiliqua bitstreams you only need:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>A build system: <a class="reference external" href="https://pdm-project.org/en/latest/#installation">pdm (LINK)</a></dt><dd><ul>
+<li><p>You will see installation instructions for Linux / Mac / Windows.</p></li>
+<li><p>This is used for managing Python dependencies in a virtual environment, so that they are A) guaranteed to be exactly the same version as in CI and B) don’t affect the installed packages on your computer.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>An FPGA tool suite: <a class="reference external" href="https://github.com/YosysHQ/oss-cad-suite-build?tab=readme-ov-file#installation">oss-cad-suite (LINK)</a></dt><dd><ul>
+<li><p>You will see installation instructions for Linux / Mac / Windows.</p></li>
+<li><p>If you are paranoid, it might be worth installing the same version <a class="reference external" href="https://github.com/apfaudio/tiliqua/blob/main/gateware/scripts/Dockerfile#L38">as we are using in CI</a></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default, synthesis will use <code class="code docutils literal notranslate"><span class="pre">yowasp-yosys</span></code> and <code class="code docutils literal notranslate"><span class="pre">yowasp-nextpnr-ecp5</span></code> (python packages), rather than any <code class="code docutils literal notranslate"><span class="pre">oss-cad-suite</span></code> you have installed. When running locally, builds are often faster if you point to your own installation - modify <code class="code docutils literal notranslate"><span class="pre">gateware/.env.toolchain</span></code> (simply deleting it will try to find yosys in your PATH).</p>
+</div>
+</section>
+<section id="check-installation">
+<h2>2. Check Installation<a class="headerlink" href="#check-installation" title="Link to this heading"></a></h2>
+<p>Before continuing, it’s worth checking everything is installed okay and is correctly in your PATH:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>--version
+PDM,<span class="w"> </span>version<span class="w"> </span><span class="m">2</span>.26.0
+$<span class="w"> </span>openFPGALoader<span class="w"> </span>-V
+openFPGALoader<span class="w"> </span>v0.12.1
+$<span class="w"> </span>verilator<span class="w"> </span>--version
+Verilator<span class="w"> </span><span class="m">5</span>.031<span class="w"> </span>devel<span class="w"> </span>rev<span class="w"> </span>v5.030-75-gc98744b91
+</pre></div>
+</div>
+</section>
+<section id="check-usb-device-permissions">
+<h2>3. Check USB device permissions<a class="headerlink" href="#check-usb-device-permissions" title="Link to this heading"></a></h2>
+<p>With Tiliqua powered on and the <code class="docutils literal notranslate"><span class="pre">dbg</span></code> USB port connected, you want to see something like this (without using <code class="docutils literal notranslate"><span class="pre">sudo</span></code>!):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>openFPGALoader<span class="w"> </span>--scan-usb
+Bus<span class="w"> </span>device<span class="w"> </span>vid:pid<span class="w">       </span>probe<span class="w"> </span><span class="nb">type</span><span class="w">      </span>manufacturer<span class="w"> </span>serial<span class="w">               </span>product
+<span class="m">007</span><span class="w"> </span><span class="m">006</span><span class="w">    </span>0x1209:0xc0ca<span class="w"> </span>dirtyJtag<span class="w">       </span>apf.audio<span class="w">    </span>E463A8574B2D2632<span class="w">     </span>Tiliqua<span class="w"> </span>R5<span class="w"> </span>apfbug-beta4-dirty
+</pre></div>
+</div>
+<p>On Linux, you may need to install a udev rule for this to work. The exact procedure depends on your distro so I can only provide an example. On Arch Linux, I use the following rule:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Placed at `/etc/udev/rules.d/50-tiliqua.rules`</span>
+<span class="nv">SUBSYSTEM</span><span class="o">==</span><span class="s2">&quot;usb&quot;</span>,<span class="w"> </span>ATTRS<span class="o">{</span>idVendor<span class="o">}==</span><span class="s2">&quot;1209&quot;</span>,<span class="w"> </span>ATTRS<span class="o">{</span>idProduct<span class="o">}==</span><span class="s2">&quot;c0ca&quot;</span>,<span class="w"> </span><span class="nv">MODE</span><span class="o">=</span><span class="s2">&quot;0666&quot;</span>,<span class="w"> </span><span class="nv">GROUP</span><span class="o">=</span><span class="s2">&quot;users&quot;</span>,<span class="w"> </span><span class="nv">TAG</span><span class="o">+=</span><span class="s2">&quot;uaccess&quot;</span>
+</pre></div>
+</div>
+<p>You want this configured correctly as some of the Tiliqua build scripts call <code class="docutils literal notranslate"><span class="pre">openFPGALoader</span></code> under the hood (without <code class="docutils literal notranslate"><span class="pre">sudo</span></code>).</p>
+</section>
+<section id="initialize-submodules">
+<h2>4. Initialize submodules<a class="headerlink" href="#initialize-submodules" title="Link to this heading"></a></h2>
+<p>After cloning the main repository, you should also initialize all the submodules:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>gateware
+git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>--recursive
+</pre></div>
+</div>
+</section>
+<section id="set-up-python-environment">
+<h2>5. Set up python environment<a class="headerlink" href="#set-up-python-environment" title="Link to this heading"></a></h2>
+<p>Finally, install all python dependencies in a PDM-managed virtual environment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># from the `gateware` directory</span>
+pdm<span class="w"> </span>install
+</pre></div>
+</div>
+<p>Now you are ready to build some bitstreams!</p>
+</section>
+<section id="optional-for-cpu-bitstreams-a-rust-toolchain">
+<h2>6. (optional, for CPU Bitstreams) A Rust toolchain<a class="headerlink" href="#optional-for-cpu-bitstreams-a-rust-toolchain" title="Link to this heading"></a></h2>
+<p>The above tools are sufficient for simple bitstreams. More advanced bitstreams include an SoC and CPU that runs Rust firmware for the menu system and graphics. To build these bitstreams, you will also need a Rust toolchain.</p>
+<ul>
+<li><p>Install <a class="reference external" href="https://rustup.rs/">rustup (LINK)</a></p>
+<ul>
+<li><p>Install the following Rust components:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rustup<span class="w"> </span>toolchain<span class="w"> </span>install<span class="w"> </span><span class="c1"># from gateware/, installs the toolchain pinned in rust-toolchain.toml</span>
+cargo<span class="w"> </span>install<span class="w"> </span>cargo-binutils<span class="w"> </span>svd2rust<span class="w"> </span>form
+</pre></div>
+</div>
+</li>
+<li><p>Make sure the tools like <code class="docutils literal notranslate"><span class="pre">svd2rust</span></code>, <code class="docutils literal notranslate"><span class="pre">form</span></code> and so on are available in your PATH after installing them. You may need to add a <code class="docutils literal notranslate"><span class="pre">.cargo/bin</span></code>-like directory <a class="reference external" href="https://doc.rust-lang.org/book/ch14-04-installing-binaries.html">to your path</a>.</p></li>
+</ul>
+</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Building bitstreams that include an SoC is currently only supported on Linux and Mac. For Windows, the easiest path is probably doing this under WSL.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All examples are built in CI. If you’re having trouble setting up your environment or missing a dependency, it may also be worth checking the <a class="reference external" href="https://github.com/apfaudio/tiliqua/blob/main/gateware/scripts/Dockerfile">Dockerfile</a>.</p>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="quickstart/tlq_soldiercrab.html" class="btn btn-neutral float-left" title="Soldiercrab SoM [TLQ-SOLDIERCRAB]" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="building_flashing.html" class="btn btn-neutral float-right" title="Building and Flashing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

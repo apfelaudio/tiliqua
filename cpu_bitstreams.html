@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 4: SoC/CPU bitstreams &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial 5: Using (third-party) PMODs" href="pmods.html" />
+    <link rel="prev" title="Tutorial 3: Video cores (top.beamrace)" href="beamrace_video.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Tiliqua
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="audio_bitstreams.html">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial 4: SoC/CPU bitstreams</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#background-tiliqua-soc-designs">Background: Tiliqua SoC designs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building">Building</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flashing-logs">Flashing, Logs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#faster-builds-only-updating-firmware">Faster builds - only updating firmware</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parallel-builds">Parallel builds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#simulation">Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#todo">TODO</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial 4: SoC/CPU bitstreams</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/cpu_bitstreams.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-4-soc-cpu-bitstreams">
+<h1>Tutorial 4: SoC/CPU bitstreams<a class="headerlink" href="#tutorial-4-soc-cpu-bitstreams" title="Link to this heading"></a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This tutorial is not finished yet.</p>
+</div>
+<p>More advanced projects in this repository (such as <a class="reference internal" href="examples/soc_examples.html#xbeam"><span class="std std-ref">XBEAM</span></a>) contain audio and video logic, as well as a small CPU and peripheral cores: all connected together to form a SoC (<em>System-on-Chip</em>).</p>
+<p id="module-tiliqua.tiliqua_soc">At a very high level, we have a VexiiRiscv softcore running firmware (written
+in Rust), that interfaces with a bunch of peripherals through CSR registers,
+over a Wishbone bus.</p>
+<section id="background-tiliqua-soc-designs">
+<h2>Background: Tiliqua SoC designs<a class="headerlink" href="#background-tiliqua-soc-designs" title="Link to this heading"></a></h2>
+<p>For Tiliqua projects which contain an SoC alongside the DSP logic, they will often inherit
+from <code class="docutils literal notranslate"><span class="pre">tiliqua.TiliquaSoc</span></code>, which is an Amaranth component which contains:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>A <strong>CPU instance</strong>: <a class="reference external" href="https://github.com/SpinalHDL/VexiiRiscv">VexiiRiscv</a></p></li>
+<li><p>Some <strong>Peripheral cores</strong>: For UART, I2C, SPI flash and more.</p></li>
+<li><p>An <strong>SoC bus/CSR system</strong>: for connecting the CPU to the various peripheral cores - in our case, a Wishbone bus as implemented by <a class="reference external" href="https://github.com/amaranth-lang/amaranth-soc">amaranth-soc</a></p></li>
+<li><p>Some <strong>Video / DMA cores</strong>: These are special peripheral cores that can directly access the system memory: useful for the video framebuffer, and for hardware-accelerated text/line drawing.</p></li>
+<li><p><strong>Build infrastructure</strong> for automatically generating a PAC (Rust register declarations) from the SoC layout, building your custom firmware, and integrating it into the final design.</p></li>
+</ul>
+</div></blockquote>
+<p>A typical SoC design might look something like this:</p>
+<a class="reference internal image-reference" href="_images/tiliquasoc.png"><img alt="_images/tiliquasoc.png" src="_images/tiliquasoc.png" style="width: 800px;" /></a>
+<p>As shown above, <code class="docutils literal notranslate"><span class="pre">TiliquaSoc</span></code> may form the heart of a design, however it is
+extensible: in the above example, <code class="docutils literal notranslate"><span class="pre">TiliquaSoc</span></code> has been subclassed and
+a new <code class="docutils literal notranslate"><span class="pre">Polysynth</span></code> peripheral has been added, so that the CPU can see
+and tweak properties of a custom DSP pipeline.</p>
+</section>
+<section id="building">
+<h2>Building<a class="headerlink" href="#building" title="Link to this heading"></a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Before proceeding with the <em>Building</em> and <em>Simulation</em> sections, make sure you have installed the required Rust toolchain: see the last section of <a class="reference internal" href="install.html"><span class="doc">Setup</span></a>.</p>
+</div>
+<p>Assuming all the required dependencies are installed, building an SoC bitstream is no different to other types of bitstreams. For example, to build <code class="docutils literal notranslate"><span class="pre">xbeam</span></code> and create a flashable archive:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>xbeam<span class="w"> </span>build
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Many of these examples are quite large, so they can take a while (1-2 minutes) to synthesize and route.</p>
+</div>
+<p>This one-line command hides some complexity. Under the hood, it will:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Instantiate the gateware design</p></li>
+<li><p>Create an <code class="docutils literal notranslate"><span class="pre">.svf</span></code> file from it, which details every register in the SoC that the CPU should have access to.</p></li>
+<li><p>Turn this into a Rust PAC (peripheral access crate) using <code class="docutils literal notranslate"><span class="pre">svd2rust</span></code> and <code class="docutils literal notranslate"><span class="pre">form</span></code>: register definitions that our Rust firmware can use.</p></li>
+<li><p>Compile our Rust firmware against the freshly-created PAC and package it into a flat binary which can be written to the SPI flash.</p></li>
+<li><p>Elaborate the gateware design, send it through the synthesis flow.</p></li>
+<li><p>Package the bitstream and firmware together into a flashable bitstream archive.</p></li>
+</ul>
+</div></blockquote>
+<p>As with other bitstreams, you may want to add some flags depending on what you want. For example, to switch to 192kHz sampling and force the video mode to always be 1080p30:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>xbeam<span class="w"> </span>build<span class="w"> </span>--fs-192khz<span class="w"> </span>--modeline<span class="w"> </span>1920x1080p30
+</pre></div>
+</div>
+</section>
+<section id="flashing-logs">
+<h2>Flashing, Logs<a class="headerlink" href="#flashing-logs" title="Link to this heading"></a></h2>
+<p>This can then be flashed straight to a bitstream slot as previously seen. Sometimes, you’ll want to see the serial traffic emitted by the CPU in <code class="docutils literal notranslate"><span class="pre">info!</span></code> or other logging statements, for example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Open the RP2040 serial port in one terminal, use whatever serial client you like</span>
+$<span class="w"> </span>picocom<span class="w"> </span>-b<span class="w"> </span><span class="m">115200</span><span class="w"> </span>/dev/ttyACM0
+<span class="c1"># In another terminal, flash the bitstream</span>
+$<span class="w"> </span>pdm<span class="w"> </span>flash<span class="w"> </span>archive<span class="w"> </span>build/xbeam-r5/xbeam*.tar.gz<span class="w"> </span>--slot<span class="w"> </span><span class="m">6</span><span class="w"> </span>--noconfirm
+<span class="c1"># First, you&#39;ll see a bunch of logs from the bootloader.</span>
+<span class="c1"># On selecting this bitstream, you&#39;ll see the logs from loading and then running it.</span>
+</pre></div>
+</div>
+</section>
+<section id="faster-builds-only-updating-firmware">
+<h2>Faster builds - only updating firmware<a class="headerlink" href="#faster-builds-only-updating-firmware" title="Link to this heading"></a></h2>
+<p>As the synthesis flow can take a long time to complete, it is annoying to have to wait for this to complete when you are only changing the firmware. For this reason, if you have already run a complete bitstream build at least once on any particular SoC bitstream and only want to update the firmware in the bitstream without resynthesizing the entire design, you can use the <code class="docutils literal notranslate"><span class="pre">--fw-only</span></code> flag:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>xbeam<span class="w"> </span>build<span class="w"> </span>--fw-only
+</pre></div>
+</div>
+<p>This will recompile and repackage the firmware into a new bitstream archive, whilst re-using the last synthesized bitstream for the selected core.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When using the <code class="docutils literal notranslate"><span class="pre">--fw-only</span></code> flag, make sure you don’t change any flags compared to those that the original bitstream was synthesized with, unless you’re sure they don’t affect the hardware design. Otherwise your firmware may assume it’s running on a different hardware design to the one it is actually running on!</p>
+</div>
+</section>
+<section id="parallel-builds">
+<h2>Parallel builds<a class="headerlink" href="#parallel-builds" title="Link to this heading"></a></h2>
+<p>In general, <code class="docutils literal notranslate"><span class="pre">yosys</span></code> and <code class="docutils literal notranslate"><span class="pre">nextpnr</span></code> are dependent on single-core performance. So, building multiple bitstreams at once will scale well. Some example scripts for building multiple bitstreams in parallel can be found in <code class="docutils literal notranslate"><span class="pre">scripts</span></code>, for example the following command will build most SoC bitstreams simultaneously:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>./scripts/build_bitstreams_soc.sh
+</pre></div>
+</div>
+<p>This can be useful for testing changes that affect every bitstream, or supplying custom arguments. Any build arguments passed to <code class="docutils literal notranslate"><span class="pre">build_bitstreams_soc.sh</span></code> will be passed to each individual build invocation.</p>
+</section>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Link to this heading"></a></h2>
+<p>All SoC bitstreams support simulation. This works in the same way as other bitstreams using <code class="docutils literal notranslate"><span class="pre">pdm</span> <span class="pre">&lt;core&gt;</span> <span class="pre">sim</span></code>, with the difference that it also performs the required firmware compilation step and puts some bootloader metadata in memory before starting the bitstream, to simulate a healthy launch by the Bootloader. For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>selftest<span class="w"> </span>sim<span class="w"> </span>--trace-fst<span class="w"> </span>--modeline<span class="w"> </span>720x720p60r2
+&lt;...&gt;
+run<span class="w"> </span>verilated<span class="w"> </span>binary<span class="w"> </span><span class="s1">&#39;build/obj_dir/Vtiliqua_soc&#39;</span>...
+sync<span class="w"> </span>domain<span class="w"> </span>is:<span class="w"> </span><span class="m">60000</span><span class="w"> </span>KHz<span class="w"> </span><span class="o">(</span><span class="m">16</span><span class="w"> </span>ns/cycle<span class="o">)</span>
+pixel<span class="w"> </span>clock<span class="w"> </span>is:<span class="w"> </span><span class="m">39070</span><span class="w"> </span>KHz<span class="w"> </span><span class="o">(</span><span class="m">25</span><span class="w"> </span>ns/cycle<span class="o">)</span>
+audio<span class="w"> </span>clock<span class="w"> </span>is:<span class="w"> </span><span class="m">12288</span><span class="w"> </span>KHz<span class="w"> </span><span class="o">(</span><span class="m">81</span><span class="w"> </span>ns/cycle<span class="o">)</span>
+Loaded<span class="w"> </span>bootinfo<span class="w"> </span>to<span class="w"> </span>PSRAM<span class="w"> </span>offset<span class="w"> </span>0xfff000
+DVIDriver:<span class="w"> </span>frame00.bmp
+<span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span>Hello<span class="w"> </span>from<span class="w"> </span>Tiliqua<span class="w"> </span>selftest!
+DVIDriver:<span class="w"> </span>frame01.bmp
+</pre></div>
+</div>
+<p>Any prints to the serial port will be sent to the terminal (e.g. <code class="docutils literal notranslate"><span class="pre">[INFO]</span> <span class="pre">&lt;...&gt;</span></code>, and every frame of video will be saved to a bitmap, as the simulation is run. As we have supplied <code class="docutils literal notranslate"><span class="pre">--trace-fst</span></code>, we will also get a <code class="docutils literal notranslate"><span class="pre">simx.fst</span></code> dump of every signal in the design, which can be viewed with <code class="docutils literal notranslate"><span class="pre">gtkwave</span></code> or <code class="docutils literal notranslate"><span class="pre">surfer</span></code> to debug any part of the design.</p>
+</section>
+<section id="todo">
+<h2>TODO<a class="headerlink" href="#todo" title="Link to this heading"></a></h2>
+<p>Finish writing this.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="beamrace_video.html" class="btn btn-neutral float-left" title="Tutorial 3: Video cores (top.beamrace)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pmods.html" class="btn btn-neutral float-right" title="Tutorial 5: Using (third-party) PMODs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

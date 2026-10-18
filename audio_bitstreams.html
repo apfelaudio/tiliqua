@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 1: Audio cores (top.dsp) &mdash; Tiliqua  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/platformpicker.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/platformpicker.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial 2: DSP blocks (tiliqua.dsp)" href="custom_dsp.html" />
+    <link rel="prev" title="Building and Flashing" href="building_flashing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Tiliqua
+              <img src="_static/logo.jpg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Quickstart</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_module.html">Tiliqua Module [<code class="docutils literal notranslate"><span class="pre">TLQ-MODULE</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_screen.html">Tiliqua Screen [<code class="docutils literal notranslate"><span class="pre">TLQ-SCREEN</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_expander.html">Expander / Euro-PMOD [<code class="docutils literal notranslate"><span class="pre">TLQ-EXPANDER</span></code>]</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart/tlq_soldiercrab.html">Soldiercrab SoM [<code class="docutils literal notranslate"><span class="pre">TLQ-SOLDIERCRAB</span></code>]</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_flashing.html">Building and Flashing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#the-basics">The Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cli-and-coretop-wrapper">CLI and <code class="docutils literal notranslate"><span class="pre">CoreTop</span></code> wrapper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#simulation">Simulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#test-suite-amaranth-sim">Test Suite (amaranth.sim)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-tests-verilator">Integration Tests (verilator)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="custom_dsp.html">Tutorial 2: DSP blocks (<code class="docutils literal notranslate"><span class="pre">tiliqua.dsp</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="beamrace_video.html">Tutorial 3: Video cores (<code class="docutils literal notranslate"><span class="pre">top.beamrace</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpu_bitstreams.html">Tutorial 4: SoC/CPU bitstreams</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pmods.html">Tutorial 5: Using (third-party) PMODs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bootloader.html">Bootloader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">Example Projects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dsp/index.html">DSP Library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="calibration.html">Calibration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usb_troubleshooting.html">USB troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware Details</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hardware_design.html">Electrical Design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hardware_changes.html">Changelist</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Keep Updated</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="community.html">Community</a></li>
+<li class="toctree-l1"><a class="reference internal" href="foss_funding.html">Funding &amp; Open Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="devlog/index.html">Development Blog</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Links</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://apfaudio.github.io/tiliqua-webflash/">Tiliqua Webflasher</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.crowdsupply.com/apfaudio/tiliqua">Tiliqua on Crowd Supply</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/apfaudio/tiliqua">Tiliqua on GitHub</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://apf.audio/">Homepage (apf.audio)</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tiliqua</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/audio_bitstreams.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-1-audio-cores-top-dsp">
+<h1>Tutorial 1: Audio cores (<code class="docutils literal notranslate"><span class="pre">top.dsp</span></code>)<a class="headerlink" href="#tutorial-1-audio-cores-top-dsp" title="Link to this heading"></a></h1>
+<p>In this tutorial, we’ll take a look at the structure of <code class="docutils literal notranslate"><span class="pre">top.dsp</span></code> audio-only bitstreams, as well as how to build and simulate them.</p>
+<p>In <a class="reference external" href="https://github.com/apfaudio/tiliqua/tree/main/gateware/src/top/dsp">gateware/src/top/dsp</a>, we have 2 files:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">top.py</span></code>: example gateware for lots of different DSP bitstreams.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sim_dsp_core.cpp</span></code>: a Verilator testbench for simulating DSP bitstreams.</p></li>
+</ul>
+</div></blockquote>
+<p>We’ll go deeper into testing and simulation later in this tutorial. For now, let’s focus on <code class="docutils literal notranslate"><span class="pre">top.py</span></code>.</p>
+<section id="the-basics">
+<h2>The Basics<a class="headerlink" href="#the-basics" title="Link to this heading"></a></h2>
+<p>Let’s start by taking a look at the simplest DSP core in this file, <a class="reference internal" href="examples/no_soc_examples.html#top.dsp.top.Mirror" title="top.dsp.top.Mirror"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mirror</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Mirror</span><span class="p">(</span><span class="n">wiring</span><span class="o">.</span><span class="n">Component</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Route audio inputs straight to outputs (in the audio domain).</span>
+<span class="sd">    This is the simplest possible core, useful for basic tests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">i</span><span class="p">:</span> <span class="n">In</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+    <span class="n">o</span><span class="p">:</span> <span class="n">Out</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Signature</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">ArrayLayout</span><span class="p">(</span><span class="n">ASQ</span><span class="p">,</span> <span class="mi">4</span><span class="p">)))</span>
+
+    <span class="n">bitstream_help</span> <span class="o">=</span> <span class="n">BitstreamHelp</span><span class="p">(</span>
+        <span class="n">brief</span><span class="o">=</span><span class="s2">&quot;Audio passthrough&quot;</span><span class="p">,</span>
+        <span class="n">io_left</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;in0&#39;</span><span class="p">,</span> <span class="s1">&#39;in1&#39;</span><span class="p">,</span> <span class="s1">&#39;in2&#39;</span><span class="p">,</span> <span class="s1">&#39;in3&#39;</span><span class="p">,</span> <span class="s1">&#39;in0 (copy)&#39;</span><span class="p">,</span> <span class="s1">&#39;in1 (copy)&#39;</span><span class="p">,</span> <span class="s1">&#39;in2 (copy)&#39;</span><span class="p">,</span> <span class="s1">&#39;in3 (copy)&#39;</span><span class="p">],</span>
+        <span class="n">io_right</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">elaborate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">Module</span><span class="p">()</span>
+        <span class="n">wiring</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">wiring</span><span class="o">.</span><span class="n">flipped</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">),</span> <span class="n">wiring</span><span class="o">.</span><span class="n">flipped</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">m</span>
+</pre></div>
+</div>
+<p>This is an Amaranth <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/wiring.html#components">Component</a> which takes an incoming stream of audio samples (4 channels wide) and emits an outgoing stream (also 4 channels wide).</p>
+<p>A couple of things are worth noting here:</p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">i</span></code> and <code class="docutils literal notranslate"><span class="pre">o</span></code> attributes define the component <em>signature</em> - that is, the input and output ports and their direction. For details, see <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/wiring.html#">Interfaces and connections</a> in the Amaranth documentation.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">stream.Signature</span></code> is an Amaranth construct describing a <em>stream of data</em> that is accompanied by a <code class="docutils literal notranslate"><span class="pre">valid</span></code>/<code class="docutils literal notranslate"><span class="pre">ready</span></code> handshake. This is a simple protocol used commonly in digital logic. For more details, see <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/stdlib/stream.html">Data streams</a> in the Amaranth documentation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ASQ</span></code> is the <em>native audio sample format</em> used by Tiliqua, which is defined as <code class="docutils literal notranslate"><span class="pre">fixed.SQ(1,</span> <span class="pre">15)</span></code> - that is, 16-bits wide, 1 integer bit and 15 fractional bits. This <code class="docutils literal notranslate"><span class="pre">fixed.SQ</span></code> is a <em>fixed-point type</em> which is not quite part of the Amaranth language yet, <a class="reference external" href="https://github.com/amaranth-lang/amaranth/pull/1578">but will be soon</a>.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">bitstream_help</span></code> attribute is optional and has nothing to do with Amaranth or the gateware. If supplied, Tiliqua’s build system puts the provided metadata in your final <em>Bitstream Archive</em>, and the bootloader uses this to display the IO mappings of your bitstream graphically in the bitstream selection screen.</p>
+</div>
+<p>The business logic of our core is in the <code class="docutils literal notranslate"><span class="pre">elaborate</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">elaborate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">Module</span><span class="p">()</span>
+    <span class="n">wiring</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">wiring</span><span class="o">.</span><span class="n">flipped</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">),</span> <span class="n">wiring</span><span class="o">.</span><span class="n">flipped</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">m</span>
+</pre></div>
+</div>
+<p>For this core, we are simply connecting the incoming and outgoing streams together. So, each audio input will be sent straight to each audio output.</p>
+<p>Taking a look at the body of a different core in <code class="docutils literal notranslate"><span class="pre">top.py</span></code>, for example <code class="docutils literal notranslate"><span class="pre">Matrix</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">elaborate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">platform</span><span class="p">):</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">Module</span><span class="p">()</span>
+
+    <span class="n">m</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">matrix_mix</span> <span class="o">=</span> <span class="n">matrix_mix</span> <span class="o">=</span> <span class="n">dsp</span><span class="o">.</span><span class="n">MatrixMix</span><span class="p">(</span>
+        <span class="n">i_channels</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">o_channels</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">coefficients</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
+                      <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
+                      <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+                      <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">]])</span>
+
+    <span class="n">wiring</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">wiring</span><span class="o">.</span><span class="n">flipped</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">),</span> <span class="n">matrix_mix</span><span class="o">.</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">wiring</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">matrix_mix</span><span class="o">.</span><span class="n">o</span><span class="p">,</span> <span class="n">wiring</span><span class="o">.</span><span class="n">flipped</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">o</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">m</span>
+</pre></div>
+</div>
+<p>Above, we are instantiating a <a class="reference internal" href="dsp/mix.html#tiliqua.dsp.MatrixMix" title="tiliqua.dsp.MatrixMix"><code class="xref py py-class docutils literal notranslate"><span class="pre">tiliqua.dsp.MatrixMix</span></code></a> component with some parameters, connecting our audio inputs <code class="docutils literal notranslate"><span class="pre">self.i</span></code> to the matrix mixer inputs <code class="docutils literal notranslate"><span class="pre">matrix_mix.i</span></code> and the mixer outputs <code class="docutils literal notranslate"><span class="pre">matrix_mix.o</span></code> to our audio outputs <code class="docutils literal notranslate"><span class="pre">self.o</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You will notice that we create an <code class="docutils literal notranslate"><span class="pre">m</span> <span class="pre">=</span> <span class="pre">Module()</span></code>, all the interesting logic uses it, and then we must return the <code class="docutils literal notranslate"><span class="pre">m</span></code> at the end of the <code class="docutils literal notranslate"><span class="pre">elaborate</span></code> method. This is a pattern seen everywhere in Amaranth HDL, as operations on <code class="docutils literal notranslate"><span class="pre">Module</span></code> are how hardware definitions are built up.</p>
+</div>
+</section>
+<section id="cli-and-coretop-wrapper">
+<h2>CLI and <code class="docutils literal notranslate"><span class="pre">CoreTop</span></code> wrapper<a class="headerlink" href="#cli-and-coretop-wrapper" title="Link to this heading"></a></h2>
+<p>The definitions of <code class="docutils literal notranslate"><span class="pre">Mirror</span></code> and <code class="docutils literal notranslate"><span class="pre">Matrix</span></code> we have seen above <em>are not the whole hardware design</em>. In fact, when we select a project, the <code class="docutils literal notranslate"><span class="pre">Mirror</span></code> core (for example) is being instantiated <em>inside</em> a wrapper core called <code class="docutils literal notranslate"><span class="pre">CoreTop</span></code>. This is because interfacing with the LEDs, audio CODEC, audio clocks and resets requires a lot of peripheral logic. All of this is contained in <code class="docutils literal notranslate"><span class="pre">CoreTop</span></code>, to reduce the amount of boilerplate in each example core. You only need to worry about processing each audio sample.</p>
+<p>You will notice at the bottom of <code class="docutils literal notranslate"><span class="pre">top.py</span></code> we have a list of cores like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Different DSP cores that can be selected at top-level CLI.</span>
+<span class="n">CORES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1">#                 (touch, class name)</span>
+    <span class="s2">&quot;mirror&quot;</span><span class="p">:</span>         <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">Mirror</span><span class="p">),</span>
+    <span class="s2">&quot;nco&quot;</span><span class="p">:</span>            <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">QuadNCO</span><span class="p">),</span>
+    <span class="s2">&quot;svf&quot;</span><span class="p">:</span>            <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">ResonantFilter</span><span class="p">),</span>
+    <span class="s2">&quot;vca&quot;</span><span class="p">:</span>            <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">DualVCA</span><span class="p">),</span>
+    <span class="c1"># ...</span>
+</pre></div>
+</div>
+<p>Because the <code class="docutils literal notranslate"><span class="pre">dsp/top.py</span></code> file contains <em>multiple projects</em>, there is some extra hooks set up so that the specific project can be selected using <code class="docutils literal notranslate"><span class="pre">--dsp-core</span></code>. You can list them using</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>dsp<span class="w"> </span>build<span class="w"> </span>-h
+&lt;...&gt;
+options:
+<span class="w">  </span>&lt;...&gt;
+<span class="w">  </span>--dsp-core<span class="w"> </span>DSP_CORE<span class="w">   </span>One<span class="w"> </span>of<span class="w"> </span><span class="o">[</span><span class="s1">&#39;mirror&#39;</span>,<span class="w"> </span><span class="s1">&#39;nco&#39;</span>,<span class="w"> </span><span class="s1">&#39;svf&#39;</span>,<span class="w"> </span><span class="s1">&#39;vca&#39;</span>,<span class="w"> </span><span class="s1">&#39;pitch&#39;</span>,<span class="w"> </span><span class="s1">&#39;matrix&#39;</span>,<span class="w"> </span><span class="s1">&#39;touchmix&#39;</span>,<span class="w"> </span><span class="s1">&#39;waveshaper&#39;</span>,<span class="w"> </span><span class="s1">&#39;midicv&#39;</span>,
+<span class="w">                        </span><span class="s1">&#39;psram_pingpong&#39;</span>,<span class="w"> </span><span class="s1">&#39;sram_pingpong&#39;</span>,<span class="w"> </span><span class="s1">&#39;psram_diffuser&#39;</span>,<span class="w"> </span><span class="s1">&#39;sram_diffuser&#39;</span>,<span class="w"> </span><span class="s1">&#39;mdiff&#39;</span>,<span class="w"> </span><span class="s1">&#39;resampler&#39;</span>,
+<span class="w">                        </span><span class="s1">&#39;triple_mirror&#39;</span>,<span class="w"> </span><span class="s1">&#39;stft_mirror&#39;</span>,<span class="w"> </span><span class="s1">&#39;vocode&#39;</span>,<span class="w"> </span><span class="s1">&#39;noise&#39;</span>,<span class="w"> </span><span class="s1">&#39;dwo&#39;</span><span class="o">]</span>
+</pre></div>
+</div>
+<p>And then to build one:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>dsp<span class="w"> </span>build<span class="w"> </span>--dsp-core<span class="o">=</span>nco
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Feel free to build some of these cores and flash / try them to Tiliqua before continuing.</p>
+</div>
+</section>
+<section id="simulation">
+<h2>Simulation<a class="headerlink" href="#simulation" title="Link to this heading"></a></h2>
+<p>Simulation is essential in order to be able to debug gateware and understand what is going on. In this repository, you will find 2 different approaches to simulation:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Native Amaranth simulations</strong>: These are small Python testbenches that you can run your gateware against, using <a class="reference external" href="https://amaranth-lang.org/docs/amaranth/latest/simulator.html">Amaranth’s built-in simulator</a>. The vast majority of testbenches for individual components in this repository are written in this way - as you will find in <a class="reference external" href="https://github.com/apfaudio/tiliqua/tree/main/gateware/tests">gateware/tests</a>.</p></li>
+<li><p><strong>Verilator simulations</strong>: For simulating entire, fully-integrated toplevel designs (such as SoCs or bitstreams with video), the native python testbenches can be slow. So, most top-level bitstreams support being simulated end-to-end with <code class="docutils literal notranslate"><span class="pre">verilator</span></code>, which is much faster. Under the hood, this involves converting the entire design to Verilog, ‘verilating’ it into C++, and then compiling and running the C++ implementation against a testbench.</p></li>
+</ul>
+</div></blockquote>
+<section id="test-suite-amaranth-sim">
+<h3>Test Suite (amaranth.sim)<a class="headerlink" href="#test-suite-amaranth-sim" title="Link to this heading"></a></h3>
+<p>To run the entire Tiliqua test suite (native amaranth simulations), you can run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># note: spawns as many test threads as you have CPUs</span>
+$<span class="w"> </span>pdm<span class="w"> </span><span class="nb">test</span>
+</pre></div>
+</div>
+<p>Alternatively, to run just a single test, for example to only test the <code class="docutils literal notranslate"><span class="pre">Resample</span></code> core:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>pdm<span class="w"> </span>run<span class="w"> </span>python3<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_dsp.py<span class="w"> </span>-k<span class="w"> </span>resample
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Either of these will emit a bunch of simulation <code class="docutils literal notranslate"><span class="pre">*.vcd</span></code> files which you can open up with <code class="docutils literal notranslate"><span class="pre">gtkwave</span></code> or <code class="docutils literal notranslate"><span class="pre">surfer</span></code> in order to inspect the behavior of every net in the design as it is being simulated.</p>
+</div>
+</section>
+<section id="integration-tests-verilator">
+<h3>Integration Tests (verilator)<a class="headerlink" href="#integration-tests-verilator" title="Link to this heading"></a></h3>
+<p>Generally, to run an integration test of a particular project, you can provide <code class="docutils literal notranslate"><span class="pre">sim</span></code> rather than <code class="docutils literal notranslate"><span class="pre">build</span></code> on the command line. For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pdm<span class="w"> </span>dsp<span class="w"> </span>sim<span class="w"> </span>--dsp-core<span class="o">=</span>mirror<span class="w"> </span>--trace-fst
+</pre></div>
+</div>
+<p>This command will simulate our <code class="docutils literal notranslate"><span class="pre">Mirror</span></code> DSP core, inside the <code class="docutils literal notranslate"><span class="pre">CoreTop</span></code> wrapper, as an entire design with simulated audio/I2S inputs as described in our <code class="docutils literal notranslate"><span class="pre">sim_dsp_core.cpp</span></code> testbench. Once it is finished, you will notice 2 files:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">simx.fst</span></code>: the waveform trace from simulation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sim-i2s-outputs.svg</span></code>: a small SVG file containing traces of all 4 audio outputs</p></li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">*.fst</span></code> file is only created if the <code class="docutils literal notranslate"><span class="pre">--trace-fst</span></code> flag is supplied as above. If you omit it, the simulation will run faster, but you won’t get a waveform trace any more.</p>
+</div>
+<p>On opening up the <code class="docutils literal notranslate"><span class="pre">*.fst</span></code> file, if you add some signals under <code class="docutils literal notranslate"><span class="pre">TOP-&gt;top-&gt;pmod0</span></code>, for example <code class="docutils literal notranslate"><span class="pre">i_cal__payload[0][15:0]</span></code> and <code class="docutils literal notranslate"><span class="pre">o_cal__payload[0][15:0]</span></code>, press the <code class="docutils literal notranslate"><span class="pre">Zoom</span> <span class="pre">Fit</span></code> button, you will see some activity.</p>
+<p>Then, if you right click on one of the signals in the ‘Time’ column, select <code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">Format-&gt;Analog-&gt;Step</span></code> followed by <code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">Format-&gt;Signed</span> <span class="pre">Decimal</span></code> and maybe also hit the <code class="docutils literal notranslate"><span class="pre">Insert</span> <span class="pre">Analog</span> <span class="pre">Height</span> <span class="pre">Extension</span></code> a few times, you will be able to see one of the sine wave excitations coming in from the testbench:</p>
+<figure class="align-default">
+<img alt="_images/simx_mirror.png" src="_images/simx_mirror.png" />
+</figure>
+<p>Because in the <code class="docutils literal notranslate"><span class="pre">Mirror</span></code> case there are no unique nets inside the core (we are just connecting inputs to outputs), there are no interesting signals for us to look at inside it.</p>
+<p>If we instead run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># `nco` is a quad VCO with 4 wave types</span>
+pdm<span class="w"> </span>dsp<span class="w"> </span>sim<span class="w"> </span>--dsp-core<span class="o">=</span>nco<span class="w"> </span>--trace-fst
+</pre></div>
+</div>
+<p>And then open up <code class="docutils literal notranslate"><span class="pre">sim-i2s-outputs.svg</span></code>, you will see sine, saw, triangle and square waves all phase modulated by the channel 0 sine wave input:</p>
+<figure class="align-default">
+<img alt="_images/nco.png" src="_images/nco.png" />
+</figure>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="building_flashing.html" class="btn btn-neutral float-left" title="Building and Flashing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="custom_dsp.html" class="btn btn-neutral float-right" title="Tutorial 2: DSP blocks (tiliqua.dsp)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024—2026, S. Holzapfel and Tiliqua contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
