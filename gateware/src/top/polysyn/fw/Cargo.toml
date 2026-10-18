@@ -1,7 +1,10 @@
 [package]
-name = "tiliqua-fw"
+name = "polysyn-fw"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+name = "tiliqua_fw"
 
 [dependencies]
 tiliqua-hal = { path="../../../rs/hal", default-features = false }
@@ -11,14 +14,13 @@ opts = { path = "../../../rs/opts" }
 
 log = "0.4.17"
 embedded-hal = "=1.0.0"
-riscv = { version = "=0.11.1", features = ["critical-section-single-hart"] }
-riscv-rt = { version = "=0.12.2", features = ["single-hart"] }
-panic-halt = "0.2.0"
+riscv = { version = "=0.16.1", features = ["critical-section-single-hart"] }
+riscv-rt = { version = "=0.18.0", features = ["single-hart"] }
 micromath = "2.1.0"
 fastrand = { version = "2.1.0", default-features = false }
-heapless = "0.8.0"
-strum_macros = "0.26.4"
-strum = {version = "0.25.0", features = ["derive"], default-features=false}
+heapless = "0.9.3"
+strum_macros = "0.28.0"
+strum = {version = "0.28.0", features = ["derive"], default-features=false}
 fixed = "1.28.0"
 trig-const = "0.4.0"
 midi-types = "0.1.7"

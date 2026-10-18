@@ -15,21 +15,21 @@ pub fn mobo_pca9635_set_bargraph<T: Options>(
         let c = o.percent();
         for n in 0..6 {
             if ((n as f32)*0.5f32/6.0f32 + 0.5) < c {
-                leds[PCA9635_BAR_RED[n]] = 0xff as u8;
+                leds[PCA9635_BAR_RED[n]] = 0xff;
             } else {
-                leds[PCA9635_BAR_RED[n]] = 0 as u8;
+                leds[PCA9635_BAR_RED[n]] = 0;
             }
             if ((n as f32)*-0.5f32/6.0f32 + 0.5) > c {
-                leds[PCA9635_BAR_GREEN[n]] = 0xff as u8;
+                leds[PCA9635_BAR_GREEN[n]] = 0xff;
             } else {
-                leds[PCA9635_BAR_GREEN[n]] = 0 as u8;
+                leds[PCA9635_BAR_GREEN[n]] = 0;
             }
         }
 
         if opts.modify() && !toggle {
             for n in 0..6 {
-                leds[PCA9635_BAR_GREEN[n]] = 0 as u8;
-                leds[PCA9635_BAR_RED[n]] = 0 as u8;
+                leds[PCA9635_BAR_GREEN[n]] = 0;
+                leds[PCA9635_BAR_RED[n]] = 0;
             }
         }
     }

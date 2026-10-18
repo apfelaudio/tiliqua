@@ -10,7 +10,6 @@
 
 use embedded_hal::i2c::I2c;
 use core::fmt;
-use micromath::F32Ext;
 
 #[cfg(test)]
 use log;
@@ -24,8 +23,8 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::CommunicationError => write!(f, "Communication Error"),
-            Error::InvalidParameter => write!(f, "Invalid Parameter")
+            Self::CommunicationError => write!(f, "Communication Error"),
+            Self::InvalidParameter => write!(f, "Invalid Parameter")
         }
     }
 }
@@ -94,8 +93,8 @@ const ADDRESS: u8 = 0b0110_0000;
 impl PLL {
     pub fn multisynth(&self) -> FeedbackMultisynth {
         match *self {
-            PLL::A => FeedbackMultisynth::MSNA,
-            PLL::B => FeedbackMultisynth::MSNB,
+            Self::A => FeedbackMultisynth::MSNA,
+            Self::B => FeedbackMultisynth::MSNB,
         }
     }
 }
@@ -108,14 +107,14 @@ trait FractionalMultisynth {
 impl FractionalMultisynth for FeedbackMultisynth {
     fn base_addr(&self) -> u8 {
         match *self {
-            FeedbackMultisynth::MSNA => 26,
-            FeedbackMultisynth::MSNB => 34,
+            Self::MSNA => 26,
+            Self::MSNB => 34,
         }
     }
     fn ix(&self) -> u8 {
         match *self {
-            FeedbackMultisynth::MSNA => 6,
-            FeedbackMultisynth::MSNB => 7,
+            Self::MSNA => 6,
+            Self::MSNB => 7,
         }
     }
 }
@@ -123,22 +122,22 @@ impl FractionalMultisynth for FeedbackMultisynth {
 impl FractionalMultisynth for Multisynth {
     fn base_addr(&self) -> u8 {
         match *self {
-            Multisynth::MS0 => 42,
-            Multisynth::MS1 => 50,
-            Multisynth::MS2 => 58,
-            Multisynth::MS3 => 66,
-            Multisynth::MS4 => 74,
-            Multisynth::MS5 => 82,
+            Self::MS0 => 42,
+            Self::MS1 => 50,
+            Self::MS2 => 58,
+            Self::MS3 => 66,
+            Self::MS4 => 74,
+            Self::MS5 => 82,
         }
     }
     fn ix(&self) -> u8 {
         match *self {
-            Multisynth::MS0 => 0,
-            Multisynth::MS1 => 1,
-            Multisynth::MS2 => 2,
-            Multisynth::MS3 => 3,
-            Multisynth::MS4 => 4,
-            Multisynth::MS5 => 5,
+            Self::MS0 => 0,
+            Self::MS1 => 1,
+            Self::MS2 => 2,
+            Self::MS3 => 3,
+            Self::MS4 => 4,
+            Self::MS5 => 5,
         }
     }
 }
@@ -146,8 +145,8 @@ impl FractionalMultisynth for Multisynth {
 impl SimpleMultisynth {
     pub fn base_addr(&self) -> u8 {
         match *self {
-            SimpleMultisynth::MS6 => 90,
-            SimpleMultisynth::MS7 => 91,
+            Self::MS6 => 90,
+            Self::MS7 => 91,
         }
     }
 }
@@ -175,8 +174,8 @@ enum Register {
 }
 
 impl Register {
-    pub fn addr(&self) -> u8 {
-        *self as u8
+    pub fn addr(self) -> u8 {
+        self as u8
     }
 }
 
@@ -230,51 +229,51 @@ bitflags! {
 impl ClockOutput {
     fn register(self) -> Register {
         match self {
-            ClockOutput::Clk0 => Register::Clk0,
-            ClockOutput::Clk1 => Register::Clk1,
-            ClockOutput::Clk2 => Register::Clk2,
-            ClockOutput::Clk3 => Register::Clk3,
-            ClockOutput::Clk4 => Register::Clk4,
-            ClockOutput::Clk5 => Register::Clk5,
-            ClockOutput::Clk6 => Register::Clk6,
-            ClockOutput::Clk7 => Register::Clk7,
+            Self::Clk0 => Register::Clk0,
+            Self::Clk1 => Register::Clk1,
+            Self::Clk2 => Register::Clk2,
+            Self::Clk3 => Register::Clk3,
+            Self::Clk4 => Register::Clk4,
+            Self::Clk5 => Register::Clk5,
+            Self::Clk6 => Register::Clk6,
+            Self::Clk7 => Register::Clk7,
         }
     }
 
-    fn ix(&self) -> u8 {
-        *self as u8
+    fn ix(self) -> u8 {
+        self as u8
     }
 }
 
 impl OutputDivider {
-    fn bits(&self) -> u8 {
-        *self as u8
+    fn bits(self) -> u8 {
+        self as u8
     }
 
-    fn min_divider(desired_divider: u16) -> Result<OutputDivider, Error> {
+    fn min_divider(desired_divider: u16) -> Result<Self, Error> {
         match 16 - (desired_divider.max(1) - 1).leading_zeros() {
-            0 => Ok(OutputDivider::Div1),
-            1 => Ok(OutputDivider::Div2),
-            2 => Ok(OutputDivider::Div4),
-            3 => Ok(OutputDivider::Div8),
-            4 => Ok(OutputDivider::Div16),
-            5 => Ok(OutputDivider::Div32),
-            6 => Ok(OutputDivider::Div64),
-            7 => Ok(OutputDivider::Div128),
+            0 => Ok(Self::Div1),
+            1 => Ok(Self::Div2),
+            2 => Ok(Self::Div4),
+            3 => Ok(Self::Div8),
+            4 => Ok(Self::Div16),
+            5 => Ok(Self::Div32),
+            6 => Ok(Self::Div64),
+            7 => Ok(Self::Div128),
             _ => Err(Error::InvalidParameter),
         }
     }
 
-    fn denominator_u8(&self) -> u8 {
-        match *self {
-            OutputDivider::Div1 => 1,
-            OutputDivider::Div2 => 2,
-            OutputDivider::Div4 => 4,
-            OutputDivider::Div8 => 8,
-            OutputDivider::Div16 => 16,
-            OutputDivider::Div32 => 32,
-            OutputDivider::Div64 => 64,
-            OutputDivider::Div128 => 128,
+    fn denominator_u8(self) -> u8 {
+        match self {
+            Self::Div1 => 1,
+            Self::Div2 => 2,
+            Self::Div4 => 4,
+            Self::Div8 => 8,
+            Self::Div16 => 16,
+            Self::Div32 => 32,
+            Self::Div64 => 64,
+            Self::Div128 => 128,
         }
     }
 }
@@ -311,7 +310,7 @@ pub struct SpreadParams {
 impl SpreadParams {
 
     fn calc_ssudp(&self) -> u16 {
-        ((self.f_pfd / (4.0 * 31500.0)).floor() as u16) & 0x7FF
+        ((self.f_pfd / (4.0 * 31500.0)) as u16) & 0x7FF
     }
 
     fn calc_center_spread(&self) -> (u16, u16, u16, u16, u16, u16) {
@@ -319,19 +318,19 @@ impl SpreadParams {
 
         // Calculate intermediate SSUP value
         let ssup = 128.0 * (self.a + self.b / self.c) *
-            (self.ssc_amp / ((1.0 - self.ssc_amp) * ssudp as f32));
+            (self.ssc_amp / ((1.0 - self.ssc_amp) * f32::from(ssudp)));
 
         // Calculate intermediate SSDN value
         let ssdn = 128.0 * (self.a + self.b / self.c) *
-            (self.ssc_amp / ((1.0 + self.ssc_amp) * ssudp as f32));
+            (self.ssc_amp / ((1.0 + self.ssc_amp) * f32::from(ssudp)));
 
         // Calculate final register values
-        let ssup_p1 = ssup.floor() as u16 & 0x7FF;
-        let ssup_p2 = ((32767.0f32 * (ssup - ssup_p1 as f32)) as u16) & 0x3FFF;
+        let ssup_p1 = ssup as u16 & 0x7FF;
+        let ssup_p2 = ((32767.0f32 * (ssup - f32::from(ssup_p1))) as u16) & 0x3FFF;
         let ssup_p3 = 0x7FFF;
 
-        let ssdn_p1 = ssdn.floor() as u16 & 0x7FF;
-        let ssdn_p2 = ((32767.0f32 * (ssdn - ssdn_p1 as f32)) as u16) & 0x3FFF;
+        let ssdn_p1 = ssdn as u16 & 0x7FF;
+        let ssdn_p2 = ((32767.0f32 * (ssdn - f32::from(ssdn_p1))) as u16) & 0x3FFF;
         let ssdn_p3 = 0x7FFF;
 
         (ssup_p1, ssup_p2, ssup_p3, ssdn_p1, ssdn_p2, ssdn_p3)
@@ -389,20 +388,20 @@ pub trait Si5351 {
 impl<I2C: I2c> Si5351Device<I2C> {
     /// Creates a new driver from a I2C peripheral
     pub fn new(i2c: I2C, address_bit: bool, xtal_freq: u32) -> Self {
-        let si5351 = Si5351Device {
+        
+
+        Self {
             i2c,
-            address: ADDRESS | if address_bit { 1 } else { 0 },
+            address: ADDRESS | u8::from(address_bit),
             xtal_freq,
             clk_enabled_mask: 0,
             ms_int_mode_mask: 0,
             ms_src_mask: 0,
-        };
-
-        si5351
+        }
     }
 
     pub fn new_adafruit_module(i2c: I2C) -> Self {
-        Si5351Device::new(i2c, false, 25_000_000)
+        Self::new(i2c, false, 25_000_000)
     }
 
     fn write_ms_config<MS: FractionalMultisynth + Copy>(
@@ -423,24 +422,15 @@ impl<I2C: I2c> Si5351Device<I2C> {
             return Err(Error::InvalidParameter);
         }
 
-        let p1: u32;
-        let p2: u32;
-        let p3: u32;
-
-        if frac_num == 0 {
-            p1 = 128 * int as u32 - 512;
-            p2 = 0;
-            p3 = 1;
+        let (p1, p2, p3) = if frac_num == 0 {
+            (128 * u32::from(int) - 512, 0, 1)
         } else {
-            let ratio = (128u64 * (frac_num as u64) / (frac_denom as u64)) as u32;
-
-            p1 = 128 * int as u32 + ratio - 512;
-            p2 = 128 * frac_num - frac_denom * ratio;
-            p3 = frac_denom;
-        }
+            let ratio = (128u64 * u64::from(frac_num) / u64::from(frac_denom)) as u32;
+            (128 * u32::from(int) + ratio - 512, 128 * frac_num - frac_denom * ratio, frac_denom)
+        };
 
         self.write_synth_registers(
-            ms,
+            &ms,
             [
                 ((p3 & 0x0000FF00) >> 8) as u8,
                 p3 as u8,
@@ -517,7 +507,7 @@ impl<I2C: I2c> Si5351Device<I2C> {
 
     fn write_synth_registers<MS: FractionalMultisynth>(
         &mut self,
-        ms: MS,
+        ms: &MS,
         params: [u8; 8],
     ) -> Result<(), Error> {
         self.i2c
@@ -590,7 +580,7 @@ impl<I2C: I2c> Si5351 for Si5351Device<I2C>
 
         let r_div = OutputDivider::min_divider(total_divider / 900)?;
 
-        let ms_div = (total_divider / (2 * r_div.denominator_u8() as u16) * 2).max(6);
+        let ms_div = (total_divider / (2 * u16::from(r_div.denominator_u8())) * 2).max(6);
         if ms_div > 1800 {
             return Err(Error::InvalidParameter);
         }
@@ -611,7 +601,7 @@ impl<I2C: I2c> Si5351 for Si5351Device<I2C>
         let pll_freq = freq * total_div;
 
         let mult = (pll_freq / self.xtal_freq) as u8;
-        let f = ((pll_freq % self.xtal_freq) as u64 * denom as u64 / self.xtal_freq as u64) as u32;
+        let f = (u64::from(pll_freq % self.xtal_freq) * u64::from(denom) / u64::from(self.xtal_freq)) as u32;
 
         Ok((mult, f))
     }
@@ -667,7 +657,7 @@ impl<I2C: I2c> Si5351 for Si5351Device<I2C>
 
         let denom: u32 = 1048575;
         let (ms_divider, r_div) = self.find_int_dividers_for_max_pll_freq(900_000_000, freq)?;
-        let total_div = ms_divider as u32 * r_div.denominator_u8() as u32;
+        let total_div = u32::from(ms_divider) * u32::from(r_div.denominator_u8());
         let (mult, num) = self.find_pll_coeffs_for_dividers(total_div, denom, freq)?;
 
         let ms = match clk {
@@ -683,7 +673,7 @@ impl<I2C: I2c> Si5351 for Si5351Device<I2C>
         if let Some(spread_percent) = spread {
             let params = SpreadParams {
                 f_pfd: self.xtal_freq as f32,
-                a: mult as f32,
+                a: f32::from(mult),
                 b: num as f32,
                 c: denom as f32,
                 ssc_amp: spread_percent,
@@ -706,20 +696,21 @@ impl<I2C: I2c> Si5351 for Si5351Device<I2C>
 
         let denom0: u32 = 1048575;
         let (ms_divider, r_div) = self.find_int_dividers_for_max_pll_freq(900_000_000, freqs[0])?;
-        let total_div = ms_divider as u32 * r_div.denominator_u8() as u32;
+        let total_div = u32::from(ms_divider) * u32::from(r_div.denominator_u8());
         let (mult0, num0) = self.find_pll_coeffs_for_dividers(total_div, denom0, freqs[0])?;
 
-        let mut reg0 = 0u8;
-        if let Some(spread_percent) = spread {
+        let reg0 = if let Some(spread_percent) = spread {
             let params = SpreadParams {
                 f_pfd: self.xtal_freq as f32,
-                a: mult0 as f32,
+                a: f32::from(mult0),
                 b: num0 as f32,
                 c: denom0 as f32,
                 ssc_amp: spread_percent,
             };
-            reg0 = self.setup_spread_spectrum(pll, &params)?;
-        }
+            self.setup_spread_spectrum(pll, &params)?
+        } else {
+            0
+        };
 
         for (i, clk) in clks.iter().enumerate() {
             let ms = match clk {
@@ -735,15 +726,15 @@ impl<I2C: I2c> Si5351 for Si5351Device<I2C>
                 self.setup_multisynth_int(ms, ms_divider, r_div)?;
                 self.setup_pll(pll, mult0, num0, denom0)?;
             } else {
-                let pll_freq = (self.xtal_freq as u64 * mult0 as u64
-                    + (self.xtal_freq as u64 * num0 as u64) / denom0 as u64) as f32;
+                let pll_freq = (u64::from(self.xtal_freq) * u64::from(mult0)
+                    + (u64::from(self.xtal_freq) * u64::from(num0)) / u64::from(denom0)) as f32;
                 let factor = pll_freq / (freqs[i] as f32);
                 let int_factor = factor as u16;
-                let rem = ((factor - (int_factor as f32)) * 1e4) as u32;
+                let rem = ((factor - f32::from(int_factor)) * 1e4) as u32;
                 #[cfg(test)]
                 {
-                    log::info!("pll_freq={} factor={} int_factor={} rem={}", pll_freq, factor, int_factor, rem);
-                    log::info!("f_out={}", pll_freq / (int_factor as f32 + (rem as f32 / 1e4)));
+                    log::info!("pll_freq={pll_freq} factor={factor} int_factor={int_factor} rem={rem}");
+                    log::info!("f_out={}", pll_freq / (f32::from(int_factor) + (rem as f32 / 1e4)));
                 }
                 self.setup_multisynth(ms, int_factor, rem, 10000, r_div)?;
             }
@@ -828,10 +819,6 @@ impl<I2C: I2c> Si5351 for Si5351Device<I2C>
             denom,
             OutputDivider::Div1,
         )?;
-
-        if mult % 2 == 0 && num == 0 {
-        } else {
-        }
 
         Ok(())
     }
@@ -925,26 +912,26 @@ mod tests {
 
         let test_spread = 0.015;
 
-        for freq in test_freqs.iter() {
-            log::info!("\n=== Target: {} Hz ===", freq);
+        for freq in &test_freqs {
+            log::info!("\n=== Target: {freq} Hz ===");
 
             let (ms_divider, r_div) = si.find_int_dividers_for_max_pll_freq(900_000_000, *freq)
                 .expect("Failed to find dividers");
-            let total_div = ms_divider as u32 * r_div.denominator_u8() as u32;
+            let total_div = u32::from(ms_divider) * u32::from(r_div.denominator_u8());
             let denom = 1048575; // Maximum denominator
             let (mult, num) = si.find_pll_coeffs_for_dividers(total_div, denom, *freq)
                 .expect("Failed to find PLL coefficients");
 
-            let pll_freq = (si.xtal_freq as u64 * mult as u64 
-                + (si.xtal_freq as u64 * num as u64) / denom as u64) as f64;
-            let output_freq = pll_freq / total_div as f64;
-            let freq_error = output_freq - *freq as f64;
-            let relative_error = 100.0 * freq_error.abs() / *freq as f64;
+            let pll_freq = (u64::from(si.xtal_freq) * u64::from(mult) 
+                + (u64::from(si.xtal_freq) * u64::from(num)) / u64::from(denom)) as f64;
+            let output_freq = pll_freq / f64::from(total_div);
+            let freq_error = output_freq - f64::from(*freq);
+            let relative_error = 100.0 * freq_error.abs() / f64::from(*freq);
 
             // Calculate spread spectrum parameters
             let spread_params = SpreadParams {
                 f_pfd: si.xtal_freq as f32,
-                a: mult as f32,
+                a: f32::from(mult),
                 b: num as f32,
                 c: denom as f32,
                 ssc_amp: test_spread,
@@ -954,23 +941,23 @@ mod tests {
             let (ssup_p1, ssup_p2, ssup_p3, ssdn_p1, ssdn_p2, ssdn_p3) = 
                 spread_params.calc_center_spread();
 
-            log::info!("ms_divider = {}", ms_divider);
+            log::info!("ms_divider = {ms_divider}");
             log::info!("r_div = 1/{}", r_div.denominator_u8());
-            log::info!("total_div = {}", total_div);
-            log::info!("denom = {}", denom);
-            log::info!("mult = {}", mult);
-            log::info!("num = {}", num);
-            log::info!("pll_freq = {}", pll_freq);
-            log::info!("output_freq = {}", output_freq);
-            log::info!("freq_error = {}", freq_error);
-            log::info!("relative_error = {}%", relative_error);
-            log::info!("ssudp = {}", ssudp);
-            log::info!("ssup_p1 = {}", ssup_p1);
-            log::info!("ssup_p2 = {}", ssup_p2);
-            log::info!("ssup_p3 = {}", ssup_p3);
-            log::info!("ssdn_p1 = {}", ssdn_p1);
-            log::info!("ssdn_p2 = {}", ssdn_p2);
-            log::info!("ssdn_p3 = {}", ssdn_p3);
+            log::info!("total_div = {total_div}");
+            log::info!("denom = {denom}");
+            log::info!("mult = {mult}");
+            log::info!("num = {num}");
+            log::info!("pll_freq = {pll_freq}");
+            log::info!("output_freq = {output_freq}");
+            log::info!("freq_error = {freq_error}");
+            log::info!("relative_error = {relative_error}%");
+            log::info!("ssudp = {ssudp}");
+            log::info!("ssup_p1 = {ssup_p1}");
+            log::info!("ssup_p2 = {ssup_p2}");
+            log::info!("ssup_p3 = {ssup_p3}");
+            log::info!("ssdn_p1 = {ssdn_p1}");
+            log::info!("ssdn_p2 = {ssdn_p2}");
+            log::info!("ssdn_p3 = {ssdn_p3}");
 
             // Try to set the frequency and observe I2C operations
             si.set_frequency(PLL::A, ClockOutput::Clk0, *freq, Some(test_spread))

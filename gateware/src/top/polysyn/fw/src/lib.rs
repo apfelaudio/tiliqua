@@ -17,6 +17,7 @@ hal::impl_vector! {
     Vector0: pac::VECTOR_PERIPH,
 }
 
-pub mod handlers;
+tiliqua_lib::impl_handlers!(Serial0, Timer0);
+
 pub mod options;
 pub mod wavetable;

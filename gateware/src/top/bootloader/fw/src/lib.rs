@@ -10,5 +10,6 @@ guh_usb_msc::impl_usb_msc! {
     UsbMsc0: pac::USB_MSC,
 }
 
-pub mod handlers;
+tiliqua_lib::impl_handlers!(Serial0, Timer0);
+
 pub mod options;

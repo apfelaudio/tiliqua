@@ -5,4 +5,5 @@ rustflags = [
 ]
 
 [build]
+target-dir = "../../../rs/target"
 target = "riscv32imafc-unknown-none-elf"

@@ -82,6 +82,22 @@ macro_rules! impl_tiliqua_soc_pac {
     };
 }
 
+#[macro_export]
+macro_rules! new_framebuffer {
+    ($peripherals:ident, $modeline:expr) => {
+        DMAFramebuffer0::new(
+            $peripherals.FRAMEBUFFER_PERIPH,
+            $peripherals.PALETTE_PERIPH,
+            $peripherals.BLIT,
+            $peripherals.PIXEL_PLOT,
+            $peripherals.LINE,
+            tiliqua_pac::constants::PSRAM_FB_BASE,
+            $modeline,
+            tiliqua_pac::constants::BLIT_MEM_BASE,
+        )
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -91,12 +107,12 @@ mod tests {
     pub struct MockI2c;
 
     impl ErrorType for MockI2c {
-        type Error = std::convert::Infallible;
+        type Error = core::convert::Infallible;
     }
 
     impl I2c for MockI2c {
         fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
-            log::info!("I2c::write(addr=0x{:02X}): {:02X?}", addr, bytes);
+            log::info!("I2c::write(addr=0x{addr:02X}): {bytes:02X?}");
             Ok(())
         }
 
@@ -106,8 +122,8 @@ mod tests {
             bytes: &[u8],
             buffer: &mut [u8],
         ) -> Result<(), Self::Error> {
-            log::info!("I2c::write_read(addr=0x{:02X}):", address);
-            log::info!("  Write: {:02X?}", bytes);
+            log::info!("I2c::write_read(addr=0x{address:02X}):");
+            log::info!("  Write: {bytes:02X?}");
             log::info!("  Read buffer size: {}", buffer.len());
             Ok(())
         }
@@ -117,14 +133,14 @@ mod tests {
             address: u8,
             operations: &mut [Operation<'_>],
         ) -> Result<(), Self::Error> {
-            log::info!("I2c::transaction(addr=0x{:02X}):", address);
+            log::info!("I2c::transaction(addr=0x{address:02X}):");
             for (i, op) in operations.iter().enumerate() {
                 match op {
                     Operation::Read(buffer) => {
                         log::info!("  Op {}: Read {} bytes", i, buffer.len());
                     }
                     Operation::Write(bytes) => {
-                        log::info!("  Op {}: Write {:02X?}", i, bytes);
+                        log::info!("  Op {i}: Write {bytes:02X?}");
                     }
                 }
             }

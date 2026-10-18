@@ -1,5 +1,5 @@
-/// TODO: just a placeholder for printing string options for now.
-/// modification is not implemented.
+//! TODO: just a placeholder for printing string options for now.
+//! modification is not implemented.
 
 use crate::traits::*;
 use core::str::FromStr;
@@ -12,10 +12,13 @@ pub struct StringOption {
 }
 
 impl StringOption {
+    /// # Panics
+    ///
+    /// Panics if `value` does not fit in an `OptionString`.
     pub fn new(name: &'static str, value: &str, key: u32) -> Self {
         Self {
             name,
-            value: OptionString::from_str(value).unwrap(),
+            value: OptionString::from_str(value).expect("string option value exceeds OptionString capacity"),
             option_key: OptionKey::new(key),
         }
     }

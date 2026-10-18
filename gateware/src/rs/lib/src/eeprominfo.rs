@@ -10,7 +10,7 @@ const EEPROM_CONFIG_ADDR: u8 = 0x40;
 const EEPROM_CONFIG_SIZE: usize = 0x40;
 const CRC_ALGORITHM: Crc<u32> = Crc::<u32>::new(&CRC_32_BZIP2);
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct EepromCalibration {
     pub adc_scale: [i32; 4],
     pub adc_zero:  [i32; 4],
@@ -58,7 +58,10 @@ where
         let mut buffer = [0u8; SIZE];
         let digest = CRC_ALGORITHM.digest();
         let serialized = postcard::to_slice_crc32(data, &mut buffer, digest)
-            .map_err(|_| EepromError::InvalidSize)?;
+            .map_err(|e| {
+                log::error!("eeprominfo: serialization failed: {e:?}");
+                EepromError::InvalidSize
+            })?;
         self.eeprom.write_bytes(addr, serialized)
     }
 

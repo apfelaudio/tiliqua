@@ -40,7 +40,7 @@ where
     }
 
     fn value(&self) -> OptionString {
-        String::from_str(self.value.into()).unwrap()
+        String::from_str(self.value.into()).expect("enum option name exceeds OptionString capacity")
     }
 
     fn key(&self) -> &OptionKey {
@@ -106,12 +106,10 @@ where
 
     fn encode(&self, buf: &mut [u8]) -> Option<usize> {
         use postcard::to_slice;
-        if self.value != self.init {
-            if let Ok(used) = to_slice(&self.value, buf) {
-                Some(used.len())
-            } else {
-                None
-            }
+        if self.value == self.init {
+            None
+        } else if let Ok(used) = to_slice(&self.value, buf) {
+            Some(used.len())
         } else {
             None
         }

@@ -1,7 +1,7 @@
 use serde_derive::{Serialize, Deserialize};
 use strum_macros::{EnumIter, IntoStaticStr};
 
-#[derive(Default, Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize, EnumIter, IntoStaticStr)]
+#[derive(Default, Debug, PartialEq, Eq, PartialOrd, Clone, Copy, Serialize, Deserialize, EnumIter, IntoStaticStr)]
 #[strum(serialize_all = "kebab-case")]
 pub enum Rotate {
     #[default]
@@ -29,32 +29,33 @@ pub struct DVIModeline {
 
 impl DVIModeline {
     pub fn refresh_rate(&self) -> f32 {
-        1e6f32 * self.pixel_clk_mhz / (self.h_total as u32 * self.v_total as u32) as f32
+        1e6f32 * self.pixel_clk_mhz / (u32::from(self.h_total) * u32::from(self.v_total)) as f32
     }
 
     pub fn fixed(&self) -> bool {
         self.v_total == 0
     }
 
+    #[must_use]
     pub fn maybe_override_fixed(self, fixed: Option<(u16, u16)>, fixed_pclk_hz: u32) -> Self {
         if let Some((h_active, v_active)) = fixed {
             let rotate = match (h_active, v_active) {
                 (720, 720) => Rotate::Left, // ... XXX hack for round screen :)
                 _ => Rotate::Normal
             };
-            DVIModeline {
-                h_active      : h_active,
+            Self {
+                h_active,
                 h_sync_start  : 0,
                 h_sync_end    : 0,
                 h_total       : 0,
                 h_sync_invert : false,
-                v_active      : v_active,
+                v_active,
                 v_sync_start  : 0,
                 v_sync_end    : 0,
                 v_total       : 0,
                 v_sync_invert : false,
                 pixel_clk_mhz : (fixed_pclk_hz as f32) / 1e6f32,
-                rotate        : rotate
+                rotate
             }
         } else {
             self

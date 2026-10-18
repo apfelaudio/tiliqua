@@ -9,7 +9,7 @@ mod tests {
     use super::*;
     use log::info;
 
-    #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr, Default, Serialize, Deserialize)]
+    #[derive(Clone, Copy, PartialEq, Eq, EnumIter, IntoStaticStr, Default, Serialize, Deserialize)]
     #[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
     pub enum Page {
         #[default]
@@ -17,7 +17,7 @@ mod tests {
         Scope2,
     }
 
-    #[derive(Clone, Copy, PartialEq, EnumIter, IntoStaticStr, Default, Serialize, Deserialize)]
+    #[derive(Clone, Copy, PartialEq, Eq, EnumIter, IntoStaticStr, Default, Serialize, Deserialize)]
     #[strum(serialize_all = "kebab-case")]
     pub enum TestEnum {
         EnumValue1,

@@ -1,6 +1,6 @@
 use tiliqua_hal::embedded_graphics::pixelcolor::{PixelColor, raw::{RawU8, RawData}};
 
-/// 'HueIntensity8': 8bpp framebuffer color type (4bpp hue and 4bpp intensity).
+/// '`HueIntensity8`': 8bpp framebuffer color type (4bpp hue and 4bpp intensity).
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct HI8(RawU8);
 
@@ -34,11 +34,13 @@ impl HI8 {
     }
 
     /// Return a new color with the specified hue offset.
+    #[must_use]
     pub fn with_hue_offset(self, hue_offset: u8) -> Self {
         Self::new(self.hue().wrapping_add(hue_offset), self.intensity())
     }
 
     /// Return a new color with the same hue but new intensity.
+    #[must_use]
     pub fn with_intensity(self, intensity: u8) -> Self {
         Self::new(self.hue(), intensity)
     }

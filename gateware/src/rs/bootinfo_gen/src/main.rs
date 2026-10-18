@@ -1,3 +1,5 @@
+#![expect(clippy::print_stdout, reason = "command-line tool")]
+
 // `bootinfo_gen` is used to serialize a manifest and 'fake' bootloader
 // configuration (dynamic modeline, pixel clocks and so on) to a binary
 // file, matching what the real bootloader would save in PSRAM at the
@@ -42,11 +44,11 @@ struct Args {
     output: PathBuf,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn core::error::Error>> {
     let args = Args::parse();
 
     let manifest_str = fs::read_to_string(&args.manifest)?;
-    println!("Manifest file content: {}", manifest_str);
+    println!("Manifest file content: {manifest_str}");
 
     let manifest: BitstreamManifest = serde_json::from_str(&manifest_str)?;
     println!("Manifest parsed successfully");
@@ -68,6 +70,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let serialized = postcard::to_slice_crc32(&bootinfo, &mut buffer, digest)?;
     let serialized_len = serialized.len();
     fs::write(&args.output, serialized)?;
-    println!("Generated bootinfo: {} bytes -> {:?}", serialized_len, args.output);
+    println!("Generated bootinfo: {} bytes -> {}", serialized_len, args.output.display());
     Ok(())
 }

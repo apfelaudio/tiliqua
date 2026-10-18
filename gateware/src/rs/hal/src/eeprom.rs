@@ -42,13 +42,13 @@ where
         }
         let mut write_buffer = [0u8; EEPROM_MAX_TRANSACTION_SIZE];
         write_buffer[0] = addr;
-        write_buffer[1..data.len() + 1].copy_from_slice(data);
+        write_buffer[1..=data.len()].copy_from_slice(data);
         let mut attempts = 0;
         loop {
             match self.i2c.transaction(self.address, &mut [
-                Operation::Write(&write_buffer[..data.len() + 1])
+                Operation::Write(&write_buffer[..=data.len()])
             ]) {
-                Ok(_) => break,
+                Ok(()) => break,
                 Err(e) => {
                     attempts += 1;
                     if attempts >= 10 {

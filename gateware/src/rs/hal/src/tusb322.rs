@@ -9,14 +9,14 @@ use embedded_hal::i2c::Operation;
 
 const TUSB322_ADDR: u8 = 0x47;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TUSB322Mode {
     DrpFromSnk,
     Ufp,
     Dfp,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum AttachedState {
     NotAttached,
     AttachedSrc,
@@ -24,13 +24,13 @@ pub enum AttachedState {
     AttachedAccessory,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum CableDirection {
     CC1,
     CC2,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum CurrentModeAdvertise {
     Default,
     Mid,
@@ -38,7 +38,7 @@ pub enum CurrentModeAdvertise {
     Reserved,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum CurrentModeDetect {
     Default,
     Medium,
@@ -46,7 +46,7 @@ pub enum CurrentModeDetect {
     High,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum AccessoryType {
     NoAccessory,
     Reserved1,

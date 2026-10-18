@@ -8,5 +8,8 @@ proc-macro = true
 
 [dependencies]
 hash32 = "1.0.0"
-quote = "1.0.38"
-syn = "2.0.98"
+quote = "1.0.47"
+syn = "3.0.9"
+
+[lints]
+workspace = true

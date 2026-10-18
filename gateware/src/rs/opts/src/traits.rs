@@ -43,7 +43,7 @@ pub trait OptionTrait {
 
     fn set_from_cc(&mut self, _value: u8) -> bool { false }
 
-    /// Handle button press (toggle_modify). Returns true if handled, false otherwise.
+    /// Handle button press (`toggle_modify`). Returns true if handled, false otherwise.
     fn button_press(&mut self) -> bool { false }
 }
 
@@ -78,10 +78,8 @@ pub trait Options {
         for opt in self.all() {
             let key = opt.key().value();
             for &existing_key in &keys {
-                if existing_key == key {
-                    panic!("validate_keys: option key collision! name={} key=0x{:08x}",
+                assert!(existing_key != key, "validate_keys: option key collision! name={} key=0x{:08x}",
                            opt.name(), key);
-                }
             }
             keys.push(key).expect("validate_keys: Number of options exceeds MAX_N_OPTS");
         }
@@ -131,10 +129,8 @@ where
                 self.view_mut().options_mut()[n_selected].tick_down();
             } else if n_selected != 0 {
                 self.set_selected(Some(n_selected - 1));
-            } else {
-                if self.page().n_unique_values() > 1 {
-                    self.set_selected(None);
-                }
+            } else if self.page().n_unique_values() > 1 {
+                self.set_selected(None);
             }
         } else if self.modify() {
             self.page_mut().tick_down();

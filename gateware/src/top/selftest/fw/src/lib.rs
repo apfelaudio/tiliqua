@@ -6,5 +6,6 @@ pub use tiliqua_hal as hal;
 
 hal::impl_tiliqua_soc_pac!();
 
-pub mod handlers;
+tiliqua_lib::impl_handlers!(Serial0, Timer0);
+
 pub mod options;

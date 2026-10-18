@@ -33,11 +33,11 @@ pub const HELP_IO_MAX_SIZE: usize    = 20;
 pub const HELP_IO_LEFT_N: usize      = 8;
 pub const HELP_IO_RIGHT_N: usize     = 6;
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq, Eq)]
 pub enum RegionType {
     /// Bitstream region that gets loaded directly by the bootloader
     Bitstream,
-    /// XiP firmware that executes directly from SPI flash
+    /// `XiP` firmware that executes directly from SPI flash
     XipFirmware,
     /// Region that gets copied from SPI flash to RAM before use (firmware.bin to PSRAM)
     RamLoad,
@@ -76,6 +76,7 @@ pub struct BitstreamHelp {
 }
 
 #[derive(Deserialize, Serialize, Clone)]
+#[expect(clippy::unsafe_derive_deserialize, reason = "from_addr accesses raw memory")]
 pub struct BitstreamManifest {
     pub hw_rev: u32,
     pub name: String<BITSTREAM_NAME_LEN>,
@@ -109,41 +110,45 @@ impl BitstreamManifest {
             info!("\t}}");
         }
         for (i, region) in self.regions.iter().enumerate() {
-            info!("\tmemory_region[{}] = {{", i);
+            info!("\tmemory_region[{i}] = {{");
             info!("\t\tfilename:     '{}'", region.filename);
             if let Some(spiflash_src) = region.spiflash_src {
-                info!("\t\tspiflash_src: {:#x}", spiflash_src);
+                info!("\t\tspiflash_src: {spiflash_src:#x}");
             } else {
                 info!("\t\tspiflash_src: None");
             }
             if let Some(psram_dst) = region.psram_dst {
-                info!("\t\tpsram_dst:    {:#x} (copyto)", psram_dst);
+                info!("\t\tpsram_dst:    {psram_dst:#x} (copyto)");
             }
             info!("\t\tsize:         {:#x}", region.size);
             if let Some(crc) = region.crc {
-                info!("\t\tcrc:          {:#x}", crc);
+                info!("\t\tcrc:          {crc:#x}");
             }
             info!("\t}}");
         }
         info!("}}");
     }
 
-    pub fn from_slice(manifest_slice: &[u8]) -> Option<BitstreamManifest> {
-        let manifest_de = serde_json_core::from_slice::<BitstreamManifest>(manifest_slice);
+    pub fn from_slice(manifest_slice: &[u8]) -> Option<Self> {
+        let manifest_de = serde_json_core::from_slice::<Self>(manifest_slice);
         match manifest_de {
             Ok((contents, _rest)) => {
                 info!("BitstreamManifest: parse OK");
                 Some(contents)
             }
             Err(err) => {
-                info!("BitstreamManifest: parse error {:?}", err);
+                info!("BitstreamManifest: parse error {err:?}");
                 None
             }
         }
     }
 
-    pub fn from_addr(addr: usize, size: usize) -> Option<BitstreamManifest> {
+    /// # Safety
+    ///
+    /// `addr` must point to `size` readable bytes.
+    pub unsafe fn from_addr(addr: usize, size: usize) -> Option<Self> {
 
+        // SAFETY: upheld by the caller.
         let manifest_slice = unsafe {
             core::slice::from_raw_parts(
                 addr as *mut u8,
@@ -168,13 +173,13 @@ impl BitstreamManifest {
         }
 
         let manifest_slice = &manifest_slice[0..last_byte];
-        info!("Manifest length: {}", last_byte);
+        info!("Manifest length: {last_byte}");
 
         Self::from_slice(manifest_slice)
     }
 
     pub fn get_option_storage_window(&self) -> Option<core::ops::Range<u32>> {
-        for region in self.regions.iter() {
+        for region in &self.regions {
             if region.region_type == RegionType::OptionStorage {
                 if let Some(spiflash_src) = region.spiflash_src {
                     return Some(spiflash_src..(spiflash_src+region.size));

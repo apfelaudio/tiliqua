@@ -10,9 +10,9 @@ path = "src/lib.rs"
 
 [dependencies]
 log = "0.4.17"
-heapless = "0.8.0"
-strum_macros = "0.26.4"
-strum = {version = "0.25.0", features = ["derive"], default-features=false}
+heapless = "0.9.3"
+strum_macros = "0.28.0"
+strum = {version = "0.28.0", features = ["derive"], default-features=false}
 micromath = "2.1.0"
 fixed = "1.28.0"
 midi-types = "0.1.7"
@@ -25,11 +25,12 @@ serde_derive = "1.0.219"
 postcard = { version="1.1.3", default-features=false, features = ["use-crc"] }
 crc = { version="3.0", default-features=false }
 fastrand = { version = "2.1.0", default-features = false }
+irq = "0.2.3"
+amaranth-soc-isr = { path="../isr" }
 [dev-dependencies]
 critical-section = { version = "1.1.2", features = ["std"] }
-image = "0.24.7"
+image = "0.25.10"
 env_logger = "0.11.6"
 
-[profile.release]
-lto = true
-opt-level = 3
+[lints]
+workspace = true

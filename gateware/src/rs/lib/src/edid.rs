@@ -1,5 +1,5 @@
-/// Tiny EDID parser, only handles the header and detailed timing descriptor.
-/// Does not handle extension blocks. This should be enough for most small embedded monitors.
+//! Tiny EDID parser, only handles the header and detailed timing descriptor.
+//! Does not handle extension blocks. This should be enough for most small embedded monitors.
 
 /// Main EDID structure representing the first 128 bytes of an EDID block
 #[derive(Debug)]
@@ -110,7 +110,7 @@ impl Edid {
     pub fn parse(edid_data: &[u8; 128]) -> Result<Self, EdidError> {
         // Verify checksum
         let mut checksum: u8 = 0;
-        for &byte in edid_data.iter() {
+        for &byte in edid_data {
             checksum = checksum.wrapping_add(byte);
         }
         if checksum != 0 {
@@ -137,15 +137,15 @@ impl Edid {
             return Err(EdidError::InvalidHeaderPattern);
         }
         let mut descriptors = [Descriptor::RawDescriptor([0; 18]); 4];
-        for i in 0..4 {
+        for (i, descriptor) in descriptors.iter_mut().enumerate() {
             let offset = 54 + i * 18;
             let mut data = [0; 18];
             data.copy_from_slice(&edid_data[offset..offset + 18]);
             // Parse the descriptor based on its format
-            descriptors[i] = Self::parse_descriptor(&data);
+            *descriptor = Self::parse_descriptor(&data);
         }
 
-        Ok(Edid {
+        Ok(Self {
             header,
             descriptors,
             extensions: edid_data[126],
@@ -167,25 +167,25 @@ impl Edid {
 
     /// Parse a detailed timing descriptor
     fn parse_detailed_timing(data: &[u8; 18]) -> DetailedTimingDescriptor {
-        let pixel_clock = u16::from_le_bytes([data[0], data[1]]) as u32 * 10; // 10 kHz units
+        let pixel_clock = u32::from(u16::from_le_bytes([data[0], data[1]])) * 10; // 10 kHz units
                                                                               //
         // Horizontal active/blanking
-        let h_active = ((data[4] as u16 & 0xF0) << 4) | data[2] as u16;
-        let h_blanking = ((data[4] as u16 & 0x0F) << 8) | data[3] as u16;
+        let h_active = ((u16::from(data[4]) & 0xF0) << 4) | u16::from(data[2]);
+        let h_blanking = ((u16::from(data[4]) & 0x0F) << 8) | u16::from(data[3]);
 
         // Vertical active/blanking
-        let v_active = ((data[7] as u16 & 0xF0) << 4) | data[5] as u16;
-        let v_blanking = ((data[7] as u16 & 0x0F) << 8) | data[6] as u16;
+        let v_active = ((u16::from(data[7]) & 0xF0) << 4) | u16::from(data[5]);
+        let v_blanking = ((u16::from(data[7]) & 0x0F) << 8) | u16::from(data[6]);
 
         // Sync offsets and pulse widths
-        let h_sync_offset = ((data[11] as u16 & 0xC0) << 2) | data[8] as u16;
-        let h_sync_pulse_width = ((data[11] as u16 & 0x30) << 4) | data[9] as u16;
-        let v_sync_offset = ((data[11] as u16 & 0x0C) << 2) | ((data[10] as u16 & 0xF0) >> 4);
-        let v_sync_pulse_width = ((data[11] as u16 & 0x03) << 4) | (data[10] as u16 & 0x0F);
+        let h_sync_offset = ((u16::from(data[11]) & 0xC0) << 2) | u16::from(data[8]);
+        let h_sync_pulse_width = ((u16::from(data[11]) & 0x30) << 4) | u16::from(data[9]);
+        let v_sync_offset = ((u16::from(data[11]) & 0x0C) << 2) | ((u16::from(data[10]) & 0xF0) >> 4);
+        let v_sync_pulse_width = ((u16::from(data[11]) & 0x03) << 4) | (u16::from(data[10]) & 0x0F);
 
         // Image size
-        let h_image_size = ((data[14] as u16 & 0xF0) << 4) | data[12] as u16;
-        let v_image_size = ((data[14] as u16 & 0x0F) << 8) | data[13] as u16;
+        let h_image_size = ((u16::from(data[14]) & 0xF0) << 4) | u16::from(data[12]);
+        let v_image_size = ((u16::from(data[14]) & 0x0F) << 8) | u16::from(data[13]);
 
         // Borders
         let h_border = data[15];
@@ -287,8 +287,8 @@ mod tests {
 
         let edid = Edid::parse(&edid_data);
         match edid {
-            Ok(data) => println!("Successfully parsed EDID: {:#?}", data),
-            Err(e) => panic!("Failed to parse EDID: {:?}", e),
+            Ok(data) => log::info!("Successfully parsed EDID: {data:#?}"),
+            Err(e) => panic!("Failed to parse EDID: {e:?}"),
         }
     }
 }

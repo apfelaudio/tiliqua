@@ -37,7 +37,7 @@ impl<T: ButtonOptionParams> ButtonOption<T> {
         }
     }
 
-    /// For OneShot mode: returns and clears the latched value
+    /// For `OneShot` mode: returns and clears the latched value
     /// For Toggle mode: returns current value without clearing
     pub fn poll(&mut self) -> bool {
         let result = self.value;

@@ -16,12 +16,13 @@ RUN DEBIAN_FRONTEND="noninteractive" \
     && rm -rf /var/lib/apt/lists/*
 
 # Rust and dependencies from https://apfaudio.github.io/tiliqua/install.html
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable \
+COPY rust-toolchain.toml /opt/rust-toolchain/
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none \
     && . /root/.cargo/env \
-    && rustup component add rustfmt clippy llvm-tools \
-    && rustup target add riscv32im-unknown-none-elf riscv32imafc-unknown-none-elf \
-    && cargo install cargo-binutils form svd2rust --locked \
-    && rustup default stable
+    && cd /opt/rust-toolchain \
+    && rustup toolchain install \
+    && rustup default "$(rustup show active-toolchain | cut -d' ' -f1)" \
+    && cargo install cargo-binutils form svd2rust --locked
 
 # Make sure cargo binaries are available in PATH
 ENV PATH="/root/.cargo/bin:${PATH}"

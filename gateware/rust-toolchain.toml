@@ -1,0 +1,4 @@
+[toolchain]
+channel = "1.99.1"
+components = ["clippy", "rustfmt", "llvm-tools"]
+targets = ["riscv32im-unknown-none-elf", "riscv32imafc-unknown-none-elf", "riscv32imac-unknown-none-elf"]

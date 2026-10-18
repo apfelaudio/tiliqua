@@ -12,7 +12,7 @@ pub struct OnePoleSmoother {
 
 impl OnePoleSmoother {
     pub fn new(alpha: f32) -> Self {
-        OnePoleSmoother {
+        Self {
             alpha: Fix::from_num(alpha),
             y_k1:  Fix::from_num(0),
         }
@@ -24,6 +24,6 @@ impl OnePoleSmoother {
     }
 
     pub fn proc_u16(&mut self, x_k: u16) -> u16 {
-        self.proc(Fix::from_bits(x_k as i32)).to_bits() as u16
+        self.proc(Fix::from_bits(i32::from(x_k))).to_bits() as u16
     }
 }
